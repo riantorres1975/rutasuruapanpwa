@@ -1,0 +1,37 @@
+@import "mapbox-gl/dist/mapbox-gl.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #f2f4f8;
+  --foreground: #0f172a;
+  --surface: rgba(255, 255, 255, 0.85);
+  --surface-strong: rgba(255, 255, 255, 0.95);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #020617;
+    --foreground: #e2e8f0;
+    --surface: rgba(15, 23, 42, 0.78);
+    --surface-strong: rgba(15, 23, 42, 0.92);
+  }
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background:
+    radial-gradient(circle at 0% 0%, rgba(14, 116, 144, 0.2), transparent 38%),
+    radial-gradient(circle at 100% 100%, rgba(2, 132, 199, 0.18), transparent 42%),
+    var(--background);
+}
+
+.mapboxgl-ctrl-bottom-left,
+.mapboxgl-ctrl-bottom-right {
+  display: none;
+}
