@@ -16,6 +16,14 @@ import type { Coordinates, RouteData } from "@/lib/types";
 const LAYER_GLOW_ID = "routes-glow";
 const LAYER_LINE_ID = "routes-line";
 const LAYER_HIT_ID = "routes-hit";
+const USER_LOC_SOURCE = "user-location-source";
+const USER_LOC_ACCURACY_LAYER = "user-location-accuracy";
+const USER_LOC_DOT_LAYER = "user-location-dot";
+const TELEFERICO_SOURCE = "teleferico-source";
+const TELEFERICO_LINE_LAYER = "teleferico-line";
+const TELEFERICO_GLOW_LAYER = "teleferico-glow";
+const TELEFERICO_STATIONS_LAYER = "teleferico-stations";
+const TELEFERICO_COLOR = "#14b8a6"; // teal-500
 const CAMERA_DURATION = 1200;
 const MIN_DRAW_DURATION = 1200;
 const MAX_DRAW_DURATION = 1800;
@@ -30,8 +38,10 @@ type MapProps = {
   selectedRouteSegment: Coordinates[] | null;
   originPoint: [number, number] | null;
   destinationPoint: [number, number] | null;
+  showTeleferico?: boolean;
   onMapPick: (point: [number, number]) => void;
   onSelectRoute: (routeId: number) => void;
+  onNearbyRoutesFound: (routeIds: number[]) => void;
 };
 
 function lineOpacityExpression(
@@ -348,8 +358,10 @@ function MapComponent({
   selectedRouteSegment,
   originPoint,
   destinationPoint,
+  showTeleferico = false,
   onMapPick,
-  onSelectRoute
+  onSelectRoute,
+  onNearbyRoutesFound
 }: MapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -366,9 +378,14 @@ function MapComponent({
   const animationTokenRef = useRef(0);
   const originMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const destinationMarkerRef = useRef<mapboxgl.Marker | null>(null);
+  const onNearbyRoutesFoundRef = useRef(onNearbyRoutesFound);
+  const showTelefericoRef = useRef(showTeleferico);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const telefericoGeoJSONRef = useRef<any>(null);
 
   const [isLoading, setIsLoading] = useState(true);
   const [locationLoading, setLocationLoading] = useState(false);
+  const [locationAccuracy, setLocationAccuracy] = useState<number | null>(null);
 
   const mapToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
   const routeFeatures = useMemo(() => toFeatureCollection(routes), [routes]);
@@ -404,6 +421,33 @@ function MapComponent({
   useEffect(() => {
     onMapPickRef.current = onMapPick;
   }, [onMapPick]);
+
+  useEffect(() => {
+    onNearbyRoutesFoundRef.current = onNearbyRoutesFound;
+  }, [onNearbyRoutesFound]);
+
+  useEffect(() => {
+    showTelefericoRef.current = showTeleferico;
+  }, [showTeleferico]);
+
+  // Toggle teleférico layer visibility + camera
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !isMapReadyRef.current) return;
+
+    const vis = showTeleferico ? "visible" : "none";
+    for (const layer of [TELEFERICO_GLOW_LAYER, TELEFERICO_LINE_LAYER, TELEFERICO_STATIONS_LAYER]) {
+      if (map.getLayer(layer)) map.setLayoutProperty(layer, "visibility", vis);
+    }
+
+    if (showTeleferico) {
+      // Fly to encompass all stations: E6 (west) → E1 (east)
+      map.fitBounds(
+        [[-102.0769769, 19.396299], [-102.02093, 19.4306165]],
+        { padding: { top: 100, right: 32, bottom: 180, left: 32 }, duration: 1200, maxZoom: 14 }
+      );
+    }
+  }, [showTeleferico]);
 
   const stopRouteAnimation = useCallback(() => {
     animationTokenRef.current += 1;
@@ -492,8 +536,88 @@ function MapComponent({
       bindRouteInteraction();
     };
 
-    const onLoad = () => {
+    const addTelefericoLayers = (geojson: GeoJSON.FeatureCollection) => {
+      if (!map.getSource(TELEFERICO_SOURCE)) {
+        map.addSource(TELEFERICO_SOURCE, { type: "geojson", data: geojson });
+      }
+
+      // Glow layer
+      if (!map.getLayer(TELEFERICO_GLOW_LAYER)) {
+        map.addLayer(
+          {
+            id: TELEFERICO_GLOW_LAYER,
+            type: "line",
+            source: TELEFERICO_SOURCE,
+            filter: ["==", ["geometry-type"], "LineString"],
+            layout: { "line-cap": "round", "line-join": "round" },
+            paint: {
+              "line-color": TELEFERICO_COLOR,
+              "line-width": 10,
+              "line-blur": 6,
+              "line-opacity": 0.35,
+            },
+          },
+          LAYER_GLOW_ID
+        );
+      }
+
+      // Dashed line layer
+      if (!map.getLayer(TELEFERICO_LINE_LAYER)) {
+        map.addLayer(
+          {
+            id: TELEFERICO_LINE_LAYER,
+            type: "line",
+            source: TELEFERICO_SOURCE,
+            filter: ["==", ["geometry-type"], "LineString"],
+            layout: { "line-cap": "butt", "line-join": "round" },
+            paint: {
+              "line-color": TELEFERICO_COLOR,
+              "line-width": 3.5,
+              "line-dasharray": [2, 2.5],
+              "line-opacity": 0.95,
+            },
+          },
+          LAYER_GLOW_ID
+        );
+      }
+
+      // Station circles
+      if (!map.getLayer(TELEFERICO_STATIONS_LAYER)) {
+        map.addLayer({
+          id: TELEFERICO_STATIONS_LAYER,
+          type: "circle",
+          source: TELEFERICO_SOURCE,
+          filter: ["==", ["geometry-type"], "Point"],
+          paint: {
+            "circle-radius": 7,
+            "circle-color": TELEFERICO_COLOR,
+            "circle-stroke-color": "#ffffff",
+            "circle-stroke-width": 2.5,
+          },
+        });
+      }
+
+      // Sync visibility
+      const vis = showTelefericoRef.current ? "visible" : "none";
+      for (const layer of [TELEFERICO_GLOW_LAYER, TELEFERICO_LINE_LAYER, TELEFERICO_STATIONS_LAYER]) {
+        if (map.getLayer(layer)) map.setLayoutProperty(layer, "visibility", vis);
+      }
+    };
+
+    const onLoad = async () => {
       ensureRouteLayers();
+
+      // Load teleférico GeoJSON
+      try {
+        const res = await fetch("/teleferico.geojson");
+        if (res.ok) {
+          const geojson = await res.json();
+          telefericoGeoJSONRef.current = geojson;
+          addTelefericoLayers(geojson);
+        }
+      } catch {
+        // non-fatal — teleférico layer is optional
+      }
 
       const bounds = getBoundsFromRoutes(routesRef.current);
       if (bounds) {
@@ -515,7 +639,13 @@ function MapComponent({
     const onColorSchemeChange = (event: MediaQueryListEvent) => {
       const nextStyle = getMapStyle(event.matches);
       map.setStyle(nextStyle);
-      map.once("style.load", ensureRouteLayers);
+      map.once("style.load", () => {
+        ensureRouteLayers();
+        // Restore teleférico layers after style swap
+        if (telefericoGeoJSONRef.current) {
+          addTelefericoLayers(telefericoGeoJSONRef.current);
+        }
+      });
     };
 
     map.on("load", onLoad);
@@ -721,12 +851,104 @@ function MapComponent({
     setLocationLoading(true);
     navigator.geolocation.getCurrentPosition(
       ({ coords }) => {
+        const userLng = coords.longitude;
+        const userLat = coords.latitude;
+        const accuracyM = coords.accuracy; // metres
+
+        setLocationAccuracy(accuracyM);
+
+        // ── Fly to user position ──────────────────────────────────────────
         map.flyTo({
-          center: [coords.longitude, coords.latitude],
+          center: [userLng, userLat],
           zoom: 15.5,
           duration: 1200,
           essential: true
         });
+
+        // ── Draw blue dot + accuracy circle as GeoJSON layers ────────────
+        const pointGeoJSON: GeoJSON.FeatureCollection<GeoJSON.Point> = {
+          type: "FeatureCollection",
+          features: [{
+            type: "Feature",
+            properties: { accuracy: accuracyM },
+            geometry: { type: "Point", coordinates: [userLng, userLat] }
+          }]
+        };
+
+        if (map.getSource(USER_LOC_SOURCE)) {
+          (map.getSource(USER_LOC_SOURCE) as mapboxgl.GeoJSONSource).setData(pointGeoJSON);
+        } else {
+          map.addSource(USER_LOC_SOURCE, { type: "geojson", data: pointGeoJSON });
+
+          // Accuracy circle — radius in pixels approximated via circle-radius
+          // We use a fixed pixel radius and note it's approximate at zoom 15.5
+          // For a proper meter-based circle, Turf or a polygon would be needed;
+          // this gives a clear visual cue without a dependency.
+          map.addLayer({
+            id: USER_LOC_ACCURACY_LAYER,
+            type: "circle",
+            source: USER_LOC_SOURCE,
+            paint: {
+              "circle-radius": [
+                "interpolate", ["linear"], ["zoom"],
+                10, 4,
+                15, ["max", 12, ["*", 0.08, ["get", "accuracy"]]],
+                18, ["max", 24, ["*", 0.5, ["get", "accuracy"]]]
+              ],
+              "circle-color": "#3b82f6",
+              "circle-opacity": 0.15,
+              "circle-stroke-color": "#3b82f6",
+              "circle-stroke-width": 1,
+              "circle-stroke-opacity": 0.4
+            }
+          }, LAYER_GLOW_ID); // insert below route layers
+
+          // Blue dot
+          map.addLayer({
+            id: USER_LOC_DOT_LAYER,
+            type: "circle",
+            source: USER_LOC_SOURCE,
+            paint: {
+              "circle-radius": 8,
+              "circle-color": "#3b82f6",
+              "circle-opacity": 1,
+              "circle-stroke-color": "#ffffff",
+              "circle-stroke-width": 2.5
+            }
+          });
+        }
+
+        // ── Haversine proximity search (400 m threshold) ──────────────────
+        const NEARBY_METERS = 400;
+        const toRad = (v: number) => (v * Math.PI) / 180;
+
+        const haversine = (lng1: number, lat1: number, lng2: number, lat2: number) => {
+          const dLat = toRad(lat2 - lat1);
+          const dLng = toRad(lng2 - lng1);
+          const a =
+            Math.sin(dLat / 2) ** 2 +
+            Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+          return 6_371_000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        };
+
+        const nearbyRoutes: { id: number; minDist: number }[] = [];
+
+        for (const route of routesRef.current) {
+          let minDist = Infinity;
+          for (const [lng, lat] of route.coordenadas) {
+            const d = haversine(userLng, userLat, lng, lat);
+            if (d < minDist) minDist = d;
+            if (minDist === 0) break;
+          }
+          if (minDist <= NEARBY_METERS) {
+            nearbyRoutes.push({ id: route.id, minDist });
+          }
+        }
+
+        nearbyRoutes.sort((a, b) => a.minDist - b.minDist);
+        const nearbyIds = nearbyRoutes.map((r) => r.id);
+
+        onNearbyRoutesFoundRef.current(nearbyIds);
         setLocationLoading(false);
       },
       () => {
@@ -765,27 +987,54 @@ function MapComponent({
         </div>
       )}
 
-      <button
-        type="button"
-        onClick={handleLocateMe}
-        disabled={locationLoading}
-        className="absolute bottom-24 left-4 z-20 grid h-12 w-12 place-items-center rounded-full border border-white/35 bg-[var(--surface-strong)] text-slate-900 shadow-soft transition hover:-translate-y-0.5 disabled:opacity-60 disabled:hover:translate-y-0 dark:text-slate-100"
-        aria-label="Ir a mi ubicacion"
-      >
-        {locationLoading ? (
-          <span className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
-        ) : (
-          <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
-            <path
-              d="M12 8.5V4M15.5 12H20M12 15.5V20M8.5 12H4M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
+      {/* Locate-me button + accuracy warning */}
+      <div className="absolute bottom-24 left-4 z-20 flex flex-col items-start gap-2">
+        <button
+          type="button"
+          onClick={handleLocateMe}
+          disabled={locationLoading}
+          className="grid h-12 w-12 place-items-center rounded-full border border-white/35 bg-[var(--surface-strong)] text-slate-900 shadow-soft transition hover:-translate-y-0.5 disabled:opacity-60 disabled:hover:translate-y-0 dark:text-slate-100"
+          aria-label="Ir a mi ubicacion"
+        >
+          {locationLoading ? (
+            <span className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+          ) : (
+            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
+              <path
+                d="M12 8.5V4M15.5 12H20M12 15.5V20M8.5 12H4M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          )}
+        </button>
+
+        {/* Accuracy chip — shown after a fix is received */}
+        {locationAccuracy !== null && (
+          <div
+            className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold shadow-soft backdrop-blur-xl transition-all duration-300 ${
+              locationAccuracy > 1200
+                ? "border-amber-400/50 bg-amber-900/70 text-amber-200"
+                : "border-emerald-400/40 bg-emerald-900/70 text-emerald-200"
+            }`}
+          >
+            {locationAccuracy > 1200 ? (
+              <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3 shrink-0" aria-hidden="true">
+                <path d="M12 8v4m0 4h.01M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0Z"
+                  stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            ) : (
+              <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-400" aria-hidden="true" />
+            )}
+            {locationAccuracy > 1200
+              ? `GPS impreciso ±${Math.round(locationAccuracy / 1000 * 10) / 10} km`
+              : `±${Math.round(locationAccuracy)} m`
+            }
+          </div>
         )}
-      </button>
+      </div>
     </section>
   );
 }

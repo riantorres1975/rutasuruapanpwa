@@ -3,11 +3,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import BottomSheet from "@/components/BottomSheet";
 import MapView from "@/components/Map";
+import NearbyToast from "@/components/NearbyToast";
+import OnboardingOverlay from "@/components/OnboardingOverlay";
 import RouteList from "@/components/RouteList";
-import rutasGrouped from "@/data/rutas-grouped.json";
+import { TELEFERICO_LINE_COORDS } from "@/components/TelefericoSection";
+import { useShareRoute } from "@/hooks/useShareRoute";
 import type { Coordinates, GroupedRouteData, ResolvedRouteData, RouteDirection } from "@/lib/types";
-
-const groupedRoutes = rutasGrouped as GroupedRouteData[];
 const PROXIMITY_METERS = 550;
 const SEGMENT_LENGTH_FACTOR = 0.04;
 const AVG_TRIP_SPEED_KMH = 18;
@@ -228,6 +229,8 @@ function getEstimatedMinutes(segment: Coordinates[]) {
 }
 
 export default function HomePage() {
+  const [groupedRoutes, setGroupedRoutes] = useState<GroupedRouteData[]>([]);
+  const [isLoadingData, setIsLoadingData] = useState(true);
   const [selectedRouteId, setSelectedRouteId] = useState<number | null>(null);
   const [selectedDirection, setSelectedDirection] = useState<RouteDirection>("ida");
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -237,9 +240,30 @@ export default function HomePage() {
   const [suggestions, setSuggestions] = useState<RouteOption[]>([]);
   const [isCalculatingSuggestions, setIsCalculatingSuggestions] = useState(false);
   const [showHint, setShowHint] = useState(true);
+  // nearbyToast: null = hidden, number = route count (0 means none found)
+  const [nearbyToast, setNearbyToast] = useState<number | null>(null);
+  const [nearbyRouteIds, setNearbyRouteIds] = useState<number[]>([]);
+  const [showTeleferico, setShowTeleferico] = useState(false);
+  const { share: shareRoute, status: shareStatus } = useShareRoute();
   const activePointRef = useRef(activePoint);
   const originPointRef = useRef(originPoint);
   const destinationPointRef = useRef(destinationPoint);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/rutas")
+      .then((res) => res.json())
+      .then((data: GroupedRouteData[]) => {
+        if (!cancelled) {
+          setGroupedRoutes(data);
+          setIsLoadingData(false);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setIsLoadingData(false);
+      });
+    return () => { cancelled = true; };
+  }, []);
 
   const flowStep = useMemo(() => getFlowStep(originPoint, destinationPoint), [destinationPoint, originPoint]);
 
@@ -284,7 +308,7 @@ export default function HomePage() {
           };
         })
         .filter((route) => route.coordenadas.length > 1),
-    [selectedDirection]
+    [groupedRoutes, selectedDirection]
   );
 
   const fullRoutesById = useMemo(() => new Map(fullRoutes.map((route) => [route.id, route])), [fullRoutes]);
@@ -317,6 +341,12 @@ export default function HomePage() {
 
   const handleClearSelection = useCallback(() => {
     setSelectedRouteId(null);
+    setShowTeleferico(false);
+  }, []);
+
+  const handleNearbyRoutesFound = useCallback((routeIds: number[]) => {
+    setNearbyRouteIds(routeIds);
+    setNearbyToast(routeIds.length);
   }, []);
 
   const handleMapPick = useCallback((point: Coordinates) => {
@@ -368,7 +398,31 @@ export default function HomePage() {
     setIsCalculatingSuggestions(true);
 
     const timer = window.setTimeout(() => {
-      const nextSuggestions = computeRouteSuggestions(fullRoutes, originPoint, destinationPoint);
+      const searchRoutes = [
+        ...fullRoutes,
+        {
+          id: 9999,
+          ruta: "Teleférico Uruapan",
+          nombre: "Teleférico Uruapan",
+          color: "#14b8a6",
+          coordenadas: TELEFERICO_LINE_COORDS,
+          direccion: "ida" as RouteDirection,
+          tieneIda: true,
+          tieneVuelta: true
+        },
+        {
+          id: 9999,
+          ruta: "Teleférico Uruapan",
+          nombre: "Teleférico Uruapan",
+          color: "#14b8a6",
+          coordenadas: [...TELEFERICO_LINE_COORDS].reverse(),
+          direccion: "vuelta" as RouteDirection,
+          tieneIda: true,
+          tieneVuelta: true
+        }
+      ];
+
+      const nextSuggestions = computeRouteSuggestions(searchRoutes, originPoint, destinationPoint);
       setSuggestions(nextSuggestions);
       setIsCalculatingSuggestions(false);
     }, 80);
@@ -433,6 +487,38 @@ export default function HomePage() {
     }
   }, [fullRoutesById, selectedRouteId]);
 
+  if (isLoadingData) {
+    return (
+      <main className="relative flex h-dvh w-full flex-col items-center justify-center gap-5 overflow-hidden bg-[#0b1220]">
+        {/* Mapa skeleton */}
+        <div className="absolute inset-0 animate-pulse bg-gradient-to-b from-[#111b2e] to-[#0b1220]" />
+        {/* Skeleton rutas */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 opacity-30">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div
+              key={i}
+              className="h-1 animate-pulse rounded-full bg-slate-500"
+              style={{
+                width: `${55 + (i % 3) * 15}%`,
+                animationDelay: `${i * 120}ms`
+              }}
+            />
+          ))}
+        </div>
+        {/* Logo + spinner */}
+        <div className="relative z-10 flex flex-col items-center gap-4">
+          <div className="flex items-center gap-2.5 rounded-2xl border border-white/10 bg-white/5 px-5 py-3 backdrop-blur-xl">
+            <p className="font-display text-[17px] font-semibold text-white">Rutas Uruapan</p>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-slate-400">
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-cyan-400/60 border-t-transparent" />
+            Cargando rutas...
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="relative h-dvh w-full overflow-hidden">
       <MapView
@@ -443,8 +529,10 @@ export default function HomePage() {
         selectedRouteSegment={selectedSuggestion?.segment ?? null}
         originPoint={originPoint}
         destinationPoint={destinationPoint}
+        showTeleferico={showTeleferico}
         onMapPick={handleMapPick}
         onSelectRoute={handleSelectRoute}
+        onNearbyRoutesFound={handleNearbyRoutesFound}
       />
 
       <section className="pointer-events-none absolute inset-x-0 top-0 z-20 px-4 pt-4">
@@ -459,6 +547,15 @@ export default function HomePage() {
           <div className="pointer-events-auto rounded-full border border-white/20 bg-[var(--surface)] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-slate-600 shadow-soft backdrop-blur-xl dark:text-slate-300">
             Paso {flowStep}/3
           </div>
+        </div>
+
+        {/* ── Nearby routes toast ──────────────────────────────────────── */}
+        <div className="pointer-events-auto mt-2">
+          <NearbyToast
+            count={nearbyToast}
+            onView={() => setIsSheetOpen(true)}
+            onDismiss={() => setNearbyToast(null)}
+          />
         </div>
 
         <div className={`pointer-events-none mt-2 max-w-[95%] transition-all duration-300 ${showHint ? "opacity-100" : "opacity-0"}`}>
@@ -585,6 +682,9 @@ export default function HomePage() {
                     type="button"
                     onClick={() => {
                       setSelectedRouteId(bestSuggestion.routeId);
+                      if (bestSuggestion.routeId === 9999) {
+                        setShowTeleferico(true);
+                      }
                       setShowHint(false);
                     }}
                     className="rounded-full bg-slate-900 px-3.5 py-2 text-[11px] font-semibold text-slate-50 transition active:scale-[0.98] dark:bg-slate-100 dark:text-slate-900"
@@ -609,14 +709,38 @@ export default function HomePage() {
               </div>
             )}
 
-            {selectedRoute && (
+            {(selectedRoute || showTeleferico) && (
               <div className="mt-2.5 flex items-center gap-2 border-t border-slate-200/70 pt-2 dark:border-slate-700/70">
-                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: selectedRoute.color }} />
-                <span className="truncate text-[11px] font-medium text-slate-700 dark:text-slate-200">Ruta activa: {selectedRoute.nombre}</span>
+                <span
+                  className="h-2 w-2 shrink-0 rounded-full"
+                  style={{ backgroundColor: selectedRoute?.color ?? "#14b8a6" }} // teal for teleférico
+                />
+                <span className="min-w-0 flex-1 truncate text-[11px] font-medium text-slate-700 dark:text-slate-200">
+                  Ruta activa: {selectedRoute?.nombre ?? "Teleférico Uruapan"}
+                </span>
+
+                {/* Share button */}
+                <button
+                  type="button"
+                  onClick={() => shareRoute(selectedRoute?.nombre ?? "Teleférico")}
+                  className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-slate-900/10 text-slate-600 transition hover:bg-slate-900/15 active:scale-95 dark:bg-slate-100/10 dark:text-slate-300 dark:hover:bg-slate-100/20"
+                  aria-label={`Compartir ${selectedRoute?.nombre ?? "Teleférico"}`}
+                >
+                  <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" aria-hidden="true">
+                    <path
+                      d="M8.59 13.51l6.83 3.98m-.01-10.98-6.82 3.98M21 5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm0 14a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM3 12a3 3 0 1 1 6 0 3 3 0 0 1-6 0Z"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+
                 <button
                   type="button"
                   onClick={handleClearSelection}
-                  className="ml-auto rounded-full bg-slate-900/10 px-2.5 py-1 text-[10px] font-semibold text-slate-700 transition active:scale-[0.98] dark:bg-slate-100/10 dark:text-slate-200"
+                  className="shrink-0 rounded-full bg-slate-900/10 px-2.5 py-1 text-[10px] font-semibold text-slate-700 transition active:scale-[0.98] dark:bg-slate-100/10 dark:text-slate-200"
                 >
                   Limpiar
                 </button>
@@ -625,6 +749,43 @@ export default function HomePage() {
           </div>
         )}
       </section>
+
+      {/* ── Share confirmation toast ─────────────────────────────────────── */}
+      <div
+        aria-live="polite"
+        aria-atomic="true"
+        className={`pointer-events-none absolute inset-x-0 bottom-24 z-50 flex justify-center transition-all duration-300 ${
+          shareStatus !== "idle" ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
+        }`}
+      >
+        <div
+          className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-[13px] font-semibold shadow-[0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-xl ${
+            shareStatus === "error"
+              ? "border-red-400/30 bg-slate-900/85 text-red-300"
+              : "border-emerald-400/30 bg-slate-900/85 text-emerald-300"
+          }`}
+        >
+          {shareStatus === "shared" && (
+            <>
+              <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
+                <path d="M8.59 13.51l6.83 3.98m-.01-10.98-6.82 3.98M21 5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm0 14a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM3 12a3 3 0 1 1 6 0 3 3 0 0 1-6 0Z"
+                  stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              ¡Compartido!
+            </>
+          )}
+          {shareStatus === "copied" && (
+            <>
+              <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
+                <path d="M9 12l2 2 4-4M7 3h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"
+                  stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              ¡Copiado al portapapeles!
+            </>
+          )}
+          {shareStatus === "error" && "❌ No se pudo copiar"}
+        </div>
+      </div>
 
       <button
         type="button"
@@ -649,9 +810,15 @@ export default function HomePage() {
           onDirectionChange={setSelectedDirection}
           suggestedRouteIds={suggestedRouteIds}
           bestSuggestedRouteId={bestSuggestion?.routeId ?? null}
+          nearbyRouteIds={nearbyRouteIds}
           selectedRouteId={selectedRouteId}
           onClearSelection={() => {
             handleClearSelection();
+            setIsSheetOpen(false);
+          }}
+          onShowTeleferico={() => {
+            handleClearSelection();
+            setShowTeleferico(true);
             setIsSheetOpen(false);
           }}
           onSelectRoute={(routeId) => {
@@ -660,6 +827,8 @@ export default function HomePage() {
           }}
         />
       </BottomSheet>
+
+      <OnboardingOverlay />
     </main>
   );
 }
