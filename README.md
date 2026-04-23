@@ -9,6 +9,17 @@ Aplicacion web mobile-first para visualizar rutas de transporte publico en Uruap
 - Tailwind CSS
 - Mapbox GL JS
 
+## Funcionalidades principales
+
+- Visualizacion de rutas ida/vuelta con seleccion y resaltado
+- Atenuacion del resto de rutas para mantener foco visual
+- Animacion de dibujo progresivo al seleccionar ruta
+- Seleccion de origen (A) y destino (B) tocando el mapa
+- Sugerencias A -> B sin APIs externas (matching local sobre coordenadas)
+- Al seleccionar una sugerencia, se renderiza solo el segmento relevante entre A y B
+- Marcadores A/B sobre inicio y fin del segmento seleccionado
+- UX fluida sin recrear layers: solo se actualiza el source GeoJSON
+
 ## Configuracion rapida
 
 1. Instala dependencias:
@@ -29,41 +40,48 @@ NEXT_PUBLIC_MAPBOX_TOKEN=pk.tu_token_publico_mapbox
 npm run dev
 ```
 
-## Estructura base
+## Estructura
 
 ```
 app/
 components/
+  BottomSheet.tsx
   Map.tsx
   RouteList.tsx
-  BottomSheet.tsx
 data/
   rutas.json
+  rutas-grouped.json
 lib/
   map.ts
+  types.ts
+scripts/
+  convert-rutas.js
+  group-rutas.js
 ```
 
 ## Datos de rutas
 
-El archivo `data/rutas.json` usa este formato:
+Se usan dos archivos principales:
+
+- `data/rutas.json`: rutas normalizadas en formato plano
+- `data/rutas-grouped.json`: rutas agrupadas por nombre con `ida` y `vuelta`
+
+Formato esperado en `data/rutas-grouped.json`:
 
 ```json
 [
   {
-    "id": 1,
-    "nombre": "Ruta 1",
-    "color": "#FF5733",
-    "coordenadas": [[-102.05, 19.42], [-102.04, 19.43]]
+    "ruta": "Ruta 1",
+    "color": "#ff5733",
+    "ida": [[-102.05, 19.42], [-102.04, 19.43]],
+    "vuelta": [[-102.04, 19.43], [-102.05, 19.42]]
   }
 ]
 ```
 
-## Funcionalidades
+## Scripts utiles
 
-- Mapa centrado en Uruapan con multiples rutas
-- Colores unicos por ruta
-- Seleccion de ruta con resaltado y atenuacion del resto
-- Bottom sheet con buscador y lista de rutas
-- Boton flotante para abrir panel
-- Boton de mi ubicacion
-- UI en modo claro/oscuro segun preferencias del sistema
+- `npm run convert:rutas`: convierte y normaliza insumos desde `Rutas/` hacia `data/rutas.json`
+- `node scripts/group-rutas.js`: genera `data/rutas-grouped.json` a partir de rutas normalizadas
+- `npm run lint`: validacion de lint
+- `npm run build`: build de produccion
