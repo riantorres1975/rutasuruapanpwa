@@ -205,7 +205,7 @@ Mostrar todas las rutas con su resolución completa (miles de puntos) degrada el
 
 ## 👤 Autor
 
-**[Tu nombre aquí]**
+**Wh0am1**
 
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://linkedin.com/in/tu-usuario)
 [![Portafolio](https://img.shields.io/badge/Portafolio-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://tu-portafolio.dev)
@@ -421,7 +421,7 @@ Rendering all routes at full resolution (thousands of points) degrades FPS when 
 
 ## 👤 Author
 
-**[Your name here]**
+**Wh0am1**
 
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://linkedin.com/in/your-username)
 [![Portfolio](https://img.shields.io/badge/Portfolio-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://your-portfolio.dev)
