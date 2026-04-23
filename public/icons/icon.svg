@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Rutas Uruapan">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#1d4ed8" />
+    </linearGradient>
+    <linearGradient id="path" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#22d3ee" />
+      <stop offset="100%" stop-color="#34d399" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)" />
+  <path
+    d="M124 366c62 0 96-42 132-96 28-42 48-66 84-66 33 0 53 20 72 44"
+    fill="none"
+    stroke="url(#path)"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-width="44"
+  />
+  <circle cx="124" cy="366" r="24" fill="#22d3ee" />
+  <circle cx="412" cy="248" r="24" fill="#34d399" />
+</svg>

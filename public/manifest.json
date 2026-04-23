@@ -1,0 +1,30 @@
+{
+  "name": "Rutas Uruapan",
+  "short_name": "Rutas",
+  "description": "Visualizador de rutas de transporte publico en Uruapan, Michoacan",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "theme_color": "dark",
+  "background_color": "#0b1220",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

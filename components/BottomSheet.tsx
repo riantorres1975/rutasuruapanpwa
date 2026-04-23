@@ -71,7 +71,7 @@ export default function BottomSheet({ open, onOpenChange, title, children }: Bot
     <>
       <div
         onClick={() => onOpenChange(false)}
-        className={`fixed inset-0 z-30 bg-slate-950/45 backdrop-blur-sm transition duration-300 ${
+        className={`fixed inset-0 z-30 bg-slate-950/45 backdrop-blur-[6px] transition-opacity duration-300 ${
           open ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
         }`}
       />
@@ -81,23 +81,23 @@ export default function BottomSheet({ open, onOpenChange, title, children }: Bot
         aria-modal="true"
         aria-label={title}
         style={open ? { transform: `translateY(${dragOffset}px)` } : undefined}
-        className={`fixed inset-x-0 bottom-0 z-40 h-[76dvh] rounded-t-[28px] border border-white/15 bg-[var(--surface-strong)] shadow-soft backdrop-blur-xl transition-transform will-change-transform ${
-          open ? "translate-y-0" : "translate-y-full"
-        } ${isDragging ? "duration-100" : "duration-300"}`}
+        className={`fixed inset-x-0 bottom-0 z-40 h-[80dvh] rounded-t-[30px] border border-white/20 bg-[var(--surface-strong)] shadow-soft backdrop-blur-2xl transition-[transform,opacity] will-change-transform ${
+          open ? "translate-y-0 opacity-100" : "translate-y-[102%] opacity-95"
+        } ${isDragging ? "duration-100" : "duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"}`}
       >
         <header
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerEnd}
           onPointerCancel={onPointerEnd}
-          className="relative border-b border-slate-200/70 px-4 pb-3 pt-2 dark:border-slate-700/70"
+          className="relative border-b border-slate-200/65 px-5 pb-3.5 pt-3 dark:border-slate-700/65"
         >
-          <div className="mx-auto mb-2 h-1.5 w-12 rounded-full bg-slate-300 dark:bg-slate-600" />
+          <div className="mx-auto mb-2.5 h-1.5 w-14 rounded-full bg-slate-300/90 dark:bg-slate-600/90" />
           <p className="pr-12 text-base font-semibold text-slate-900 dark:text-slate-100">{title}</p>
           <button
             type="button"
             onClick={() => onOpenChange(false)}
-            className="absolute right-4 top-2 rounded-full bg-slate-900/5 p-2.5 text-slate-700 transition hover:bg-slate-900/10 dark:bg-slate-100/10 dark:text-slate-200 dark:hover:bg-slate-100/20"
+            className="absolute right-4 top-2.5 rounded-full bg-slate-900/5 p-2.5 text-slate-700 transition hover:bg-slate-900/10 active:scale-[0.97] dark:bg-slate-100/10 dark:text-slate-200 dark:hover:bg-slate-100/20"
             aria-label="Cerrar panel"
           >
             <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
@@ -111,7 +111,7 @@ export default function BottomSheet({ open, onOpenChange, title, children }: Bot
           </button>
         </header>
 
-        <div className="h-[calc(76dvh-72px)] overflow-y-auto px-4 pb-6 pt-4">{children}</div>
+        <div className="h-[calc(80dvh-78px)] overflow-y-auto overscroll-contain px-5 pb-8 pt-5">{children}</div>
       </section>
     </>
   );

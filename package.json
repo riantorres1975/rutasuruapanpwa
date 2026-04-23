@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "convert:rutas": "node scripts/convert-rutas.js"
   },
   "dependencies": {
     "mapbox-gl": "^3.12.0",
