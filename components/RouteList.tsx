@@ -1,11 +1,13 @@
 "use client";
 
+import Fuse from "fuse.js";
 import { useDeferredValue, useMemo, useState } from "react";
 import TelefericoSection from "@/components/TelefericoSection";
 import type { ResolvedRouteData, RouteDirection } from "@/lib/types";
 
 type RouteListProps = {
   routes: ResolvedRouteData[];
+  isLoading?: boolean;
   direction: RouteDirection;
   onDirectionChange: (direction: RouteDirection) => void;
   suggestedRouteIds: number[];
@@ -19,6 +21,7 @@ type RouteListProps = {
 
 export default function RouteList({
   routes,
+  isLoading = false,
   direction,
   onDirectionChange,
   suggestedRouteIds,
@@ -32,7 +35,18 @@ export default function RouteList({
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query);
 
-  const normalizedQuery = useMemo(() => deferredQuery.trim().toLowerCase(), [deferredQuery]);
+  const normalizedQuery = deferredQuery.trim();
+
+  const fuse = useMemo(
+    () =>
+      new Fuse(routes, {
+        keys: ["nombre"],
+        threshold: 0.35,
+        minMatchCharLength: 1,
+        includeScore: false
+      }),
+    [routes]
+  );
 
   const hasNearby = nearbyRouteIds.length > 0;
   const telefericoRouteId = useMemo(() => {
@@ -67,7 +81,7 @@ export default function RouteList({
 
   const filteredRoutes = useMemo(() => {
     const base = normalizedQuery
-      ? routes.filter((r) => r.nombre.toLowerCase().includes(normalizedQuery))
+      ? fuse.search(normalizedQuery).map((result) => result.item)
       : routes;
 
     if (!hasNearby) return base;
@@ -88,50 +102,59 @@ export default function RouteList({
     nearby.sort((a, b) => (nearbyRankMap.get(a.id) ?? 0) - (nearbyRankMap.get(b.id) ?? 0));
 
     return [...nearby, ...rest];
-  }, [normalizedQuery, routes, hasNearby, nearbyRankMap]);
+  }, [normalizedQuery, routes, hasNearby, nearbyRankMap, fuse]);
 
   return (
     <div className="space-y-5">
-      <div className="space-y-2">
-        <h2 className="font-display text-xl font-bold text-slate-900 dark:text-slate-100">Rutas disponibles</h2>
-        <p className="text-sm text-slate-600 dark:text-slate-300">
-          Explora rutas y toca una opcion para verla en el mapa.
-        </p>
-        <div className="inline-flex rounded-full border border-white/10 bg-white/5 p-1">
-          <button
-            type="button"
-            onClick={() => onDirectionChange("ida")}
-            className={`h-8 rounded-full px-3 text-xs transition ${
-              direction === "ida"
-                ? "bg-[#00D4AA] font-bold text-gray-900"
-                : "text-white/50 hover:bg-white/10"
-            }`}
-          >
-            Ida
-          </button>
-          <button
-            type="button"
-            onClick={() => onDirectionChange("vuelta")}
-            className={`h-8 rounded-full px-3 text-xs transition ${
-              direction === "vuelta"
-                ? "bg-[#00D4AA] font-bold text-gray-900"
-                : "text-white/50 hover:bg-white/10"
-            }`}
-          >
-            Vuelta
-          </button>
-        </div>
-        <div className="flex items-center justify-between text-xs font-medium text-slate-500 dark:text-slate-400">
-          <span>{filteredRoutes.length} rutas</span>
+      {/* Header section */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 className="font-display text-[18px] font-bold text-slate-100">Rutas disponibles</h2>
+            <p className="mt-0.5 text-[13px] text-slate-400">
+              Toca una ruta para verla en el mapa.
+            </p>
+          </div>
           {selectedRouteId !== null && onClearSelection && (
             <button
               type="button"
               onClick={onClearSelection}
-              className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-slate-300 transition hover:bg-white/10"
+              className="shrink-0 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[12px] font-semibold text-slate-300 transition hover:bg-white/10 active:scale-[0.97]"
             >
-              Limpiar seleccion
+              Limpiar
             </button>
           )}
+        </div>
+
+        {/* Direction toggle + route count on same row */}
+        <div className="flex items-center gap-3">
+          <div className="inline-flex rounded-xl border border-white/10 bg-white/5 p-1">
+            <button
+              type="button"
+              onClick={() => onDirectionChange("ida")}
+              className={`h-9 rounded-lg px-4 text-[13px] font-semibold transition active:scale-[0.97] ${
+                direction === "ida"
+                  ? "bg-[#00D4AA] text-gray-900 shadow-sm"
+                  : "text-white/50 hover:bg-white/10 hover:text-white/80"
+              }`}
+            >
+              Ida
+            </button>
+            <button
+              type="button"
+              onClick={() => onDirectionChange("vuelta")}
+              className={`h-9 rounded-lg px-4 text-[13px] font-semibold transition active:scale-[0.97] ${
+                direction === "vuelta"
+                  ? "bg-[#00D4AA] text-gray-900 shadow-sm"
+                  : "text-white/50 hover:bg-white/10 hover:text-white/80"
+              }`}
+            >
+              Vuelta
+            </button>
+          </div>
+          <span className="text-[12px] font-medium text-slate-500">
+            {filteredRoutes.length} ruta{filteredRoutes.length !== 1 ? "s" : ""}
+          </span>
         </div>
       </div>
 
@@ -177,20 +200,44 @@ export default function RouteList({
         />
       )}
 
-      {filteredRoutes.length > 0 ? (
-        <ul className="space-y-2 pb-8">
+      {/* Skeleton rows durante la carga inicial — reemplazan el spinner generico */}
+      {isLoading ? (
+        <ul className="space-y-2 pb-10" aria-busy="true" aria-label="Cargando rutas">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <li key={i}>
+              <div className="flex min-h-16 w-full items-stretch gap-3 rounded-2xl border border-white/8 bg-white/4 px-2 py-3">
+                {/* Color strip skeleton */}
+                <div className="w-1 self-stretch rounded-full bg-white/10 animate-pulse" />
+                <div className="ml-1 flex flex-1 flex-col justify-center gap-2 py-0.5">
+                  {/* Route name skeleton — varying widths for realistic feel */}
+                  <div
+                    className="h-3.5 animate-pulse rounded-full bg-white/10"
+                    style={{ width: `${52 + (i % 3) * 14}%`, animationDelay: `${i * 80}ms` }}
+                  />
+                  {/* Subtitle skeleton */}
+                  <div
+                    className="h-2.5 animate-pulse rounded-full bg-white/6"
+                    style={{ width: `${36 + (i % 2) * 12}%`, animationDelay: `${i * 80 + 40}ms` }}
+                  />
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
+      ) : filteredRoutes.length > 0 ? (
+        <ul className="space-y-2 pb-10">
           {/* Section header when nearby routes are active */}
           {hasNearby && !normalizedQuery && (
             <li aria-hidden="true">
               <div className="flex items-center gap-2 pb-1 pt-0.5">
-                <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-cyan-600 dark:text-cyan-400">
+                <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-[#00D4AA]">
                   <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" aria-hidden="true">
                     <circle cx="12" cy="12" r="4" fill="currentColor" />
                     <path d="M12 2v3M12 19v3M2 12h3M19 12h3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                   </svg>
-                  Cercanas a ti — más óptima primero
+                  Cercanas a ti
                 </span>
-                <span className="flex-1 border-t border-cyan-300/30 dark:border-cyan-700/30" />
+                <span className="flex-1 border-t border-[#00D4AA]/20" />
               </div>
             </li>
           )}
@@ -272,8 +319,20 @@ export default function RouteList({
           })}
         </ul>
       ) : (
-        <div className="rounded-2xl border border-slate-200/80 bg-white/75 px-4 py-6 text-center text-sm text-slate-600 dark:border-slate-700/80 dark:bg-slate-900/70 dark:text-slate-300">
-          No encontramos rutas con ese nombre. Intenta con otra palabra o revisa la lista completa.
+        <div className="flex flex-col items-center gap-3 rounded-2xl border border-white/8 bg-white/4 px-4 py-8 text-center">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/5">
+            <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6 text-slate-500" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.8" />
+              <path d="m20 20-3.8-3.8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              <path d="M8.5 11h5M11 8.5v5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeOpacity="0.5" />
+            </svg>
+          </div>
+          <div>
+            <p className="text-[14px] font-semibold text-slate-300">Sin resultados</p>
+            <p className="mt-1 text-[12px] text-slate-500">
+              No hay rutas con ese nombre. Prueba con otra palabra.
+            </p>
+          </div>
         </div>
       )}
     </div>

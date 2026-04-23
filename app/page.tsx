@@ -1,6 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
+// ── Sidebar resize constants ──────────────────────────────────────────────────
+const SIDEBAR_DEFAULT_MD = 380; // px en breakpoint md (768–1023px)
+const SIDEBAR_DEFAULT_LG = 420; // px en breakpoint lg (1024px+)
+const SIDEBAR_MIN = 300;        // px mínimo al arrastrar
+const SIDEBAR_MAX = 520;        // px máximo al arrastrar
 import BottomSheet from "@/components/BottomSheet";
 import MapView from "@/components/Map";
 import NearbyToast from "@/components/NearbyToast";
@@ -8,6 +14,8 @@ import OnboardingOverlay from "@/components/OnboardingOverlay";
 import RouteList from "@/components/RouteList";
 import { useShareRoute } from "@/hooks/useShareRoute";
 import type { Coordinates, GroupedRouteData, ResolvedRouteData, RouteDirection } from "@/lib/types";
+import { computeTransferOptions } from "@/lib/transfers";
+import type { TransferOption } from "@/lib/transfers";
 const PROXIMITY_METERS = 550;
 const SEGMENT_LENGTH_FACTOR = 0.04;
 const AVG_TRIP_SPEED_KMH = 18;
@@ -229,6 +237,46 @@ function getEstimatedMinutes(segment: Coordinates[]) {
 }
 
 export default function HomePage() {
+  // ── Sidebar resize state ────────────────────────────────────────────────────
+  // null = usa el default por breakpoint (380/420px via CSS), number = ancho fijo tras drag
+  const [sidebarWidth, setSidebarWidth] = useState<number | null>(null);
+  const isDraggingRef = useRef(false);
+  const dragStartXRef = useRef(0);
+  const dragStartWidthRef = useRef(0);
+
+  const handleDragStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    // Determinar ancho actual real del sidebar
+    const isLg = window.innerWidth >= 1024;
+    const currentWidth = sidebarWidth ?? (isLg ? SIDEBAR_DEFAULT_LG : SIDEBAR_DEFAULT_MD);
+    isDraggingRef.current = true;
+    dragStartXRef.current = e.clientX;
+    dragStartWidthRef.current = currentWidth;
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+  }, [sidebarWidth]);
+
+  useEffect(() => {
+    const onMouseMove = (e: MouseEvent) => {
+      if (!isDraggingRef.current) return;
+      const delta = e.clientX - dragStartXRef.current;
+      const newWidth = Math.min(SIDEBAR_MAX, Math.max(SIDEBAR_MIN, dragStartWidthRef.current + delta));
+      setSidebarWidth(newWidth);
+    };
+    const onMouseUp = () => {
+      if (!isDraggingRef.current) return;
+      isDraggingRef.current = false;
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+  }, []);
+
   const [groupedRoutes, setGroupedRoutes] = useState<GroupedRouteData[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [fetchError, setFetchError] = useState(false);
@@ -240,6 +288,7 @@ export default function HomePage() {
   const [destinationPoint, setDestinationPoint] = useState<Coordinates | null>(null);
   const [activePoint, setActivePoint] = useState<ActivePoint>("origin");
   const [suggestions, setSuggestions] = useState<RouteOption[]>([]);
+  const [transfers, setTransfers] = useState<TransferOption[]>([]);
   const [isCalculatingSuggestions, setIsCalculatingSuggestions] = useState(false);
   const [showHint, setShowHint] = useState(true);
   // nearbyToast: null = hidden, number = route count (0 means none found)
@@ -432,6 +481,7 @@ export default function HomePage() {
   useEffect(() => {
     if (!originPoint || !destinationPoint) {
       setSuggestions([]);
+      setTransfers([]);
       setIsCalculatingSuggestions(false);
       return;
     }
@@ -441,6 +491,12 @@ export default function HomePage() {
     const timer = window.setTimeout(() => {
       const nextSuggestions = computeRouteSuggestions(fullRoutes, originPoint, destinationPoint);
       setSuggestions(nextSuggestions);
+      // Only compute transfers when no direct route found
+      const nextTransfers =
+        nextSuggestions.length === 0
+          ? computeTransferOptions(fullRoutes, originPoint, destinationPoint)
+          : [];
+      setTransfers(nextTransfers);
       setIsCalculatingSuggestions(false);
     }, 80);
 
@@ -551,99 +607,15 @@ export default function HomePage() {
     );
   }
 
-  return (
-    <main className="relative h-dvh w-full overflow-hidden">
-      <MapView
-        routes={mapRoutes}
-        selectedRouteId={selectedRouteId}
-        suggestedRouteIds={suggestedRouteIds}
-        allRoutesMode={routesMapMode}
-        bestSuggestedRouteId={bestSuggestion?.routeId ?? null}
-        selectedRouteSegment={selectedSuggestion?.segment ?? null}
-        originPoint={originPoint}
-        destinationPoint={destinationPoint}
-        showTeleferico={showTeleferico}
-        onMapPick={handleMapPick}
-        onSelectRoute={handleSelectRoute}
-        onNearbyRoutesFound={handleNearbyRoutesFound}
-      />
-
-      {/* ── Top overlay: logo + mode toggle + toast + hint + A/B bar ── */}
-      <section className="pointer-events-none absolute inset-x-0 top-0 z-20 px-4 pt-safe-or-4">
-        {/* Row 1: logo pill + mode toggle */}
-        <div className="flex items-center gap-2">
-          <div className="pointer-events-auto inline-flex items-center gap-2 rounded-2xl border border-[#00D4AA]/20 bg-[#0E1526]/95 px-3 py-2 shadow-[0_4px_24px_rgba(0,212,170,0.08)] backdrop-blur-xl">
-            {/* Static dot — no more infinite ping distracting the user */}
-            <span className="h-2 w-2 rounded-full bg-[#00D4AA]" aria-hidden="true" />
-            <p className="font-display text-[14px] font-semibold leading-none text-slate-100">Rutas Uruapan</p>
-            <span className="rounded-full bg-white/8 px-1.5 py-0.5 text-[11px] font-medium text-slate-400">
-              {fullRoutes.length}
-            </span>
-            {/* Flow step pills — slightly larger, more visible */}
-            <span className="ml-0.5 inline-flex items-center gap-1" aria-label={`Paso ${flowStep} de 3`}>
-              {[1, 2, 3].map((step) => {
-                const isActive = step === flowStep;
-                const isDone = step < flowStep;
-                return (
-                  <span
-                    key={step}
-                    className={`rounded-full transition-all duration-300 ${
-                      isActive
-                        ? "h-2 w-4 bg-[#00D4AA]"
-                        : isDone
-                          ? "h-2 w-2 bg-[#00D4AA]/50"
-                          : "h-2 w-2 bg-white/20"
-                    }`}
-                  />
-                );
-              })}
-            </span>
-          </div>
-
-          {/* Mode toggle — matches logo pill height */}
-          <button
-            type="button"
-            onClick={() => {
-              setRoutesMapMode((current) => (current === "all-visible" ? "all-highlighted" : "all-visible"));
-            }}
-            className={`pointer-events-auto inline-flex h-9 w-9 items-center justify-center rounded-xl border text-sm transition active:scale-[0.97] ${
-              routesMapMode === "all-highlighted"
-                ? "border-[#00D4AA]/50 bg-[#00D4AA]/15 text-[#00D4AA]"
-                : "border-white/15 bg-[#0E1526]/95 text-white/60"
-            }`}
-            aria-label={
-              routesMapMode === "all-visible"
-                ? "Cambiar a modo todas destacadas"
-                : "Cambiar a modo todas visibles"
-            }
-            title={routesMapMode === "all-visible" ? "Modo: todas visibles" : "Modo: todas destacadas"}
-          >
-            <span aria-hidden="true">👁</span>
-          </button>
-        </div>
-
-        {/* Row 2: Nearby toast */}
-        <div className="pointer-events-auto mt-2">
-          <NearbyToast
-            count={nearbyToast}
-            onView={() => setIsSheetOpen(true)}
-            onDismiss={() => setNearbyToast(null)}
-          />
-        </div>
-
-        {/* Row 3: Hint pill — larger text, better readable */}
-        <div
-          className={`pointer-events-none mt-2 transition-all duration-300 ${
-            showHint ? "translate-y-0 opacity-100" : "-translate-y-1 opacity-0"
-          }`}
-        >
-          <div className="inline-flex max-w-[95%] items-center gap-2 rounded-full border border-[#00D4AA]/30 bg-[#0E1526]/92 px-3 py-1.5 text-[12px] font-medium leading-snug text-[#00D4AA] backdrop-blur-md">
-            <span>{hintMessage}</span>
-          </div>
-        </div>
-
-        {/* Row 4: A→B pill bar — larger touch targets, clearer labels */}
-        <div className="pointer-events-auto mt-2 w-full rounded-2xl border border-white/10 bg-[#0E1526]/95 p-1.5 shadow-soft backdrop-blur-xl">
+  // ── Bloque de JSX compartido: controles A/B + resultado de ruta ──────────────
+  // Se renderiza tanto en el overlay mobile como en el sidebar desktop.
+  // Extraido como funcion local para evitar duplicacion de JSX.
+  const renderRouteControls = (context: "mobile" | "desktop") => {
+    const isMobile = context === "mobile";
+    return (
+      <>
+        {/* A→B pill bar */}
+        <div className={`${isMobile ? "w-full" : "w-full"} rounded-2xl border border-white/10 bg-[#0E1526]/95 p-1.5 shadow-soft backdrop-blur-xl`}>
           <div className="flex items-center gap-1.5">
             {/* Origin button */}
             <button
@@ -652,7 +624,7 @@ export default function HomePage() {
                 setActivePoint("origin");
                 setShowHint(true);
               }}
-              className={`inline-flex h-11 flex-1 items-center justify-center gap-1.5 rounded-xl border px-3 text-[13px] font-semibold transition active:scale-[0.97] ${
+              className={`inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl border px-3 text-[13px] font-semibold transition active:scale-[0.97] ${
                 originPoint
                   ? "border-[#00D4AA]/50 bg-[#00D4AA]/15 text-[#00D4AA]"
                   : activePoint === "origin"
@@ -662,13 +634,7 @@ export default function HomePage() {
               aria-label={originPoint ? "Punto A marcado, toca para cambiar" : "Toca para marcar punto de origen"}
             >
               <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0" aria-hidden="true">
-                <path
-                  d="M12 21s6-5.7 6-11a6 6 0 1 0-12 0c0 5.3 6 11 6 11Z"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
+                <path d="M12 21s6-5.7 6-11a6 6 0 1 0-12 0c0 5.3 6 11 6 11Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                 <circle cx="12" cy="10" r="2" fill="currentColor" />
               </svg>
               <span className="truncate">{originPoint ? "A marcado" : "Origen"}</span>
@@ -679,7 +645,7 @@ export default function HomePage() {
               )}
             </button>
 
-            {/* Separator arrow */}
+            {/* Separator */}
             <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0 text-slate-500" aria-hidden="true">
               <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
@@ -692,7 +658,7 @@ export default function HomePage() {
                 setShowHint(true);
               }}
               disabled={!originPoint}
-              className={`inline-flex h-11 flex-1 items-center justify-center gap-1.5 rounded-xl border px-3 text-[13px] font-semibold transition active:scale-[0.97] disabled:opacity-40 ${
+              className={`inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl border px-3 text-[13px] font-semibold transition active:scale-[0.97] disabled:opacity-40 ${
                 destinationPoint
                   ? "border-[#00D4AA]/50 bg-[#00D4AA]/15 text-[#00D4AA]"
                   : activePoint === "destination"
@@ -713,7 +679,7 @@ export default function HomePage() {
               )}
             </button>
 
-            {/* Reset — visible only when at least one point is set */}
+            {/* Reset */}
             {(originPoint || destinationPoint) && (
               <button
                 type="button"
@@ -723,7 +689,7 @@ export default function HomePage() {
                   setActivePoint("origin");
                   setShowHint(true);
                 }}
-                className="inline-flex h-11 items-center rounded-xl border border-red-400/20 bg-red-500/8 px-2.5 text-[12px] font-semibold text-red-300 transition active:scale-[0.97]"
+                className="inline-flex h-10 items-center rounded-xl border border-red-400/20 bg-red-500/8 px-2.5 text-[12px] font-semibold text-red-300 transition active:scale-[0.97]"
                 aria-label="Reiniciar puntos A y B"
               >
                 <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
@@ -735,11 +701,10 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Row 5: Context action — appears only when waiting for a tap on map (steps 1 & 2) */}
+        {/* Context action — pasos 1 y 2 */}
         {(flowStep === 1 || flowStep === 2) && (
-          <div className="pointer-events-auto mt-2 w-full">
+          <div className="w-full">
             <div className="flex items-center gap-1.5 rounded-2xl border border-[#00D4AA]/25 bg-[#0E1526]/92 px-3.5 py-2.5 backdrop-blur-xl">
-              {/* Animated pulse indicator */}
               <span className="relative flex h-3 w-3 shrink-0" aria-hidden="true">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#00D4AA]/60 opacity-75" />
                 <span className="relative inline-flex h-3 w-3 rounded-full bg-[#00D4AA]" />
@@ -752,10 +717,10 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* Row 5 (step 3): Route result card */}
+        {/* Resultado de ruta — paso 3 */}
         {flowStep === 3 && (
           <div
-            className="pointer-events-auto mt-2 w-full overflow-hidden rounded-2xl border border-white/10 bg-[#141D33] shadow-[0_4px_24px_rgba(0,212,170,0.10)] backdrop-blur-xl transition-all duration-300"
+            className="w-full overflow-hidden rounded-2xl border border-white/10 bg-[#141D33] shadow-[0_4px_24px_rgba(0,212,170,0.10)] backdrop-blur-xl transition-all duration-300"
             style={{ borderLeftWidth: "3px", borderLeftColor: selectedRoute?.color ?? "#00D4AA" }}
           >
             {isCalculatingSuggestions ? (
@@ -765,13 +730,10 @@ export default function HomePage() {
               </div>
             ) : bestSuggestion ? (
               <div className="px-4 py-3">
-                {/* Label + route name */}
                 <p className="text-[10px] font-bold tracking-[2px] text-[#00D4AA]/80">RUTA RECOMENDADA</p>
-                <p className="mt-0.5 truncate font-display text-[18px] font-bold leading-tight text-slate-100">
+                <p className="mt-0.5 truncate font-display text-[17px] font-bold leading-tight text-slate-100">
                   {bestSuggestion.ruta}
                 </p>
-
-                {/* Badges row */}
                 <div className="mt-2 flex flex-wrap items-center gap-1.5">
                   <span className="inline-flex items-center gap-1 rounded-lg border border-[#00D4AA]/25 bg-[#00D4AA]/10 px-2.5 py-1 text-[12px] font-semibold text-[#00D4AA]">
                     <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3" aria-hidden="true">
@@ -786,43 +748,28 @@ export default function HomePage() {
                     </span>
                   )}
                 </div>
-
-                {/* Actions */}
                 <div className="mt-3 flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => {
-                      setActivePoint("destination");
-                      setShowHint(true);
-                    }}
-                    className="inline-flex h-10 flex-1 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-[13px] font-semibold text-slate-300 transition active:scale-[0.97]"
+                    onClick={() => { setActivePoint("destination"); setShowHint(true); }}
+                    className="inline-flex h-9 flex-1 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-[12px] font-semibold text-slate-300 transition active:scale-[0.97]"
                   >
                     Ajustar
                   </button>
-                  {/* Compartir disponible desde que hay sugerencia, antes de ver en mapa */}
                   <button
                     type="button"
                     onClick={() => shareRoute(bestSuggestion.ruta)}
-                    className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-300 transition active:scale-[0.97]"
+                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-300 transition active:scale-[0.97]"
                     aria-label={`Compartir ruta ${bestSuggestion.ruta}`}
                   >
                     <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
-                      <path
-                        d="M8.59 13.51l6.83 3.98m-.01-10.98-6.82 3.98M21 5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm0 14a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM3 12a3 3 0 1 1 6 0 3 3 0 0 1-6 0Z"
-                        stroke="currentColor"
-                        strokeWidth="1.8"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
+                      <path d="M8.59 13.51l6.83 3.98m-.01-10.98-6.82 3.98M21 5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm0 14a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM3 12a3 3 0 1 1 6 0 3 3 0 0 1-6 0Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   </button>
                   <button
                     type="button"
-                    onClick={() => {
-                      setSelectedRouteId(bestSuggestion.routeId);
-                      setShowHint(false);
-                    }}
-                    className="inline-flex h-10 flex-[2] items-center justify-center gap-1.5 rounded-xl bg-[#00D4AA] text-[13px] font-bold text-[#05131a] shadow-[0_2px_12px_rgba(0,212,170,0.35)] transition active:scale-[0.97]"
+                    onClick={() => { setSelectedRouteId(bestSuggestion.routeId); setShowHint(false); }}
+                    className="inline-flex h-9 flex-[2] items-center justify-center gap-1.5 rounded-xl bg-[#00D4AA] text-[12px] font-bold text-[#05131a] shadow-[0_2px_12px_rgba(0,212,170,0.35)] transition active:scale-[0.97]"
                   >
                     <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
                       <path d="M9 20l-5.447-2.724A1 1 0 0 1 3 16.382V5.618a1 1 0 0 1 1.447-.894L9 7m0 13V7m0 13 6-3M9 7l6-3m6 17V4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
@@ -830,6 +777,44 @@ export default function HomePage() {
                     Ver en mapa
                   </button>
                 </div>
+              </div>
+            ) : transfers.length > 0 ? (
+              <div className="px-4 py-3">
+                <p className="text-[10px] font-bold tracking-[2px] text-amber-400/80">CON TRANSBORDO</p>
+                <p className="mt-0.5 text-[12px] text-slate-400">No hay ruta directa. Opciones con cambio de ruta:</p>
+                <ul className="mt-2 space-y-1.5">
+                  {transfers.map((t) => (
+                    <li key={`${t.routeAId}-${t.routeBId}`}>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedRouteId(t.routeAId)}
+                        className="flex w-full items-center gap-2 rounded-xl border border-amber-400/20 bg-amber-500/8 px-3 py-2 text-left transition active:scale-[0.99] hover:bg-amber-500/12"
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0 text-amber-400" aria-hidden="true">
+                          <path d="M8 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3M16 3h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3M12 8v8M9 11l3-3 3 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-[12px] font-semibold text-slate-100">
+                            {t.routeAName}
+                          </span>
+                          <span className="block truncate text-[11px] text-slate-400">
+                            → transbordo → {t.routeBName}
+                          </span>
+                        </span>
+                        <span className="shrink-0 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold text-amber-300">
+                          ~{Math.round(t.walkMeters)}m
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+                <button
+                  type="button"
+                  onClick={() => { setActivePoint("destination"); setShowHint(true); }}
+                  className="mt-3 inline-flex h-9 w-full items-center justify-center rounded-xl border border-white/10 bg-white/5 text-[12px] font-semibold text-slate-300 transition active:scale-[0.97]"
+                >
+                  Mover destino
+                </button>
               </div>
             ) : (
               <div className="px-4 py-3">
@@ -846,30 +831,21 @@ export default function HomePage() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => {
-                    setActivePoint("destination");
-                    setShowHint(true);
-                  }}
-                  className="mt-3 inline-flex h-10 w-full items-center justify-center rounded-xl border border-white/10 bg-white/5 text-[13px] font-semibold text-slate-300 transition active:scale-[0.97]"
+                  onClick={() => { setActivePoint("destination"); setShowHint(true); }}
+                  className="mt-3 inline-flex h-9 w-full items-center justify-center rounded-xl border border-white/10 bg-white/5 text-[12px] font-semibold text-slate-300 transition active:scale-[0.97]"
                 >
                   Mover destino
                 </button>
               </div>
             )}
 
-            {/* Active route row */}
+            {/* Ruta activa */}
             {(selectedRoute || showTeleferico) && (
               <div className="flex items-center gap-2 border-t border-white/8 px-4 py-2.5">
-                <span
-                  className="h-2.5 w-2.5 shrink-0 rounded-full"
-                  style={{ backgroundColor: selectedRoute?.color ?? "#14b8a6" }}
-                  aria-hidden="true"
-                />
+                <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: selectedRoute?.color ?? "#14b8a6" }} aria-hidden="true" />
                 <span className="min-w-0 flex-1 truncate text-[12px] font-medium text-slate-300">
                   {selectedRoute?.nombre ?? "Teleférico Uruapan"}
                 </span>
-
-                {/* Share */}
                 <button
                   type="button"
                   onClick={() => shareRoute(selectedRoute?.nombre ?? "Teleférico")}
@@ -877,17 +853,9 @@ export default function HomePage() {
                   aria-label={`Compartir ${selectedRoute?.nombre ?? "Teleférico"}`}
                 >
                   <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
-                    <path
-                      d="M8.59 13.51l6.83 3.98m-.01-10.98-6.82 3.98M21 5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm0 14a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM3 12a3 3 0 1 1 6 0 3 3 0 0 1-6 0Z"
-                      stroke="currentColor"
-                      strokeWidth="1.8"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
+                    <path d="M8.59 13.51l6.83 3.98m-.01-10.98-6.82 3.98M21 5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm0 14a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM3 12a3 3 0 1 1 6 0 3 3 0 0 1-6 0Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </button>
-
-                {/* Clear */}
                 <button
                   type="button"
                   onClick={handleClearSelection}
@@ -899,68 +867,289 @@ export default function HomePage() {
             )}
           </div>
         )}
-      </section>
+      </>
+    );
+  };
 
-      {/* ── Share confirmation toast ─────────────────────────────────────── */}
-      <div
-        aria-live="polite"
-        aria-atomic="true"
-        className={`pointer-events-none absolute inset-x-0 bottom-24 z-50 flex justify-center transition-all duration-300 ${
-          shareStatus !== "idle" ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
+  return (
+    <main className="relative flex h-dvh w-full overflow-hidden">
+
+      {/* ══════════════════════════════════════════════════════════════════════
+          DESKTOP SIDEBAR (md+)
+          Panel izquierdo redimensionable. Default: 380px en md, 420px en lg.
+          El usuario puede arrastrar el handle derecho entre 300px y 520px.
+          En mobile: oculto (los controles van en el overlay flotante y el BottomSheet).
+      ══════════════════════════════════════════════════════════════════════ */}
+      <aside
+        className={`relative z-30 hidden h-full shrink-0 flex-col border-r border-white/8 bg-[#0b1220]/98 backdrop-blur-2xl md:flex ${
+          sidebarWidth == null ? "md:w-[380px] lg:w-[420px]" : ""
         }`}
+        style={sidebarWidth != null ? { width: `${sidebarWidth}px` } : undefined}
       >
-        <div
-          className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-[13px] font-semibold shadow-[0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-xl ${
-            shareStatus === "error"
-              ? "border-red-400/30 bg-slate-900/85 text-red-300"
-              : "border-emerald-400/30 bg-slate-900/85 text-emerald-300"
-          }`}
-        >
-          {shareStatus === "shared" && (
-            <>
-              <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
-                <path d="M8.59 13.51l6.83 3.98m-.01-10.98-6.82 3.98M21 5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm0 14a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM3 12a3 3 0 1 1 6 0 3 3 0 0 1-6 0Z"
-                  stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              ¡Compartido!
-            </>
-          )}
-          {shareStatus === "copied" && (
-            <>
-              <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
-                <path d="M9 12l2 2 4-4M7 3h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"
-                  stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              ¡Copiado al portapapeles!
-            </>
-          )}
-          {shareStatus === "error" && "❌ No se pudo copiar"}
+
+        {/* ── Header del sidebar ──────────────────────────────────────────── */}
+        <div className="flex shrink-0 items-center justify-between border-b border-white/8 px-5 py-4">
+          <div className="flex items-center gap-2.5">
+            {/* Dot de estado */}
+            <span className="relative flex h-2.5 w-2.5" aria-hidden="true">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#00D4AA] opacity-50" />
+              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#00D4AA]" />
+            </span>
+            <p className="font-display text-[15px] font-bold text-slate-100">Rutas Uruapan</p>
+            <span className="rounded-full border border-[#00D4AA]/25 bg-[#00D4AA]/10 px-2 py-0.5 text-[11px] font-semibold text-[#00D4AA]">
+              {fullRoutes.length} rutas
+            </span>
+          </div>
+
+          {/* Mode toggle */}
+          <button
+            type="button"
+            onClick={() => setRoutesMapMode((current) => (current === "all-visible" ? "all-highlighted" : "all-visible"))}
+            className={`inline-flex h-8 w-8 items-center justify-center rounded-lg border text-sm transition hover:scale-105 active:scale-95 ${
+              routesMapMode === "all-highlighted"
+                ? "border-[#00D4AA]/40 bg-[#00D4AA]/12 text-[#00D4AA]"
+                : "border-white/12 bg-white/5 text-white/50 hover:border-white/25 hover:text-white/80"
+            }`}
+            aria-label={routesMapMode === "all-visible" ? "Cambiar a modo todas destacadas" : "Cambiar a modo todas visibles"}
+            title={routesMapMode === "all-visible" ? "Modo: todas visibles" : "Modo: todas destacadas"}
+          >
+            <span aria-hidden="true">👁</span>
+          </button>
+        </div>
+
+        {/* ── Flow step indicator + hint ──────────────────────────────────── */}
+        <div className="shrink-0 border-b border-white/5 px-5 py-3">
+          {/* Step pills */}
+          <div className="mb-2.5 flex items-center gap-2" aria-label={`Paso ${flowStep} de 3 para encontrar tu ruta`}>
+            {[
+              { n: 1, label: "Origen" },
+              { n: 2, label: "Destino" },
+              { n: 3, label: "Resultado" }
+            ].map(({ n, label }) => {
+              const isActive = n === flowStep;
+              const isDone = n < flowStep;
+              return (
+                <div key={n} className="flex flex-1 flex-col items-center gap-1">
+                  <div className={`h-1 w-full rounded-full transition-all duration-300 ${
+                    isActive ? "bg-[#00D4AA]" : isDone ? "bg-[#00D4AA]/40" : "bg-white/12"
+                  }`} />
+                  <span className={`text-[10px] font-semibold transition-colors duration-300 ${
+                    isActive ? "text-[#00D4AA]" : isDone ? "text-[#00D4AA]/60" : "text-white/25"
+                  }`}>{label}</span>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Hint message */}
+          <div className={`transition-all duration-300 ${showHint ? "opacity-100" : "opacity-0"}`}>
+            <p className="text-[12px] leading-snug text-slate-400">{hintMessage}</p>
+          </div>
+        </div>
+
+        {/* ── Controles A/B + resultado de ruta ──────────────────────────── */}
+        <div className="shrink-0 space-y-2.5 border-b border-white/5 px-5 py-4">
+          {renderRouteControls("desktop")}
+        </div>
+
+        {/* ── NearbyToast en sidebar ──────────────────────────────────────── */}
+        {nearbyToast !== null && (
+          <div className="shrink-0 px-5 pt-3">
+            <NearbyToast
+              count={nearbyToast}
+              onView={() => {/* En desktop ya se ve la lista abajo */}}
+              onDismiss={() => setNearbyToast(null)}
+            />
+          </div>
+        )}
+
+        {/* ── Lista de rutas (scrollable) ─────────────────────────────────── */}
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4">
+          <RouteList
+            routes={fullRoutes}
+            isLoading={isLoadingData}
+            direction={selectedDirection}
+            onDirectionChange={setSelectedDirection}
+            suggestedRouteIds={suggestedRouteIds}
+            bestSuggestedRouteId={bestSuggestion?.routeId ?? null}
+            nearbyRouteIds={nearbyRouteIds}
+            selectedRouteId={selectedRouteId}
+            onClearSelection={handleClearSelection}
+            onShowTeleferico={() => {/* no-op en desktop, el sidebar permanece abierto */}}
+            onSelectRoute={handleSelectRoute}
+          />
+        </div>
+
+        {/* ── Footer del sidebar: creditos ────────────────────────────────── */}
+        <div className="shrink-0 border-t border-white/5 px-5 py-3">
+          <p className="text-[11px] text-slate-600">
+            Rutas Uruapan · Datos actualizados · Uruapan, Mich.
+          </p>
+        </div>
+      </aside>
+
+      {/* ══════════════════════════════════════════════════════════════════════
+          DRAG HANDLE — solo visible en md+
+          Barra vertical de 4px entre sidebar y mapa. El usuario arrastra para
+          redimensionar el sidebar entre 300px y 520px.
+      ══════════════════════════════════════════════════════════════════════ */}
+      <div
+        role="separator"
+        aria-label="Redimensionar panel lateral"
+        aria-orientation="vertical"
+        className="group relative z-40 hidden w-1 shrink-0 cursor-col-resize md:flex md:flex-col md:items-center md:justify-center"
+        onMouseDown={handleDragStart}
+      >
+        {/* Track line */}
+        <div className="absolute inset-y-0 left-0 w-1 bg-white/5 transition-colors duration-150 group-hover:bg-[#00D4AA]/30 group-active:bg-[#00D4AA]/50" />
+        {/* Grip icon — centrado verticalmente */}
+        <div className="relative z-10 flex flex-col items-center gap-[3px] rounded-full border border-white/10 bg-[#0b1220] px-0.5 py-2 shadow-[0_2px_8px_rgba(0,0,0,0.4)] transition-all duration-150 group-hover:border-[#00D4AA]/30 group-hover:bg-[#0E1526] group-hover:shadow-[0_2px_12px_rgba(0,212,170,0.15)]">
+          {[0, 1, 2, 3].map((i) => (
+            <span
+              key={i}
+              className="block h-[3px] w-[3px] rounded-full bg-white/25 transition-colors duration-150 group-hover:bg-[#00D4AA]/60"
+            />
+          ))}
         </div>
       </div>
 
-      {/* ── Floating "Ver rutas" button — bottom right, safe-area aware ── */}
-      <button
-        type="button"
-        onClick={() => setIsSheetOpen(true)}
-        className="absolute bottom-6 right-4 z-30 inline-flex h-12 items-center gap-2 rounded-2xl border border-white/15 bg-[#0E1526]/95 pl-3.5 pr-4 text-[14px] font-semibold text-white shadow-[0_8px_32px_rgba(0,0,0,0.45)] backdrop-blur-xl transition hover:border-[#00D4AA]/40 hover:shadow-[0_8px_32px_rgba(0,212,170,0.15)] active:scale-[0.97]"
-        style={{ marginBottom: "env(safe-area-inset-bottom, 0px)" }}
-        aria-label={`Ver las ${fullRoutes.length} rutas disponibles`}
-      >
-        <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 text-[#00D4AA]" aria-hidden="true">
-          <path
-            d="M4 7H20M4 12H20M4 17H14"
-            stroke="currentColor"
-            strokeWidth="2.2"
-            strokeLinecap="round"
-          />
-        </svg>
-        <span>Rutas</span>
-        {/* Route count badge */}
-        <span className="ml-0.5 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-[#00D4AA]/20 px-1.5 text-[11px] font-bold text-[#00D4AA]">
-          {fullRoutes.length}
-        </span>
-      </button>
+      {/* ══════════════════════════════════════════════════════════════════════
+          MAPA — ocupa todo el espacio restante
+          En mobile: ocupa 100% del ancho (el sidebar está oculto)
+          En desktop: ocupa flex-1 (el resto del ancho tras el sidebar)
+      ══════════════════════════════════════════════════════════════════════ */}
+      <div className="relative flex-1">
+        <MapView
+          routes={mapRoutes}
+          selectedRouteId={selectedRouteId}
+          suggestedRouteIds={suggestedRouteIds}
+          allRoutesMode={routesMapMode}
+          bestSuggestedRouteId={bestSuggestion?.routeId ?? null}
+          selectedRouteSegment={selectedSuggestion?.segment ?? null}
+          originPoint={originPoint}
+          destinationPoint={destinationPoint}
+          showTeleferico={showTeleferico}
+          onMapPick={handleMapPick}
+          onSelectRoute={handleSelectRoute}
+          onNearbyRoutesFound={handleNearbyRoutesFound}
+        />
 
+        {/* ── MOBILE: Top overlay (oculto en desktop) ── */}
+        <section className="pointer-events-none absolute inset-x-0 top-0 z-20 px-4 pt-safe-or-4 md:hidden">
+          {/* Row 1: logo pill + mode toggle */}
+          <div className="flex items-center gap-2">
+            <div className="pointer-events-auto inline-flex items-center gap-2 rounded-2xl border border-[#00D4AA]/20 bg-[#0E1526]/95 px-3 py-2 shadow-[0_4px_24px_rgba(0,212,170,0.08)] backdrop-blur-xl">
+              <span className="h-2 w-2 rounded-full bg-[#00D4AA]" aria-hidden="true" />
+              <p className="font-display text-[14px] font-semibold leading-none text-slate-100">Rutas Uruapan</p>
+              <span className="rounded-full bg-white/8 px-1.5 py-0.5 text-[11px] font-medium text-slate-400">
+                {fullRoutes.length}
+              </span>
+              <span className="ml-0.5 inline-flex items-center gap-1" aria-label={`Paso ${flowStep} de 3`}>
+                {[1, 2, 3].map((step) => {
+                  const isActive = step === flowStep;
+                  const isDone = step < flowStep;
+                  return (
+                    <span
+                      key={step}
+                      className={`rounded-full transition-all duration-300 ${
+                        isActive ? "h-2 w-4 bg-[#00D4AA]" : isDone ? "h-2 w-2 bg-[#00D4AA]/50" : "h-2 w-2 bg-white/20"
+                      }`}
+                    />
+                  );
+                })}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setRoutesMapMode((current) => (current === "all-visible" ? "all-highlighted" : "all-visible"))}
+              className={`pointer-events-auto inline-flex h-9 w-9 items-center justify-center rounded-xl border text-sm transition active:scale-[0.97] ${
+                routesMapMode === "all-highlighted"
+                  ? "border-[#00D4AA]/50 bg-[#00D4AA]/15 text-[#00D4AA]"
+                  : "border-white/15 bg-[#0E1526]/95 text-white/60"
+              }`}
+              aria-label={routesMapMode === "all-visible" ? "Cambiar a modo todas destacadas" : "Cambiar a modo todas visibles"}
+              title={routesMapMode === "all-visible" ? "Modo: todas visibles" : "Modo: todas destacadas"}
+            >
+              <span aria-hidden="true">👁</span>
+            </button>
+          </div>
+
+          {/* Row 2: Nearby toast */}
+          <div className="pointer-events-auto mt-2">
+            <NearbyToast
+              count={nearbyToast}
+              onView={() => setIsSheetOpen(true)}
+              onDismiss={() => setNearbyToast(null)}
+            />
+          </div>
+
+          {/* Row 3: Hint pill */}
+          <div className={`pointer-events-none mt-2 transition-all duration-300 ${showHint ? "translate-y-0 opacity-100" : "-translate-y-1 opacity-0"}`}>
+            <div className="inline-flex max-w-[95%] items-center gap-2 rounded-full border border-[#00D4AA]/30 bg-[#0E1526]/92 px-3 py-1.5 text-[12px] font-medium leading-snug text-[#00D4AA] backdrop-blur-md">
+              <span>{hintMessage}</span>
+            </div>
+          </div>
+
+          {/* Row 4: A/B controls */}
+          <div className="pointer-events-auto mt-2">
+            {renderRouteControls("mobile")}
+          </div>
+        </section>
+
+        {/* ── Share toast (mobile + desktop, posicion ajustada) ── */}
+        <div
+          aria-live="polite"
+          aria-atomic="true"
+          className={`pointer-events-none absolute inset-x-0 bottom-24 z-50 flex justify-center transition-all duration-300 ${
+            shareStatus !== "idle" ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
+          }`}
+        >
+          <div
+            className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-[13px] font-semibold shadow-[0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-xl ${
+              shareStatus === "error"
+                ? "border-red-400/30 bg-slate-900/85 text-red-300"
+                : "border-emerald-400/30 bg-slate-900/85 text-emerald-300"
+            }`}
+          >
+            {shareStatus === "shared" && (
+              <>
+                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
+                  <path d="M8.59 13.51l6.83 3.98m-.01-10.98-6.82 3.98M21 5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm0 14a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM3 12a3 3 0 1 1 6 0 3 3 0 0 1-6 0Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                Compartido!
+              </>
+            )}
+            {shareStatus === "copied" && (
+              <>
+                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
+                  <path d="M9 12l2 2 4-4M7 3h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                Copiado al portapapeles!
+              </>
+            )}
+            {shareStatus === "error" && "No se pudo copiar"}
+          </div>
+        </div>
+
+        {/* ── MOBILE ONLY: Floating "Ver rutas" button ── */}
+        <button
+          type="button"
+          onClick={() => setIsSheetOpen(true)}
+          className="absolute bottom-6 right-4 z-30 inline-flex h-12 items-center gap-2 rounded-2xl border border-white/15 bg-[#0E1526]/95 pl-3.5 pr-4 text-[14px] font-semibold text-white shadow-[0_8px_32px_rgba(0,0,0,0.45)] backdrop-blur-xl transition hover:border-[#00D4AA]/40 hover:shadow-[0_8px_32px_rgba(0,212,170,0.15)] active:scale-[0.97] md:hidden"
+          style={{ marginBottom: "env(safe-area-inset-bottom, 0px)" }}
+          aria-label={`Ver las ${fullRoutes.length} rutas disponibles`}
+        >
+          <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 text-[#00D4AA]" aria-hidden="true">
+            <path d="M4 7H20M4 12H20M4 17H14" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+          </svg>
+          <span>Rutas</span>
+          <span className="ml-0.5 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-[#00D4AA]/20 px-1.5 text-[11px] font-bold text-[#00D4AA]">
+            {fullRoutes.length}
+          </span>
+        </button>
+      </div>
+
+      {/* ── MOBILE ONLY: BottomSheet con lista de rutas ── */}
       <BottomSheet open={isSheetOpen} onOpenChange={setIsSheetOpen} title="Selecciona una ruta">
         <RouteList
           routes={fullRoutes}
