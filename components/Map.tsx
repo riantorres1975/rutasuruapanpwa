@@ -50,7 +50,7 @@ function lineOpacityExpression(
   bestSuggestedRouteId: number | null,
   selectedSegmentActive: boolean
 ) {
-  const suggestedExpression = ["in", ["get", "id"], ["literal", suggestedRouteIds]] as any;
+  const suggestedExpression = ["in", ["get", "id"], ["literal", suggestedRouteIds.length > 0 ? suggestedRouteIds : [-1]]] as any;
 
   if (selectedRouteId === null) {
     if (suggestedRouteIds.length === 0) {
@@ -77,7 +77,7 @@ function lineWidthExpression(
   bestSuggestedRouteId: number | null,
   selectedSegmentActive: boolean
 ) {
-  const suggestedExpression = ["in", ["get", "id"], ["literal", suggestedRouteIds]] as any;
+  const suggestedExpression = ["in", ["get", "id"], ["literal", suggestedRouteIds.length > 0 ? suggestedRouteIds : [-1]]] as any;
 
   if (selectedRouteId === null) {
     if (suggestedRouteIds.length === 0) {
@@ -104,7 +104,7 @@ function glowOpacityExpression(
   bestSuggestedRouteId: number | null,
   selectedSegmentActive: boolean
 ) {
-  const suggestedExpression = ["in", ["get", "id"], ["literal", suggestedRouteIds]] as any;
+  const suggestedExpression = ["in", ["get", "id"], ["literal", suggestedRouteIds.length > 0 ? suggestedRouteIds : [-1]]] as any;
 
   if (selectedRouteId === null) {
     if (suggestedRouteIds.length === 0) {
@@ -131,7 +131,7 @@ function glowWidthExpression(
   bestSuggestedRouteId: number | null,
   selectedSegmentActive: boolean
 ) {
-  const suggestedExpression = ["in", ["get", "id"], ["literal", suggestedRouteIds]] as any;
+  const suggestedExpression = ["in", ["get", "id"], ["literal", suggestedRouteIds.length > 0 ? suggestedRouteIds : [-1]]] as any;
 
   if (selectedRouteId === null) {
     if (suggestedRouteIds.length === 0) {
@@ -158,7 +158,7 @@ function glowBlurExpression(
   bestSuggestedRouteId: number | null,
   selectedSegmentActive: boolean
 ) {
-  const suggestedExpression = ["in", ["get", "id"], ["literal", suggestedRouteIds]] as any;
+  const suggestedExpression = ["in", ["get", "id"], ["literal", suggestedRouteIds.length > 0 ? suggestedRouteIds : [-1]]] as any;
 
   if (selectedRouteId === null) {
     if (suggestedRouteIds.length === 0) {
