@@ -1,0 +1,50 @@
+name: Build & Data Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run data pipeline
+        run: npm run pipeline:rutas
+
+      - name: Verify pipeline output
+        run: |
+          if [ ! -f data/rutas-grouped.json ]; then
+            echo "Pipeline failed: data/rutas-grouped.json not found"
+            exit 1
+          fi
+          ROUTES=$(node -e "const d=require('./data/rutas-grouped.json'); console.log(d.length)")
+          echo "Routes generated: $ROUTES"
+          if [ "$ROUTES" -lt 1 ]; then
+            echo "Pipeline produced 0 routes"
+            exit 1
+          fi
+
+      - name: Build
+        run: npm run build
+
+      - name: Upload data artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rutas-data
+          path: |
+            data/rutas.json
+            data/rutas-grouped.json
+          retention-days: 7
