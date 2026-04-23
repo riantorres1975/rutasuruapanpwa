@@ -35,6 +35,29 @@ export default function RouteList({
   const normalizedQuery = useMemo(() => deferredQuery.trim().toLowerCase(), [deferredQuery]);
 
   const hasNearby = nearbyRouteIds.length > 0;
+  const telefericoRouteId = useMemo(() => {
+    const telefericoRoute = routes.find((route) => route.nombre === "Teleférico Uruapan");
+    if (telefericoRoute) {
+      return telefericoRoute.id;
+    }
+
+    const lastRoute = routes[routes.length - 1];
+    return lastRoute ? lastRoute.id : null;
+  }, [routes]);
+
+  const handleShowTelefericoOnMap = () => {
+    if (telefericoRouteId === null) {
+      onShowTeleferico?.();
+      return;
+    }
+
+    if (selectedRouteId !== telefericoRouteId) {
+      onSelectRoute(telefericoRouteId);
+      return;
+    }
+
+    onShowTeleferico?.();
+  };
 
   // Build a lookup: routeId → position in nearbyRouteIds (0 = nearest)
   const nearbyRankMap = useMemo(
@@ -74,14 +97,14 @@ export default function RouteList({
         <p className="text-sm text-slate-600 dark:text-slate-300">
           Explora rutas y toca una opcion para verla en el mapa.
         </p>
-        <div className="inline-flex rounded-full border border-slate-200 bg-white/75 p-1 dark:border-slate-700 dark:bg-slate-900/60">
+        <div className="inline-flex rounded-full border border-white/10 bg-white/5 p-1">
           <button
             type="button"
             onClick={() => onDirectionChange("ida")}
-            className={`h-8 rounded-full px-3 text-xs font-semibold transition ${
+            className={`h-8 rounded-full px-3 text-xs transition ${
               direction === "ida"
-                ? "bg-slate-900 text-slate-50 dark:bg-slate-100 dark:text-slate-900"
-                : "text-slate-700 hover:bg-slate-900/10 dark:text-slate-300 dark:hover:bg-slate-100/10"
+                ? "bg-[#00D4AA] font-bold text-gray-900"
+                : "text-white/50 hover:bg-white/10"
             }`}
           >
             Ida
@@ -89,10 +112,10 @@ export default function RouteList({
           <button
             type="button"
             onClick={() => onDirectionChange("vuelta")}
-            className={`h-8 rounded-full px-3 text-xs font-semibold transition ${
+            className={`h-8 rounded-full px-3 text-xs transition ${
               direction === "vuelta"
-                ? "bg-slate-900 text-slate-50 dark:bg-slate-100 dark:text-slate-900"
-                : "text-slate-700 hover:bg-slate-900/10 dark:text-slate-300 dark:hover:bg-slate-100/10"
+                ? "bg-[#00D4AA] font-bold text-gray-900"
+                : "text-white/50 hover:bg-white/10"
             }`}
           >
             Vuelta
@@ -104,7 +127,7 @@ export default function RouteList({
             <button
               type="button"
               onClick={onClearSelection}
-              className="rounded-full border border-slate-300/80 bg-slate-900/5 px-3 py-1.5 text-slate-700 transition hover:bg-slate-900/10 dark:border-slate-600/80 dark:bg-slate-100/10 dark:text-slate-200 dark:hover:bg-slate-100/20"
+              className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-slate-300 transition hover:bg-white/10"
             >
               Limpiar seleccion
             </button>
@@ -115,18 +138,27 @@ export default function RouteList({
       <label className="block">
         <span className="sr-only">Buscar ruta</span>
         <div className="relative">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/35"
+            aria-hidden="true"
+          >
+            <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.8" />
+            <path d="m20 20-3.8-3.8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          </svg>
           <input
             type="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Busca por nombre de ruta"
-            className="h-12 w-full rounded-2xl border border-slate-200 bg-white/80 px-4 pr-11 text-sm text-slate-900 outline-none transition placeholder:text-slate-500 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-200 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-100 dark:placeholder:text-slate-400 dark:focus:border-cyan-400 dark:focus:ring-cyan-500/25"
+            className="h-12 w-full rounded-2xl border border-white/8 bg-white/5 pl-10 pr-11 text-sm text-slate-100 outline-none transition placeholder:text-white/25 focus:border-[#00D4AA]/40 focus:ring-1 focus:ring-[#00D4AA]/10"
           />
           {query && (
             <button
               type="button"
               onClick={() => setQuery("")}
-              className="absolute right-2 top-2.5 grid h-7 w-7 place-items-center rounded-full bg-slate-900/10 text-slate-600 transition hover:bg-slate-900/15 dark:bg-slate-100/10 dark:text-slate-300 dark:hover:bg-slate-100/20"
+              className="absolute right-2 top-2.5 grid h-7 w-7 place-items-center rounded-full bg-white/5 text-slate-400 transition hover:bg-white/10"
               aria-label="Limpiar busqueda"
             >
               <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
@@ -140,8 +172,8 @@ export default function RouteList({
       {/* ── Teleférico featured card (hidden while searching) ────────────── */}
       {!normalizedQuery && (
         <TelefericoSection
-          onShowOnMap={onShowTeleferico}
-          isSuggested={suggestedRouteIds.includes(9999)}
+          onShowOnMap={handleShowTelefericoOnMap}
+          isSuggested={telefericoRouteId !== null && suggestedRouteIds.includes(telefericoRouteId)}
         />
       )}
 
@@ -189,55 +221,50 @@ export default function RouteList({
                 <button
                   type="button"
                   onClick={() => onSelectRoute(route.id)}
-                  className={`flex min-h-16 w-full items-center justify-between rounded-2xl border px-3 py-3 text-left transition active:scale-[0.995] ${
+                  className={`flex min-h-16 w-full items-stretch justify-between rounded-2xl border px-2 py-3 text-left transition active:scale-[0.995] ${
                     isSelected
-                      ? "border-cyan-400/70 bg-cyan-500/10"
+                      ? "border-[#00D4AA]/70 bg-[#00D4AA]/10 shadow-[0_4px_24px_rgba(0,212,170,0.08)]"
                       : isNearby
-                        ? "border-teal-400/60 bg-teal-500/10 dark:bg-teal-500/10"
+                        ? "border-[#00D4AA]/50 bg-[#00D4AA]/8"
                         : isBestSuggestion
                           ? "border-emerald-400/70 bg-emerald-500/10"
                           : isSuggested
-                            ? "border-emerald-300/70 bg-emerald-500/5"
-                            : "border-slate-200/80 bg-white/70 hover:border-slate-300 hover:bg-white dark:border-slate-700/80 dark:bg-slate-900/65 dark:hover:border-slate-600 dark:hover:bg-slate-900"
+                            ? "border-[#00D4AA]/30 bg-[#00D4AA]/5"
+                            : "border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/7"
                   }`}
                 >
-                  <span className="flex items-center gap-3">
+                  <span className="w-1 self-stretch rounded-full" style={{ backgroundColor: route.color }} />
+                  <span className="ml-3 flex flex-1 items-center gap-3">
                     {/* Rank number for nearby routes */}
                     {isNearby ? (
-                      <span className="flex h-8 w-8 shrink-0 flex-col items-center justify-center rounded-full bg-teal-500/15 text-[11px] font-bold leading-none text-teal-700 dark:text-teal-300">
+                      <span className="flex h-7 w-7 shrink-0 flex-col items-center justify-center rounded-full bg-[#00D4AA]/15 text-[10px] font-bold leading-none text-[#00D4AA]">
                         #{(nearbyRank ?? 0) + 1}
                       </span>
-                    ) : (
-                      <span className="h-8 w-1.5 rounded-full" style={{ backgroundColor: route.color }} />
-                    )}
-                    <span>
-                      <span className="block text-sm font-semibold text-slate-900 dark:text-slate-100">{route.nombre}</span>
-                      <span className="block text-xs text-slate-500 dark:text-slate-400">
-                        {isNearby ? "Pasa cerca de ti" : "Toca para ver el recorrido"}
+                    ) : null}
+                    <span className="min-w-0">
+                      <span className="block font-display text-sm font-bold text-slate-100">{route.nombre}</span>
+                      <span className="block text-xs text-white/35">
+                        {route.tieneIda && route.tieneVuelta
+                          ? "Ida y vuelta disponibles"
+                          : route.tieneIda
+                            ? "Solo ida disponible"
+                            : "Solo vuelta disponible"}
                       </span>
                     </span>
                   </span>
 
-                  <span className="flex items-center gap-1.5">
-                    {isBestSuggestion && (
-                      <span className="rounded-full bg-emerald-500/20 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-200">
-                        Mejor opcion
-                      </span>
-                    )}
+                  <span className="ml-2 flex items-center gap-1.5">
                     {isNearby && !isSelected && (
-                      <span className="rounded-full bg-teal-500/15 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-teal-700 dark:text-teal-300">
-                        Cercana
+                      <span className="rounded-full bg-[#00D4AA]/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[#00D4AA]">
+                        CERCANA
                       </span>
                     )}
-                    <span
-                      className={`rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-wide ${
-                        isSelected
-                          ? "bg-cyan-500/20 text-cyan-700 dark:text-cyan-200"
-                          : "bg-slate-900/10 text-slate-600 dark:bg-slate-100/10 dark:text-slate-300"
-                      }`}
-                    >
-                      {isSelected ? "Activa" : "Ver"} {route.direccion}
-                    </span>
+                    {isBestSuggestion && (
+                      <span className="rounded-full bg-[#00D4AA]/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[#00D4AA]">
+                        MEJOR
+                      </span>
+                    )}
+                    {isSelected && <span className="rounded-full bg-[#00D4AA]/15 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[#00D4AA]">ACTIVA</span>}
                   </span>
                 </button>
               </li>

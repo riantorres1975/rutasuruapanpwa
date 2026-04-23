@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-// ─── Real station data from Ruta Teleférico.geojson ───────────────────────────
+// ─── Station data for Teleférico route ────────────────────────────────────────
 
 export const TELEFERICO_STATIONS = [
   {

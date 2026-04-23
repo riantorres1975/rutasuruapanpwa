@@ -6,7 +6,6 @@ import MapView from "@/components/Map";
 import NearbyToast from "@/components/NearbyToast";
 import OnboardingOverlay from "@/components/OnboardingOverlay";
 import RouteList from "@/components/RouteList";
-import { TELEFERICO_LINE_COORDS } from "@/components/TelefericoSection";
 import { useShareRoute } from "@/hooks/useShareRoute";
 import type { Coordinates, GroupedRouteData, ResolvedRouteData, RouteDirection } from "@/lib/types";
 const PROXIMITY_METERS = 550;
@@ -41,6 +40,7 @@ type RouteOption = {
 
 type ActivePoint = "origin" | "destination" | null;
 type FlowStep = 1 | 2 | 3;
+type RoutesMapMode = "all-visible" | "all-highlighted";
 
 function getFlowStep(originPoint: Coordinates | null, destinationPoint: Coordinates | null): FlowStep {
   if (!originPoint) {
@@ -244,10 +244,37 @@ export default function HomePage() {
   const [nearbyToast, setNearbyToast] = useState<number | null>(null);
   const [nearbyRouteIds, setNearbyRouteIds] = useState<number[]>([]);
   const [showTeleferico, setShowTeleferico] = useState(false);
+  const [routesMapMode, setRoutesMapMode] = useState<RoutesMapMode>("all-visible");
   const { share: shareRoute, status: shareStatus } = useShareRoute();
   const activePointRef = useRef(activePoint);
   const originPointRef = useRef(originPoint);
   const destinationPointRef = useRef(destinationPoint);
+  const hasHydratedMapModeRef = useRef(false);
+
+  useEffect(() => {
+    try {
+      const storedMode = window.localStorage.getItem("rutas-map-mode");
+      if (storedMode === "all-visible" || storedMode === "all-highlighted") {
+        setRoutesMapMode(storedMode);
+      }
+    } catch {
+      // noop
+    } finally {
+      hasHydratedMapModeRef.current = true;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!hasHydratedMapModeRef.current) {
+      return;
+    }
+
+    try {
+      window.localStorage.setItem("rutas-map-mode", routesMapMode);
+    } catch {
+      // noop
+    }
+  }, [routesMapMode]);
 
   useEffect(() => {
     let cancelled = false;
@@ -398,31 +425,7 @@ export default function HomePage() {
     setIsCalculatingSuggestions(true);
 
     const timer = window.setTimeout(() => {
-      const searchRoutes = [
-        ...fullRoutes,
-        {
-          id: 9999,
-          ruta: "Teleférico Uruapan",
-          nombre: "Teleférico Uruapan",
-          color: "#14b8a6",
-          coordenadas: TELEFERICO_LINE_COORDS,
-          direccion: "ida" as RouteDirection,
-          tieneIda: true,
-          tieneVuelta: true
-        },
-        {
-          id: 9999,
-          ruta: "Teleférico Uruapan",
-          nombre: "Teleférico Uruapan",
-          color: "#14b8a6",
-          coordenadas: [...TELEFERICO_LINE_COORDS].reverse(),
-          direccion: "vuelta" as RouteDirection,
-          tieneIda: true,
-          tieneVuelta: true
-        }
-      ];
-
-      const nextSuggestions = computeRouteSuggestions(searchRoutes, originPoint, destinationPoint);
+      const nextSuggestions = computeRouteSuggestions(fullRoutes, originPoint, destinationPoint);
       setSuggestions(nextSuggestions);
       setIsCalculatingSuggestions(false);
     }, 80);
@@ -442,7 +445,6 @@ export default function HomePage() {
     () => (bestSuggestion ? getEstimatedMinutes(bestSuggestion.segment) : null),
     [bestSuggestion]
   );
-
   const hintMessage = useMemo(() => {
     if (flowStep === 1) {
       return "Paso 1 de 3: toca el mapa para marcar tu origen.";
@@ -525,6 +527,7 @@ export default function HomePage() {
         routes={mapRoutes}
         selectedRouteId={selectedRouteId}
         suggestedRouteIds={suggestedRouteIds}
+        allRoutesMode={routesMapMode}
         bestSuggestedRouteId={bestSuggestion?.routeId ?? null}
         selectedRouteSegment={selectedSuggestion?.segment ?? null}
         originPoint={originPoint}
@@ -536,17 +539,50 @@ export default function HomePage() {
       />
 
       <section className="pointer-events-none absolute inset-x-0 top-0 z-20 px-4 pt-4">
-        <div className="flex items-center justify-between gap-3">
-          <div className="pointer-events-auto inline-flex items-center gap-2.5 rounded-2xl border border-white/20 bg-[var(--surface)] px-3.5 py-2 shadow-soft backdrop-blur-xl">
-            <p className="font-display text-[15px] font-semibold leading-none">Rutas Uruapan</p>
-            <span className="rounded-full bg-slate-900/10 px-2 py-0.5 text-[11px] font-medium text-slate-700 dark:bg-slate-100/10 dark:text-slate-200">
+        <div className="flex items-center gap-3">
+          <div className="pointer-events-auto inline-flex items-center gap-2.5 rounded-2xl border border-[#00D4AA]/20 bg-[#0E1526] px-3.5 py-2 shadow-[0_4px_24px_rgba(0,212,170,0.08)] backdrop-blur-xl">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#00D4AA]/70 opacity-70" />
+              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#00D4AA]" />
+            </span>
+            <p className="font-display text-[15px] font-semibold leading-none text-slate-100">Rutas Uruapan</p>
+            <span className="rounded-full bg-white/5 px-2 py-0.5 text-[11px] font-medium text-slate-300">
               {fullRoutes.length}
+            </span>
+            <span className="ml-1 inline-flex items-center gap-1">
+              {[1, 2, 3].map((step) => {
+                const isActive = step === flowStep;
+                return (
+                  <span
+                    key={step}
+                    className={`h-1.5 w-1.5 rounded-full border transition ${
+                      isActive ? "border-[#00D4AA] bg-[#00D4AA]" : "border-white/30 bg-transparent"
+                    }`}
+                  />
+                );
+              })}
             </span>
           </div>
 
-          <div className="pointer-events-auto rounded-full border border-white/20 bg-[var(--surface)] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-slate-600 shadow-soft backdrop-blur-xl dark:text-slate-300">
-            Paso {flowStep}/3
-          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setRoutesMapMode((current) => (current === "all-visible" ? "all-highlighted" : "all-visible"));
+            }}
+            className={`pointer-events-auto inline-flex h-9 w-9 items-center justify-center rounded-xl border text-sm transition active:scale-[0.98] ${
+              routesMapMode === "all-highlighted"
+                ? "border-[#00D4AA]/50 bg-[#00D4AA]/15 text-[#00D4AA]"
+                : "border-white/15 bg-[#0E1526]/92 text-white/75"
+            }`}
+            aria-label={
+              routesMapMode === "all-visible"
+                ? "Cambiar a modo todas destacadas"
+                : "Cambiar a modo todas visibles"
+            }
+            title={routesMapMode === "all-visible" ? "Modo: todas visibles" : "Modo: todas destacadas"}
+          >
+            <span aria-hidden="true">👁</span>
+          </button>
         </div>
 
         {/* ── Nearby routes toast ──────────────────────────────────────── */}
@@ -558,13 +594,17 @@ export default function HomePage() {
           />
         </div>
 
-        <div className={`pointer-events-none mt-2 max-w-[95%] transition-all duration-300 ${showHint ? "opacity-100" : "opacity-0"}`}>
-          <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/35 bg-slate-900/72 px-2.5 py-1.5 text-[11px] font-medium text-cyan-100 backdrop-blur-md dark:bg-slate-950/65">
+        <div
+          className={`pointer-events-none mt-2 max-w-[95%] transition-all duration-300 ${
+            showHint ? "translate-y-0 opacity-100" : "-translate-y-1 opacity-0"
+          }`}
+        >
+          <div className="inline-flex items-center gap-2 rounded-full border border-[#00D4AA]/35 bg-[#0E1526]/90 px-2.5 py-1.5 text-[11px] font-medium text-[#00D4AA] backdrop-blur-md">
             <span>{hintMessage}</span>
           </div>
         </div>
 
-        <div className="pointer-events-auto mt-3 w-full max-w-[95%] rounded-full border border-white/20 bg-[var(--surface)] p-1.5 shadow-soft backdrop-blur-xl transition-all duration-300">
+        <div className="pointer-events-auto mt-3 w-full max-w-[95%] rounded-full border border-white/10 bg-[#0E1526]/95 p-1.5 shadow-soft backdrop-blur-xl transition-all duration-300">
           <div className="flex items-center gap-1.5">
             <button
               type="button"
@@ -572,16 +612,26 @@ export default function HomePage() {
                 setActivePoint("origin");
                 setShowHint(true);
               }}
-              className={`inline-flex h-9 items-center rounded-full px-3 text-[11px] font-semibold transition active:scale-[0.98] ${
+              className={`inline-flex h-10 min-w-[120px] items-center justify-center gap-1.5 rounded-full border px-3 text-[11px] font-semibold transition active:scale-[0.98] ${
                 originPoint
-                  ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-200"
-                  : "bg-slate-900/10 text-slate-700 dark:bg-slate-100/10 dark:text-slate-200"
+                  ? "border-[#00D4AA]/50 bg-[#00D4AA]/15 text-[#00D4AA]"
+                  : "border-white/10 bg-white/5 text-white/40"
               }`}
             >
-              A {originPoint ? "listo" : "pendiente"}
+              <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" aria-hidden="true">
+                <path
+                  d="M12 21s6-5.7 6-11a6 6 0 1 0-12 0c0 5.3 6 11 6 11Z"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <circle cx="12" cy="10" r="2" fill="currentColor" />
+              </svg>
+              {originPoint ? "✓ A listo" : "A pendiente"}
             </button>
 
-            <span className="text-slate-400">→</span>
+            <span className="text-slate-500">→</span>
 
             <button
               type="button"
@@ -590,13 +640,23 @@ export default function HomePage() {
                 setShowHint(true);
               }}
               disabled={!originPoint}
-              className={`inline-flex h-9 items-center rounded-full px-3 text-[11px] font-semibold transition active:scale-[0.98] disabled:opacity-50 ${
+              className={`inline-flex h-10 min-w-[120px] items-center justify-center gap-1.5 rounded-full border px-3 text-[11px] font-semibold transition active:scale-[0.98] disabled:opacity-50 ${
                 destinationPoint
-                  ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-200"
-                  : "bg-slate-900/10 text-slate-700 dark:bg-slate-100/10 dark:text-slate-200"
+                  ? "border-[#00D4AA]/50 bg-[#00D4AA]/15 text-[#00D4AA]"
+                  : "border-white/10 bg-white/5 text-white/40"
               }`}
             >
-              B {destinationPoint ? "listo" : "pendiente"}
+              <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" aria-hidden="true">
+                <path
+                  d="M12 21s6-5.7 6-11a6 6 0 1 0-12 0c0 5.3 6 11 6 11Z"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <circle cx="12" cy="10" r="2" fill="currentColor" />
+              </svg>
+              {destinationPoint ? "✓ B listo" : "B pendiente"}
             </button>
 
             {(originPoint || destinationPoint) && (
@@ -608,7 +668,7 @@ export default function HomePage() {
                   setActivePoint("origin");
                   setShowHint(true);
                 }}
-                className="ml-auto inline-flex h-9 items-center rounded-full bg-slate-900/10 px-3 text-[11px] font-semibold text-slate-700 transition active:scale-[0.98] dark:bg-slate-100/10 dark:text-slate-200"
+                className="ml-auto inline-flex h-9 items-center rounded-full border border-white/10 bg-white/5 px-3 text-[11px] font-semibold text-slate-300 transition active:scale-[0.98]"
               >
                 Reiniciar
               </button>
@@ -624,8 +684,14 @@ export default function HomePage() {
                 setActivePoint("origin");
                 setShowHint(true);
               }}
-              className="flex h-11 w-full items-center justify-center rounded-2xl bg-slate-900 text-sm font-semibold text-slate-50 shadow-soft transition active:scale-[0.99] dark:bg-slate-100 dark:text-slate-900"
+              className="flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-[#00D4AA] text-sm font-bold text-gray-900 transition active:scale-[0.99]"
             >
+              <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
+                <path
+                  d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"
+                  fill="currentColor"
+                />
+              </svg>
               Seleccionar origen en el mapa
             </button>
           </div>
@@ -639,30 +705,39 @@ export default function HomePage() {
                 setActivePoint("destination");
                 setShowHint(true);
               }}
-              className="flex h-11 w-full items-center justify-center rounded-2xl bg-slate-900 text-sm font-semibold text-slate-50 shadow-soft transition active:scale-[0.99] dark:bg-slate-100 dark:text-slate-900"
+              className="flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-[#00D4AA] text-sm font-bold text-gray-900 transition active:scale-[0.99]"
             >
+              <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
+                <path
+                  d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"
+                  fill="currentColor"
+                />
+              </svg>
               Seleccionar destino en el mapa
             </button>
           </div>
         )}
 
         {flowStep === 3 && (
-          <div className="pointer-events-auto mt-2.5 w-full max-w-[95%] rounded-2xl border border-white/20 bg-[var(--surface-strong)] p-3 shadow-soft backdrop-blur-xl transition-all duration-300">
+          <div
+            className="pointer-events-auto mt-2.5 w-full max-w-[95%] rounded-2xl border border-white/10 bg-[#141D33] p-3 shadow-[0_4px_24px_rgba(0,212,170,0.08)] backdrop-blur-xl transition-all duration-300"
+            style={{ borderLeft: `3px solid ${selectedRoute?.color ?? "#00D4AA"}` }}
+          >
             {isCalculatingSuggestions ? (
-              <div className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-cyan-500/70 border-t-transparent" />
+              <div className="flex items-center gap-2 text-sm font-medium text-slate-200">
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#00D4AA]/70 border-t-transparent" />
                 Calculando mejor ruta...
               </div>
             ) : bestSuggestion ? (
               <div className="space-y-2">
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Ruta recomendada</p>
-                  <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">{bestSuggestion.ruta}</p>
+                  <p className="text-[11px] font-bold tracking-[2px] text-[#00D4AA]">RUTA RECOMENDADA</p>
+                  <p className="truncate font-display text-2xl font-black text-slate-100">{bestSuggestion.ruta}</p>
                 </div>
 
-                <div className="flex items-center gap-2 text-[11px] text-slate-600 dark:text-slate-300">
-                  <span className="rounded-full bg-slate-900/10 px-2 py-1 dark:bg-slate-100/10">{bestSuggestionEta} min aprox</span>
-                  <span className="rounded-full bg-slate-900/10 px-2 py-1 dark:bg-slate-100/10">
+                <div className="flex items-center gap-2 text-[11px] text-[#00D4AA]">
+                  <span className="rounded-full border border-[#00D4AA]/20 bg-[#00D4AA]/10 px-2 py-1 text-[#00D4AA]">{bestSuggestionEta} min aprox</span>
+                  <span className="rounded-full border border-[#00D4AA]/20 bg-[#00D4AA]/10 px-2 py-1 text-[#00D4AA]">
                     {suggestions.length} opcion{suggestions.length === 1 ? "" : "es"}
                   </span>
                 </div>
@@ -674,7 +749,7 @@ export default function HomePage() {
                       setActivePoint("destination");
                       setShowHint(true);
                     }}
-                    className="rounded-full bg-slate-900/10 px-3 py-2 text-[11px] font-semibold text-slate-700 transition active:scale-[0.98] dark:bg-slate-100/10 dark:text-slate-200"
+                    className="rounded-full bg-white/5 px-3 py-2 text-[11px] font-semibold text-slate-300 transition active:scale-[0.98]"
                   >
                     Ajustar puntos
                   </button>
@@ -682,12 +757,9 @@ export default function HomePage() {
                     type="button"
                     onClick={() => {
                       setSelectedRouteId(bestSuggestion.routeId);
-                      if (bestSuggestion.routeId === 9999) {
-                        setShowTeleferico(true);
-                      }
                       setShowHint(false);
                     }}
-                    className="rounded-full bg-slate-900 px-3.5 py-2 text-[11px] font-semibold text-slate-50 transition active:scale-[0.98] dark:bg-slate-100 dark:text-slate-900"
+                    className="rounded-full bg-[#00D4AA] px-3.5 py-2 text-[11px] font-semibold text-[#05131a] transition active:scale-[0.98]"
                   >
                     Ver ruta
                   </button>
@@ -695,14 +767,14 @@ export default function HomePage() {
               </div>
             ) : (
               <div className="space-y-2">
-                <p className="text-sm font-medium text-slate-800 dark:text-slate-100">No encontramos una ruta directa.</p>
+                <p className="text-sm font-medium text-slate-100">No encontramos una ruta directa.</p>
                 <button
                   type="button"
                   onClick={() => {
                     setActivePoint("destination");
                     setShowHint(true);
                   }}
-                  className="rounded-full bg-slate-900/10 px-3 py-2 text-[11px] font-semibold text-slate-700 transition active:scale-[0.98] dark:bg-slate-100/10 dark:text-slate-200"
+                  className="rounded-full bg-white/5 px-3 py-2 text-[11px] font-semibold text-slate-300 transition active:scale-[0.98]"
                 >
                   Mover destino
                 </button>
@@ -710,12 +782,12 @@ export default function HomePage() {
             )}
 
             {(selectedRoute || showTeleferico) && (
-              <div className="mt-2.5 flex items-center gap-2 border-t border-slate-200/70 pt-2 dark:border-slate-700/70">
+              <div className="mt-2.5 flex items-center gap-2 border-t border-white/10 pt-2">
                 <span
                   className="h-2 w-2 shrink-0 rounded-full"
                   style={{ backgroundColor: selectedRoute?.color ?? "#14b8a6" }} // teal for teleférico
                 />
-                <span className="min-w-0 flex-1 truncate text-[11px] font-medium text-slate-700 dark:text-slate-200">
+                <span className="min-w-0 flex-1 truncate text-[11px] font-medium text-slate-300">
                   Ruta activa: {selectedRoute?.nombre ?? "Teleférico Uruapan"}
                 </span>
 
@@ -723,7 +795,7 @@ export default function HomePage() {
                 <button
                   type="button"
                   onClick={() => shareRoute(selectedRoute?.nombre ?? "Teleférico")}
-                  className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-slate-900/10 text-slate-600 transition hover:bg-slate-900/15 active:scale-95 dark:bg-slate-100/10 dark:text-slate-300 dark:hover:bg-slate-100/20"
+                  className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white/5 text-slate-300 transition hover:bg-white/10 active:scale-95"
                   aria-label={`Compartir ${selectedRoute?.nombre ?? "Teleférico"}`}
                 >
                   <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" aria-hidden="true">
@@ -740,7 +812,7 @@ export default function HomePage() {
                 <button
                   type="button"
                   onClick={handleClearSelection}
-                  className="shrink-0 rounded-full bg-slate-900/10 px-2.5 py-1 text-[10px] font-semibold text-slate-700 transition active:scale-[0.98] dark:bg-slate-100/10 dark:text-slate-200"
+                  className="shrink-0 rounded-full bg-white/5 px-2.5 py-1 text-[10px] font-semibold text-slate-300 transition active:scale-[0.98]"
                 >
                   Limpiar
                 </button>
@@ -790,7 +862,7 @@ export default function HomePage() {
       <button
         type="button"
         onClick={() => setIsSheetOpen(true)}
-        className="absolute bottom-5 right-4 z-30 inline-flex h-12 items-center gap-2 rounded-full bg-slate-950 px-4 text-sm font-semibold text-white shadow-soft transition hover:-translate-y-0.5 active:translate-y-0 dark:bg-slate-100 dark:text-slate-900"
+        className="absolute bottom-5 right-4 z-30 inline-flex h-12 items-center gap-2 rounded-full border border-white/15 bg-[#0E1526] px-4 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:border-[#00D4AA]/50 active:translate-y-0"
       >
         <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
           <path
@@ -817,8 +889,6 @@ export default function HomePage() {
             setIsSheetOpen(false);
           }}
           onShowTeleferico={() => {
-            handleClearSelection();
-            setShowTeleferico(true);
             setIsSheetOpen(false);
           }}
           onSelectRoute={(routeId) => {

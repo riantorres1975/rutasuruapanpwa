@@ -5,18 +5,17 @@
 @tailwind utilities;
 
 :root {
-  --background: #f2f4f8;
-  --foreground: #0f172a;
-  --surface: rgba(255, 255, 255, 0.85);
-  --surface-strong: rgba(255, 255, 255, 0.95);
+  --background: #080c18;
+  --foreground: #e2e8f0;
+  --surface: #0e1526;
+  --surface-strong: #141d33;
+  --accent: #00d4aa;
+  --accent-warm: #ff5c35;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #020617;
-    --foreground: #e2e8f0;
-    --surface: rgba(15, 23, 42, 0.78);
-    --surface-strong: rgba(15, 23, 42, 0.92);
+@layer components {
+  .card-base {
+    @apply rounded-2xl border border-white/10 bg-[#0E1526] shadow-[0_4px_24px_rgba(0,212,170,0.08)] backdrop-blur-xl;
   }
 }
 
@@ -26,9 +25,30 @@
 
 body {
   background:
-    radial-gradient(circle at 0% 0%, rgba(14, 116, 144, 0.2), transparent 38%),
-    radial-gradient(circle at 100% 100%, rgba(2, 132, 199, 0.18), transparent 42%),
+    radial-gradient(ellipse at 0% 0%, rgba(0, 212, 170, 0.06), transparent 50%),
+    radial-gradient(circle at 100% 100%, rgba(20, 29, 51, 0.35), transparent 46%),
     var(--background);
+  color: var(--foreground);
+}
+
+@keyframes map-routes-fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.map-routes-fade-in .mapboxgl-canvas {
+  animation: map-routes-fade-in 800ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .map-routes-fade-in .mapboxgl-canvas {
+    animation: none;
+  }
 }
 
 .mapboxgl-ctrl-bottom-left,
