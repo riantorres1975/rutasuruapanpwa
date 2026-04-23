@@ -1,5 +1,5 @@
-const STATIC_CACHE_NAME = "rutas-static-v1";
-const DATA_CACHE_NAME = "rutas-data-v1";
+const STATIC_CACHE_NAME = "rutas-static-__BUILD_ID__";
+const DATA_CACHE_NAME = "rutas-data-__BUILD_ID__";
 
 // Only shell assets are pre-cached during install.
 // /api/rutas is NOT included here: if the server is cold on first install,

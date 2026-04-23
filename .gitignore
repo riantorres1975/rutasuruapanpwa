@@ -24,3 +24,6 @@ pnpm-debug.log*
 
 # typescript
 *.tsbuildinfo
+
+# generated at build time from sw.template.js
+/public/sw.js

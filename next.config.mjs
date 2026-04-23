@@ -1,3 +1,10 @@
+import { randomBytes } from "crypto";
+import { readFileSync, writeFileSync } from "fs";
+import { join } from "path";
+
+// Generate a stable build ID once per build invocation
+const BUILD_ID = randomBytes(4).toString("hex");
+
 /** @type {import('next').NextConfig} */
 const securityHeaders = [
   // Prevent MIME-type sniffing
@@ -19,11 +26,21 @@ const nextConfig = {
   async headers() {
     return [
       {
-        // Apply security headers to all routes
         source: "/(.*)",
         headers: securityHeaders
       }
     ];
+  },
+
+  webpack(config, { isServer }) {
+    if (!isServer) {
+      // Read template, stamp with build ID, write sw.js — keeps template pristine
+      const root = process.cwd();
+      const template = readFileSync(join(root, "public", "sw.template.js"), "utf8");
+      const stamped = template.replace(/__BUILD_ID__/g, BUILD_ID);
+      writeFileSync(join(root, "public", "sw.js"), stamped, "utf8");
+    }
+    return config;
   }
 };
 
