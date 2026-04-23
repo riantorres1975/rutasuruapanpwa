@@ -380,7 +380,6 @@ function MapComponent({
   const destinationMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const onNearbyRoutesFoundRef = useRef(onNearbyRoutesFound);
   const showTelefericoRef = useRef(showTeleferico);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const telefericoGeoJSONRef = useRef<any>(null);
 
   const [isLoading, setIsLoading] = useState(true);

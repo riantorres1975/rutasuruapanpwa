@@ -34,7 +34,6 @@ export function useShareRoute() {
 
     // Fallback: copy to clipboard
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (navigator as any).clipboard.writeText(text);
       setStatus("copied");
       reset();
