@@ -35,10 +35,16 @@ export default function PWARegistrar() {
       }
     };
 
-    window.addEventListener("load", registerServiceWorker);
-    return () => {
-      window.removeEventListener("load", registerServiceWorker);
-    };
+    // If the page has already fired `load` before this effect runs
+    // (common in fast connections), register immediately instead of waiting.
+    if (document.readyState === "complete") {
+      registerServiceWorker();
+    } else {
+      window.addEventListener("load", registerServiceWorker);
+      return () => {
+        window.removeEventListener("load", registerServiceWorker);
+      };
+    }
   }, []);
 
   return null;

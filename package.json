@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "convert:rutas": "node scripts/convert-rutas.js"
+    "convert:rutas": "node scripts/convert-rutas.js",
+    "group:rutas": "node scripts/group-rutas.js",
+    "pipeline:rutas": "node scripts/convert-rutas.js && node scripts/group-rutas.js"
   },
   "dependencies": {
     "mapbox-gl": "^3.12.0",

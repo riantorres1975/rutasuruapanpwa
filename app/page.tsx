@@ -231,6 +231,8 @@ function getEstimatedMinutes(segment: Coordinates[]) {
 export default function HomePage() {
   const [groupedRoutes, setGroupedRoutes] = useState<GroupedRouteData[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
+  const [fetchAttempt, setFetchAttempt] = useState(0);
   const [selectedRouteId, setSelectedRouteId] = useState<number | null>(null);
   const [selectedDirection, setSelectedDirection] = useState<RouteDirection>("ida");
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -279,18 +281,30 @@ export default function HomePage() {
   useEffect(() => {
     let cancelled = false;
     fetch("/api/rutas")
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
       .then((data: GroupedRouteData[]) => {
         if (!cancelled) {
-          setGroupedRoutes(data);
+          if (!Array.isArray(data) || data.length === 0) {
+            console.error("[rutas] /api/rutas returned empty or invalid data");
+            setFetchError(true);
+          } else {
+            setGroupedRoutes(data);
+          }
           setIsLoadingData(false);
         }
       })
-      .catch(() => {
-        if (!cancelled) setIsLoadingData(false);
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          console.error("[rutas] Failed to load route data:", err instanceof Error ? err.message : err);
+          setFetchError(true);
+          setIsLoadingData(false);
+        }
       });
     return () => { cancelled = true; };
-  }, []);
+  }, [fetchAttempt]);
 
   const flowStep = useMemo(() => getFlowStep(originPoint, destinationPoint), [destinationPoint, originPoint]);
 
@@ -489,6 +503,22 @@ export default function HomePage() {
     }
   }, [fullRoutesById, selectedRouteId]);
 
+  if (fetchError) {
+    return (
+      <main className="relative flex h-dvh w-full flex-col items-center justify-center gap-4 overflow-hidden bg-[#0b1220] px-6 text-center">
+        <p className="font-display text-[18px] font-semibold text-slate-100">No se pudieron cargar las rutas</p>
+        <p className="text-[13px] text-slate-400">Verifica tu conexion a internet e intenta de nuevo.</p>
+        <button
+          type="button"
+          onClick={() => { setFetchError(false); setIsLoadingData(true); setFetchAttempt((n) => n + 1); }}
+          className="mt-2 inline-flex h-10 items-center rounded-xl bg-[#00D4AA] px-5 text-[13px] font-bold text-[#05131a]"
+        >
+          Reintentar
+        </button>
+      </main>
+    );
+  }
+
   if (isLoadingData) {
     return (
       <main className="relative flex h-dvh w-full flex-col items-center justify-center gap-5 overflow-hidden bg-[#0b1220]">
@@ -538,25 +568,31 @@ export default function HomePage() {
         onNearbyRoutesFound={handleNearbyRoutesFound}
       />
 
-      <section className="pointer-events-none absolute inset-x-0 top-0 z-20 px-4 pt-4">
-        <div className="flex items-center gap-3">
-          <div className="pointer-events-auto inline-flex items-center gap-2.5 rounded-2xl border border-[#00D4AA]/20 bg-[#0E1526] px-3.5 py-2 shadow-[0_4px_24px_rgba(0,212,170,0.08)] backdrop-blur-xl">
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#00D4AA]/70 opacity-70" />
-              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#00D4AA]" />
-            </span>
-            <p className="font-display text-[15px] font-semibold leading-none text-slate-100">Rutas Uruapan</p>
-            <span className="rounded-full bg-white/5 px-2 py-0.5 text-[11px] font-medium text-slate-300">
+      {/* ── Top overlay: logo + mode toggle + toast + hint + A/B bar ── */}
+      <section className="pointer-events-none absolute inset-x-0 top-0 z-20 px-4 pt-safe-or-4">
+        {/* Row 1: logo pill + mode toggle */}
+        <div className="flex items-center gap-2">
+          <div className="pointer-events-auto inline-flex items-center gap-2 rounded-2xl border border-[#00D4AA]/20 bg-[#0E1526]/95 px-3 py-2 shadow-[0_4px_24px_rgba(0,212,170,0.08)] backdrop-blur-xl">
+            {/* Static dot — no more infinite ping distracting the user */}
+            <span className="h-2 w-2 rounded-full bg-[#00D4AA]" aria-hidden="true" />
+            <p className="font-display text-[14px] font-semibold leading-none text-slate-100">Rutas Uruapan</p>
+            <span className="rounded-full bg-white/8 px-1.5 py-0.5 text-[11px] font-medium text-slate-400">
               {fullRoutes.length}
             </span>
-            <span className="ml-1 inline-flex items-center gap-1">
+            {/* Flow step pills — slightly larger, more visible */}
+            <span className="ml-0.5 inline-flex items-center gap-1" aria-label={`Paso ${flowStep} de 3`}>
               {[1, 2, 3].map((step) => {
                 const isActive = step === flowStep;
+                const isDone = step < flowStep;
                 return (
                   <span
                     key={step}
-                    className={`h-1.5 w-1.5 rounded-full border transition ${
-                      isActive ? "border-[#00D4AA] bg-[#00D4AA]" : "border-white/30 bg-transparent"
+                    className={`rounded-full transition-all duration-300 ${
+                      isActive
+                        ? "h-2 w-4 bg-[#00D4AA]"
+                        : isDone
+                          ? "h-2 w-2 bg-[#00D4AA]/50"
+                          : "h-2 w-2 bg-white/20"
                     }`}
                   />
                 );
@@ -564,15 +600,16 @@ export default function HomePage() {
             </span>
           </div>
 
+          {/* Mode toggle — matches logo pill height */}
           <button
             type="button"
             onClick={() => {
               setRoutesMapMode((current) => (current === "all-visible" ? "all-highlighted" : "all-visible"));
             }}
-            className={`pointer-events-auto inline-flex h-9 w-9 items-center justify-center rounded-xl border text-sm transition active:scale-[0.98] ${
+            className={`pointer-events-auto inline-flex h-9 w-9 items-center justify-center rounded-xl border text-sm transition active:scale-[0.97] ${
               routesMapMode === "all-highlighted"
                 ? "border-[#00D4AA]/50 bg-[#00D4AA]/15 text-[#00D4AA]"
-                : "border-white/15 bg-[#0E1526]/92 text-white/75"
+                : "border-white/15 bg-[#0E1526]/95 text-white/60"
             }`}
             aria-label={
               routesMapMode === "all-visible"
@@ -585,7 +622,7 @@ export default function HomePage() {
           </button>
         </div>
 
-        {/* ── Nearby routes toast ──────────────────────────────────────── */}
+        {/* Row 2: Nearby toast */}
         <div className="pointer-events-auto mt-2">
           <NearbyToast
             count={nearbyToast}
@@ -594,31 +631,37 @@ export default function HomePage() {
           />
         </div>
 
+        {/* Row 3: Hint pill — larger text, better readable */}
         <div
-          className={`pointer-events-none mt-2 max-w-[95%] transition-all duration-300 ${
+          className={`pointer-events-none mt-2 transition-all duration-300 ${
             showHint ? "translate-y-0 opacity-100" : "-translate-y-1 opacity-0"
           }`}
         >
-          <div className="inline-flex items-center gap-2 rounded-full border border-[#00D4AA]/35 bg-[#0E1526]/90 px-2.5 py-1.5 text-[11px] font-medium text-[#00D4AA] backdrop-blur-md">
+          <div className="inline-flex max-w-[95%] items-center gap-2 rounded-full border border-[#00D4AA]/30 bg-[#0E1526]/92 px-3 py-1.5 text-[12px] font-medium leading-snug text-[#00D4AA] backdrop-blur-md">
             <span>{hintMessage}</span>
           </div>
         </div>
 
-        <div className="pointer-events-auto mt-3 w-full max-w-[95%] rounded-full border border-white/10 bg-[#0E1526]/95 p-1.5 shadow-soft backdrop-blur-xl transition-all duration-300">
+        {/* Row 4: A→B pill bar — larger touch targets, clearer labels */}
+        <div className="pointer-events-auto mt-2 w-full rounded-2xl border border-white/10 bg-[#0E1526]/95 p-1.5 shadow-soft backdrop-blur-xl">
           <div className="flex items-center gap-1.5">
+            {/* Origin button */}
             <button
               type="button"
               onClick={() => {
                 setActivePoint("origin");
                 setShowHint(true);
               }}
-              className={`inline-flex h-10 min-w-[120px] items-center justify-center gap-1.5 rounded-full border px-3 text-[11px] font-semibold transition active:scale-[0.98] ${
+              className={`inline-flex h-11 flex-1 items-center justify-center gap-1.5 rounded-xl border px-3 text-[13px] font-semibold transition active:scale-[0.97] ${
                 originPoint
                   ? "border-[#00D4AA]/50 bg-[#00D4AA]/15 text-[#00D4AA]"
-                  : "border-white/10 bg-white/5 text-white/40"
+                  : activePoint === "origin"
+                    ? "ring-pulse-active border-[#00D4AA]/60 bg-[#00D4AA]/10 text-[#00D4AA]"
+                    : "border-white/10 bg-white/5 text-white/40"
               }`}
+              aria-label={originPoint ? "Punto A marcado, toca para cambiar" : "Toca para marcar punto de origen"}
             >
-              <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0" aria-hidden="true">
                 <path
                   d="M12 21s6-5.7 6-11a6 6 0 1 0-12 0c0 5.3 6 11 6 11Z"
                   stroke="currentColor"
@@ -628,11 +671,20 @@ export default function HomePage() {
                 />
                 <circle cx="12" cy="10" r="2" fill="currentColor" />
               </svg>
-              {originPoint ? "✓ A listo" : "A pendiente"}
+              <span className="truncate">{originPoint ? "A marcado" : "Origen"}</span>
+              {originPoint && (
+                <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 shrink-0 text-[#00D4AA]" aria-hidden="true">
+                  <path d="M5 12l5 5L20 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              )}
             </button>
 
-            <span className="text-slate-500">→</span>
+            {/* Separator arrow */}
+            <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0 text-slate-500" aria-hidden="true">
+              <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
 
+            {/* Destination button */}
             <button
               type="button"
               onClick={() => {
@@ -640,25 +692,28 @@ export default function HomePage() {
                 setShowHint(true);
               }}
               disabled={!originPoint}
-              className={`inline-flex h-10 min-w-[120px] items-center justify-center gap-1.5 rounded-full border px-3 text-[11px] font-semibold transition active:scale-[0.98] disabled:opacity-50 ${
+              className={`inline-flex h-11 flex-1 items-center justify-center gap-1.5 rounded-xl border px-3 text-[13px] font-semibold transition active:scale-[0.97] disabled:opacity-40 ${
                 destinationPoint
                   ? "border-[#00D4AA]/50 bg-[#00D4AA]/15 text-[#00D4AA]"
-                  : "border-white/10 bg-white/5 text-white/40"
+                  : activePoint === "destination"
+                    ? "ring-pulse-active border-[#00D4AA]/60 bg-[#00D4AA]/10 text-[#00D4AA]"
+                    : "border-white/10 bg-white/5 text-white/40"
               }`}
+              aria-label={destinationPoint ? "Punto B marcado, toca para cambiar" : "Toca para marcar punto de destino"}
             >
-              <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" aria-hidden="true">
-                <path
-                  d="M12 21s6-5.7 6-11a6 6 0 1 0-12 0c0 5.3 6 11 6 11Z"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <circle cx="12" cy="10" r="2" fill="currentColor" />
+              <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0" aria-hidden="true">
+                <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.8" />
+                <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.5" />
               </svg>
-              {destinationPoint ? "✓ B listo" : "B pendiente"}
+              <span className="truncate">{destinationPoint ? "B marcado" : "Destino"}</span>
+              {destinationPoint && (
+                <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 shrink-0 text-[#00D4AA]" aria-hidden="true">
+                  <path d="M5 12l5 5L20 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              )}
             </button>
 
+            {/* Reset — visible only when at least one point is set */}
             {(originPoint || destinationPoint) && (
               <button
                 type="button"
@@ -668,90 +723,98 @@ export default function HomePage() {
                   setActivePoint("origin");
                   setShowHint(true);
                 }}
-                className="ml-auto inline-flex h-9 items-center rounded-full border border-white/10 bg-white/5 px-3 text-[11px] font-semibold text-slate-300 transition active:scale-[0.98]"
+                className="inline-flex h-11 items-center rounded-xl border border-red-400/20 bg-red-500/8 px-2.5 text-[12px] font-semibold text-red-300 transition active:scale-[0.97]"
+                aria-label="Reiniciar puntos A y B"
               >
-                Reiniciar
+                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
+                  <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M3 3v5h5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
               </button>
             )}
           </div>
         </div>
 
-        {flowStep === 1 && (
-          <div className="pointer-events-auto mt-2.5 w-full max-w-[95%]">
-            <button
-              type="button"
-              onClick={() => {
-                setActivePoint("origin");
-                setShowHint(true);
-              }}
-              className="flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-[#00D4AA] text-sm font-bold text-gray-900 transition active:scale-[0.99]"
-            >
-              <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
-                <path
-                  d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"
-                  fill="currentColor"
-                />
-              </svg>
-              Seleccionar origen en el mapa
-            </button>
+        {/* Row 5: Context action — appears only when waiting for a tap on map (steps 1 & 2) */}
+        {(flowStep === 1 || flowStep === 2) && (
+          <div className="pointer-events-auto mt-2 w-full">
+            <div className="flex items-center gap-1.5 rounded-2xl border border-[#00D4AA]/25 bg-[#0E1526]/92 px-3.5 py-2.5 backdrop-blur-xl">
+              {/* Animated pulse indicator */}
+              <span className="relative flex h-3 w-3 shrink-0" aria-hidden="true">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#00D4AA]/60 opacity-75" />
+                <span className="relative inline-flex h-3 w-3 rounded-full bg-[#00D4AA]" />
+              </span>
+              <p className="flex-1 text-[13px] font-medium text-slate-200">
+                {flowStep === 1 ? "Toca el mapa para marcar tu" : "Ahora toca para marcar tu"}{" "}
+                <span className="font-bold text-[#00D4AA]">{flowStep === 1 ? "origen" : "destino"}</span>
+              </p>
+            </div>
           </div>
         )}
 
-        {flowStep === 2 && (
-          <div className="pointer-events-auto mt-2.5 w-full max-w-[95%]">
-            <button
-              type="button"
-              onClick={() => {
-                setActivePoint("destination");
-                setShowHint(true);
-              }}
-              className="flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-[#00D4AA] text-sm font-bold text-gray-900 transition active:scale-[0.99]"
-            >
-              <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
-                <path
-                  d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"
-                  fill="currentColor"
-                />
-              </svg>
-              Seleccionar destino en el mapa
-            </button>
-          </div>
-        )}
-
+        {/* Row 5 (step 3): Route result card */}
         {flowStep === 3 && (
           <div
-            className="pointer-events-auto mt-2.5 w-full max-w-[95%] rounded-2xl border border-white/10 bg-[#141D33] p-3 shadow-[0_4px_24px_rgba(0,212,170,0.08)] backdrop-blur-xl transition-all duration-300"
-            style={{ borderLeft: `3px solid ${selectedRoute?.color ?? "#00D4AA"}` }}
+            className="pointer-events-auto mt-2 w-full overflow-hidden rounded-2xl border border-white/10 bg-[#141D33] shadow-[0_4px_24px_rgba(0,212,170,0.10)] backdrop-blur-xl transition-all duration-300"
+            style={{ borderLeftWidth: "3px", borderLeftColor: selectedRoute?.color ?? "#00D4AA" }}
           >
             {isCalculatingSuggestions ? (
-              <div className="flex items-center gap-2 text-sm font-medium text-slate-200">
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#00D4AA]/70 border-t-transparent" />
-                Calculando mejor ruta...
+              <div className="flex items-center gap-3 px-4 py-3.5">
+                <span className="h-5 w-5 shrink-0 animate-spin rounded-full border-2 border-[#00D4AA]/60 border-t-transparent" />
+                <span className="text-[13px] font-medium text-slate-200">Buscando mejor ruta...</span>
               </div>
             ) : bestSuggestion ? (
-              <div className="space-y-2">
-                <div>
-                  <p className="text-[11px] font-bold tracking-[2px] text-[#00D4AA]">RUTA RECOMENDADA</p>
-                  <p className="truncate font-display text-2xl font-black text-slate-100">{bestSuggestion.ruta}</p>
-                </div>
+              <div className="px-4 py-3">
+                {/* Label + route name */}
+                <p className="text-[10px] font-bold tracking-[2px] text-[#00D4AA]/80">RUTA RECOMENDADA</p>
+                <p className="mt-0.5 truncate font-display text-[18px] font-bold leading-tight text-slate-100">
+                  {bestSuggestion.ruta}
+                </p>
 
-                <div className="flex items-center gap-2 text-[11px] text-[#00D4AA]">
-                  <span className="rounded-full border border-[#00D4AA]/20 bg-[#00D4AA]/10 px-2 py-1 text-[#00D4AA]">{bestSuggestionEta} min aprox</span>
-                  <span className="rounded-full border border-[#00D4AA]/20 bg-[#00D4AA]/10 px-2 py-1 text-[#00D4AA]">
-                    {suggestions.length} opcion{suggestions.length === 1 ? "" : "es"}
+                {/* Badges row */}
+                <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                  <span className="inline-flex items-center gap-1 rounded-lg border border-[#00D4AA]/25 bg-[#00D4AA]/10 px-2.5 py-1 text-[12px] font-semibold text-[#00D4AA]">
+                    <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3" aria-hidden="true">
+                      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
+                      <path d="M12 7v5l3 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                    </svg>
+                    {bestSuggestionEta} min aprox
                   </span>
+                  {suggestions.length > 1 && (
+                    <span className="inline-flex items-center rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-[12px] font-medium text-slate-400">
+                      +{suggestions.length - 1} alternativa{suggestions.length > 2 ? "s" : ""}
+                    </span>
+                  )}
                 </div>
 
-                <div className="flex items-center justify-between gap-2">
+                {/* Actions */}
+                <div className="mt-3 flex items-center gap-2">
                   <button
                     type="button"
                     onClick={() => {
                       setActivePoint("destination");
                       setShowHint(true);
                     }}
-                    className="rounded-full bg-white/5 px-3 py-2 text-[11px] font-semibold text-slate-300 transition active:scale-[0.98]"
+                    className="inline-flex h-10 flex-1 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-[13px] font-semibold text-slate-300 transition active:scale-[0.97]"
                   >
-                    Ajustar puntos
+                    Ajustar
+                  </button>
+                  {/* Compartir disponible desde que hay sugerencia, antes de ver en mapa */}
+                  <button
+                    type="button"
+                    onClick={() => shareRoute(bestSuggestion.ruta)}
+                    className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-300 transition active:scale-[0.97]"
+                    aria-label={`Compartir ruta ${bestSuggestion.ruta}`}
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
+                      <path
+                        d="M8.59 13.51l6.83 3.98m-.01-10.98-6.82 3.98M21 5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm0 14a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM3 12a3 3 0 1 1 6 0 3 3 0 0 1-6 0Z"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
                   </button>
                   <button
                     type="button"
@@ -759,46 +822,61 @@ export default function HomePage() {
                       setSelectedRouteId(bestSuggestion.routeId);
                       setShowHint(false);
                     }}
-                    className="rounded-full bg-[#00D4AA] px-3.5 py-2 text-[11px] font-semibold text-[#05131a] transition active:scale-[0.98]"
+                    className="inline-flex h-10 flex-[2] items-center justify-center gap-1.5 rounded-xl bg-[#00D4AA] text-[13px] font-bold text-[#05131a] shadow-[0_2px_12px_rgba(0,212,170,0.35)] transition active:scale-[0.97]"
                   >
-                    Ver ruta
+                    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
+                      <path d="M9 20l-5.447-2.724A1 1 0 0 1 3 16.382V5.618a1 1 0 0 1 1.447-.894L9 7m0 13V7m0 13 6-3M9 7l6-3m6 17V4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    Ver en mapa
                   </button>
                 </div>
               </div>
             ) : (
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-slate-100">No encontramos una ruta directa.</p>
+              <div className="px-4 py-3">
+                <div className="flex items-start gap-3">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-500/15">
+                    <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-amber-400" aria-hidden="true">
+                      <path d="M12 8v4m0 4h.01M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                    </svg>
+                  </span>
+                  <div className="flex-1">
+                    <p className="text-[13px] font-semibold text-slate-100">Sin ruta directa</p>
+                    <p className="mt-0.5 text-[12px] leading-snug text-slate-400">Ajusta alguno de los puntos e intenta de nuevo.</p>
+                  </div>
+                </div>
                 <button
                   type="button"
                   onClick={() => {
                     setActivePoint("destination");
                     setShowHint(true);
                   }}
-                  className="rounded-full bg-white/5 px-3 py-2 text-[11px] font-semibold text-slate-300 transition active:scale-[0.98]"
+                  className="mt-3 inline-flex h-10 w-full items-center justify-center rounded-xl border border-white/10 bg-white/5 text-[13px] font-semibold text-slate-300 transition active:scale-[0.97]"
                 >
                   Mover destino
                 </button>
               </div>
             )}
 
+            {/* Active route row */}
             {(selectedRoute || showTeleferico) && (
-              <div className="mt-2.5 flex items-center gap-2 border-t border-white/10 pt-2">
+              <div className="flex items-center gap-2 border-t border-white/8 px-4 py-2.5">
                 <span
-                  className="h-2 w-2 shrink-0 rounded-full"
-                  style={{ backgroundColor: selectedRoute?.color ?? "#14b8a6" }} // teal for teleférico
+                  className="h-2.5 w-2.5 shrink-0 rounded-full"
+                  style={{ backgroundColor: selectedRoute?.color ?? "#14b8a6" }}
+                  aria-hidden="true"
                 />
-                <span className="min-w-0 flex-1 truncate text-[11px] font-medium text-slate-300">
-                  Ruta activa: {selectedRoute?.nombre ?? "Teleférico Uruapan"}
+                <span className="min-w-0 flex-1 truncate text-[12px] font-medium text-slate-300">
+                  {selectedRoute?.nombre ?? "Teleférico Uruapan"}
                 </span>
 
-                {/* Share button */}
+                {/* Share */}
                 <button
                   type="button"
                   onClick={() => shareRoute(selectedRoute?.nombre ?? "Teleférico")}
-                  className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white/5 text-slate-300 transition hover:bg-white/10 active:scale-95"
+                  className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-white/5 text-slate-400 transition hover:bg-white/10 active:scale-95"
                   aria-label={`Compartir ${selectedRoute?.nombre ?? "Teleférico"}`}
                 >
-                  <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
                     <path
                       d="M8.59 13.51l6.83 3.98m-.01-10.98-6.82 3.98M21 5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm0 14a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM3 12a3 3 0 1 1 6 0 3 3 0 0 1-6 0Z"
                       stroke="currentColor"
@@ -809,10 +887,11 @@ export default function HomePage() {
                   </svg>
                 </button>
 
+                {/* Clear */}
                 <button
                   type="button"
                   onClick={handleClearSelection}
-                  className="shrink-0 rounded-full bg-white/5 px-2.5 py-1 text-[10px] font-semibold text-slate-300 transition active:scale-[0.98]"
+                  className="shrink-0 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-[11px] font-semibold text-slate-300 transition active:scale-[0.97]"
                 >
                   Limpiar
                 </button>
@@ -859,25 +938,33 @@ export default function HomePage() {
         </div>
       </div>
 
+      {/* ── Floating "Ver rutas" button — bottom right, safe-area aware ── */}
       <button
         type="button"
         onClick={() => setIsSheetOpen(true)}
-        className="absolute bottom-5 right-4 z-30 inline-flex h-12 items-center gap-2 rounded-full border border-white/15 bg-[#0E1526] px-4 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:border-[#00D4AA]/50 active:translate-y-0"
+        className="absolute bottom-6 right-4 z-30 inline-flex h-12 items-center gap-2 rounded-2xl border border-white/15 bg-[#0E1526]/95 pl-3.5 pr-4 text-[14px] font-semibold text-white shadow-[0_8px_32px_rgba(0,0,0,0.45)] backdrop-blur-xl transition hover:border-[#00D4AA]/40 hover:shadow-[0_8px_32px_rgba(0,212,170,0.15)] active:scale-[0.97]"
+        style={{ marginBottom: "env(safe-area-inset-bottom, 0px)" }}
+        aria-label={`Ver las ${fullRoutes.length} rutas disponibles`}
       >
-        <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 text-[#00D4AA]" aria-hidden="true">
           <path
             d="M4 7H20M4 12H20M4 17H14"
             stroke="currentColor"
-            strokeWidth="2"
+            strokeWidth="2.2"
             strokeLinecap="round"
           />
         </svg>
-        Rutas
+        <span>Rutas</span>
+        {/* Route count badge */}
+        <span className="ml-0.5 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-[#00D4AA]/20 px-1.5 text-[11px] font-bold text-[#00D4AA]">
+          {fullRoutes.length}
+        </span>
       </button>
 
       <BottomSheet open={isSheetOpen} onOpenChange={setIsSheetOpen} title="Selecciona una ruta">
         <RouteList
           routes={fullRoutes}
+          isLoading={isLoadingData}
           direction={selectedDirection}
           onDirectionChange={setSelectedDirection}
           suggestedRouteIds={suggestedRouteIds}

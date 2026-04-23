@@ -1,20 +1,34 @@
 const STATIC_CACHE_NAME = "rutas-static-v1";
 const DATA_CACHE_NAME = "rutas-data-v1";
+
+// Only shell assets are pre-cached during install.
+// /api/rutas is NOT included here: if the server is cold on first install,
+// addAll() would throw and block the entire SW installation.
+// The data endpoint is handled lazily via staleWhileRevalidate on first fetch.
 const APP_SHELL_ASSETS = [
   "/",
   "/manifest.json",
   "/offline.html",
   "/icons/icon-192.png",
   "/icons/icon-512.png",
-  "/icons/apple-touch-icon.png",
-  "/api/rutas"
+  "/icons/apple-touch-icon.png"
 ];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
     (async () => {
       const staticCache = await caches.open(STATIC_CACHE_NAME);
-      await staticCache.addAll(APP_SHELL_ASSETS);
+      // Pre-cache shell assets individually so a single failure does not
+      // block the whole installation. Errors are logged but not fatal.
+      await Promise.allSettled(
+        APP_SHELL_ASSETS.map(async (url) => {
+          try {
+            await staticCache.add(url);
+          } catch (err) {
+            console.warn("[sw] Failed to pre-cache:", url, err);
+          }
+        })
+      );
       await self.skipWaiting();
     })()
   );
