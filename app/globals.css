@@ -55,3 +55,31 @@ body {
 .mapboxgl-ctrl-bottom-right {
   display: none;
 }
+
+.landmark-marker {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px 3px 4px;
+  border-radius: 999px;
+  background: rgba(14, 21, 38, 0.82);
+  border: 1px solid rgba(0, 212, 170, 0.35);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(8px);
+  pointer-events: none;
+  white-space: nowrap;
+  transform: translateZ(0);
+}
+
+.landmark-marker .lm-icon {
+  font-size: 13px;
+  line-height: 1;
+}
+
+.landmark-marker .lm-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  color: #e2e8f0;
+  text-transform: uppercase;
+}
