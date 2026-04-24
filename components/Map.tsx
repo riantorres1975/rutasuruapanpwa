@@ -5,7 +5,6 @@ import mapboxgl from "mapbox-gl";
 import {
   DEFAULT_ZOOM,
   SOURCE_ID,
-  URUAPAN_LANDMARKS,
   getBoundsFromCoordinates,
   getBoundsFromRoutes,
   getMapStyle,
@@ -573,7 +572,6 @@ function MapComponent({
   const showTelefericoRef = useRef(showTeleferico);
   const telefericoGeoJSONRef = useRef<any>(null);
   const selectedTransferRef = useRef(selectedTransfer);
-  const landmarkMarkersRef = useRef<mapboxgl.Marker[]>([]);
 
   const [isLoading, setIsLoading] = useState(true);
   const [locationLoading, setLocationLoading] = useState(false);
@@ -946,17 +944,6 @@ function MapComponent({
         });
       }
 
-      // Add landmark markers for orientation
-      for (const lm of URUAPAN_LANDMARKS) {
-        const el = document.createElement("div");
-        el.className = "landmark-marker";
-        el.innerHTML = `<span class="lm-icon">${lm.icon}</span><span class="lm-label">${lm.name}</span>`;
-        const marker = new mapboxgl.Marker({ element: el, anchor: "center" })
-          .setLngLat(lm.coords)
-          .addTo(map);
-        landmarkMarkersRef.current.push(marker);
-      }
-
       isMapReadyRef.current = true;
       setIsLoading(false);
     };
@@ -991,8 +978,6 @@ function MapComponent({
       destinationMarkerRef.current?.remove();
       originMarkerRef.current = null;
       destinationMarkerRef.current = null;
-      for (const m of landmarkMarkersRef.current) m.remove();
-      landmarkMarkersRef.current = [];
       media.removeEventListener("change", onColorSchemeChange);
       map.off("load", onLoad);
       map.off("click", onMapClick);

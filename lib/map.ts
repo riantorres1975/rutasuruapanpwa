@@ -7,17 +7,6 @@ export const DEFAULT_ZOOM = 12.3;
 const LIGHT_STYLE = "mapbox://styles/mapbox/streets-v12";
 const DARK_STYLE = "mapbox://styles/mapbox/dark-v11";
 
-export const URUAPAN_LANDMARKS: { name: string; coords: [number, number]; icon: string }[] = [
-  { name: "Centro", coords: [-102.0569, 19.4197], icon: "🏛️" },
-  { name: "Mercado", coords: [-102.0617, 19.4183], icon: "🛒" },
-  { name: "Parque Nacional", coords: [-102.0634, 19.4113], icon: "🌳" },
-  { name: "Central Camionera", coords: [-102.0341, 19.4254], icon: "🚌" },
-  { name: "Hospital General", coords: [-102.0235, 19.3975], icon: "🏥" },
-  { name: "UPN / Aeropuerto", coords: [-102.0390, 19.3951], icon: "✈️" },
-  { name: "Ágora", coords: [-102.0375, 19.4217], icon: "🎭" },
-  { name: "Zapata", coords: [-102.0732, 19.4252], icon: "📍" }
-];
-
 export function getMapStyle(isDark: boolean) {
   return isDark ? DARK_STYLE : LIGHT_STYLE;
 }
