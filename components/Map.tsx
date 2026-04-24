@@ -1300,7 +1300,13 @@ function MapComponent({
 
   return (
     <section className="map-routes-fade-in relative h-full w-full">
-      <div ref={containerRef} className="h-full w-full" />
+      {/* role="application" permite a lectores de pantalla navegar el mapa como widget interactivo */}
+      <div
+        ref={containerRef}
+        className="h-full w-full"
+        role="application"
+        aria-label="Mapa interactivo de rutas de transporte de Uruapan. Toca para marcar puntos de origen y destino."
+      />
 
       {isLoading && (
         <div className="absolute inset-0 z-10 grid place-items-center bg-slate-950/35 backdrop-blur-[2px]">

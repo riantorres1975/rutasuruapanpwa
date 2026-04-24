@@ -1,0 +1,44 @@
+[
+  {
+    "trip_id": "TELEFERICO_IDA_DAILY",
+    "arrival_time": "05:00:00",
+    "departure_time": "05:00:00",
+    "stop_id": "TEL_E1",
+    "stop_sequence": 1
+  },
+  {
+    "trip_id": "TELEFERICO_IDA_DAILY",
+    "arrival_time": "05:00:00",
+    "departure_time": "05:00:00",
+    "stop_id": "TEL_E2",
+    "stop_sequence": 2
+  },
+  {
+    "trip_id": "TELEFERICO_IDA_DAILY",
+    "arrival_time": "05:00:00",
+    "departure_time": "05:00:00",
+    "stop_id": "TEL_E3",
+    "stop_sequence": 3
+  },
+  {
+    "trip_id": "TELEFERICO_IDA_DAILY",
+    "arrival_time": "05:00:00",
+    "departure_time": "05:00:00",
+    "stop_id": "TEL_E4",
+    "stop_sequence": 4
+  },
+  {
+    "trip_id": "TELEFERICO_IDA_DAILY",
+    "arrival_time": "05:00:00",
+    "departure_time": "05:00:00",
+    "stop_id": "TEL_E5",
+    "stop_sequence": 5
+  },
+  {
+    "trip_id": "TELEFERICO_IDA_DAILY",
+    "arrival_time": "05:00:00",
+    "departure_time": "05:00:00",
+    "stop_id": "TEL_E6",
+    "stop_sequence": 6
+  }
+]

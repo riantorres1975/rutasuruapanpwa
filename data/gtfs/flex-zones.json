@@ -1,0 +1,30 @@
+[
+  {
+    "zone_id": "FLEX_NUEVO_SAN_JUAN",
+    "zone_name": "Nuevo San Juan Parangaricutiro",
+    "route_id": "SUBURBAN_COMBIS_REGION",
+    "geometry": null,
+    "status": "pending_coordinates"
+  },
+  {
+    "zone_id": "FLEX_CAPACUARO",
+    "zone_name": "Capacuaro",
+    "route_id": "SUBURBAN_COMBIS_REGION",
+    "geometry": null,
+    "status": "pending_coordinates"
+  },
+  {
+    "zone_id": "FLEX_PARACHO",
+    "zone_name": "Paracho",
+    "route_id": "SUBURBAN_COMBIS_REGION",
+    "geometry": null,
+    "status": "pending_coordinates"
+  },
+  {
+    "zone_id": "FLEX_ANGAHUAN",
+    "zone_name": "Angahuan",
+    "route_id": "SUBURBAN_COMBIS_REGION",
+    "geometry": null,
+    "status": "pending_coordinates"
+  }
+]

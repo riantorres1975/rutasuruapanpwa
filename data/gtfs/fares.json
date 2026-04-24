@@ -1,0 +1,26 @@
+[
+  {
+    "fare_id": "URBAN_BUS_CASH_2026",
+    "price": 11,
+    "currency_type": "MXN",
+    "payment_method": "cash",
+    "transfers": 0,
+    "applies_to": "urban_bus"
+  },
+  {
+    "fare_id": "TELEFERICO_CARD_2026",
+    "price": 11,
+    "currency_type": "MXN",
+    "payment_method": "prepaid_card",
+    "transfers": 0,
+    "applies_to": "teleferico"
+  },
+  {
+    "fare_id": "MOBILITY_CARD_PURCHASE_2026",
+    "price": 19,
+    "currency_type": "MXN",
+    "payment_method": "card_purchase",
+    "transfers": 0,
+    "applies_to": "mobility_card"
+  }
+]

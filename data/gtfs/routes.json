@@ -1,0 +1,30 @@
+[
+  {
+    "route_id": "TELEFERICO_URUAPAN",
+    "agency_id": "URUAPAN_MOVILIDAD",
+    "route_short_name": "Teleferico",
+    "route_long_name": "Teleferico Uruapan Hospital Regional - Mercado Poniente",
+    "route_type": 4,
+    "route_color": "00D4AA",
+    "route_text_color": "061318"
+  },
+  {
+    "route_id": "URBAN_BUSES_URUAPAN",
+    "agency_id": "TATA_VASCO_COLECTIVOS_URUAPAN",
+    "route_short_name": "Camiones urbanos",
+    "route_long_name": "36 rutas urbanas de Uruapan desde data/rutas-grouped.json",
+    "route_type": 3,
+    "route_color": "64D2FF",
+    "route_text_color": "061318"
+  },
+  {
+    "route_id": "SUBURBAN_COMBIS_REGION",
+    "agency_id": "COMBIS_SUBURBANAS",
+    "route_short_name": "Combis suburbanas",
+    "route_long_name": "Conexiones suburbanas hacia Nuevo San Juan Parangaricutiro, Capacuaro, Paracho y Angahuan",
+    "route_type": 3,
+    "route_color": "FFD60A",
+    "route_text_color": "061318",
+    "gtfs_flex": true
+  }
+]

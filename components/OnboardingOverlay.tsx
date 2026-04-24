@@ -207,12 +207,23 @@ export default function OnboardingOverlay() {
       />
 
       {/* ── Card ───────────────────────────────────────────────────────────── */}
+      {/*
+        Posicionamiento:
+        - Mobile (< md): inset-x-4 bottom-10 — centrado en toda la pantalla, sobre el mapa.
+        - Desktop (md+): centrado sobre el área del mapa (excluye el sidebar ~380-420px).
+          Usamos left-[380px] en md y left-[420px] en lg para que el centro calculado
+          sea solo sobre el mapa. bottom-10 se mantiene para que aparezca en zona inferior visible.
+      */}
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Bienvenida a Rutas Uruapan"
+        aria-label="Bienvenida a VoyUruapan"
         aria-live="polite"
-        className={`fixed inset-x-4 bottom-10 z-50 mx-auto max-w-sm rounded-3xl border border-white/15 bg-[var(--surface-strong)] shadow-[0_24px_60px_rgba(0,0,0,0.55)] backdrop-blur-2xl transition-all duration-500 will-change-transform ${
+        className={`fixed z-50 mx-auto max-w-sm rounded-3xl border border-white/15 bg-[var(--surface-strong)] shadow-[0_24px_60px_rgba(0,0,0,0.55)] backdrop-blur-2xl transition-all duration-500 will-change-transform
+          inset-x-4 bottom-10
+          md:inset-x-auto md:bottom-10 md:left-[calc(380px+5%)] md:right-[5%]
+          lg:left-[calc(420px+5%)] lg:right-[5%]
+          ${
           visible
             ? "translate-y-0 opacity-100 pointer-events-auto"
             : "translate-y-10 opacity-0 pointer-events-none"
@@ -225,7 +236,7 @@ export default function OnboardingOverlay() {
           <button
             type="button"
             onClick={dismiss}
-            className="absolute right-4 top-4 z-10 rounded-full px-2.5 py-1 text-[11px] font-medium text-slate-500 transition hover:text-slate-300 dark:text-slate-400"
+            className="absolute right-4 top-4 z-10 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[12px] font-medium text-slate-400 transition hover:bg-white/10 hover:text-slate-200 active:scale-[0.97]"
             aria-label="Saltar introducción"
           >
             Saltar
@@ -272,12 +283,12 @@ export default function OnboardingOverlay() {
               </p>
 
               {/* Title */}
-              <h2 className="text-center text-xl font-bold leading-snug text-slate-900 dark:text-slate-50">
+              <h2 className="text-center text-xl font-bold leading-snug text-slate-50">
                 {current.title}
               </h2>
 
               {/* Description */}
-              <p className="text-center text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+              <p className="text-center text-[14px] leading-relaxed text-slate-400">
                 {current.description}
               </p>
             </div>
@@ -285,21 +296,21 @@ export default function OnboardingOverlay() {
         </div>
 
         {/* ── Footer: dots + button ───────────────────────────────────────── */}
-        <div className="flex items-center justify-between gap-4 border-t border-slate-200/60 px-7 py-5 dark:border-slate-700/60">
+        <div className="flex items-center justify-between gap-4 border-t border-white/8 px-7 py-5">
           <StepDots total={steps.length} current={step} />
 
           <button
             type="button"
             onClick={goNext}
-            className={`inline-flex h-11 items-center gap-1.5 rounded-full px-5 text-sm font-semibold transition active:scale-[0.97] ${
+            className={`inline-flex h-11 items-center gap-1.5 rounded-full px-5 text-[14px] font-semibold transition active:scale-[0.97] ${
               isLast
-                ? "bg-cyan-500 text-white shadow-[0_4px_20px_rgba(6,182,212,0.45)] hover:bg-cyan-400"
-                : "bg-slate-900 text-slate-50 hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
+                ? "bg-[#00D4AA] text-[#05131a] shadow-[0_4px_20px_rgba(0,212,170,0.40)] hover:bg-[#00bfa0]"
+                : "border border-white/15 bg-white/8 text-slate-100 hover:bg-white/15"
             }`}
           >
             {isLast ? (
               <>
-                ¡Entendido, empezar!
+                Empezar
                 <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
                   <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>

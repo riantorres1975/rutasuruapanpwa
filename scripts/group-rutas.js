@@ -144,6 +144,31 @@ const groupedRoutes = Array.from(grouped.values())
   })
   .sort((a, b) => a.ruta.localeCompare(b.ruta, "es", { sensitivity: "base", numeric: true }));
 
+const telefericoRoute = {
+  ruta: "Teleférico Uruapan",
+  color: "#00D4AA",
+  ida: [
+    [-102.02093, 19.396299],
+    [-102.025606, 19.4146744],
+    [-102.0375379, 19.4216787],
+    [-102.0477917, 19.4211717],
+    [-102.0585911, 19.419822],
+    [-102.0769769, 19.4306165]
+  ],
+  vuelta: [
+    [-102.0769769, 19.4306165],
+    [-102.0585911, 19.419822],
+    [-102.0477917, 19.4211717],
+    [-102.0375379, 19.4216787],
+    [-102.025606, 19.4146744],
+    [-102.02093, 19.396299]
+  ]
+};
+
+if (!groupedRoutes.some((route) => normalizeKey(route.ruta) === normalizeKey(telefericoRoute.ruta))) {
+  groupedRoutes.push(telefericoRoute);
+}
+
 fs.writeFileSync(outputFile, JSON.stringify(groupedRoutes, null, 2));
 
 console.log(`Rutas originales leidas: ${routes.length}`);

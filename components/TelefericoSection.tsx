@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { TELEFERICO_URUAPAN } from "@/lib/mobility-config";
 
 // ─── Station data for Teleférico route ────────────────────────────────────────
 
@@ -61,8 +62,8 @@ export const TELEFERICO_LINE_COORDS: [number, number][] = TELEFERICO_STATIONS.ma
 );
 
 const FARES = [
-  { label: "Adulto", price: "$15", icon: "👤" },
-  { label: "Estudiante", price: "$10", icon: "🎒" },
+  { label: "Viaje", price: TELEFERICO_URUAPAN.fare, icon: "👤" },
+  { label: "Pago", price: "Tarjeta", icon: "🎫" },
 ];
 
 // ─── Compact card shown inside RouteList ──────────────────────────────────────
@@ -119,7 +120,7 @@ export function TelefericoCard({ onOpen, isSuggested }: TelefericoCardProps) {
               )}
             </div>
             <p className="mt-0.5 text-[11px] font-medium text-teal-100">
-              6 estaciones · $15 adulto · cada 5 min
+              {TELEFERICO_URUAPAN.stations.length} estaciones · {TELEFERICO_URUAPAN.fare} · {TELEFERICO_URUAPAN.frequency.toLowerCase()}
             </p>
           </div>
         </div>
@@ -153,15 +154,15 @@ type TelefericoDetailProps = {
 
 function InfoRow({ icon, label, value }: { icon: string; label: string; value: string }) {
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-slate-200/60 bg-white/60 px-3.5 py-3 dark:border-slate-700/60 dark:bg-slate-800/60">
+    <div className="flex items-center gap-3 rounded-xl border border-white/8 bg-white/5 px-3.5 py-3">
       <span className="text-xl" aria-hidden="true">
         {icon}
       </span>
       <div className="min-w-0">
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
           {label}
         </p>
-        <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">{value}</p>
+        <p className="truncate text-[13px] font-semibold text-slate-100">{value}</p>
       </div>
     </div>
   );
@@ -209,7 +210,7 @@ export function TelefericoDetail({ onClose, onShowOnMap }: TelefericoDetailProps
             {[
               { label: "Estaciones", value: "6" },
               { label: "Frecuencia", value: "5 min" },
-              { label: "Horario", value: "6–22h" },
+              { label: "Horario", value: TELEFERICO_URUAPAN.hours },
             ].map((stat) => (
               <div
                 key={stat.label}
@@ -263,14 +264,14 @@ export function TelefericoDetail({ onClose, onShowOnMap }: TelefericoDetailProps
               </div>
               {/* Content */}
               <div className="flex-1 pb-3">
-                <div className="rounded-xl border border-slate-200/60 bg-white/60 px-3.5 py-2.5 dark:border-slate-700/60 dark:bg-slate-800/60">
+                <div className="rounded-xl border border-white/8 bg-white/5 px-3.5 py-2.5">
                   <div className="flex items-center gap-2">
                     <span aria-hidden="true">{station.icon}</span>
-                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                    <p className="text-[13px] font-semibold text-slate-100">
                       {station.fullName}
                     </p>
                   </div>
-                  <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+                  <p className="mt-0.5 text-[11px] text-slate-500">
                     {station.desc}
                   </p>
                 </div>
@@ -282,22 +283,22 @@ export function TelefericoDetail({ onClose, onShowOnMap }: TelefericoDetailProps
 
       {/* Fares */}
       <div>
-        <h3 className="mb-2.5 text-[11px] font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+        <h3 className="mb-2.5 text-[11px] font-semibold uppercase tracking-widest text-slate-500">
           Tarifas
         </h3>
         <div className="grid grid-cols-2 gap-2">
           {FARES.map((fare) => (
             <div
               key={fare.label}
-              className="rounded-xl border border-teal-200/60 bg-teal-50/80 px-4 py-3 dark:border-teal-700/40 dark:bg-teal-900/20"
+              className="rounded-xl border border-teal-400/20 bg-teal-500/10 px-4 py-3"
             >
               <p className="text-xl" aria-hidden="true">
                 {fare.icon}
               </p>
-              <p className="mt-1 text-2xl font-extrabold text-teal-700 dark:text-teal-300">
+              <p className="mt-1 text-2xl font-extrabold text-teal-300">
                 {fare.price}
               </p>
-              <p className="text-[11px] font-medium text-slate-600 dark:text-slate-400">
+              <p className="text-[11px] font-medium text-slate-400">
                 {fare.label}
               </p>
             </div>
@@ -311,17 +312,16 @@ export function TelefericoDetail({ onClose, onShowOnMap }: TelefericoDetailProps
           Operación
         </h3>
         <div className="space-y-2">
-          <InfoRow icon="🕐" label="Horario" value="6:00 – 22:00 hrs, todos los días" />
-          <InfoRow icon="⏱️" label="Frecuencia" value="Cada 5 minutos" />
-          <InfoRow icon="📍" label="Duración por tramo" value="~8 minutos de extremo a extremo" />
+          <InfoRow icon="🕐" label="Horario" value={`${TELEFERICO_URUAPAN.hours}, todos los días`} />
+          <InfoRow icon="⏱️" label="Frecuencia" value={TELEFERICO_URUAPAN.frequency} />
+          <InfoRow icon="📍" label="Duración" value={TELEFERICO_URUAPAN.tripDuration} />
         </div>
       </div>
 
       {/* Disclaimer */}
-      <div className="rounded-xl border border-amber-200/60 bg-amber-50/70 px-4 py-3 dark:border-amber-700/30 dark:bg-amber-900/15">
-        <p className="text-[11px] leading-relaxed text-amber-800 dark:text-amber-300">
-          ℹ️ La información de horarios y tarifas puede variar. Se recomienda confirmar en
-          taquilla antes de abordar.
+      <div className="rounded-xl border border-amber-400/20 bg-amber-500/8 px-4 py-3">
+        <p className="text-[11px] leading-relaxed text-amber-300/90">
+          La informacion de horarios y tarifas puede variar. Se recomienda confirmar en taquilla antes de abordar.
         </p>
       </div>
 

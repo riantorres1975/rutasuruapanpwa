@@ -1,0 +1,23 @@
+[
+  {
+    "from_stop_id": "TEL_E3",
+    "to_route_id": "URBAN_BUSES_URUAPAN",
+    "transfer_type": 2,
+    "min_transfer_time": 180,
+    "note": "Conexion referencial con rutas urbanas cercanas a Boulevard Industrial / Plaza Agora."
+  },
+  {
+    "from_stop_id": "TEL_E4",
+    "to_route_id": "URBAN_BUSES_URUAPAN",
+    "transfer_type": 2,
+    "min_transfer_time": 180,
+    "note": "Conexion referencial con rutas urbanas cercanas a Presidencia."
+  },
+  {
+    "from_stop_id": "TEL_E5",
+    "to_route_id": "URBAN_BUSES_URUAPAN",
+    "transfer_type": 2,
+    "min_transfer_time": 180,
+    "note": "Conexion referencial con rutas urbanas cercanas a Centro Historico."
+  }
+]

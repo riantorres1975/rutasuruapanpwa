@@ -16,9 +16,13 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "Rutas Uruapan",
-  description: "Visualizador de rutas de transporte publico en Uruapan, Michoacan",
-  applicationName: "Rutas Uruapan",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://rutasuruapanpwa.vercel.app"),
+  title: {
+    default: "VoyUruapan | Rutas de camiones y Teleférico en Uruapan",
+    template: "%s | VoyUruapan"
+  },
+  description: "Rutas de camiones, combis suburbanas y Teleférico en Uruapan, Michoacán.",
+  applicationName: "VoyUruapan",
   manifest: "/manifest.json",
   icons: {
     icon: [
@@ -31,7 +35,18 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Rutas"
+    title: "VoyUruapan"
+  },
+  openGraph: {
+    siteName: "VoyUruapan",
+    locale: "es_MX",
+    type: "website",
+    images: [{ url: "/icons/icon-512.png", width: 512, height: 512, alt: "VoyUruapan" }]
+  },
+  twitter: {
+    card: "summary",
+    title: "VoyUruapan",
+    description: "Rutas de camiones y Teleférico en Uruapan."
   }
 };
 
@@ -45,7 +60,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" suppressHydrationWarning>
+    <html lang="es-MX" suppressHydrationWarning>
       <body
         className={`${plusJakarta.variable} ${spaceGrotesk.variable} min-h-dvh bg-[var(--background)] font-sans text-[var(--foreground)] antialiased`}
       >

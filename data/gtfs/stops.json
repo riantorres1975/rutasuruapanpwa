@@ -1,0 +1,44 @@
+[
+  {
+    "stop_id": "TEL_E1",
+    "stop_name": "Hospital Regional",
+    "stop_lat": 19.396299,
+    "stop_lon": -102.02093,
+    "location_type": 0
+  },
+  {
+    "stop_id": "TEL_E2",
+    "stop_name": "Libramiento Aeropuerto",
+    "stop_lat": 19.4146744,
+    "stop_lon": -102.025606,
+    "location_type": 0
+  },
+  {
+    "stop_id": "TEL_E3",
+    "stop_name": "Boulevard Industrial / Plaza Agora",
+    "stop_lat": 19.4216787,
+    "stop_lon": -102.0375379,
+    "location_type": 0
+  },
+  {
+    "stop_id": "TEL_E4",
+    "stop_name": "Presidencia",
+    "stop_lat": 19.4211717,
+    "stop_lon": -102.0477917,
+    "location_type": 0
+  },
+  {
+    "stop_id": "TEL_E5",
+    "stop_name": "Centro Historico",
+    "stop_lat": 19.419822,
+    "stop_lon": -102.0585911,
+    "location_type": 0
+  },
+  {
+    "stop_id": "TEL_E6",
+    "stop_name": "Mercado Poniente",
+    "stop_lat": 19.4306165,
+    "stop_lon": -102.0769769,
+    "location_type": 0
+  }
+]

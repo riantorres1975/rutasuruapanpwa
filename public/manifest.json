@@ -1,13 +1,29 @@
 {
-  "name": "Rutas Uruapan",
-  "short_name": "Rutas",
-  "description": "Visualizador de rutas de transporte publico en Uruapan, Michoacan",
-  "start_url": "/",
+  "name": "VoyUruapan",
+  "short_name": "Voy",
+  "id": "/mapa",
+  "description": "Rutas de camiones, combis suburbanas y Teleférico en Uruapan, Michoacán",
+  "start_url": "/mapa",
   "scope": "/",
   "display": "standalone",
+  "categories": ["travel", "navigation", "utilities"],
   "theme_color": "#0b1220",
   "background_color": "#0b1220",
   "orientation": "portrait",
+  "shortcuts": [
+    {
+      "name": "Abrir mapa",
+      "short_name": "Mapa",
+      "url": "/mapa",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Rutas de camiones",
+      "short_name": "Rutas",
+      "url": "/#tarifas",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ],
   "icons": [
     {
       "src": "/icons/icon-192.png",

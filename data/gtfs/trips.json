@@ -1,0 +1,16 @@
+[
+  {
+    "route_id": "TELEFERICO_URUAPAN",
+    "service_id": "DAILY_0500_2300",
+    "trip_id": "TELEFERICO_IDA_DAILY",
+    "trip_headsign": "Mercado Poniente",
+    "direction_id": 0
+  },
+  {
+    "route_id": "TELEFERICO_URUAPAN",
+    "service_id": "DAILY_0500_2300",
+    "trip_id": "TELEFERICO_VUELTA_DAILY",
+    "trip_headsign": "Hospital Regional",
+    "direction_id": 1
+  }
+]

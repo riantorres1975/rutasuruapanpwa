@@ -7,6 +7,8 @@ const DATA_CACHE_NAME = "rutas-data-__BUILD_ID__";
 // The data endpoint is handled lazily via staleWhileRevalidate on first fetch.
 const APP_SHELL_ASSETS = [
   "/",
+  "/mapa",
+  "/privacidad",
   "/manifest.json",
   "/offline.html",
   "/icons/icon-192.png",
@@ -92,9 +94,14 @@ async function networkFirstNavigation(request) {
       return cached;
     }
 
-    const root = await caches.match("/");
-    if (root) {
-      return root;
+    const mapShell = await caches.match("/mapa");
+    if (mapShell) {
+      return mapShell;
+    }
+
+    const landing = await caches.match("/");
+    if (landing) {
+      return landing;
     }
 
     const offline = await caches.match("/offline.html");
