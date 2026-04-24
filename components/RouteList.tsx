@@ -51,12 +51,7 @@ export default function RouteList({
   const hasNearby = nearbyRouteIds.length > 0;
   const telefericoRouteId = useMemo(() => {
     const telefericoRoute = routes.find((route) => route.nombre === "Teleférico Uruapan");
-    if (telefericoRoute) {
-      return telefericoRoute.id;
-    }
-
-    const lastRoute = routes[routes.length - 1];
-    return lastRoute ? lastRoute.id : null;
+    return telefericoRoute ? telefericoRoute.id : null;
   }, [routes]);
 
   const handleShowTelefericoOnMap = () => {

@@ -975,7 +975,7 @@ export default function HomePage() {
             nearbyRouteIds={nearbyRouteIds}
             selectedRouteId={selectedRouteId}
             onClearSelection={handleClearSelection}
-            onShowTeleferico={() => {/* no-op en desktop, el sidebar permanece abierto */}}
+            onShowTeleferico={() => { setShowTeleferico(true); }}
             onSelectRoute={handleSelectRoute}
           />
         </div>
@@ -1165,6 +1165,7 @@ export default function HomePage() {
             setIsSheetOpen(false);
           }}
           onShowTeleferico={() => {
+            setShowTeleferico(true);
             setIsSheetOpen(false);
           }}
           onSelectRoute={(routeId) => {

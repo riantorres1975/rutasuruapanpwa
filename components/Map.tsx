@@ -828,7 +828,7 @@ function MapComponent({
         if (map.getLayer(layer)) map.setLayoutProperty(layer, "visibility", lineVis);
       }
       if (map.getLayer(TELEFERICO_STATIONS_LAYER)) {
-        map.setLayoutProperty(TELEFERICO_STATIONS_LAYER, "visibility", "visible");
+        map.setLayoutProperty(TELEFERICO_STATIONS_LAYER, "visibility", lineVis);
       }
     };
 
