@@ -289,6 +289,7 @@ export default function HomePage() {
   const [activePoint, setActivePoint] = useState<ActivePoint>("origin");
   const [suggestions, setSuggestions] = useState<RouteOption[]>([]);
   const [transfers, setTransfers] = useState<TransferOption[]>([]);
+  const [selectedTransfer, setSelectedTransfer] = useState<TransferOption | null>(null);
   const [isCalculatingSuggestions, setIsCalculatingSuggestions] = useState(false);
   const [showHint, setShowHint] = useState(true);
   // nearbyToast: null = hidden, number = route count (0 means none found)
@@ -431,6 +432,7 @@ export default function HomePage() {
 
   const handleClearSelection = useCallback(() => {
     setSelectedRouteId(null);
+    setSelectedTransfer(null);
     setShowTeleferico(false);
   }, []);
 
@@ -482,6 +484,7 @@ export default function HomePage() {
     if (!originPoint || !destinationPoint) {
       setSuggestions([]);
       setTransfers([]);
+      setSelectedTransfer(null);
       setIsCalculatingSuggestions(false);
       return;
     }
@@ -787,7 +790,7 @@ export default function HomePage() {
                     <li key={`${t.routeAId}-${t.routeBId}`}>
                       <button
                         type="button"
-                        onClick={() => { handleSelectRoute(t.routeAId); setTransfers([]); }}
+                        onClick={() => { setSelectedTransfer(t); setTransfers([]); }}
                         className="flex w-full items-center gap-2 rounded-xl border border-amber-400/20 bg-amber-500/8 px-3 py-2 text-left transition active:scale-[0.99] hover:bg-amber-500/12"
                       >
                         <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0 text-amber-400" aria-hidden="true">
@@ -816,6 +819,25 @@ export default function HomePage() {
                   Mover destino
                 </button>
               </div>
+            ) : selectedTransfer ? (
+              <div className="px-4 py-3">
+                <p className="text-[10px] font-bold tracking-[2px] text-amber-400/80">TRANSBORDO SELECCIONADO</p>
+                <div className="mt-2 flex items-center gap-2">
+                  <span className="flex-1 truncate text-[13px] font-semibold text-slate-100">{selectedTransfer.routeAName}</span>
+                  <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0 text-amber-400" aria-hidden="true">
+                    <path d="M8 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3M16 3h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3M12 8v8M9 11l3-3 3 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  <span className="flex-1 truncate text-[13px] font-semibold text-slate-100">{selectedTransfer.routeBName}</span>
+                </div>
+                <p className="mt-1 text-[11px] text-slate-400">Camina ~{Math.round(selectedTransfer.walkMeters)} m en el punto de transbordo</p>
+                <button
+                  type="button"
+                  onClick={() => { setSelectedTransfer(null); setTransfers(transfers.length === 0 ? [] : transfers); handleClearSelection(); }}
+                  className="mt-3 inline-flex h-9 w-full items-center justify-center rounded-xl border border-white/10 bg-white/5 text-[12px] font-semibold text-slate-300 transition active:scale-[0.97]"
+                >
+                  Limpiar
+                </button>
+              </div>
             ) : (
               <div className="px-4 py-3">
                 <div className="flex items-start gap-3">
@@ -839,30 +861,51 @@ export default function HomePage() {
               </div>
             )}
 
-            {/* Ruta activa */}
-            {(selectedRoute || showTeleferico) && (
+            {/* Ruta activa / transbordo activo */}
+            {(selectedRoute || showTeleferico || selectedTransfer) && (
               <div className="flex items-center gap-2 border-t border-white/8 px-4 py-2.5">
-                <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: selectedRoute?.color ?? "#14b8a6" }} aria-hidden="true" />
-                <span className="min-w-0 flex-1 truncate text-[12px] font-medium text-slate-300">
-                  {selectedRoute?.nombre ?? "Teleférico Uruapan"}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => shareRoute(selectedRoute?.nombre ?? "Teleférico")}
-                  className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-white/5 text-slate-400 transition hover:bg-white/10 active:scale-95"
-                  aria-label={`Compartir ${selectedRoute?.nombre ?? "Teleférico"}`}
-                >
-                  <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
-                    <path d="M8.59 13.51l6.83 3.98m-.01-10.98-6.82 3.98M21 5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm0 14a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM3 12a3 3 0 1 1 6 0 3 3 0 0 1-6 0Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </button>
-                <button
-                  type="button"
-                  onClick={handleClearSelection}
-                  className="shrink-0 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-[11px] font-semibold text-slate-300 transition active:scale-[0.97]"
-                >
-                  Limpiar
-                </button>
+                {selectedTransfer ? (
+                  <>
+                    <span className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden">
+                      <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-blue-400" aria-hidden="true" />
+                      <span className="truncate text-[12px] font-medium text-slate-300">{selectedTransfer.routeAName}</span>
+                      <span className="shrink-0 text-[10px] text-amber-400 font-bold">→</span>
+                      <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-emerald-400" aria-hidden="true" />
+                      <span className="truncate text-[12px] font-medium text-slate-300">{selectedTransfer.routeBName}</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleClearSelection}
+                      className="shrink-0 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-[11px] font-semibold text-slate-300 transition active:scale-[0.97]"
+                    >
+                      Limpiar
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: selectedRoute?.color ?? "#14b8a6" }} aria-hidden="true" />
+                    <span className="min-w-0 flex-1 truncate text-[12px] font-medium text-slate-300">
+                      {selectedRoute?.nombre ?? "Teleférico Uruapan"}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => shareRoute(selectedRoute?.nombre ?? "Teleférico")}
+                      className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-white/5 text-slate-400 transition hover:bg-white/10 active:scale-95"
+                      aria-label={`Compartir ${selectedRoute?.nombre ?? "Teleférico"}`}
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
+                        <path d="M8.59 13.51l6.83 3.98m-.01-10.98-6.82 3.98M21 5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm0 14a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM3 12a3 3 0 1 1 6 0 3 3 0 0 1-6 0Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleClearSelection}
+                      className="shrink-0 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-[11px] font-semibold text-slate-300 transition active:scale-[0.97]"
+                    >
+                      Limpiar
+                    </button>
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -1029,6 +1072,7 @@ export default function HomePage() {
           originPoint={originPoint}
           destinationPoint={destinationPoint}
           showTeleferico={showTeleferico}
+          selectedTransfer={selectedTransfer}
           onMapPick={handleMapPick}
           onSelectRoute={handleSelectRoute}
           onNearbyRoutesFound={handleNearbyRoutesFound}

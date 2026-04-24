@@ -12,6 +12,7 @@ import {
   URUAPAN_CENTER
 } from "@/lib/map";
 import type { Coordinates, RouteData } from "@/lib/types";
+import type { TransferOption } from "@/lib/transfers";
 
 const LAYER_GLOW_ID = "routes-glow";
 const LAYER_LINE_ID = "routes-line";
@@ -25,6 +26,10 @@ const TELEFERICO_GLOW_LAYER = "teleferico-glow";
 const TELEFERICO_STATIONS_LAYER = "teleferico-stations";
 const TELEFERICO_COLOR = "#00D4AA";
 const TELEFERICO_ROUTE_NAME = "Teleférico Uruapan";
+const TRANSFER_SOURCE = "transfer-source";
+const TRANSFER_SEG_A_LAYER = "transfer-seg-a";
+const TRANSFER_SEG_B_LAYER = "transfer-seg-b";
+const TRANSFER_PIN_LAYER = "transfer-pin";
 const CAMERA_DURATION = 1200;
 const MIN_DRAW_DURATION = 1200;
 const MAX_DRAW_DURATION = 1800;
@@ -43,6 +48,7 @@ type MapProps = {
   originPoint: [number, number] | null;
   destinationPoint: [number, number] | null;
   showTeleferico?: boolean;
+  selectedTransfer?: TransferOption | null;
   onMapPick: (point: [number, number]) => void;
   onSelectRoute: (routeId: number) => void;
   onNearbyRoutesFound: (routeIds: number[]) => void;
@@ -540,6 +546,7 @@ function MapComponent({
   originPoint,
   destinationPoint,
   showTeleferico = false,
+  selectedTransfer = null,
   onMapPick,
   onSelectRoute,
   onNearbyRoutesFound
@@ -564,6 +571,7 @@ function MapComponent({
   const onNearbyRoutesFoundRef = useRef(onNearbyRoutesFound);
   const showTelefericoRef = useRef(showTeleferico);
   const telefericoGeoJSONRef = useRef<any>(null);
+  const selectedTransferRef = useRef(selectedTransfer);
 
   const [isLoading, setIsLoading] = useState(true);
   const [locationLoading, setLocationLoading] = useState(false);
@@ -637,6 +645,83 @@ function MapComponent({
       );
     }
   }, [showTeleferico]);
+
+  useEffect(() => {
+    selectedTransferRef.current = selectedTransfer;
+    const map = mapRef.current;
+    if (!map || !isMapReadyRef.current) return;
+
+    const clearTransferLayers = () => {
+      for (const layer of [TRANSFER_SEG_A_LAYER, TRANSFER_SEG_B_LAYER, TRANSFER_PIN_LAYER]) {
+        if (map.getLayer(layer)) map.removeLayer(layer);
+      }
+      if (map.getSource(TRANSFER_SOURCE)) map.removeSource(TRANSFER_SOURCE);
+    };
+
+    clearTransferLayers();
+
+    if (!selectedTransfer) return;
+
+    const geojson: GeoJSON.FeatureCollection = {
+      type: "FeatureCollection",
+      features: [
+        {
+          type: "Feature",
+          properties: { type: "segA" },
+          geometry: { type: "LineString", coordinates: selectedTransfer.segmentA as number[][] }
+        },
+        {
+          type: "Feature",
+          properties: { type: "segB" },
+          geometry: { type: "LineString", coordinates: selectedTransfer.segmentB as number[][] }
+        },
+        {
+          type: "Feature",
+          properties: { type: "pin" },
+          geometry: { type: "Point", coordinates: selectedTransfer.transferPoint as number[] }
+        }
+      ]
+    };
+
+    map.addSource(TRANSFER_SOURCE, { type: "geojson", data: geojson });
+
+    map.addLayer({
+      id: TRANSFER_SEG_A_LAYER,
+      type: "line",
+      source: TRANSFER_SOURCE,
+      filter: ["==", ["get", "type"], "segA"],
+      layout: { "line-cap": "round", "line-join": "round" },
+      paint: { "line-color": "#60a5fa", "line-width": 5, "line-opacity": 0.95 }
+    });
+
+    map.addLayer({
+      id: TRANSFER_SEG_B_LAYER,
+      type: "line",
+      source: TRANSFER_SOURCE,
+      filter: ["==", ["get", "type"], "segB"],
+      layout: { "line-cap": "round", "line-join": "round" },
+      paint: { "line-color": "#34d399", "line-width": 5, "line-opacity": 0.95 }
+    });
+
+    map.addLayer({
+      id: TRANSFER_PIN_LAYER,
+      type: "circle",
+      source: TRANSFER_SOURCE,
+      filter: ["==", ["get", "type"], "pin"],
+      paint: {
+        "circle-radius": 9,
+        "circle-color": "#f59e0b",
+        "circle-stroke-color": "#ffffff",
+        "circle-stroke-width": 2.5
+      }
+    });
+
+    const allCoords = [...selectedTransfer.segmentA, ...selectedTransfer.segmentB];
+    const bounds = getBoundsFromCoordinates(allCoords);
+    if (bounds) {
+      fitBoundsAnimated(map, bounds, { top: 120, right: 32, bottom: 160, left: 32, duration: 1200, maxZoom: 15 });
+    }
+  }, [selectedTransfer]);
 
   const stopRouteAnimation = useCallback(() => {
     animationTokenRef.current += 1;
@@ -869,9 +954,14 @@ function MapComponent({
       map.setStyle(nextStyle);
       map.once("style.load", () => {
         ensureRouteLayers();
-        // Restore teleférico layers after style swap
         if (telefericoGeoJSONRef.current) {
           addTelefericoLayers(telefericoGeoJSONRef.current);
+        }
+        // Re-trigger transfer layers after style swap
+        if (selectedTransferRef.current) {
+          const t = selectedTransferRef.current;
+          selectedTransferRef.current = null;
+          setTimeout(() => { selectedTransferRef.current = t; }, 0);
         }
       });
     };
