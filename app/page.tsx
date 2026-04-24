@@ -782,12 +782,12 @@ export default function HomePage() {
               <div className="px-4 py-3">
                 <p className="text-[10px] font-bold tracking-[2px] text-amber-400/80">CON TRANSBORDO</p>
                 <p className="mt-0.5 text-[12px] text-slate-400">No hay ruta directa. Opciones con cambio de ruta:</p>
-                <ul className="mt-2 space-y-1.5">
+                <ul className="mt-2 max-h-[200px] space-y-1.5 overflow-y-auto">
                   {transfers.map((t) => (
                     <li key={`${t.routeAId}-${t.routeBId}`}>
                       <button
                         type="button"
-                        onClick={() => setSelectedRouteId(t.routeAId)}
+                        onClick={() => { handleSelectRoute(t.routeAId); setTransfers([]); }}
                         className="flex w-full items-center gap-2 rounded-xl border border-amber-400/20 bg-amber-500/8 px-3 py-2 text-left transition active:scale-[0.99] hover:bg-amber-500/12"
                       >
                         <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0 text-amber-400" aria-hidden="true">
