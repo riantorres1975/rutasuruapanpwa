@@ -34,6 +34,7 @@ Los sistemas de transporte público en ciudades intermedias de México carecen d
 | 📍 Geolocalización Inteligente | Filtra rutas a <400m del usuario, indicador de precisión y ranking de cercanía |
 | 🚀 Onboarding | Overlay de bienvenida explicativo usando `localStorage` |
 | 📲 Compartir Ruta | Integración con `navigator.share()` nativo y fallback al portapapeles |
+| 🏷️ Nombres descriptivos | Cada ruta se identifica por su destino (ej. "Jucutacato · Ruta 24") en lista, mapa y link compartido; búsqueda por número o destino |
 | 🔄 Ida / Vuelta | Cambio dinámico de dirección con re-render reactivo |
 | 🎯 Motor de sugerencias A→B | Algoritmo Haversine para matching local sin APIs externas |
 | 📐 Simplificación de trayectorias | Algoritmo Ramer-Douglas-Peucker (RDP) para reducir puntos en rutas de fondo |
@@ -250,6 +251,7 @@ Public transit in mid-size Mexican cities lacks accessible digital information. 
 | 📍 Smart Geolocation | Filters routes <400m from user, accuracy indicator, and proximity ranking |
 | 🚀 Onboarding Flow | Step-by-step explanatory overlay using `localStorage` |
 | 📲 Share Routing | Native integration via `navigator.share()` with clipboard fallback |
+| 🏷️ Descriptive names | Each route is identified by its destination (e.g. "Jucutacato · Ruta 24") in list, map, and shared link; search works by number or destination |
 | 🔄 Outbound / Return | Dynamic direction toggle with reactive re-render |
 | 🎯 A→B Suggestion Engine | Haversine-based local matching, no external APIs |
 | 📐 Path simplification | Ramer-Douglas-Peucker (RDP) algorithm for background route decimation |

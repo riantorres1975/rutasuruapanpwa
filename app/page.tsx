@@ -13,6 +13,7 @@ import NearbyToast from "@/components/NearbyToast";
 import OnboardingOverlay from "@/components/OnboardingOverlay";
 import RouteList from "@/components/RouteList";
 import { useShareRoute } from "@/hooks/useShareRoute";
+import { formatRouteLabel } from "@/lib/route-names";
 import type { Coordinates, GroupedRouteData, ResolvedRouteData, RouteDirection } from "@/lib/types";
 import { computeTransferOptions } from "@/lib/transfers";
 import type { TransferOption } from "@/lib/transfers";
@@ -735,7 +736,7 @@ export default function HomePage() {
               <div className="px-4 py-3">
                 <p className="text-[10px] font-bold tracking-[2px] text-[#00D4AA]/80">RUTA RECOMENDADA</p>
                 <p className="mt-0.5 truncate font-display text-[17px] font-bold leading-tight text-slate-100">
-                  {bestSuggestion.ruta}
+                  {formatRouteLabel(bestSuggestion.ruta)}
                 </p>
                 <div className="mt-2 flex flex-wrap items-center gap-1.5">
                   <span className="inline-flex items-center gap-1 rounded-lg border border-[#00D4AA]/25 bg-[#00D4AA]/10 px-2.5 py-1 text-[12px] font-semibold text-[#00D4AA]">
@@ -761,9 +762,9 @@ export default function HomePage() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => shareRoute(bestSuggestion.ruta)}
+                    onClick={() => shareRoute(formatRouteLabel(bestSuggestion.ruta))}
                     className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-300 transition active:scale-[0.97]"
-                    aria-label={`Compartir ruta ${bestSuggestion.ruta}`}
+                    aria-label={`Compartir ruta ${formatRouteLabel(bestSuggestion.ruta)}`}
                   >
                     <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
                       <path d="M8.59 13.51l6.83 3.98m-.01-10.98-6.82 3.98M21 5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm0 14a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM3 12a3 3 0 1 1 6 0 3 3 0 0 1-6 0Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
@@ -868,10 +869,10 @@ export default function HomePage() {
                   <>
                     <span className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden">
                       <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-blue-400" aria-hidden="true" />
-                      <span className="truncate text-[12px] font-medium text-slate-300">{selectedTransfer.routeAName}</span>
+                      <span className="truncate text-[12px] font-medium text-slate-300">{formatRouteLabel(selectedTransfer.routeAName)}</span>
                       <span className="shrink-0 text-[10px] text-amber-400 font-bold">→</span>
                       <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-emerald-400" aria-hidden="true" />
-                      <span className="truncate text-[12px] font-medium text-slate-300">{selectedTransfer.routeBName}</span>
+                      <span className="truncate text-[12px] font-medium text-slate-300">{formatRouteLabel(selectedTransfer.routeBName)}</span>
                     </span>
                     <button
                       type="button"
@@ -885,13 +886,13 @@ export default function HomePage() {
                   <>
                     <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: selectedRoute?.color ?? "#14b8a6" }} aria-hidden="true" />
                     <span className="min-w-0 flex-1 truncate text-[12px] font-medium text-slate-300">
-                      {selectedRoute?.nombre ?? "Teleférico Uruapan"}
+                      {selectedRoute ? formatRouteLabel(selectedRoute.nombre, selectedRoute.ruta) : "Teleférico Uruapan"}
                     </span>
                     <button
                       type="button"
-                      onClick={() => shareRoute(selectedRoute?.nombre ?? "Teleférico")}
+                      onClick={() => shareRoute(selectedRoute ? formatRouteLabel(selectedRoute.nombre, selectedRoute.ruta) : "Teleférico")}
                       className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-white/5 text-slate-400 transition hover:bg-white/10 active:scale-95"
-                      aria-label={`Compartir ${selectedRoute?.nombre ?? "Teleférico"}`}
+                      aria-label={`Compartir ${selectedRoute ? formatRouteLabel(selectedRoute.nombre, selectedRoute.ruta) : "Teleférico"}`}
                     >
                       <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
                         <path d="M8.59 13.51l6.83 3.98m-.01-10.98-6.82 3.98M21 5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm0 14a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM3 12a3 3 0 1 1 6 0 3 3 0 0 1-6 0Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />

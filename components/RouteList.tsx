@@ -3,6 +3,7 @@
 import Fuse from "fuse.js";
 import { useDeferredValue, useMemo, useState } from "react";
 import TelefericoSection from "@/components/TelefericoSection";
+import { getRouteDestination } from "@/lib/route-names";
 import type { ResolvedRouteData, RouteDirection } from "@/lib/types";
 
 type RouteListProps = {
@@ -37,15 +38,24 @@ export default function RouteList({
 
   const normalizedQuery = deferredQuery.trim();
 
+  const searchableRoutes = useMemo(
+    () =>
+      routes.map((route) => ({
+        ...route,
+        _destino: getRouteDestination(route.ruta) ?? ""
+      })),
+    [routes]
+  );
+
   const fuse = useMemo(
     () =>
-      new Fuse(routes, {
-        keys: ["nombre"],
+      new Fuse(searchableRoutes, {
+        keys: ["nombre", "_destino"],
         threshold: 0.35,
         minMatchCharLength: 1,
         includeScore: false
       }),
-    [routes]
+    [searchableRoutes]
   );
 
   const hasNearby = nearbyRouteIds.length > 0;
@@ -77,7 +87,7 @@ export default function RouteList({
   const filteredRoutes = useMemo(() => {
     const base = normalizedQuery
       ? fuse.search(normalizedQuery).map((result) => result.item)
-      : routes;
+      : searchableRoutes;
 
     if (!hasNearby) return base;
 
@@ -97,7 +107,7 @@ export default function RouteList({
     nearby.sort((a, b) => (nearbyRankMap.get(a.id) ?? 0) - (nearbyRankMap.get(b.id) ?? 0));
 
     return [...nearby, ...rest];
-  }, [normalizedQuery, routes, hasNearby, nearbyRankMap, fuse]);
+  }, [normalizedQuery, searchableRoutes, hasNearby, nearbyRankMap, fuse]);
 
   return (
     <div className="space-y-5">
@@ -284,14 +294,29 @@ export default function RouteList({
                       </span>
                     ) : null}
                     <span className="min-w-0">
-                      <span className="block font-display text-sm font-bold text-slate-100">{route.nombre}</span>
-                      <span className="block text-xs text-white/35">
-                        {route.tieneIda && route.tieneVuelta
+                      {(() => {
+                        const destino = getRouteDestination(route.ruta);
+                        const availability = route.tieneIda && route.tieneVuelta
                           ? "Ida y vuelta disponibles"
                           : route.tieneIda
                             ? "Solo ida disponible"
-                            : "Solo vuelta disponible"}
-                      </span>
+                            : "Solo vuelta disponible";
+                        return destino ? (
+                          <>
+                            <span className="block font-display text-sm font-bold text-slate-100 truncate">{destino}</span>
+                            <span className="block text-[11px] text-white/45">
+                              <span className="font-semibold text-white/60">{route.ruta}</span>
+                              <span className="mx-1.5 text-white/25">·</span>
+                              {availability}
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="block font-display text-sm font-bold text-slate-100">{route.nombre}</span>
+                            <span className="block text-xs text-white/35">{availability}</span>
+                          </>
+                        );
+                      })()}
                     </span>
                   </span>
 
