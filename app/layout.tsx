@@ -38,15 +38,26 @@ export const metadata: Metadata = {
     title: "VoyUruapan"
   },
   openGraph: {
+    title: "VoyUruapan — Rutas de camiones y Teleférico en Uruapan",
+    description: "Encuentra tu ruta en Uruapan. Camiones urbanos, Teleférico y combis en un solo mapa interactivo.",
+    url: "https://rutasuruapanpwa.vercel.app",
     siteName: "VoyUruapan",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "VoyUruapan — Mapa de rutas de transporte en Uruapan"
+      }
+    ],
     locale: "es_MX",
-    type: "website",
-    images: [{ url: "/icons/icon-512.png", width: 512, height: 512, alt: "VoyUruapan" }]
+    type: "website"
   },
   twitter: {
-    card: "summary",
-    title: "VoyUruapan",
-    description: "Rutas de camiones y Teleférico en Uruapan."
+    card: "summary_large_image",
+    title: "VoyUruapan — Rutas Uruapan",
+    description: "Camiones, Teleférico y combis en Uruapan en un mapa interactivo.",
+    images: ["/og-image.png"]
   }
 };
 

@@ -36,6 +36,185 @@ body {
   color: var(--foreground);
 }
 
+@keyframes landing-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes landing-aurora {
+  0%, 100% {
+    opacity: 0.9;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+
+  50% {
+    opacity: 1;
+    transform: translate3d(0, -16px, 0) scale(1.04);
+  }
+}
+
+@keyframes landing-float {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+
+  50% {
+    transform: translateY(-10px) rotate(0.45deg);
+  }
+}
+
+@keyframes glow-breathe {
+  0%, 100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.9;
+    transform: scale(1.08);
+  }
+}
+
+@keyframes route-flow {
+  to {
+    stroke-dashoffset: -160;
+  }
+}
+
+@keyframes station-pulse {
+  0%, 100% {
+    filter: drop-shadow(0 0 0 rgba(0, 212, 170, 0));
+    transform: scale(1);
+  }
+
+  50% {
+    filter: drop-shadow(0 0 10px rgba(0, 212, 170, 0.7));
+    transform: scale(1.08);
+  }
+}
+
+@keyframes grid-drift {
+  to {
+    background-position: 28px 28px;
+  }
+}
+
+.landing-aurora {
+  animation: landing-aurora 9s ease-in-out infinite;
+}
+
+.animate-fade-up {
+  animation: landing-fade-up 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-delay-100 {
+  animation-delay: 100ms;
+}
+
+.animate-delay-200 {
+  animation-delay: 200ms;
+}
+
+.animate-delay-300 {
+  animation-delay: 300ms;
+}
+
+.animate-delay-400 {
+  animation-delay: 400ms;
+}
+
+.animate-delay-500 {
+  animation-delay: 500ms;
+}
+
+.animate-float-panel {
+  animation: landing-float 6s ease-in-out infinite;
+}
+
+.animate-glow-breathe {
+  animation: glow-breathe 5s ease-in-out infinite;
+}
+
+.route-flow {
+  animation: route-flow 10s linear infinite;
+}
+
+.station-pulse {
+  animation: station-pulse 3.2s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.map-grid-drift {
+  animation: grid-drift 12s linear infinite;
+}
+
+.card-lift {
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+.card-lift:hover {
+  border-color: rgba(0, 212, 170, 0.35);
+  box-shadow: 0 18px 60px rgba(0, 212, 170, 0.10);
+  transform: translateY(-4px);
+}
+
+.animated-chip {
+  transition: border-color 180ms ease, color 180ms ease, transform 180ms ease;
+}
+
+.animated-chip:hover {
+  transform: translateY(-2px);
+}
+
+.cta-shine {
+  position: relative;
+  overflow: hidden;
+}
+
+.cta-shine::after {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.32), transparent);
+  content: "";
+  inset: 0;
+  position: absolute;
+  transform: translateX(-130%);
+}
+
+.cta-shine:hover::after {
+  transform: translateX(130%);
+  transition: transform 700ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-aurora,
+  .animate-fade-up,
+  .animate-float-panel,
+  .animate-glow-breathe,
+  .route-flow,
+  .station-pulse,
+  .map-grid-drift {
+    animation: none;
+  }
+
+  .card-lift,
+  .animated-chip,
+  .cta-shine::after {
+    transition: none;
+  }
+
+  .card-lift:hover,
+  .animated-chip:hover {
+    transform: none;
+  }
+}
+
 /* Ring pulsante para botones A/B activos */
 @keyframes ring-pulse {
   0%, 100% {

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import MadeByFooter from "@/components/MadeByFooter";
 import { APP_BRAND, FARES_2026, TELEFERICO_URUAPAN } from "@/lib/mobility-config";
 
 export const metadata: Metadata = {
@@ -37,6 +38,15 @@ const telefericoFaqs = [
     answer: `Las estaciones son ${TELEFERICO_URUAPAN.stations.join(", ")}.`
   }
 ];
+
+const stationDescriptions = [
+  "Principal acceso al Hospital General IMSS y Hospital Regional. Zona de alta demanda en horarios de mañana.",
+  "Acceso noreste de la ciudad. Conexión hacia el Libramiento de Uruapan y zonas industriales.",
+  "Centro cultural y comercial. Cerca del Centro Cultural Ágora de Uruapan y zona de servicios.",
+  "Corazón administrativo de la ciudad. Frente a la Presidencia Municipal de Uruapan.",
+  "Acceso al Parque Nacional Eduardo Ruiz y zona comercial del centro. La estación más transitada.",
+  "Terminal poniente. Conexión con el mercado y colonias del lado oeste de la ciudad."
+] as const;
 
 export default function TelefericoHorarioPage() {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://rutasuruapanpwa.vercel.app";
@@ -136,7 +146,7 @@ export default function TelefericoHorarioPage() {
               <article key={station} className="rounded-2xl border border-white/10 bg-white/5 p-4">
                 <p className="text-xs font-black text-[#00D4AA]">E{index + 1}</p>
                 <h3 className="mt-2 font-display text-lg font-black text-white">{station}</h3>
-                <p className="mt-2 text-sm leading-6 text-slate-400">Conexión potencial con rutas urbanas y puntos cercanos de Uruapan.</p>
+                <p className="mt-2 text-sm leading-6 text-slate-400">{stationDescriptions[index]}</p>
               </article>
             ))}
           </div>
@@ -154,6 +164,8 @@ export default function TelefericoHorarioPage() {
         <p className="mt-8 rounded-2xl border border-amber-400/20 bg-amber-500/10 p-4 text-sm leading-7 text-amber-100">
           La información de horarios y tarifas puede cambiar por operación. Usa esta página como guía de planeación y confirma avisos oficiales antes de abordar.
         </p>
+
+        <MadeByFooter />
       </div>
     </main>
   );

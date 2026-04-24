@@ -34,7 +34,7 @@ export default function BlogIndexPage() {
         <section className="mt-10 grid gap-4 md:grid-cols-2">
           {BLOG_ARTICLES.map((article) => (
             <article key={article.slug} className="rounded-[2rem] border border-white/10 bg-[#0E1526]/80 p-6 transition hover:border-[#00D4AA]/35">
-              <p className="text-xs font-bold uppercase tracking-widest text-[#00D4AA]">{article.keyword}</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-[#00D4AA]">{article.date}</p>
               <h2 className="mt-3 font-display text-2xl font-black text-white">{article.title}</h2>
               <p className="mt-3 text-sm leading-7 text-slate-300">{article.description}</p>
               <Link href={`/blog/${article.slug}`} className="mt-5 inline-flex text-sm font-black text-[#00D4AA]">

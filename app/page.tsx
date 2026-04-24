@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import MadeByFooter from "@/components/MadeByFooter";
 import {
   APP_BRAND,
   FARES_2026,
@@ -9,6 +10,25 @@ import {
   SUBURBAN_CONNECTIONS,
   TELEFERICO_URUAPAN
 } from "@/lib/mobility-config";
+
+const HOW_IT_WORKS_STEPS = [
+  {
+    title: "Abre el mapa",
+    description: "Entra al mapa interactivo con todas las rutas de Uruapan ya cargadas."
+  },
+  {
+    title: "Marca tu origen",
+    description: "Toca el punto del mapa donde estás o usa el botón de ubicación automática."
+  },
+  {
+    title: "Marca tu destino",
+    description: "Toca a dónde quieres llegar. El mapa detecta las rutas más cercanas."
+  },
+  {
+    title: "Compara opciones",
+    description: "VoyUruapan te muestra la ruta recomendada con tiempo estimado y alternativas disponibles."
+  }
+] as const;
 
 export const metadata: Metadata = {
   title: {
@@ -107,16 +127,16 @@ export default function LandingPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
       />
 
-      <section className="relative px-5 pb-16 pt-5 sm:px-8 lg:px-10">
-        <div className="absolute inset-0 -z-0 bg-[radial-gradient(circle_at_10%_0%,rgba(0,212,170,0.18),transparent_30%),radial-gradient(circle_at_90%_15%,rgba(100,210,255,0.12),transparent_32%)]" />
+      <section className="relative isolate px-5 pb-16 pt-5 sm:px-8 lg:px-10">
+        <div className="landing-aurora absolute inset-0 -z-0 bg-[radial-gradient(circle_at_10%_0%,rgba(0,212,170,0.18),transparent_30%),radial-gradient(circle_at_90%_15%,rgba(100,210,255,0.12),transparent_32%)]" />
         <div className="relative z-10 mx-auto flex max-w-6xl items-center justify-between gap-4">
-          <Link href="/" className="inline-flex items-center gap-2 rounded-2xl border border-[#00D4AA]/20 bg-[#0E1526]/90 px-3.5 py-2 backdrop-blur-xl">
+          <Link href="/" className="animate-fade-up inline-flex items-center gap-2 rounded-2xl border border-[#00D4AA]/20 bg-[#0E1526]/90 px-3.5 py-2 backdrop-blur-xl">
             <span className="h-2.5 w-2.5 rounded-full bg-[#00D4AA] shadow-[0_0_18px_rgba(0,212,170,0.9)]" />
             <span className="font-display text-sm font-bold tracking-tight text-white">{APP_BRAND.name}</span>
           </Link>
           <Link
             href="/mapa"
-            className="inline-flex h-10 items-center rounded-full border border-white/15 bg-white/5 px-4 text-sm font-semibold text-white transition hover:border-[#00D4AA]/50 hover:bg-[#00D4AA]/10"
+            className="animate-fade-up animate-delay-100 inline-flex h-10 items-center rounded-full border border-white/15 bg-white/5 px-4 text-sm font-semibold text-white transition hover:border-[#00D4AA]/50 hover:bg-[#00D4AA]/10"
           >
             Abrir mapa
           </Link>
@@ -124,17 +144,17 @@ export default function LandingPage() {
 
         <div className="relative z-10 mx-auto grid max-w-6xl gap-10 pt-14 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:pt-20">
           <div>
-            <p className="mb-4 inline-flex rounded-full border border-[#00D4AA]/25 bg-[#00D4AA]/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.24em] text-[#00D4AA]">
-              Transporte multimodal en Uruapan
-            </p>
-            <h1 className="font-display text-5xl font-black leading-[0.95] tracking-tight text-white sm:text-6xl lg:text-7xl">
-              Rutas de camiones y Teleférico en Uruapan
-            </h1>
-            <p className="mt-5 max-w-2xl text-base leading-7 text-slate-300 sm:text-lg">
-              {APP_BRAND.tagline}. Busca rutas urbanas, conexiones suburbanas y estaciones del Teleférico de Uruapan desde una PWA rápida y ligera.
-            </p>
+             <p className="animate-fade-up mb-4 inline-flex rounded-full border border-[#00D4AA]/25 bg-[#00D4AA]/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.24em] text-[#00D4AA]">
+               Transporte multimodal en Uruapan
+             </p>
+             <h1 className="animate-fade-up animate-delay-100 font-display text-5xl font-black leading-[0.95] tracking-tight text-white sm:text-6xl lg:text-7xl">
+               Rutas de camiones y Teleférico en Uruapan
+             </h1>
+             <p className="animate-fade-up animate-delay-200 mt-5 max-w-2xl text-base leading-7 text-slate-300 sm:text-lg">
+               {APP_BRAND.tagline}. Busca rutas urbanas, conexiones suburbanas y estaciones del Teleférico de Uruapan desde una PWA rápida y ligera.
+             </p>
 
-            <form action="/mapa" className="mt-7 max-w-xl rounded-3xl border border-white/10 bg-[#0E1526]/90 p-2 shadow-[0_20px_80px_rgba(0,0,0,0.35)] backdrop-blur-xl">
+             <form action="/mapa" className="animate-fade-up animate-delay-300 mt-7 max-w-xl rounded-3xl border border-white/10 bg-[#0E1526]/90 p-2 shadow-[0_20px_80px_rgba(0,0,0,0.35)] backdrop-blur-xl">
               <label className="sr-only" htmlFor="destino">¿A donde vas?</label>
               <div className="flex flex-col gap-2 sm:flex-row">
                 <div className="relative flex-1">
@@ -149,43 +169,43 @@ export default function LandingPage() {
                     className="h-12 w-full rounded-2xl border border-white/10 bg-white/5 pl-12 pr-4 text-sm font-medium text-white outline-none transition placeholder:text-white/30 focus:border-[#00D4AA]/50 focus:ring-1 focus:ring-[#00D4AA]/20"
                   />
                 </div>
-                <button className="h-12 rounded-2xl bg-[#00D4AA] px-6 text-sm font-black text-gray-950 transition hover:bg-[#12e7bd]" type="submit">
+                <button className="cta-shine h-12 rounded-2xl bg-[#00D4AA] px-6 text-sm font-black text-gray-950 transition hover:bg-[#12e7bd]" type="submit">
                   Buscar ruta
                 </button>
               </div>
             </form>
 
-            <div className="mt-4 flex flex-wrap gap-2">
+            <div className="animate-fade-up animate-delay-400 mt-4 flex flex-wrap gap-2">
               {LANDING_SEARCH_SUGGESTIONS.slice(0, 6).map((item) => (
-                <Link key={item} href={`/mapa?destino=${encodeURIComponent(item)}`} className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-slate-300 transition hover:border-[#00D4AA]/40 hover:text-[#00D4AA]">
+                <Link key={item} href={`/mapa?destino=${encodeURIComponent(item)}`} className="animated-chip rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-slate-300 transition hover:border-[#00D4AA]/40 hover:text-[#00D4AA]">
                   {item}
                 </Link>
               ))}
             </div>
 
-            <div className="mt-8 flex flex-wrap gap-3 text-xs font-semibold text-slate-400">
+            <div className="animate-fade-up animate-delay-500 mt-8 flex flex-wrap gap-3 text-xs font-semibold text-slate-400">
               {SEO_KEYWORDS.map((keyword) => (
-                <span key={keyword} className="rounded-full bg-white/[0.03] px-3 py-1">{keyword}</span>
+                <span key={keyword} className="animated-chip rounded-full bg-white/[0.03] px-3 py-1">{keyword}</span>
               ))}
             </div>
           </div>
 
-          <div className="relative mx-auto w-full max-w-sm lg:max-w-md">
-            <div className="absolute -inset-8 rounded-[3rem] bg-[#00D4AA]/10 blur-3xl" />
+          <div className="animate-fade-up animate-delay-300 animate-float-panel relative mx-auto w-full max-w-sm lg:max-w-md">
+            <div className="animate-glow-breathe absolute -inset-8 rounded-[3rem] bg-[#00D4AA]/10 blur-3xl" />
             <div className="relative overflow-hidden rounded-[2rem] border border-white/12 bg-[#0B1224] p-4 shadow-[0_30px_120px_rgba(0,0,0,0.55)]">
               <div className="mb-4 flex items-center justify-between rounded-2xl border border-white/10 bg-[#0E1526] px-3 py-2">
                 <span className="inline-flex items-center gap-2 text-sm font-bold"><span className="h-2.5 w-2.5 rounded-full bg-[#00D4AA]" />VoyUruapan</span>
                 <span className="rounded-full bg-white/5 px-2 py-0.5 text-[11px] text-slate-300">41 rutas</span>
               </div>
               <div className="relative h-[430px] overflow-hidden rounded-[1.5rem] bg-[radial-gradient(circle_at_30%_20%,rgba(0,212,170,0.18),transparent_18%),linear-gradient(135deg,#111827,#060913)]">
-                <div className="absolute inset-0 opacity-50 [background-image:linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] [background-size:28px_28px]" />
+                <div className="map-grid-drift absolute inset-0 opacity-50 [background-image:linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] [background-size:28px_28px]" />
                 <svg viewBox="0 0 320 430" className="absolute inset-0 h-full w-full" aria-hidden="true">
-                  <path d="M-20 250 C60 190 95 260 160 215 C225 170 250 230 340 180" fill="none" stroke="#00D4AA" strokeWidth="7" strokeLinecap="round" strokeDasharray="18 12" />
+                  <path className="route-flow" d="M-20 250 C60 190 95 260 160 215 C225 170 250 230 340 180" fill="none" stroke="#00D4AA" strokeWidth="7" strokeLinecap="round" strokeDasharray="18 12" />
                   <path d="M20 85 C105 115 120 190 185 170 C250 150 270 95 330 120" fill="none" stroke="#64D2FF" strokeWidth="3" opacity="0.75" />
                   <path d="M25 360 C70 280 95 250 135 245 C210 235 220 290 295 260" fill="none" stroke="#FFD60A" strokeWidth="3" opacity="0.75" />
                   <path d="M70 15 C60 100 100 160 80 230 C65 290 70 350 35 430" fill="none" stroke="#AF52DE" strokeWidth="3" opacity="0.75" />
                   {[42, 95, 150, 205, 260, 305].map((x, index) => (
-                    <circle key={x} cx={x} cy={index < 2 ? 228 - index * 20 : 212 - index * 7} r="7" fill="#00D4AA" stroke="white" strokeWidth="2" />
+                    <circle key={x} className="station-pulse" style={{ animationDelay: `${index * 180}ms` }} cx={x} cy={index < 2 ? 228 - index * 20 : 212 - index * 7} r="7" fill="#00D4AA" stroke="white" strokeWidth="2" />
                   ))}
                 </svg>
                 <div className="absolute left-4 right-4 top-4 rounded-2xl border border-white/10 bg-[#0E1526]/95 p-2 backdrop-blur-xl">
@@ -207,8 +227,8 @@ export default function LandingPage() {
 
       <section className="px-5 py-12 sm:px-8 lg:px-10">
         <div className="mx-auto grid max-w-6xl gap-4 md:grid-cols-3">
-          {routeModes.map((mode) => (
-            <article key={mode.title} className="card-base p-5">
+          {routeModes.map((mode, index) => (
+            <article key={mode.title} className="animate-fade-up card-base card-lift p-5" style={{ animationDelay: `${index * 100}ms` }}>
               <h2 className="font-display text-xl font-black text-white">{mode.title}</h2>
               <p className="mt-3 text-sm leading-6 text-slate-300">{mode.text}</p>
               <p className="mt-4 text-xs font-bold uppercase tracking-[0.18em] text-[#00D4AA]">{mode.meta}</p>
@@ -225,8 +245,8 @@ export default function LandingPage() {
             <p className="mt-3 text-sm leading-6 text-slate-300">Datos base para calcular rutas combinadas entre camión urbano, combis y Teleférico.</p>
           </div>
           <div className="mt-6 grid gap-3 md:grid-cols-3">
-            {Object.values(FARES_2026).map((fare) => (
-              <div key={fare.label} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+            {Object.values(FARES_2026).map((fare, index) => (
+              <div key={fare.label} className="animate-fade-up card-lift rounded-2xl border border-white/10 bg-white/5 p-4" style={{ animationDelay: `${index * 100}ms` }}>
                 <p className="text-sm font-bold text-slate-300">{fare.label}</p>
                 <p className="mt-2 font-display text-3xl font-black text-white">{fare.price}</p>
                 <p className="mt-2 text-xs leading-5 text-slate-400">{fare.payment}</p>
@@ -254,7 +274,7 @@ export default function LandingPage() {
           <div className="rounded-[2rem] border border-white/10 bg-[#0E1526]/80 p-5">
             <div className="grid gap-3 sm:grid-cols-2">
               {TELEFERICO_URUAPAN.stations.map((station, index) => (
-                <div key={station} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-3">
+                <div key={station} className="animated-chip flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-3">
                   <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-[#00D4AA]/40 bg-[#00D4AA]/10 text-xs font-black text-[#00D4AA]">E{index + 1}</span>
                   <span className="text-sm font-bold text-slate-100">{station}</span>
                 </div>
@@ -268,11 +288,11 @@ export default function LandingPage() {
         <div className="mx-auto max-w-6xl">
           <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#00D4AA]">Como funciona</p>
           <div className="mt-5 grid gap-4 md:grid-cols-4">
-            {["Abre el mapa", "Marca origen", "Marca destino", "Compara opciones"].map((step, index) => (
-              <div key={step} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+            {HOW_IT_WORKS_STEPS.map((step, index) => (
+              <div key={step.title} className="animate-fade-up card-lift rounded-2xl border border-white/10 bg-white/5 p-4" style={{ animationDelay: `${index * 90}ms` }}>
                 <span className="text-xs font-black text-[#00D4AA]">0{index + 1}</span>
-                <h3 className="mt-2 font-display text-lg font-black text-white">{step}</h3>
-                <p className="mt-2 text-sm leading-6 text-slate-400">VoyUruapan calcula alternativas con rutas urbanas, Teleférico y caminata cuando sea necesario.</p>
+                <h3 className="mt-2 font-display text-lg font-black text-white">{step.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-400">{step.description}</p>
               </div>
             ))}
           </div>
@@ -288,7 +308,7 @@ export default function LandingPage() {
             </div>
             <div className="flex flex-wrap gap-2">
               {["Ruta 11 Uruapan", "Ruta 1", "Ruta 5", ...SUBURBAN_CONNECTIONS].map((item) => (
-                <Link key={item} href={`/mapa?destino=${encodeURIComponent(item)}`} className="rounded-full border border-white/10 bg-[#0E1526] px-3 py-2 text-xs font-bold text-slate-200 transition hover:border-[#00D4AA]/50 hover:text-[#00D4AA]">
+                <Link key={item} href={`/mapa?destino=${encodeURIComponent(item)}`} className="animated-chip rounded-full border border-white/10 bg-[#0E1526] px-3 py-2 text-xs font-bold text-slate-200 transition hover:border-[#00D4AA]/50 hover:text-[#00D4AA]">
                   {item}
                 </Link>
               ))}
@@ -302,7 +322,7 @@ export default function LandingPage() {
           <h2 className="font-display text-3xl font-black text-white">Preguntas frecuentes</h2>
           <div className="mt-6 grid gap-3 md:grid-cols-2">
             {LANDING_FAQS.map((item) => (
-              <article key={item.question} className="rounded-2xl border border-white/10 bg-[#0E1526]/80 p-5">
+              <article key={item.question} className="card-lift rounded-2xl border border-white/10 bg-[#0E1526]/80 p-5">
                 <h3 className="font-display text-base font-black text-white">{item.question}</h3>
                 <p className="mt-3 text-sm leading-6 text-slate-300">{item.answer}</p>
               </article>
@@ -319,6 +339,9 @@ export default function LandingPage() {
             <Link href="/blog" className="font-semibold text-slate-200 hover:text-[#00D4AA]">Blog</Link>
             <Link href="/privacidad" className="font-semibold text-slate-200 hover:text-[#00D4AA]">Privacidad</Link>
           </div>
+        </div>
+        <div className="mx-auto max-w-6xl">
+          <MadeByFooter />
         </div>
       </footer>
     </main>
