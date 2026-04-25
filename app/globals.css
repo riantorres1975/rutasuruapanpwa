@@ -32,6 +32,12 @@
     @apply rounded-2xl border border-white/10 bg-[#0E1526] shadow-[0_4px_24px_rgba(0,212,170,0.08)] backdrop-blur-xl;
   }
 
+  /* Cursor crosshair sobre el lienzo del mapa cuando se espera marcar A o B */
+  .mapboxgl-canvas.map-awaiting-pick {
+    cursor: crosshair !important;
+  }
+
+
   /* Safe-area-aware top padding for overlays on notched devices */
   .pt-safe-or-4 {
     padding-top: max(1rem, env(safe-area-inset-top));
@@ -408,6 +414,20 @@ body {
     transparent 75%,
     rgba(14, 18, 8, 0.55) 100%
   );
+}
+
+/* ── Fade suave para card de sugerencias del hero ── */
+@keyframes suggestion-fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.suggestion-fade {
+  animation: suggestion-fade-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .suggestion-fade { animation: none; }
 }
 
 /* ── Tipografía con carácter ── */

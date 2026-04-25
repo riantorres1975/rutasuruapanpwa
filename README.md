@@ -35,14 +35,18 @@ Los sistemas de transporte público en ciudades intermedias de México carecen d
 | 🚀 Onboarding | Overlay de bienvenida explicativo usando `localStorage` |
 | 📲 Compartir Ruta | Integración con `navigator.share()` nativo y fallback al portapapeles |
 | 🏷️ Nombres descriptivos | Cada ruta se identifica por su destino (ej. "Jucutacato · Ruta 24") en lista, mapa y link compartido; búsqueda por número o destino |
-| 🔄 Ida / Vuelta | Cambio dinámico de dirección con re-render reactivo |
+| 🔄 Ida / Vuelta | Cambio dinámico de dirección con re-render reactivo; botón de sugerencia rápida al no encontrar ruta directa |
 | 🎯 Motor de sugerencias A→B | Algoritmo Haversine para matching local sin APIs externas |
+| 🔀 Rutas con trasbordo | Sugerencias A→B con 1 cambio de camión; rutas secundarias atenuadas visualmente para foco en el trasbordo |
 | 📐 Simplificación de trayectorias | Algoritmo Ramer-Douglas-Peucker (RDP) para reducir puntos en rutas de fondo |
 | 🎬 Animación de trazado | Dibujo progresivo de rutas con `requestAnimationFrame` |
 | 📍 Segmento relevante | Al seleccionar una sugerencia, se renderiza solo el segmento A→B |
+| 🎯 Auto-encuadre de pines | La cámara ajusta el viewport automáticamente al marcar A o B |
+| 🖱️ Cursor crosshair | El canvas del mapa muestra cursor de mira mientras se espera marcar A o B |
 | ⚡ Lazy load de datos | El JSON de 314 KB se carga vía `fetch("/api/rutas")` fuera del bundle JS |
 | 📴 PWA completa | Service Worker con caché offline, manifest, instalable en Android/iOS |
 | 🎨 UX fluida | Sin recrear layers de Mapbox: solo se actualiza el GeoJSON source |
+| ✨ HeroMap animado | Card de sugerencias rotatoria con fade suave y dots indicator; bearing rotatorio del mapa |
 
 ---
 
@@ -196,8 +200,9 @@ Mostrar todas las rutas con su resolución completa (miles de puntos) degrada el
 - [x] **Integración del Teleférico** — rutas, estaciones, tiempos y visualización rica
 - [x] **Compartir ruta** — integración nativa y portapapeles
 - [x] **Onboarding** — guía paso a paso para usuarios nuevos
+- [x] **Rutas con trasbordo** — sugerencias A→B con máximo 1 cambio de camión y visualización diferenciada
+- [x] **Auto-encuadre inteligente** — la cámara se ajusta al marcar A, B o al mostrar una ruta sugerida
 - [ ] **Búsqueda de paradas por nombre** — campo de texto con autocomplete fuzzy
-- [ ] **Rutas con trasbordo** — sugerencias A→B con máximo 1 cambio de camión
 - [ ] **Horarios estimados** — basados en patrones históricos de la ciudad
 - [ ] **Modo nocturno adaptativo** — cambio automático según hora del día
 - [ ] **Panel de accesibilidad** — contraste alto, texto grande, screen reader
@@ -252,14 +257,18 @@ Public transit in mid-size Mexican cities lacks accessible digital information. 
 | 🚀 Onboarding Flow | Step-by-step explanatory overlay using `localStorage` |
 | 📲 Share Routing | Native integration via `navigator.share()` with clipboard fallback |
 | 🏷️ Descriptive names | Each route is identified by its destination (e.g. "Jucutacato · Ruta 24") in list, map, and shared link; search works by number or destination |
-| 🔄 Outbound / Return | Dynamic direction toggle with reactive re-render |
+| 🔄 Outbound / Return | Dynamic direction toggle with reactive re-render; quick-flip button when no direct route found |
 | 🎯 A→B Suggestion Engine | Haversine-based local matching, no external APIs |
+| 🔀 Transfer routes | A→B suggestions with 1 bus change; secondary routes visually dimmed to focus on transfer |
 | 📐 Path simplification | Ramer-Douglas-Peucker (RDP) algorithm for background route decimation |
 | 🎬 Route animation | Progressive drawing with `requestAnimationFrame` |
 | 📍 Relevant segment | When a suggestion is selected, only the A→B segment is rendered |
+| 🎯 Pin auto-framing | Camera adjusts viewport automatically when A or B is placed |
+| 🖱️ Crosshair cursor | Map canvas shows crosshair cursor while waiting for A or B placement |
 | ⚡ Lazy data load | 314 KB JSON fetched via `fetch("/api/rutas")` outside the JS bundle |
 | 📴 Full PWA | Service Worker with offline cache, manifest, installable on Android/iOS |
 | 🎨 Smooth UX | No Mapbox layer recreation: only the GeoJSON source is updated |
+| ✨ Animated HeroMap | Rotating suggestion card with smooth fade and dots indicator; slow bearing rotation |
 
 ---
 
@@ -413,8 +422,9 @@ Rendering all routes at full resolution (thousands of points) degrades FPS when 
 - [x] **Cable Car Integration** — map overlay, station info, times, and rich presentation
 - [x] **Share route** — native share sheet integration and clipboard support
 - [x] **Onboarding** — guide for first-time users
+- [x] **Transfer routes** — A→B suggestions with up to 1 bus change, with dimmed secondary-route styling
+- [x] **Smart camera framing** — viewport auto-adjusts when A or B are placed, or when a suggested route is selected
 - [ ] **Stop search by name** — text field with fuzzy autocomplete
-- [ ] **Transfer routes** — A→B suggestions with up to 1 bus change
 - [ ] **Estimated schedules** — based on historical city traffic patterns
 - [ ] **Adaptive dark mode** — automatic switch based on time of day
 - [ ] **Accessibility panel** — high contrast, large text, screen reader support

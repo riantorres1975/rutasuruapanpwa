@@ -49,6 +49,7 @@ type MapProps = {
   destinationPoint: [number, number] | null;
   showTeleferico?: boolean;
   selectedTransfer?: TransferOption | null;
+  awaitingPick?: "origin" | "destination" | null;
   onMapPick: (point: [number, number]) => void;
   onSelectRoute: (routeId: number) => void;
   onNearbyRoutesFound: (routeIds: number[]) => void;
@@ -81,8 +82,13 @@ function lineOpacityExpression(
   bestSuggestedRouteId: number | null,
   selectedSegmentActive: boolean,
   hoveredRouteId: number | null,
-  allRoutesMode: RoutesMapMode
+  allRoutesMode: RoutesMapMode,
+  transferRouteIds: number[]
 ) {
+  if (transferRouteIds.length > 0) {
+    return 0.06 as any;
+  }
+
   const suggestedExpression = ["in", ["get", "id"], ["literal", suggestedRouteIds.length > 0 ? suggestedRouteIds : [-1]]] as any;
   const isTeleferico = telefericoRouteExpression();
 
@@ -117,8 +123,13 @@ function lineWidthExpression(
   bestSuggestedRouteId: number | null,
   selectedSegmentActive: boolean,
   hoveredRouteId: number | null,
-  allRoutesMode: RoutesMapMode
+  allRoutesMode: RoutesMapMode,
+  transferRouteIds: number[]
 ) {
+  if (transferRouteIds.length > 0) {
+    return 1.5 as any;
+  }
+
   const suggestedExpression = ["in", ["get", "id"], ["literal", suggestedRouteIds.length > 0 ? suggestedRouteIds : [-1]]] as any;
   const isTeleferico = telefericoRouteExpression();
 
@@ -154,8 +165,13 @@ function glowOpacityExpression(
   bestSuggestedRouteId: number | null,
   selectedSegmentActive: boolean,
   hoveredRouteId: number | null,
-  allRoutesMode: RoutesMapMode
+  allRoutesMode: RoutesMapMode,
+  transferRouteIds: number[]
 ) {
+  if (transferRouteIds.length > 0) {
+    return 0.0 as any;
+  }
+
   const suggestedExpression = ["in", ["get", "id"], ["literal", suggestedRouteIds.length > 0 ? suggestedRouteIds : [-1]]] as any;
   const isTeleferico = telefericoRouteExpression();
 
@@ -200,8 +216,13 @@ function glowWidthExpression(
   bestSuggestedRouteId: number | null,
   selectedSegmentActive: boolean,
   hoveredRouteId: number | null,
-  allRoutesMode: RoutesMapMode
+  allRoutesMode: RoutesMapMode,
+  transferRouteIds: number[]
 ) {
+  if (transferRouteIds.length > 0) {
+    return 0 as any;
+  }
+
   const suggestedExpression = ["in", ["get", "id"], ["literal", suggestedRouteIds.length > 0 ? suggestedRouteIds : [-1]]] as any;
   const isTeleferico = telefericoRouteExpression();
 
@@ -247,8 +268,13 @@ function glowBlurExpression(
   bestSuggestedRouteId: number | null,
   selectedSegmentActive: boolean,
   hoveredRouteId: number | null,
-  allRoutesMode: RoutesMapMode
+  allRoutesMode: RoutesMapMode,
+  transferRouteIds: number[]
 ) {
+  if (transferRouteIds.length > 0) {
+    return 0 as any;
+  }
+
   const suggestedExpression = ["in", ["get", "id"], ["literal", suggestedRouteIds.length > 0 ? suggestedRouteIds : [-1]]] as any;
   const isTeleferico = telefericoRouteExpression();
 
@@ -296,7 +322,8 @@ function addRouteLayers(
   bestSuggestedRouteId: number | null,
   selectedSegmentActive: boolean,
   allRoutesMode: RoutesMapMode,
-  hoveredRouteId: number | null
+  hoveredRouteId: number | null,
+  transferRouteIds: number[] = []
 ) {
   if (!map.getSource(SOURCE_ID)) {
     map.addSource(SOURCE_ID, {
@@ -322,7 +349,8 @@ function addRouteLayers(
           bestSuggestedRouteId,
           selectedSegmentActive,
           hoveredRouteId,
-          allRoutesMode
+          allRoutesMode,
+          transferRouteIds
         ),
         "line-blur": glowBlurExpression(
           selectedRouteId,
@@ -330,7 +358,8 @@ function addRouteLayers(
           bestSuggestedRouteId,
           selectedSegmentActive,
           hoveredRouteId,
-          allRoutesMode
+          allRoutesMode,
+          transferRouteIds
         ),
         "line-opacity": glowOpacityExpression(
           selectedRouteId,
@@ -338,7 +367,8 @@ function addRouteLayers(
           bestSuggestedRouteId,
           selectedSegmentActive,
           hoveredRouteId,
-          allRoutesMode
+          allRoutesMode,
+          transferRouteIds
         ),
         "line-opacity-transition": { duration: 560 },
         "line-width-transition": { duration: 560 },
@@ -365,7 +395,8 @@ function addRouteLayers(
           bestSuggestedRouteId,
           selectedSegmentActive,
           hoveredRouteId,
-          allRoutesMode
+          allRoutesMode,
+          transferRouteIds
         ),
         "line-opacity": lineOpacityExpression(
           selectedRouteId,
@@ -373,7 +404,8 @@ function addRouteLayers(
           bestSuggestedRouteId,
           selectedSegmentActive,
           hoveredRouteId,
-          allRoutesMode
+          allRoutesMode,
+          transferRouteIds
         ),
         "line-opacity-transition": { duration: 560 },
         "line-width-transition": { duration: 560 }
@@ -406,7 +438,8 @@ function applyRouteLayerStyles(
   bestSuggestedRouteId: number | null,
   selectedSegmentActive: boolean,
   allRoutesMode: RoutesMapMode,
-  hoveredRouteId: number | null
+  hoveredRouteId: number | null,
+  transferRouteIds: number[] = []
 ) {
   if (!map.getLayer(LAYER_LINE_ID) || !map.getLayer(LAYER_GLOW_ID)) {
     return;
@@ -421,7 +454,8 @@ function applyRouteLayerStyles(
       bestSuggestedRouteId,
       selectedSegmentActive,
       hoveredRouteId,
-      allRoutesMode
+      allRoutesMode,
+      transferRouteIds
     )
   );
   map.setPaintProperty(
@@ -433,7 +467,8 @@ function applyRouteLayerStyles(
       bestSuggestedRouteId,
       selectedSegmentActive,
       hoveredRouteId,
-      allRoutesMode
+      allRoutesMode,
+      transferRouteIds
     )
   );
   map.setPaintProperty(LAYER_LINE_ID, "line-dasharray", lineDashArrayExpression());
@@ -447,7 +482,8 @@ function applyRouteLayerStyles(
       bestSuggestedRouteId,
       selectedSegmentActive,
       hoveredRouteId,
-      allRoutesMode
+      allRoutesMode,
+      transferRouteIds
     )
   );
   map.setPaintProperty(
@@ -459,7 +495,8 @@ function applyRouteLayerStyles(
       bestSuggestedRouteId,
       selectedSegmentActive,
       hoveredRouteId,
-      allRoutesMode
+      allRoutesMode,
+      transferRouteIds
     )
   );
   map.setPaintProperty(
@@ -471,7 +508,8 @@ function applyRouteLayerStyles(
       bestSuggestedRouteId,
       selectedSegmentActive,
       hoveredRouteId,
-      allRoutesMode
+      allRoutesMode,
+      transferRouteIds
     )
   );
 }
@@ -547,6 +585,7 @@ function MapComponent({
   destinationPoint,
   showTeleferico = false,
   selectedTransfer = null,
+  awaitingPick = null,
   onMapPick,
   onSelectRoute,
   onNearbyRoutesFound
@@ -572,6 +611,9 @@ function MapComponent({
   const showTelefericoRef = useRef(showTeleferico);
   const telefericoGeoJSONRef = useRef<any>(null);
   const selectedTransferRef = useRef(selectedTransfer);
+  const transferRouteIdsRef = useRef<number[]>(
+    selectedTransfer ? [selectedTransfer.routeAId, selectedTransfer.routeBId] : []
+  );
 
   const [isLoading, setIsLoading] = useState(true);
   const [locationLoading, setLocationLoading] = useState(false);
@@ -648,8 +690,22 @@ function MapComponent({
 
   useEffect(() => {
     selectedTransferRef.current = selectedTransfer;
+    transferRouteIdsRef.current = selectedTransfer
+      ? [selectedTransfer.routeAId, selectedTransfer.routeBId]
+      : [];
     const map = mapRef.current;
     if (!map || !isMapReadyRef.current) return;
+
+    applyRouteLayerStyles(
+      map,
+      selectedRouteIdRef.current,
+      suggestedRouteIdsRef.current,
+      bestSuggestedRouteIdRef.current,
+      isSegmentSelection(selectedRouteIdRef.current, selectedRouteSegmentRef.current),
+      allRoutesModeRef.current,
+      hoveredRouteIdRef.current,
+      transferRouteIdsRef.current
+    );
 
     const clearTransferLayers = () => {
       for (const layer of [TRANSFER_SEG_A_LAYER, TRANSFER_SEG_B_LAYER, TRANSFER_PIN_LAYER]) {
@@ -749,7 +805,6 @@ function MapComponent({
       antialias: true
     });
 
-    map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "top-right");
 
     const onRouteClick = (event: mapboxgl.MapLayerMouseEvent) => {
       const feature = event.features?.[0];
@@ -773,7 +828,8 @@ function MapComponent({
         bestSuggestedRouteIdRef.current,
         isSegmentSelection(selectedRouteIdRef.current, selectedRouteSegmentRef.current),
         allRoutesModeRef.current,
-        hoveredRouteIdRef.current
+        hoveredRouteIdRef.current,
+        transferRouteIdsRef.current
       );
     };
 
@@ -832,7 +888,8 @@ function MapComponent({
         bestSuggestedRouteIdRef.current,
         isSegmentSelection(selectedRouteIdRef.current, selectedRouteSegmentRef.current),
         allRoutesModeRef.current,
-        hoveredRouteIdRef.current
+        hoveredRouteIdRef.current,
+        transferRouteIdsRef.current
       );
       applyRouteLayerStyles(
         map,
@@ -841,7 +898,8 @@ function MapComponent({
         bestSuggestedRouteIdRef.current,
         isSegmentSelection(selectedRouteIdRef.current, selectedRouteSegmentRef.current),
         allRoutesModeRef.current,
-        hoveredRouteIdRef.current
+        hoveredRouteIdRef.current,
+        transferRouteIdsRef.current
       );
       bindRouteInteraction();
     };
@@ -1025,8 +1083,39 @@ function MapComponent({
     const segmentStart = selectedRouteSegment?.[0] ?? null;
     const segmentEnd = selectedRouteSegment ? selectedRouteSegment[selectedRouteSegment.length - 1] ?? null : null;
 
-    updateMarker(originMarkerRef, segmentStart ?? originPoint, "#16a34a", "A");
-    updateMarker(destinationMarkerRef, segmentEnd ?? destinationPoint, "#dc2626", "B");
+    const effectiveOrigin = segmentStart ?? originPoint;
+    const effectiveDestination = segmentEnd ?? destinationPoint;
+
+    updateMarker(originMarkerRef, effectiveOrigin, "#16a34a", "A");
+    updateMarker(destinationMarkerRef, effectiveDestination, "#dc2626", "B");
+
+    // Asegurar que los pines marcados queden visibles en el viewport.
+    // No interrumpir si hay una ruta seleccionada (ese effect maneja su propia cámara).
+    if (selectedRouteIdRef.current === null) {
+      if (effectiveOrigin && effectiveDestination) {
+        const bounds = getBoundsFromCoordinates([effectiveOrigin, effectiveDestination]);
+        if (bounds) {
+          fitBoundsAnimated(map, bounds, {
+            top: 220,
+            right: 48,
+            bottom: 200,
+            left: 48,
+            duration: 700,
+            maxZoom: 15
+          });
+        }
+      } else if (effectiveOrigin || effectiveDestination) {
+        const target = (effectiveOrigin ?? effectiveDestination) as [number, number];
+        const currentZoom = map.getZoom();
+        map.easeTo({
+          center: target,
+          zoom: Math.max(currentZoom, 14),
+          duration: 600,
+          padding: { top: 220, right: 32, bottom: 200, left: 32 },
+          essential: true
+        });
+      }
+    }
   }, [destinationPoint, originPoint, selectedRouteSegment]);
 
   useEffect(() => {
@@ -1051,7 +1140,8 @@ function MapComponent({
       bestSuggestedRouteIdRef.current,
       selectedSegmentActive,
       allRoutesModeRef.current,
-      hoveredRouteIdRef.current
+      hoveredRouteIdRef.current,
+      transferRouteIdsRef.current
     );
     map.stop();
 
@@ -1135,6 +1225,12 @@ function MapComponent({
 
     source.setData(routeFeatures);
 
+    // No re-encuadrar a todas las rutas si el usuario ya marcó A o B,
+    // si no la cámara salta lejos de los pines y se ven fuera del viewport.
+    if (originPoint || destinationPoint) {
+      return;
+    }
+
     const allBounds = getBoundsFromRoutes(routes);
     if (allBounds) {
       fitBoundsAnimated(map, allBounds, {
@@ -1146,7 +1242,7 @@ function MapComponent({
         maxZoom: 14.6
       });
     }
-  }, [routeFeatures, routes, selectedRouteId, selectedRouteSegment, stopRouteAnimation]);
+  }, [destinationPoint, originPoint, routeFeatures, routes, selectedRouteId, selectedRouteSegment, stopRouteAnimation]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -1161,9 +1257,21 @@ function MapComponent({
       bestSuggestedRouteId,
       isSegmentSelection(selectedRouteId, selectedRouteSegment),
       allRoutesMode,
-      hoveredRouteIdRef.current
+      hoveredRouteIdRef.current,
+      transferRouteIdsRef.current
     );
   }, [allRoutesMode, bestSuggestedRouteId, selectedRouteId, selectedRouteSegment, suggestedRouteIds]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const canvas = map.getCanvas();
+    if (awaitingPick) {
+      canvas.classList.add("map-awaiting-pick");
+    } else {
+      canvas.classList.remove("map-awaiting-pick");
+    }
+  }, [awaitingPick]);
 
   const handleLocateMe = () => {
     const map = mapRef.current;
@@ -1309,20 +1417,16 @@ function MapComponent({
       />
 
       {isLoading && (
-        <div className="absolute inset-0 z-10 grid place-items-center bg-slate-950/35 backdrop-blur-[2px]">
-          <div className="rounded-full border border-white/20 bg-slate-900/70 px-4 py-2 text-sm font-medium text-slate-100">
-            Cargando mapa...
-          </div>
-        </div>
+        <div className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-b from-slate-950/20 to-transparent" aria-hidden="true" />
       )}
 
-      {/* Locate-me button + accuracy warning */}
-      <div className="absolute bottom-24 left-4 z-20 flex flex-col items-start gap-2">
+      {/* Locate-me button + accuracy warning — top-right, debajo del NavigationControl */}
+      <div className="absolute right-2.5 top-[10px] z-20 flex flex-col items-end gap-2">
         <button
           type="button"
           onClick={handleLocateMe}
           disabled={locationLoading}
-          className="grid h-12 w-12 place-items-center rounded-full border border-white/35 bg-[var(--surface-strong)] text-slate-900 shadow-soft transition hover:-translate-y-0.5 disabled:opacity-60 disabled:hover:translate-y-0 dark:text-slate-100"
+          className="grid h-10 w-10 place-items-center rounded-md border border-black/10 bg-white text-slate-800 shadow-[0_1px_4px_rgba(0,0,0,0.18)] transition hover:bg-slate-50 active:scale-95 disabled:opacity-60 dark:border-white/10 dark:bg-[#1a2236] dark:text-slate-100 dark:hover:bg-[#222b42]"
           aria-label="Ir a mi ubicacion"
         >
           {locationLoading ? (

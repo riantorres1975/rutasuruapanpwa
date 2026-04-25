@@ -511,7 +511,6 @@ export default function HomePage() {
     const timer = window.setTimeout(() => {
       const nextSuggestions = computeRouteSuggestions(fullRoutes, originPoint, destinationPoint);
       setSuggestions(nextSuggestions);
-      // Only compute transfers when no direct route found
       const nextTransfers =
         nextSuggestions.length === 0
           ? computeTransferOptions(fullRoutes, originPoint, destinationPoint)
@@ -913,10 +912,21 @@ export default function HomePage() {
                     <p className="mt-0.5 text-[12px] leading-snug text-slate-400">Ajusta alguno de los puntos e intenta de nuevo.</p>
                   </div>
                 </div>
+                {/* Sugerencia de cambiar dirección */}
+                <button
+                  type="button"
+                  onClick={() => setSelectedDirection((d) => (d === "ida" ? "vuelta" : "ida"))}
+                  className="mt-3 inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-[#00D4AA]/25 bg-[#00D4AA]/8 text-[12px] font-semibold text-[#00D4AA] transition active:scale-[0.97]"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0" aria-hidden="true">
+                    <path d="M4 17h16M4 17l4-4m-4 4 4 4M20 7H4M20 7l-4-4m4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  Probar en dirección {selectedDirection === "ida" ? "vuelta" : "ida"}
+                </button>
                 <button
                   type="button"
                   onClick={() => { setActivePoint("destination"); setShowHint(true); }}
-                  className="mt-3 inline-flex h-10 w-full items-center justify-center rounded-xl border border-white/10 bg-white/5 text-[12px] font-semibold text-slate-300 transition active:scale-[0.97]"
+                  className="mt-2 inline-flex h-10 w-full items-center justify-center rounded-xl border border-white/10 bg-white/5 text-[12px] font-semibold text-slate-300 transition active:scale-[0.97]"
                 >
                   Mover destino
                 </button>
@@ -1149,6 +1159,7 @@ export default function HomePage() {
           destinationPoint={destinationPoint}
           showTeleferico={showTeleferico}
           selectedTransfer={selectedTransfer}
+          awaitingPick={flowStep === 3 ? null : activePoint}
           onMapPick={handleMapPick}
           onSelectRoute={handleSelectRoute}
           onNearbyRoutesFound={handleNearbyRoutesFound}
