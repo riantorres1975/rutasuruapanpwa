@@ -5,7 +5,7 @@ import NotGovernmentNotice from "@/components/NotGovernmentNotice";
 
 export const metadata: Metadata = {
   title: "Las rutas de camión más usadas en Uruapan",
-  description: "Artículo en preparación sobre las rutas de camión más usadas en Uruapan y para qué sirven.",
+  description: "Estamos preparando un ranking detallado de los derroteros más consultados, sus destinos principales y cómo conectan con el Teleférico.",
   alternates: {
     canonical: "/blog/rutas-camion-mas-usadas-uruapan"
   }
@@ -24,33 +24,63 @@ export default function RutasCamionMasUsadasPage() {
               Las rutas de <span className="italic text-terracota-400">camión</span> más usadas en Uruapan.
             </>
           }
-          intro="Estamos preparando un ranking detallado de las rutas más consultadas, sus destinos principales y para qué sirve cada una."
+          intro="Estamos preparando un ranking detallado de los derroteros más consultados, sus destinos principales y cómo conectan con el Teleférico."
         />
 
-        <section className="mt-12 rounded-[1.75rem] border border-cream-100/12 bg-ink-900/65 p-8 backdrop-blur">
-          <p className="font-serif-display text-5xl font-black text-terracota-400">📝</p>
-          <h2 className="mt-3 font-serif-display text-2xl font-black text-cream-50">
+        {/* Rutas destacadas */}
+        <section className="mt-12 grid gap-4 sm:grid-cols-2">
+          {[
+            {
+              id: "Ruta 11 Uruapan",
+              nombre: "Ramal Tamayo – Fovissste",
+              detalle: "70 paradas · ~48 min · lun–dom 06:00–22:00",
+              desc: "Una de las más extensas. Transita por 5 Sur y Héroes de la Independencia."
+            },
+            {
+              id: "Ruta 1",
+              nombre: "Unidad – Palito Verde",
+              detalle: "Ramales a Jucutácato, Manantiales y San José Mina",
+              desc: "Línea troncal con alta cobertura de colonias populares al oriente."
+            },
+            {
+              id: "Ruta 5",
+              nombre: "Caltzontzin",
+              detalle: "Corredor industrial",
+              desc: "Mueve gran parte de la fuerza laboral hacia la comunidad de Caltzontzin."
+            },
+            {
+              id: "Ruta 7",
+              nombre: "Pemex – Centro",
+              detalle: "Línea directa al primer cuadro",
+              desc: "Conecta la colonia Pemex con el Centro Histórico sin transbordo."
+            }
+          ].map((r) => (
+            <Link
+              key={r.id}
+              href={`/mapa?destino=${encodeURIComponent(r.id)}`}
+              className="card-lift group rounded-2xl border border-cream-100/10 bg-ink-900/60 p-5 backdrop-blur transition"
+            >
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-terracota-400">{r.id}</p>
+              <h3 className="mt-1 font-serif-display text-lg font-black text-cream-50">{r.nombre}</h3>
+              <p className="mt-1 text-[11px] font-semibold text-avocado-400">{r.detalle}</p>
+              <p className="mt-3 text-sm leading-6 text-cream-100/70">{r.desc}</p>
+              <span className="mt-4 inline-flex items-center gap-1 text-xs font-bold text-terracota-400 transition group-hover:gap-2">
+                Ver en el mapa →
+              </span>
+            </Link>
+          ))}
+        </section>
+
+        <section className="mt-6 rounded-[1.75rem] border border-cream-100/12 bg-ink-900/65 p-8 backdrop-blur">
+          <h2 className="font-serif-display text-2xl font-black text-cream-50">
             Próximamente
           </h2>
           <p className="mt-3 text-sm leading-7 text-cream-100/75">
-            Mientras terminamos esta guía, puedes explorar todas las rutas en el mapa interactivo. Son 41 rutas urbanas que cubren toda la ciudad.
+            Mientras terminamos esta guía, puedes explorar las 36 rutas urbanas oficiales en el mapa interactivo.
           </p>
-
-          <div className="mt-6 flex flex-wrap gap-2">
-            {["Ruta 11 Uruapan", "Ruta 1", "Ruta 5", "Ruta 7"].map((r) => (
-              <Link
-                key={r}
-                href={`/mapa?destino=${encodeURIComponent(r)}`}
-                className="animated-chip inline-flex items-center rounded-full border border-cream-100/15 bg-cream-100/5 px-3.5 py-1.5 text-xs font-bold text-cream-50 transition hover:border-terracota-400/60 hover:text-terracota-400"
-              >
-                {r}
-              </Link>
-            ))}
-          </div>
-
           <Link
             href="/mapa"
-            className="cta-shine mt-7 inline-flex h-11 items-center rounded-full bg-terracota-400 px-5 text-sm font-black text-cream-50 hover:bg-terracota-500"
+            className="cta-shine mt-6 inline-flex h-11 items-center rounded-full bg-terracota-400 px-5 text-sm font-black text-cream-50 hover:bg-terracota-500"
           >
             Explorar el mapa →
           </Link>
