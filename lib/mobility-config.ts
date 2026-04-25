@@ -1,7 +1,7 @@
 export const APP_BRAND = {
   name: "VoyUruapan",
   tagline: "Encuentra tu ruta en Uruapan",
-  description: "Rutas de camiones, combis suburbanas y Teleférico en un solo mapa."
+  description: "Rutas de camiones urbanos y Teleférico en un solo mapa."
 } as const;
 
 export const FARES_2026 = {
@@ -58,13 +58,6 @@ export const LANDING_SEARCH_SUGGESTIONS = [
   "Plaza Agora",
   "IMSS",
   "Ruta 11 Uruapan"
-] as const;
-
-export const SUBURBAN_CONNECTIONS = [
-  "Nuevo San Juan Parangaricutiro",
-  "Capacuaro",
-  "Paracho",
-  "Angahuan"
 ] as const;
 
 export const SEO_KEYWORDS = [

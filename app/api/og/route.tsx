@@ -8,87 +8,164 @@ export async function GET() {
       <div
         style={{
           alignItems: "center",
-          background: "#080C18",
-          color: "white",
+          background:
+            "radial-gradient(circle at 22% 28%, rgba(232,93,47,0.28), rgba(232,93,47,0) 42%), radial-gradient(circle at 78% 72%, rgba(123,160,91,0.22), rgba(123,160,91,0) 44%), linear-gradient(140deg, #161B0E 0%, #0E1208 55%, #0A0E07 100%)",
+          color: "#FBF5E8",
           display: "flex",
           flexDirection: "column",
           height: "100%",
-          justifyContent: "center",
+          justifyContent: "space-between",
           overflow: "hidden",
-          padding: "64px",
+          padding: "72px 80px",
           position: "relative",
           width: "100%"
         }}
       >
-        <div
-          style={{
-            background: "radial-gradient(circle, rgba(0,212,170,0.22), rgba(0,212,170,0) 64%)",
-            height: 720,
-            left: -180,
-            position: "absolute",
-            top: -220,
-            width: 720
-          }}
-        />
-        <div
-          style={{
-            background: "radial-gradient(circle, rgba(100,210,255,0.14), rgba(100,210,255,0) 66%)",
-            bottom: -260,
-            height: 760,
-            position: "absolute",
-            right: -220,
-            width: 760
-          }}
-        />
-
-        <div
-          style={{
-            alignItems: "center",
-            background: "rgba(0,212,170,0.10)",
-            border: "2px solid rgba(0,212,170,0.28)",
-            borderRadius: 42,
-            display: "flex",
-            height: 132,
-            justifyContent: "center",
-            marginBottom: 36,
-            width: 132
-          }}
+        {/* greca purépecha decorativa superior */}
+        <svg
+          width="1200"
+          height="60"
+          viewBox="0 0 1200 60"
+          style={{ position: "absolute", top: 0, left: 0, opacity: 0.18 }}
         >
-          <svg width="72" height="72" viewBox="0 0 24 24" fill="none">
+          {Array.from({ length: 30 }).map((_, i) => (
             <path
-              d="M4 16V7.5A2.5 2.5 0 0 1 6.5 5h7A2.5 2.5 0 0 1 16 7.5V16M4 16h12M4 16l-1 3M16 16l1 3M7 19h.01M13 19h.01M7 8h6M7 11h6M18 9h1.5A1.5 1.5 0 0 1 21 10.5V16h-5"
-              stroke="#00D4AA"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+              key={i}
+              d={`M ${i * 40} 30 h 14 v -14 h 14 v 14 h 12`}
+              stroke="#E85D2F"
+              strokeWidth="2"
+              fill="none"
             />
-          </svg>
+          ))}
+        </svg>
+        <svg
+          width="1200"
+          height="60"
+          viewBox="0 0 1200 60"
+          style={{ position: "absolute", bottom: 0, left: 0, opacity: 0.18 }}
+        >
+          {Array.from({ length: 30 }).map((_, i) => (
+            <path
+              key={i}
+              d={`M ${i * 40} 30 h 14 v 14 h 14 v -14 h 12`}
+              stroke="#7BA05B"
+              strokeWidth="2"
+              fill="none"
+            />
+          ))}
+        </svg>
+
+        {/* Brand row */}
+        <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
+          <div
+            style={{
+              alignItems: "center",
+              background: "rgba(232,93,47,0.12)",
+              border: "2px solid rgba(232,93,47,0.55)",
+              borderRadius: 999,
+              display: "flex",
+              height: 56,
+              justifyContent: "center",
+              paddingLeft: 18,
+              paddingRight: 22
+            }}
+          >
+            <div
+              style={{
+                background: "#E85D2F",
+                borderRadius: 999,
+                boxShadow: "0 0 24px rgba(232,93,47,0.9)",
+                height: 14,
+                marginRight: 12,
+                width: 14
+              }}
+            />
+            <div
+              style={{
+                color: "#FBF5E8",
+                fontSize: 26,
+                fontWeight: 900,
+                letterSpacing: -0.5
+              }}
+            >
+              VoyUruapan
+            </div>
+          </div>
         </div>
 
-        <div
-          style={{
-            color: "#00D4AA",
-            fontSize: 94,
-            fontWeight: 900,
-            letterSpacing: -4,
-            lineHeight: 1,
-            marginBottom: 24,
-            textAlign: "center"
-          }}
-        >
-          VoyUruapan
+        {/* Headline + sub */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
+          <div
+            style={{
+              color: "#E85D2F",
+              fontSize: 22,
+              fontWeight: 800,
+              letterSpacing: 6,
+              textTransform: "uppercase"
+            }}
+          >
+            Transporte en Uruapan, Michoacán
+          </div>
+          <div
+            style={{
+              color: "#FBF5E8",
+              fontSize: 108,
+              fontWeight: 900,
+              letterSpacing: -5,
+              lineHeight: 0.95,
+              maxWidth: 1040
+            }}
+          >
+            Moverse por <span style={{ color: "#E85D2F", fontStyle: "italic" }}>Uruapan</span>,
+            <br />
+            tan fácil como respirar.
+          </div>
+          <div
+            style={{
+              color: "rgba(244,235,217,0.78)",
+              display: "flex",
+              fontSize: 30,
+              fontWeight: 600,
+              gap: 24,
+              lineHeight: 1.3
+            }}
+          >
+            <span>40 rutas urbanas</span>
+            <span style={{ color: "rgba(244,235,217,0.35)" }}>·</span>
+            <span>Teleférico Uruapan</span>
+            <span style={{ color: "rgba(244,235,217,0.35)" }}>·</span>
+            <span>Tarifa $11 MXN</span>
+          </div>
         </div>
-        <div
-          style={{
-            color: "#E2E8F0",
-            fontSize: 38,
-            fontWeight: 700,
-            lineHeight: 1.25,
-            maxWidth: 900,
-            textAlign: "center"
-          }}
-        >
-          Rutas de camiones y Teleférico en Uruapan, Michoacán
+
+        {/* Footer pill */}
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <div
+            style={{
+              alignItems: "center",
+              background: "rgba(123,160,91,0.18)",
+              border: "1px solid rgba(123,160,91,0.45)",
+              borderRadius: 999,
+              color: "#DCE7CC",
+              display: "flex",
+              fontSize: 22,
+              fontWeight: 800,
+              padding: "10px 20px"
+            }}
+          >
+            rutasuruapanpwa.vercel.app
+          </div>
+          <div
+            style={{
+              alignItems: "center",
+              color: "rgba(244,235,217,0.55)",
+              display: "flex",
+              fontSize: 20,
+              fontWeight: 600
+            }}
+          >
+            Hecho aquí · sin cuentas · sin anuncios
+          </div>
         </div>
       </div>
     ),

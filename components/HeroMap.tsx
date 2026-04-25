@@ -6,14 +6,14 @@ import { URUAPAN_CENTER } from "@/lib/map";
 const SUGGESTIONS = [
   { kicker: "Ruta sugerida", title: "Camión + Teleférico", meta: "Costo estimado por abordaje: $11.00 MXN" },
   { kicker: "Ruta popular", title: "Ruta 11 · Centro", meta: "La más consultada · ~14 min" },
-  { kicker: "Conexión rápida", title: "Mercado ↔ Hospital", meta: "Combina urbano con Teleférico" },
+  { kicker: "Conexión rápida", title: "Mercado ↔ Hospital", meta: "Camión urbano + Teleférico" },
   { kicker: "Turismo", title: "Parque Nacional", meta: "Llega caminando desde el Centro" }
 ] as const;
 
 const ROUTES = [
   { d: "M-20 220 C 60 150, 90 145, 130 175 S 205 235, 260 150 S 355 75, 440 120", color: "#E85D2F" },
   { d: "M-30 70 C 55 115, 110 130, 155 112 S 235 48, 285 96 S 365 190, 450 170", color: "#7BA05B" },
-  { d: "M 30 265 C 80 220, 130 218, 185 250 S 285 310, 330 245 S 395 150, 455 150", color: "#00D4AA" },
+  { d: "M 30 265 C 80 220, 130 218, 185 250 S 285 310, 330 245 S 395 150, 455 150", color: "#F4EBD9" },
   { d: "M 45 20 C 105 70, 125 95, 195 75 S 280 30, 340 82 S 400 122, 455 90", color: "#F4EBD9" }
 ] as const;
 
@@ -124,7 +124,7 @@ export default function HeroMap() {
 
   return (
     <div ref={frameRef} className="hero-map-frame aspect-[4/5] w-full max-w-md lg:aspect-[3/4]" aria-label="Vista previa de rutas de transporte en Uruapan">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_35%_25%,rgba(123,160,91,0.18),transparent_32%),radial-gradient(circle_at_70%_60%,rgba(232,93,47,0.16),transparent_34%),linear-gradient(145deg,#11170d,#07111a_55%,#0e1208)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_35%_25%,rgba(232,93,47,0.22),transparent_32%),radial-gradient(circle_at_70%_60%,rgba(123,160,91,0.16),transparent_34%),linear-gradient(145deg,#101509,#07111a_55%,#0e1208)]" />
 
       {staticMapUrl ? (
         <div
@@ -150,11 +150,11 @@ export default function HeroMap() {
           {ROUTES.map((route) => (
             <g key={route.d} filter="url(#route-glow)">
               <path d={route.d} stroke={route.color} strokeOpacity="0.2" strokeWidth="14" strokeLinecap="round" />
-              <path d={route.d} stroke={route.color} strokeWidth="4" strokeLinecap="round" strokeDasharray={route.color === "#00D4AA" ? "10 10" : undefined} />
+              <path d={route.d} stroke={route.color} strokeWidth="4" strokeLinecap="round" strokeDasharray={route.color === "#F4EBD9" ? "10 10" : undefined} />
             </g>
           ))}
           <circle cx="215" cy="255" r="12" fill="#E85D2F" stroke="#FBF5E8" strokeWidth="4" />
-          <circle cx="300" cy="120" r="8" fill="#00D4AA" stroke="#FBF5E8" strokeWidth="3" />
+          <circle cx="300" cy="120" r="8" fill="#E85D2F" stroke="#FBF5E8" strokeWidth="3" />
           <circle cx="132" cy="178" r="8" fill="#7BA05B" stroke="#FBF5E8" strokeWidth="3" />
         </svg>
       )}
@@ -178,7 +178,7 @@ export default function HeroMap() {
           {liveReady ? "En vivo · Uruapan" : "Uruapan"}
         </span>
         <span className="rounded-full bg-ink-900/80 px-2.5 py-1 text-[10px] font-bold text-cream-100 backdrop-blur">
-          41 rutas
+          40 rutas + Teleférico
         </span>
       </div>
 

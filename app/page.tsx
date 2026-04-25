@@ -9,7 +9,6 @@ import {
   FARES_2026,
   LANDING_FAQS,
   LANDING_SEARCH_SUGGESTIONS,
-  SUBURBAN_CONNECTIONS,
   TELEFERICO_URUAPAN
 } from "@/lib/mobility-config";
 
@@ -44,9 +43,17 @@ export const metadata: Metadata = {
   openGraph: {
     title: "VoyUruapan | Encuentra tu ruta en Uruapan",
     description:
-      "Rutas de camiones, combis suburbanas y Teleferico en un solo mapa para Uruapan, Michoacan.",
+      "Rutas de camiones urbanos y Teleférico en un solo mapa para Uruapan, Michoacán.",
     url: "/",
     siteName: "VoyUruapan",
+    images: [
+      {
+        url: "/opengraph-image",
+        width: 1200,
+        height: 630,
+        alt: "VoyUruapan — rutas de camiones y Teleférico en Uruapan"
+      }
+    ],
     locale: "es_MX",
     type: "website"
   }
@@ -105,11 +112,6 @@ const routeModes = [
     title: "Teleférico",
     text: "Visualiza las estaciones y conecta el eje oriente-poniente con rutas terrestres.",
     meta: `${TELEFERICO_URUAPAN.hours} · ${TELEFERICO_URUAPAN.fare}`
-  },
-  {
-    title: "Combis suburbanas",
-    text: "Base preparada para conexiones hacia pueblos y zonas cercanas de la región.",
-    meta: SUBURBAN_CONNECTIONS.join(" · ")
   }
 ];
 
@@ -169,7 +171,7 @@ export default function LandingPage() {
             </p>
 
             <p className="animate-fade-up animate-delay-200 mt-5 max-w-2xl text-base leading-7 text-cream-100/75 sm:text-lg">
-              Camiones urbanos, combis suburbanas y el único Teleférico de Michoacán en un mapa hecho aquí, para Uruapan. Ligero, sin cuentas, sin anuncios.
+              Camiones urbanos y el único Teleférico de Michoacán en un mapa hecho aquí, para Uruapan. Ligero, sin cuentas, sin anuncios.
             </p>
 
             <form action="/mapa" className="animate-fade-up animate-delay-300 mt-7 max-w-xl rounded-3xl border border-cream-100/10 bg-ink-900/85 p-2 shadow-[0_20px_80px_rgba(0,0,0,0.45)] backdrop-blur-xl">
@@ -246,7 +248,7 @@ export default function LandingPage() {
               Tarifas 2026, <span className="italic text-terracota-400">como un boleto.</span>
             </h2>
             <p className="mt-4 text-sm leading-6 text-cream-100/70">
-              Lo que cuesta moverte en Uruapan, sin letra chica. Tarifas oficiales para combinar camión urbano, combis y Teleférico.
+              Lo que cuesta moverte en Uruapan, sin letra chica. Tarifas base para combinar camión urbano y Teleférico.
             </p>
           </div>
 
@@ -332,10 +334,10 @@ export default function LandingPage() {
           <div className="grid gap-8 lg:grid-cols-2">
             <div>
               <h2 className="font-serif-display text-3xl font-black text-cream-50">Rutas y conexiones populares</h2>
-              <p className="mt-3 text-sm leading-7 text-cream-100/70">Busca rutas como Ruta 11 Uruapan, Ruta 1 o Ruta 5, además de conexiones hacia comunidades cercanas.</p>
+              <p className="mt-3 text-sm leading-7 text-cream-100/70">Busca rutas como Ruta 11 Uruapan, Ruta 1 o Ruta 5, además de estaciones clave del Teleférico.</p>
             </div>
             <div className="flex flex-wrap gap-2">
-              {["Ruta 11 Uruapan", "Ruta 1", "Ruta 5", ...SUBURBAN_CONNECTIONS].map((item) => (
+              {["Ruta 11 Uruapan", "Ruta 1", "Ruta 5", "Hospital Regional", "Centro Histórico", "Mercado Poniente"].map((item) => (
                 <Link key={item} href={`/mapa?destino=${encodeURIComponent(item)}`} className="animated-chip inline-flex items-center rounded-full border border-cream-100/15 bg-ink-900/80 px-4 py-2 text-xs font-bold text-cream-50 transition hover:border-terracota-400/60 hover:bg-terracota-400/10 hover:text-terracota-400">
                   {item}
                 </Link>

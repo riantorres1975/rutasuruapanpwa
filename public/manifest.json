@@ -2,7 +2,7 @@
   "name": "VoyUruapan",
   "short_name": "Voy",
   "id": "/mapa",
-  "description": "Rutas de camiones, combis suburbanas y Teleférico en Uruapan, Michoacán",
+  "description": "Rutas de camiones urbanos y Teleférico en Uruapan, Michoacán",
   "start_url": "/mapa",
   "scope": "/",
   "display": "standalone",
