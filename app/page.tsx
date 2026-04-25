@@ -245,7 +245,7 @@ export default function LandingPage() {
           <div className="max-w-2xl">
             <p className="text-purepecha text-sm">Janhachakua · pasaje</p>
             <h2 className="mt-2 font-serif-display text-4xl font-black text-cream-50 md:text-5xl">
-              Tarifas 2026, <span className="italic text-terracota-400">como un boleto.</span>
+              Lo que cuesta <span className="italic text-terracota-400">moverte en Uruapan.</span>
             </h2>
             <p className="mt-4 text-sm leading-6 text-cream-100/70">
               Lo que cuesta moverte en Uruapan, sin letra chica. Tarifas base para combinar camión urbano y Teleférico.
