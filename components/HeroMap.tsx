@@ -24,7 +24,6 @@ export default function HeroMap() {
   const frameRef = useRef<HTMLDivElement | null>(null);
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<import("mapbox-gl").Map | null>(null);
-  const [staticReady, setStaticReady] = useState(false);
   const [liveReady, setLiveReady] = useState(false);
   const [suggestionIdx, setSuggestionIdx] = useState(0);
   const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
@@ -39,25 +38,6 @@ export default function HeroMap() {
 
     return () => window.clearInterval(id);
   }, []);
-
-  useEffect(() => {
-    if (!staticMapUrl) {
-      return;
-    }
-
-    let cancelled = false;
-    const image = new window.Image();
-    image.onload = () => {
-      if (!cancelled) {
-        setStaticReady(true);
-      }
-    };
-    image.src = staticMapUrl;
-
-    return () => {
-      cancelled = true;
-    };
-  }, [staticMapUrl]);
 
   useEffect(() => {
     const token = mapboxToken;
@@ -146,37 +126,37 @@ export default function HeroMap() {
     <div ref={frameRef} className="hero-map-frame aspect-[4/5] w-full max-w-md lg:aspect-[3/4]" aria-label="Vista previa de rutas de transporte en Uruapan">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_35%_25%,rgba(123,160,91,0.18),transparent_32%),radial-gradient(circle_at_70%_60%,rgba(232,93,47,0.16),transparent_34%),linear-gradient(145deg,#11170d,#07111a_55%,#0e1208)]" />
 
-      <svg className={`absolute inset-0 h-full w-full transition-opacity duration-700 ${liveReady || staticReady ? "opacity-0" : "opacity-100"}`} viewBox="0 0 430 520" fill="none" aria-hidden="true">
-        <defs>
-          <pattern id="hero-grid" width="42" height="42" patternUnits="userSpaceOnUse">
-            <path d="M 42 0 L 0 0 0 42" stroke="rgba(244,235,217,0.08)" strokeWidth="1" />
-          </pattern>
-          <filter id="route-glow" x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur stdDeviation="5" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-        </defs>
-        <rect width="430" height="520" fill="url(#hero-grid)" />
-        {ROUTES.map((route) => (
-          <g key={route.d} filter="url(#route-glow)">
-            <path d={route.d} stroke={route.color} strokeOpacity="0.2" strokeWidth="14" strokeLinecap="round" />
-            <path d={route.d} stroke={route.color} strokeWidth="4" strokeLinecap="round" strokeDasharray={route.color === "#00D4AA" ? "10 10" : undefined} />
-          </g>
-        ))}
-        <circle cx="215" cy="255" r="12" fill="#E85D2F" stroke="#FBF5E8" strokeWidth="4" />
-        <circle cx="300" cy="120" r="8" fill="#00D4AA" stroke="#FBF5E8" strokeWidth="3" />
-        <circle cx="132" cy="178" r="8" fill="#7BA05B" stroke="#FBF5E8" strokeWidth="3" />
-      </svg>
-
-      {staticReady && staticMapUrl && (
+      {staticMapUrl ? (
         <div
           className={`absolute inset-0 bg-cover bg-center transition-opacity duration-700 ${liveReady ? "opacity-0" : "opacity-100"}`}
           style={{ backgroundImage: `url(${staticMapUrl})` }}
           aria-hidden="true"
         />
+      ) : (
+        <svg className={`absolute inset-0 h-full w-full transition-opacity duration-700 ${liveReady ? "opacity-0" : "opacity-100"}`} viewBox="0 0 430 520" fill="none" aria-hidden="true">
+          <defs>
+            <pattern id="hero-grid" width="42" height="42" patternUnits="userSpaceOnUse">
+              <path d="M 42 0 L 0 0 0 42" stroke="rgba(244,235,217,0.08)" strokeWidth="1" />
+            </pattern>
+            <filter id="route-glow" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="5" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+          <rect width="430" height="520" fill="url(#hero-grid)" />
+          {ROUTES.map((route) => (
+            <g key={route.d} filter="url(#route-glow)">
+              <path d={route.d} stroke={route.color} strokeOpacity="0.2" strokeWidth="14" strokeLinecap="round" />
+              <path d={route.d} stroke={route.color} strokeWidth="4" strokeLinecap="round" strokeDasharray={route.color === "#00D4AA" ? "10 10" : undefined} />
+            </g>
+          ))}
+          <circle cx="215" cy="255" r="12" fill="#E85D2F" stroke="#FBF5E8" strokeWidth="4" />
+          <circle cx="300" cy="120" r="8" fill="#00D4AA" stroke="#FBF5E8" strokeWidth="3" />
+          <circle cx="132" cy="178" r="8" fill="#7BA05B" stroke="#FBF5E8" strokeWidth="3" />
+        </svg>
       )}
 
       <div
