@@ -76,7 +76,7 @@ export default function RutasCamionMasUsadasPage() {
             Próximamente
           </h2>
           <p className="mt-3 text-sm leading-7 text-cream-100/75">
-            Mientras terminamos esta guía, puedes explorar las 36 rutas urbanas oficiales en el mapa interactivo.
+            Mientras terminamos esta guía, puedes explorar todas las rutas en el mapa interactivo. Son 41 rutas urbanas (40 terrestres y la línea del Teleférico) que cubren toda la ciudad.
           </p>
           <Link
             href="/mapa"
