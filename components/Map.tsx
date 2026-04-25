@@ -24,7 +24,7 @@ const TELEFERICO_SOURCE = "teleferico-source";
 const TELEFERICO_LINE_LAYER = "teleferico-line";
 const TELEFERICO_GLOW_LAYER = "teleferico-glow";
 const TELEFERICO_STATIONS_LAYER = "teleferico-stations";
-const TELEFERICO_COLOR = "#00D4AA";
+const TELEFERICO_COLOR = "#E85D2F";
 const TELEFERICO_ROUTE_NAME = "Teleférico Uruapan";
 const TRANSFER_SOURCE = "transfer-source";
 const TRANSFER_SEG_A_LAYER = "transfer-seg-a";
@@ -71,7 +71,7 @@ function glowColorExpression(selectedRouteId: number | null) {
   return [
     "case",
     ["all", ["==", ["get", "id"], selectedRouteId], telefericoRouteExpression()],
-    "#00D4AA",
+    "#E85D2F",
     ["get", "color"]
   ] as any;
 }
@@ -1071,7 +1071,7 @@ function MapComponent({
 
       if (!markerRef.current) {
         const element = document.createElement("div");
-        element.className = "grid h-8 w-8 place-items-center rounded-full border-2 border-white text-[10px] font-bold text-white shadow-soft";
+        element.className = "grid h-8 w-8 place-items-center rounded-full border-2 border-white text-[10px] font-bold text-cream-50 shadow-soft";
         element.style.backgroundColor = color;
         element.textContent = label;
         markerRef.current = new mapboxgl.Marker({ element, anchor: "center" });
@@ -1395,10 +1395,10 @@ function MapComponent({
 
   if (!mapToken) {
     return (
-      <div className="flex h-full w-full items-center justify-center bg-slate-950 text-slate-100">
+      <div className="flex h-full w-full items-center justify-center bg-slate-950 text-cream-50">
         <div className="rounded-2xl border border-slate-700 bg-slate-900/80 p-5 text-center shadow-soft">
           <p className="text-base font-semibold">Falta configurar Mapbox</p>
-          <p className="mt-1 text-sm text-slate-300">
+          <p className="mt-1 text-sm text-cream-100/75">
             Crea un archivo <code>.env.local</code> con <code>NEXT_PUBLIC_MAPBOX_TOKEN</code>.
           </p>
         </div>
@@ -1426,7 +1426,7 @@ function MapComponent({
           type="button"
           onClick={handleLocateMe}
           disabled={locationLoading}
-          className="grid h-10 w-10 place-items-center rounded-md border border-black/10 bg-white text-slate-800 shadow-[0_1px_4px_rgba(0,0,0,0.18)] transition hover:bg-slate-50 active:scale-95 disabled:opacity-60 dark:border-white/10 dark:bg-[#1a2236] dark:text-slate-100 dark:hover:bg-[#222b42]"
+          className="grid h-10 w-10 place-items-center rounded-md border border-black/10 bg-white text-slate-800 shadow-[0_1px_4px_rgba(0,0,0,0.18)] transition hover:bg-slate-50 active:scale-95 disabled:opacity-60 dark:border-cream-100/10 dark:bg-[#1a2236] dark:text-cream-50 dark:hover:bg-[#222b42]"
           aria-label="Ir a mi ubicacion"
         >
           {locationLoading ? (

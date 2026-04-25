@@ -41,7 +41,7 @@ export default function NearbyToast({ count, onView, onDismiss }: NearbyToastPro
         className={`pointer-events-auto inline-flex items-center gap-2.5 rounded-full border px-4 py-2 shadow-[0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-xl transition-all duration-300 ${
           hasRoutes
             ? "border-cyan-400/30 bg-slate-900/85 text-slate-50"
-            : "border-red-400/25 bg-slate-900/85 text-slate-300"
+            : "border-red-400/25 bg-slate-900/85 text-cream-100/75"
         }`}
       >
         {/* Icon */}
@@ -85,7 +85,7 @@ export default function NearbyToast({ count, onView, onDismiss }: NearbyToastPro
               onView();
               onDismiss();
             }}
-            className="rounded-full bg-cyan-500 px-3 py-1 text-[12px] font-semibold text-white transition active:scale-[0.97] hover:bg-cyan-400"
+            className="rounded-full bg-cyan-500 px-3 py-1 text-[12px] font-semibold text-cream-50 transition active:scale-[0.97] hover:bg-cyan-400"
           >
             Ver
           </button>
@@ -96,7 +96,7 @@ export default function NearbyToast({ count, onView, onDismiss }: NearbyToastPro
           type="button"
           onClick={onDismiss}
           aria-label="Cerrar aviso"
-          className="ml-0.5 rounded-full p-1 text-slate-400 transition hover:text-slate-200 active:scale-[0.95]"
+          className="ml-0.5 rounded-full p-1 text-cream-100/60 transition hover:text-cream-100/85 active:scale-[0.95]"
         >
           <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" aria-hidden="true">
             <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />

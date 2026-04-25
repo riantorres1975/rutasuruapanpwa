@@ -81,7 +81,7 @@ export function TelefericoCard({ onOpen, isSuggested }: TelefericoCardProps) {
       className="group relative w-full overflow-hidden rounded-2xl text-left transition active:scale-[0.985]"
     >
       {/* Gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-teal-600 via-teal-500 to-emerald-500 opacity-90" />
+      <div className="absolute inset-0 bg-gradient-to-br from-avocado-600 via-avocado-400 to-avocado-400 opacity-90" />
       {/* Noise texture overlay */}
       <div
         className="absolute inset-0 opacity-[0.06]"
@@ -91,21 +91,21 @@ export function TelefericoCard({ onOpen, isSuggested }: TelefericoCardProps) {
         }}
       />
       {/* Shimmer on hover */}
-      <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
+      <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-cream-100/20 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
 
       <div className="relative flex items-center justify-between gap-3 px-4 py-3.5">
         {/* Left: icon + info */}
         <div className="flex items-center gap-3">
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/20 text-2xl shadow-inner backdrop-blur-sm">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-cream-100/20 text-2xl shadow-inner backdrop-blur-sm">
             🚡
           </span>
           <div>
             <div className="flex items-center gap-2">
-              <p className="text-sm font-bold leading-none text-white">Teleférico Uruapan</p>
+              <p className="text-sm font-bold leading-none text-cream-50">Teleférico Uruapan</p>
               {isSuggested ? (
                 <span className="relative inline-flex">
-                  <span className="absolute inset-0 animate-ping rounded-full bg-cyan-400 opacity-60" />
-                  <span className="relative rounded-full bg-cyan-400 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-cyan-900 shadow-sm">
+                  <span className="absolute inset-0 animate-ping rounded-full bg-terracota-400 opacity-60" />
+                  <span className="relative rounded-full bg-terracota-400 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-cream-50 shadow-sm">
                     Sugerida
                   </span>
                 </span>
@@ -118,7 +118,7 @@ export function TelefericoCard({ onOpen, isSuggested }: TelefericoCardProps) {
                 </span>
               )}
             </div>
-            <p className="mt-0.5 text-[11px] font-medium text-teal-100">
+            <p className="mt-0.5 text-[11px] font-medium text-cream-100/85">
               {TELEFERICO_URUAPAN.stations.length} estaciones · {TELEFERICO_URUAPAN.fare} · {TELEFERICO_URUAPAN.frequency.toLowerCase()}
             </p>
           </div>
@@ -128,7 +128,7 @@ export function TelefericoCard({ onOpen, isSuggested }: TelefericoCardProps) {
         <svg
           viewBox="0 0 24 24"
           fill="none"
-          className="h-4 w-4 shrink-0 text-white/70 transition group-hover:translate-x-0.5"
+          className="h-4 w-4 shrink-0 text-cream-100/70 transition group-hover:translate-x-0.5"
           aria-hidden="true"
         >
           <path
@@ -153,15 +153,15 @@ type TelefericoDetailProps = {
 
 function InfoRow({ icon, label, value }: { icon: string; label: string; value: string }) {
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-white/8 bg-white/5 px-3.5 py-3">
+    <div className="flex items-center gap-3 rounded-xl border border-cream-100/8 bg-cream-100/5 px-3.5 py-3">
       <span className="text-xl" aria-hidden="true">
         {icon}
       </span>
       <div className="min-w-0">
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-cream-100/45">
           {label}
         </p>
-        <p className="truncate text-[13px] font-semibold text-slate-100">{value}</p>
+        <p className="truncate text-[13px] font-semibold text-cream-50">{value}</p>
       </div>
     </div>
   );
@@ -172,16 +172,16 @@ export function TelefericoDetail({ onClose, onShowOnMap }: TelefericoDetailProps
     <div className="space-y-5">
       {/* Header */}
       <div className="relative overflow-hidden rounded-2xl">
-        <div className="absolute inset-0 bg-gradient-to-br from-teal-600 via-teal-500 to-emerald-500" />
-        <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/10" />
-        <div className="absolute -bottom-6 -left-4 h-24 w-24 rounded-full bg-white/10" />
+        <div className="absolute inset-0 bg-gradient-to-br from-avocado-600 via-avocado-400 to-avocado-400" />
+        <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-cream-100/10" />
+        <div className="absolute -bottom-6 -left-4 h-24 w-24 rounded-full bg-cream-100/10" />
         <div className="relative px-5 py-5">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-2">
               <span className="text-3xl">🚡</span>
               <div>
                 <div className="flex items-center gap-2">
-                  <h2 className="text-lg font-bold text-white">Teleférico Uruapan</h2>
+                  <h2 className="text-lg font-bold text-cream-50">Teleférico Uruapan</h2>
                   <span className="relative inline-flex">
                     <span className="absolute inset-0 animate-ping rounded-full bg-yellow-400 opacity-60" />
                     <span className="relative rounded-full bg-yellow-400 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-yellow-900">
@@ -189,13 +189,13 @@ export function TelefericoDetail({ onClose, onShowOnMap }: TelefericoDetailProps
                     </span>
                   </span>
                 </div>
-                <p className="text-sm text-teal-100">Sistema de transporte aéreo urbano</p>
+                <p className="text-sm text-cream-100/85">Sistema de transporte aéreo urbano</p>
               </div>
             </div>
             <button
               type="button"
               onClick={onClose}
-              className="rounded-full bg-white/20 p-2 text-white transition hover:bg-white/30 active:scale-95"
+              className="rounded-full bg-cream-100/20 p-2 text-cream-50 transition hover:bg-cream-100/30 active:scale-95"
               aria-label="Volver a rutas"
             >
               <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
@@ -213,10 +213,10 @@ export function TelefericoDetail({ onClose, onShowOnMap }: TelefericoDetailProps
             ].map((stat) => (
               <div
                 key={stat.label}
-                className="flex-1 rounded-xl bg-white/15 px-2 py-2 text-center backdrop-blur-sm"
+                className="flex-1 rounded-xl bg-cream-100/15 px-2 py-2 text-center backdrop-blur-sm"
               >
-                <p className="text-base font-bold text-white">{stat.value}</p>
-                <p className="text-[10px] font-medium text-teal-100">{stat.label}</p>
+                <p className="text-base font-bold text-cream-50">{stat.value}</p>
+                <p className="text-[10px] font-medium text-cream-100/85">{stat.label}</p>
               </div>
             ))}
           </div>
@@ -225,7 +225,7 @@ export function TelefericoDetail({ onClose, onShowOnMap }: TelefericoDetailProps
           <button
             type="button"
             onClick={onShowOnMap}
-            className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-white/20 py-2 text-[12px] font-semibold text-white backdrop-blur-sm transition hover:bg-white/30 active:scale-[0.98]"
+            className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-cream-100/20 py-2 text-[12px] font-semibold text-cream-50 backdrop-blur-sm transition hover:bg-cream-100/30 active:scale-[0.98]"
           >
             <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" aria-hidden="true">
               <path
@@ -243,7 +243,7 @@ export function TelefericoDetail({ onClose, onShowOnMap }: TelefericoDetailProps
 
       {/* Stations timeline */}
       <div>
-        <h3 className="mb-2.5 text-[11px] font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+        <h3 className="mb-2.5 text-[11px] font-semibold uppercase tracking-widest text-cream-100/45 dark:text-cream-100/60">
           Estaciones ({TELEFERICO_STATIONS.length})
         </h3>
         <div className="relative space-y-0">
@@ -251,26 +251,26 @@ export function TelefericoDetail({ onClose, onShowOnMap }: TelefericoDetailProps
             <div key={station.id} className="flex gap-3">
               {/* Timeline */}
               <div className="flex flex-col items-center">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-teal-400 bg-teal-500/15 text-[11px] font-bold text-teal-700 dark:text-teal-300">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-avocado-400 bg-avocado-400/15 text-[11px] font-bold text-avocado-600 dark:text-avocado-100">
                   {station.id}
                 </div>
                 {index < TELEFERICO_STATIONS.length - 1 && (
                   <div
-                    className="my-0.5 w-0.5 flex-1 border-l-2 border-dashed border-teal-300/50"
+                    className="my-0.5 w-0.5 flex-1 border-l-2 border-dashed border-avocado-400/50"
                     style={{ minHeight: "1.5rem" }}
                   />
                 )}
               </div>
               {/* Content */}
               <div className="flex-1 pb-3">
-                <div className="rounded-xl border border-white/8 bg-white/5 px-3.5 py-2.5">
+                <div className="rounded-xl border border-cream-100/8 bg-cream-100/5 px-3.5 py-2.5">
                   <div className="flex items-center gap-2">
                     <span aria-hidden="true">{station.icon}</span>
-                    <p className="text-[13px] font-semibold text-slate-100">
+                    <p className="text-[13px] font-semibold text-cream-50">
                       {station.fullName}
                     </p>
                   </div>
-                  <p className="mt-0.5 text-[11px] text-slate-500">
+                  <p className="mt-0.5 text-[11px] text-cream-100/45">
                     {station.desc}
                   </p>
                 </div>
@@ -282,22 +282,22 @@ export function TelefericoDetail({ onClose, onShowOnMap }: TelefericoDetailProps
 
       {/* Fares */}
       <div>
-        <h3 className="mb-2.5 text-[11px] font-semibold uppercase tracking-widest text-slate-500">
+        <h3 className="mb-2.5 text-[11px] font-semibold uppercase tracking-widest text-cream-100/45">
           Tarifas
         </h3>
         <div className="grid grid-cols-2 gap-2">
           {FARES.map((fare) => (
             <div
               key={fare.label}
-              className="rounded-xl border border-teal-400/20 bg-teal-500/10 px-4 py-3"
+              className="rounded-xl border border-avocado-400/20 bg-avocado-400/10 px-4 py-3"
             >
               <p className="text-xl" aria-hidden="true">
                 {fare.icon}
               </p>
-              <p className="mt-1 text-2xl font-extrabold text-teal-300">
+              <p className="mt-1 text-2xl font-extrabold text-avocado-100">
                 {fare.price}
               </p>
-              <p className="text-[11px] font-medium text-slate-400">
+              <p className="text-[11px] font-medium text-cream-100/60">
                 {fare.label}
               </p>
             </div>
@@ -307,7 +307,7 @@ export function TelefericoDetail({ onClose, onShowOnMap }: TelefericoDetailProps
 
       {/* Operational info */}
       <div>
-        <h3 className="mb-2.5 text-[11px] font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+        <h3 className="mb-2.5 text-[11px] font-semibold uppercase tracking-widest text-cream-100/45 dark:text-cream-100/60">
           Operación
         </h3>
         <div className="space-y-2">
