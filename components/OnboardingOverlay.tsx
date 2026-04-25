@@ -15,7 +15,7 @@ type Step = {
 
 const steps: Step[] = [
   {
-    accentColor: "rgba(6,182,212,0.18)",  // cyan
+    accentColor: "rgba(232,93,47,0.18)",  // terracota
     title: "Marca tu origen",
     description: "Toca cualquier punto del mapa para marcar desde dónde sales (punto A).",
     icon: (
@@ -34,7 +34,7 @@ const steps: Step[] = [
     ),
   },
   {
-    accentColor: "rgba(16,185,129,0.18)", // emerald
+    accentColor: "rgba(123,160,91,0.20)", // avocado-400
     title: "Marca tu destino",
     description: "Toca el mapa de nuevo para fijar a dónde quieres llegar (punto B).",
     icon: (
@@ -59,7 +59,7 @@ const steps: Step[] = [
     ),
   },
   {
-    accentColor: "rgba(139,92,246,0.18)", // violet
+    accentColor: "rgba(244,235,217,0.16)", // cream
     title: "Te sugerimos la mejor ruta",
     description: "Nuestro motor compara las 40 rutas reales y te muestra la opción más rápida automáticamente.",
     icon: (
@@ -92,8 +92,8 @@ function StepDots({ total, current }: { total: number; current: number }) {
           key={i}
           className={`block rounded-full transition-all duration-300 ${
             i === current
-              ? "h-2 w-6 bg-cyan-400"
-              : "h-2 w-2 bg-slate-600"
+              ? "h-2 w-6 bg-terracota-400"
+              : "h-2 w-2 bg-cream-100/20"
           }`}
         />
       ))}
@@ -270,8 +270,8 @@ export default function OnboardingOverlay() {
                   style={{ background: current.accentColor }}
                   aria-hidden="true"
                 />
-                <span className="relative text-cyan-300 dark:text-cyan-200 transition-colors duration-500"
-                  style={{ color: step === 0 ? "#67e8f9" : step === 1 ? "#6ee7b7" : "#c4b5fd" }}
+                <span className="relative transition-colors duration-500"
+                  style={{ color: step === 0 ? "#E85D2F" : step === 1 ? "#7BA05B" : "#FBF5E8" }}
                 >
                   {current.icon}
                 </span>
@@ -283,7 +283,7 @@ export default function OnboardingOverlay() {
               </p>
 
               {/* Title */}
-              <h2 className="text-center text-xl font-bold leading-snug text-slate-50">
+              <h2 className="text-center font-serif-display text-2xl font-black leading-snug tracking-tight text-cream-50">
                 {current.title}
               </h2>
 
@@ -304,7 +304,7 @@ export default function OnboardingOverlay() {
             onClick={goNext}
             className={`inline-flex h-11 items-center gap-1.5 rounded-full px-5 text-[14px] font-semibold transition active:scale-[0.97] ${
               isLast
-                ? "bg-terracota-400 text-cream-50 shadow-[0_4px_20px_rgba(232,93,47,0.40)] hover:bg-[#00bfa0]"
+                ? "bg-terracota-400 text-cream-50 shadow-[0_4px_20px_rgba(232,93,47,0.40)] hover:bg-terracota-500"
                 : "border border-cream-100/15 bg-cream-100/8 text-cream-50 hover:bg-cream-100/15"
             }`}
           >
