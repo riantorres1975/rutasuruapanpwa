@@ -5,7 +5,7 @@ import NotGovernmentNotice from "@/components/NotGovernmentNotice";
 
 export const metadata: Metadata = {
   title: "Las rutas de camión más usadas en Uruapan",
-  description: "Estamos preparando un ranking detallado de los derroteros más consultados, sus destinos principales y cómo conectan con el Teleférico.",
+  description: "Estamos preparando un ranking detallado de las rutas más consultadas, sus destinos principales y cómo conectan con el Teleférico.",
   alternates: {
     canonical: "/blog/rutas-camion-mas-usadas-uruapan"
   }
@@ -24,7 +24,7 @@ export default function RutasCamionMasUsadasPage() {
               Las rutas de <span className="italic text-terracota-400">camión</span> más usadas en Uruapan.
             </>
           }
-          intro="Estamos preparando un ranking detallado de los derroteros más consultados, sus destinos principales y cómo conectan con el Teleférico."
+          intro="Estamos preparando un ranking detallado de las rutas más consultadas, sus destinos principales y cómo conectan con el Teleférico."
         />
 
         {/* Rutas destacadas */}
