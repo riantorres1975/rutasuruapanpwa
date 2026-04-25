@@ -79,7 +79,6 @@ export function TelefericoCard({ onOpen, isSuggested }: TelefericoCardProps) {
       type="button"
       onClick={onOpen}
       className="group relative w-full overflow-hidden rounded-2xl text-left transition active:scale-[0.985]"
-      aria-label="Ver información del Teleférico Uruapan"
     >
       {/* Gradient background */}
       <div className="absolute inset-0 bg-gradient-to-br from-teal-600 via-teal-500 to-emerald-500 opacity-90" />

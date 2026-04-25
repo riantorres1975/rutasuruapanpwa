@@ -5,7 +5,9 @@ import { useCallback, useState } from "react";
 export type ShareStatus = "idle" | "shared" | "copied" | "error";
 
 const APP_URL =
-  process.env.NEXT_PUBLIC_APP_URL ?? "https://rutasuruapan.vercel.app";
+  process.env.NEXT_PUBLIC_SITE_URL ??
+  process.env.NEXT_PUBLIC_APP_URL ??
+  "https://rutasuruapanpwa.vercel.app";
 
 export function useShareRoute() {
   const [status, setStatus] = useState<ShareStatus>("idle");

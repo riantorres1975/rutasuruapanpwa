@@ -198,6 +198,11 @@ body {
 }
 
 @media (max-width: 767px) {
+  .text-\[10px\],
+  .text-\[11px\] {
+    font-size: 0.75rem;
+  }
+
   /* Mobile GPUs struggle with continuous SVG/filter/background animations here. */
   .landing-aurora,
   .animate-float-panel,

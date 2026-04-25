@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 
 // ── Sidebar resize constants ──────────────────────────────────────────────────
 const SIDEBAR_DEFAULT_MD = 380; // px en breakpoint md (768–1023px)
@@ -8,7 +9,6 @@ const SIDEBAR_DEFAULT_LG = 420; // px en breakpoint lg (1024px+)
 const SIDEBAR_MIN = 300;        // px mínimo al arrastrar
 const SIDEBAR_MAX = 520;        // px máximo al arrastrar
 import BottomSheet from "@/components/BottomSheet";
-import MapView from "@/components/Map";
 import NearbyToast from "@/components/NearbyToast";
 import OnboardingOverlay from "@/components/OnboardingOverlay";
 import RouteList from "@/components/RouteList";
@@ -22,6 +22,11 @@ const SEGMENT_LENGTH_FACTOR = 0.04;
 const AVG_TRIP_SPEED_KMH = 18;
 const BACKGROUND_SIMPLIFY_TOLERANCE = 0.00008;
 const BACKGROUND_MAX_POINTS = 180;
+
+const MapView = dynamic(() => import("@/components/Map"), {
+  ssr: false,
+  loading: () => <div className="h-full w-full animate-pulse bg-[#0b1220]" />
+});
 
 function getCoordinatesByDirection(route: GroupedRouteData, direction: RouteDirection) {
   return direction === "ida" ? route.ida ?? route.vuelta ?? [] : route.vuelta ?? route.ida ?? [];
@@ -644,38 +649,6 @@ export default function HomePage() {
     );
   }
 
-  if (isLoadingData) {
-    return (
-      <main className="relative flex h-dvh w-full flex-col items-center justify-center gap-5 overflow-hidden bg-[#0b1220]">
-        {/* Mapa skeleton */}
-        <div className="absolute inset-0 animate-pulse bg-gradient-to-b from-[#111b2e] to-[#0b1220]" />
-        {/* Skeleton rutas */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 opacity-30">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div
-              key={i}
-              className="h-1 animate-pulse rounded-full bg-slate-500"
-              style={{
-                width: `${55 + (i % 3) * 15}%`,
-                animationDelay: `${i * 120}ms`
-              }}
-            />
-          ))}
-        </div>
-        {/* Logo + spinner */}
-        <div className="relative z-10 flex flex-col items-center gap-4">
-          <div className="flex items-center gap-2.5 rounded-2xl border border-white/10 bg-white/5 px-5 py-3 backdrop-blur-xl">
-            <p className="font-display text-[17px] font-semibold text-white">VoyUruapan</p>
-          </div>
-          <div className="flex items-center gap-2 text-sm text-slate-400">
-            <span className="h-4 w-4 animate-spin rounded-full border-2 border-cyan-400/60 border-t-transparent" />
-            Cargando rutas...
-          </div>
-        </div>
-      </main>
-    );
-  }
-
   // ── Bloque de JSX compartido: controles A/B + resultado de ruta ──────────────
   // Se renderiza tanto en el overlay mobile como en el sidebar desktop.
   // Extraido como funcion local para evitar duplicacion de JSX.
@@ -1055,7 +1028,7 @@ export default function HomePage() {
         {/* ── Flow step indicator + hint ──────────────────────────────────── */}
         <div className="shrink-0 border-b border-white/5 px-5 py-3">
           {/* Step pills */}
-          <div className="mb-2.5 flex items-center gap-2" aria-label={`Paso ${flowStep} de 3 para encontrar tu ruta`}>
+          <div className="mb-2.5 flex items-center gap-2" role="group" aria-label={`Paso ${flowStep} de 3 para encontrar tu ruta`}>
             {[
               { n: 1, label: "Origen" },
               { n: 2, label: "Destino" },
@@ -1154,22 +1127,46 @@ export default function HomePage() {
           En desktop: ocupa flex-1 (el resto del ancho tras el sidebar)
       ══════════════════════════════════════════════════════════════════════ */}
       <div className="relative flex-1">
-        <MapView
-          routes={mapRoutes}
-          selectedRouteId={selectedRouteId}
-          suggestedRouteIds={suggestedRouteIds}
-          allRoutesMode={routesMapMode}
-          bestSuggestedRouteId={bestSuggestion?.routeId ?? null}
-          selectedRouteSegment={selectedSuggestion?.segment ?? null}
-          originPoint={originPoint}
-          destinationPoint={destinationPoint}
-          showTeleferico={showTeleferico}
-          selectedTransfer={selectedTransfer}
-          awaitingPick={flowStep === 3 ? null : activePoint}
-          onMapPick={handleMapPick}
-          onSelectRoute={handleSelectRoute}
-          onNearbyRoutesFound={handleNearbyRoutesFound}
-        />
+        {isLoadingData ? (
+          <div className="relative h-full w-full overflow-hidden bg-[#0b1220]">
+            <div className="absolute inset-0 animate-pulse bg-gradient-to-b from-[#111b2e] to-[#0b1220]" />
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 opacity-30" aria-hidden="true">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="h-1 animate-pulse rounded-full bg-slate-500"
+                  style={{
+                    width: `${55 + (i % 3) * 15}%`,
+                    animationDelay: `${i * 120}ms`
+                  }}
+                />
+              ))}
+            </div>
+            <div className="absolute inset-0 grid place-items-center">
+              <div className="flex items-center gap-2 rounded-full border border-white/10 bg-[#0E1526]/90 px-4 py-2 text-sm font-semibold text-slate-300 shadow-soft backdrop-blur-xl">
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#00D4AA]/60 border-t-transparent" />
+                Cargando rutas...
+              </div>
+            </div>
+          </div>
+        ) : (
+          <MapView
+            routes={mapRoutes}
+            selectedRouteId={selectedRouteId}
+            suggestedRouteIds={suggestedRouteIds}
+            allRoutesMode={routesMapMode}
+            bestSuggestedRouteId={bestSuggestion?.routeId ?? null}
+            selectedRouteSegment={selectedSuggestion?.segment ?? null}
+            originPoint={originPoint}
+            destinationPoint={destinationPoint}
+            showTeleferico={showTeleferico}
+            selectedTransfer={selectedTransfer}
+            awaitingPick={flowStep === 3 ? null : activePoint}
+            onMapPick={handleMapPick}
+            onSelectRoute={handleSelectRoute}
+            onNearbyRoutesFound={handleNearbyRoutesFound}
+          />
+        )}
 
         {/* ── MOBILE: Top overlay (oculto en desktop) ── */}
         <section className="pointer-events-none absolute inset-x-0 top-0 z-20 px-4 pt-safe-or-4 md:hidden">
@@ -1181,7 +1178,7 @@ export default function HomePage() {
               <span className="rounded-full bg-white/8 px-1.5 py-0.5 text-[11px] font-medium text-slate-400">
                 {fullRoutes.length}
               </span>
-              <span className="ml-0.5 inline-flex items-center gap-1" aria-label={`Paso ${flowStep} de 3`}>
+              <span className="ml-0.5 inline-flex items-center gap-1" role="img" aria-label={`Paso ${flowStep} de 3`}>
                 {[1, 2, 3].map((step) => {
                   const isActive = step === flowStep;
                   const isDone = step < flowStep;
@@ -1277,7 +1274,6 @@ export default function HomePage() {
           <button
             type="button"
             onClick={() => setIsResultSheetOpen(true)}
-            aria-label="Ver resultado de ruta"
             className={`inline-flex h-12 max-w-[55%] items-center gap-2 rounded-2xl border bg-[#0E1526]/95 pl-3.5 pr-4 text-[14px] font-semibold text-white shadow-[0_8px_32px_rgba(0,0,0,0.45)] backdrop-blur-xl transition active:scale-[0.97] ${
               isResultSheetOpen
                 ? "border-[#00D4AA]/50 shadow-[0_8px_32px_rgba(0,212,170,0.18)]"
@@ -1306,7 +1302,7 @@ export default function HomePage() {
             type="button"
             onClick={() => setIsSheetOpen(true)}
             className="inline-flex h-12 items-center gap-2 rounded-2xl border border-white/15 bg-[#0E1526]/95 pl-3.5 pr-4 text-[14px] font-semibold text-white shadow-[0_8px_32px_rgba(0,0,0,0.45)] backdrop-blur-xl transition hover:border-[#00D4AA]/40 hover:shadow-[0_8px_32px_rgba(0,212,170,0.15)] active:scale-[0.97]"
-            aria-label={`Ver las ${fullRoutes.length} rutas disponibles`}
+            aria-label={`Rutas, ver las ${fullRoutes.length} rutas disponibles`}
           >
             <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 text-[#00D4AA]" aria-hidden="true">
               <path d="M4 7H20M4 12H20M4 17H14" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
