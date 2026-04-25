@@ -285,6 +285,8 @@ export default function HomePage() {
   const [selectedRouteId, setSelectedRouteId] = useState<number | null>(null);
   const [selectedDirection, setSelectedDirection] = useState<RouteDirection>("ida");
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [isResultSheetOpen, setIsResultSheetOpen] = useState(false);
+  const [resultSnap, setResultSnap] = useState<"mini" | "full">("mini");
   const [originPoint, setOriginPoint] = useState<Coordinates | null>(null);
   const [destinationPoint, setDestinationPoint] = useState<Coordinates | null>(null);
   const [activePoint, setActivePoint] = useState<ActivePoint>("origin");
@@ -597,6 +599,16 @@ export default function HomePage() {
     setShowHint(true);
   }, [flowStep]);
 
+  // Abrir/cerrar el result sheet según el paso del flujo
+  useEffect(() => {
+    if (flowStep === 3) {
+      setIsResultSheetOpen(true);
+      setResultSnap("mini");
+    } else {
+      setIsResultSheetOpen(false);
+    }
+  }, [flowStep]);
+
   useEffect(() => {
     if (!showHint) {
       return;
@@ -673,7 +685,7 @@ export default function HomePage() {
   // ── Bloque de JSX compartido: controles A/B + resultado de ruta ──────────────
   // Se renderiza tanto en el overlay mobile como en el sidebar desktop.
   // Extraido como funcion local para evitar duplicacion de JSX.
-  const renderRouteControls = (context: "mobile" | "desktop") => {
+  const renderRouteControls = (context: "mobile" | "desktop", hideStep3 = false) => {
     const isMobile = context === "mobile";
     return (
       <>
@@ -780,8 +792,8 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* Resultado de ruta — paso 3 */}
-        {flowStep === 3 && (
+        {/* Resultado de ruta — paso 3 (en mobile va en el result sheet) */}
+        {flowStep === 3 && !hideStep3 && (
           <div
             aria-live="polite"
             className="w-full overflow-hidden rounded-2xl border border-white/10 bg-[#141D33] shadow-[0_4px_24px_rgba(0,212,170,0.10)] backdrop-blur-xl transition-all duration-300"
@@ -1221,9 +1233,9 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Row 4: A/B controls */}
+          {/* Row 4: A/B controls (en paso 3, el panel de resultado va en el result sheet) */}
           <div className="pointer-events-auto mt-2">
-            {renderRouteControls("mobile")}
+            {renderRouteControls("mobile", true)}
           </div>
         </section>
 
@@ -1231,7 +1243,8 @@ export default function HomePage() {
         <div
           aria-live="polite"
           aria-atomic="true"
-          className={`pointer-events-none absolute inset-x-0 bottom-24 z-50 flex justify-center transition-all duration-300 ${
+          style={{ bottom: isResultSheetOpen ? "calc(80px + 4rem)" : "6rem" }}
+          className={`pointer-events-none absolute inset-x-0 z-50 flex justify-center transition-all duration-300 ${
             shareStatus !== "idle" ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
           }`}
         >
@@ -1266,8 +1279,13 @@ export default function HomePage() {
         <button
           type="button"
           onClick={() => setIsSheetOpen(true)}
-          className="absolute bottom-6 right-4 z-30 inline-flex h-12 items-center gap-2 rounded-2xl border border-white/15 bg-[#0E1526]/95 pl-3.5 pr-4 text-[14px] font-semibold text-white shadow-[0_8px_32px_rgba(0,0,0,0.45)] backdrop-blur-xl transition hover:border-[#00D4AA]/40 hover:shadow-[0_8px_32px_rgba(0,212,170,0.15)] active:scale-[0.97] md:hidden"
-          style={{ marginBottom: "env(safe-area-inset-bottom, 0px)" }}
+          className="absolute right-4 z-30 inline-flex h-12 items-center gap-2 rounded-2xl border border-white/15 bg-[#0E1526]/95 pl-3.5 pr-4 text-[14px] font-semibold text-white shadow-[0_8px_32px_rgba(0,0,0,0.45)] backdrop-blur-xl transition hover:border-[#00D4AA]/40 hover:shadow-[0_8px_32px_rgba(0,212,170,0.15)] active:scale-[0.97] md:hidden"
+          style={{
+            bottom: isResultSheetOpen
+              ? "calc(80px + env(safe-area-inset-bottom, 0px) + 12px)"
+              : "calc(1.5rem + env(safe-area-inset-bottom, 0px))",
+            transition: "bottom 300ms cubic-bezier(0.22,1,0.36,1)",
+          }}
           aria-label={`Ver las ${fullRoutes.length} rutas disponibles`}
         >
           <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 text-[#00D4AA]" aria-hidden="true">
@@ -1304,6 +1322,31 @@ export default function HomePage() {
             setIsSheetOpen(false);
           }}
         />
+      </BottomSheet>
+
+      {/* ── MOBILE ONLY: Result sheet con snap mini/full ── */}
+      <BottomSheet
+        open={isResultSheetOpen}
+        onOpenChange={setIsResultSheetOpen}
+        snapPoints
+        snap={resultSnap}
+        onSnapChange={setResultSnap}
+        miniHeight={80}
+        title={
+          isCalculatingSuggestions
+            ? "Buscando ruta..."
+            : bestSuggestion
+              ? formatRouteLabel(bestSuggestion.ruta)
+              : selectedTransfer
+                ? `${selectedTransfer.routeAName} → ${selectedTransfer.routeBName}`
+                : transfers.length > 0
+                  ? `${transfers.length} opciones con transbordo`
+                  : "Sin ruta directa"
+        }
+      >
+        <div aria-live="polite">
+          {renderRouteControls("mobile")}
+        </div>
       </BottomSheet>
 
       <OnboardingOverlay />
