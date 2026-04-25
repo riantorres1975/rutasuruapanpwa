@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Plus_Jakarta_Sans, Space_Grotesk } from "next/font/google";
+import { Plus_Jakarta_Sans, Space_Grotesk, Fraunces } from "next/font/google";
 import PWARegistrar from "@/components/PWARegistrar";
 import "./globals.css";
 
@@ -12,6 +12,13 @@ const plusJakarta = Plus_Jakarta_Sans({
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
   variable: "--font-space-grotesk",
+  display: "swap"
+});
+
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  variable: "--font-fraunces",
+  axes: ["SOFT", "opsz"],
   display: "swap"
 });
 
@@ -73,7 +80,7 @@ export default function RootLayout({
   return (
     <html lang="es-MX" suppressHydrationWarning>
       <body
-        className={`${plusJakarta.variable} ${spaceGrotesk.variable} min-h-dvh bg-[var(--background)] font-sans text-[var(--foreground)] antialiased`}
+        className={`${plusJakarta.variable} ${spaceGrotesk.variable} ${fraunces.variable} min-h-dvh bg-[var(--background)] font-sans text-[var(--foreground)] antialiased`}
       >
         <PWARegistrar />
         {children}

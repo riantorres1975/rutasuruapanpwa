@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import PageHeader from "@/components/PageHeader";
+import NotGovernmentNotice from "@/components/NotGovernmentNotice";
 import { FARES_2026, TELEFERICO_URUAPAN } from "@/lib/mobility-config";
 
 export const metadata: Metadata = {
@@ -26,78 +28,105 @@ const stationDescriptions = [
   "Terminal poniente. Conexión con el mercado y colonias del lado oeste de la ciudad."
 ] as const;
 
+const SECTIONS = [
+  {
+    n: "01",
+    title: "Qué es el Teleférico",
+    body: "El Teleférico de Uruapan es un sistema de transporte urbano que conecta zonas clave de la ciudad mediante estaciones elevadas. En VoyUruapan aparece integrado con rutas de camión para planear viajes multimodales."
+  },
+  {
+    n: "02",
+    title: "Cómo obtener la tarjeta de movilidad",
+    body: `Para usar el Teleférico necesitas una tarjeta electrónica de movilidad. Como referencia se muestra un costo de ${FARES_2026.mobilityCard.price}. Conserva la tarjeta para recargarla y validar futuros accesos.`
+  },
+  {
+    n: "03",
+    title: "Cómo validar el acceso",
+    body: `Al entrar a la estación, acerca tu tarjeta al validador. Cada viaje cuesta ${TELEFERICO_URUAPAN.fare}. Si también usas camión urbano, considera cada abordaje por separado al calcular tu presupuesto.`
+  },
+  {
+    n: "04",
+    title: "Horario",
+    body: `Opera de ${TELEFERICO_URUAPAN.hours} todos los días. Revisa avisos oficiales antes de viajar, especialmente en días festivos o por mantenimiento programado.`
+  },
+  {
+    n: "05",
+    title: "Tips para combinarlo con camión",
+    body: "Marca tu origen y destino en el mapa para ver si te conviene llegar a una estación caminando, en camión o con transbordo. El Teleférico puede ser útil para cruzar de oriente a poniente y después completar el trayecto en ruta urbana."
+  }
+] as const;
+
 export default function TelefericoBlogArticlePage() {
   return (
-    <main className="min-h-dvh bg-[#080C18] px-5 py-8 text-slate-100 sm:px-8 lg:px-10">
-      <article className="mx-auto max-w-3xl">
-        <Link href="/blog" className="inline-flex items-center gap-2 rounded-2xl border border-[#00D4AA]/20 bg-[#0E1526] px-3.5 py-2 text-sm font-bold text-white">
-          <span className="h-2.5 w-2.5 rounded-full bg-[#00D4AA]" />
-          Blog
-        </Link>
+    <main className="greca-bg greca-bg-animated min-h-dvh px-5 py-8 text-cream-100 sm:px-8 lg:px-10">
+      <article className="relative z-10 mx-auto max-w-3xl">
+        <PageHeader
+          backHref="/blog"
+          backLabel="Blog"
+          kicker="Únicо en Michoacán"
+          eyebrow="Guía 2026"
+          title={
+            <>
+              Cómo usar el <span className="italic text-terracota-400">Teleférico</span> de Uruapan paso a paso.
+            </>
+          }
+          intro="Aprende cómo abordar, pagar y combinar el Teleférico de Uruapan con rutas de camión urbano desde VoyUruapan."
+        />
 
-        <header className="mt-10">
-          <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#00D4AA]">Guía 2025</p>
-          <h1 className="mt-3 font-display text-4xl font-black leading-tight tracking-tight text-white md:text-5xl">
-            Cómo usar el Teleférico de Uruapan paso a paso
-          </h1>
-          <p className="mt-5 text-base leading-8 text-slate-300">
-            Aprende cómo abordar, pagar y combinar el Teleférico de Uruapan con rutas de camión urbano desde VoyUruapan.
-          </p>
-        </header>
-
-        <div className="mt-10 space-y-9">
-          <section>
-            <h2 className="font-display text-2xl font-black text-white">Qué es el teleférico</h2>
-            <p className="mt-3 text-sm leading-8 text-slate-300">
-              El Teleférico de Uruapan es un sistema de transporte urbano que conecta zonas clave de la ciudad mediante estaciones elevadas. En VoyUruapan aparece integrado con rutas de camión para planear viajes multimodales.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="font-display text-2xl font-black text-white">Cómo obtener la tarjeta de movilidad</h2>
-            <p className="mt-3 text-sm leading-8 text-slate-300">
-              Para usar el Teleférico necesitas una tarjeta electrónica de movilidad. En la app se muestra como referencia un costo de {FARES_2026.mobilityCard.price}. Conserva la tarjeta para recargarla y validar futuros accesos.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="font-display text-2xl font-black text-white">Cómo validar el acceso</h2>
-            <p className="mt-3 text-sm leading-8 text-slate-300">
-              Al entrar a la estación, acerca tu tarjeta al validador. Cada viaje cuesta {TELEFERICO_URUAPAN.fare}. Si también usas camión urbano, considera cada abordaje por separado al calcular tu presupuesto.
-            </p>
-          </section>
+        <div className="mt-12 space-y-8">
+          {SECTIONS.map((section) => (
+            <section
+              key={section.n}
+              className="rounded-2xl border border-cream-100/10 bg-ink-900/55 p-6 backdrop-blur"
+            >
+              <p className="font-serif-display text-3xl font-black text-terracota-400">
+                {section.n}
+              </p>
+              <h2 className="mt-2 font-serif-display text-2xl font-black text-cream-50">
+                {section.title}
+              </h2>
+              <p className="mt-3 text-sm leading-7 text-cream-100/75">
+                {section.body}
+              </p>
+            </section>
+          ))}
 
           <section>
-            <h2 className="font-display text-2xl font-black text-white">Las 6 estaciones</h2>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <p className="font-serif-display text-3xl font-black text-terracota-400">06</p>
+            <h2 className="mt-2 font-serif-display text-2xl font-black text-cream-50">
+              Las 6 estaciones, de oriente a poniente
+            </h2>
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
               {TELEFERICO_URUAPAN.stations.map((station, index) => (
-                <article key={station} className="rounded-2xl border border-white/10 bg-[#0E1526]/80 p-4">
-                  <p className="text-xs font-black text-[#00D4AA]">E{index + 1}</p>
-                  <h3 className="mt-2 font-display text-lg font-black text-white">{station}</h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-400">{stationDescriptions[index]}</p>
+                <article
+                  key={station}
+                  className="card-lift rounded-2xl border border-cream-100/10 bg-ink-900/65 p-4 backdrop-blur"
+                >
+                  <p className="font-serif-display text-xs font-black text-terracota-400">
+                    E{index + 1}
+                  </p>
+                  <h3 className="mt-2 font-serif-display text-lg font-black text-cream-50">
+                    {station}
+                  </h3>
+                  <p className="mt-2 text-xs leading-6 text-cream-100/65">
+                    {stationDescriptions[index]}
+                  </p>
                 </article>
               ))}
             </div>
           </section>
-
-          <section>
-            <h2 className="font-display text-2xl font-black text-white">Horario</h2>
-            <p className="mt-3 text-sm leading-8 text-slate-300">
-              El horario configurado en VoyUruapan es de 5am a 11pm todos los días. Revisa avisos oficiales antes de viajar, especialmente en días festivos o por mantenimiento.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="font-display text-2xl font-black text-white">Tips para combinarlo con camión</h2>
-            <p className="mt-3 text-sm leading-8 text-slate-300">
-              Marca tu origen y destino en el mapa para ver si te conviene llegar a una estación caminando, en camión o con transbordo. El Teleférico puede ser útil para cruzar de oriente a poniente y después completar el trayecto en ruta urbana.
-            </p>
-          </section>
         </div>
 
-        <Link href="/mapa" className="mt-10 inline-flex h-12 items-center rounded-full bg-[#00D4AA] px-6 text-sm font-black text-gray-950">
+        <Link
+          href="/mapa"
+          className="cta-shine mt-10 inline-flex h-12 items-center rounded-full bg-terracota-400 px-6 text-sm font-black text-cream-50 hover:bg-terracota-500"
+        >
           Ver el mapa de rutas →
         </Link>
+
+        <div className="mt-12">
+          <NotGovernmentNotice variant="compact" />
+        </div>
       </article>
     </main>
   );

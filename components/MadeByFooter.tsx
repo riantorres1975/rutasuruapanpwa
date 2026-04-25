@@ -10,7 +10,6 @@ const DONATION_URL = "https://example.com/tu-link-de-donacion";
 const socialLinks = [
   {
     label: "GitHub",
-    text: "GitHub",
     href: GITHUB_URL,
     icon: (
       <svg viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4" aria-hidden="true">
@@ -19,8 +18,7 @@ const socialLinks = [
     )
   },
   {
-    label: "X",
-    text: "Twitter/X",
+    label: "Twitter / X",
     href: X_URL,
     icon: (
       <svg viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4" aria-hidden="true">
@@ -30,7 +28,6 @@ const socialLinks = [
   },
   {
     label: "LinkedIn",
-    text: "LinkedIn",
     href: LINKEDIN_URL,
     icon: (
       <svg viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4" aria-hidden="true">
@@ -40,7 +37,6 @@ const socialLinks = [
   },
   {
     label: "Repositorio",
-    text: "Repositorio",
     href: REPO_URL,
     icon: (
       <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
@@ -51,61 +47,91 @@ const socialLinks = [
   }
 ] as const;
 
+const HeartIcon = ({ className = "h-4 w-4" }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+    <path
+      d="M12 20.5S4.5 16.1 4.5 9.7A4.2 4.2 0 0 1 12 7.1a4.2 4.2 0 0 1 7.5 2.6c0 6.4-7.5 10.8-7.5 10.8Z"
+      fill="currentColor"
+      opacity="0.32"
+    />
+    <path
+      d="M12 20.5S4.5 16.1 4.5 9.7A4.2 4.2 0 0 1 12 7.1a4.2 4.2 0 0 1 7.5 2.6c0 6.4-7.5 10.8-7.5 10.8Z"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
 export default function MadeByFooter() {
   return (
-    <div className="mt-6 border-t border-white/8 pt-5">
-      <div className="mb-5 rounded-2xl border border-[#00D4AA]/25 bg-[radial-gradient(circle_at_0%_0%,rgba(0,212,170,0.16),transparent_42%),rgba(0,212,170,0.06)] p-4 text-xs text-white/60 shadow-[0_12px_50px_rgba(0,212,170,0.08)]">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="font-display text-base font-black text-white">Apoya VoyUruapan</p>
-            <p className="mt-1 max-w-xl leading-5 text-white/55">Si esta app te ayuda, puedes apoyar el mantenimiento, datos de rutas y mejoras de la PWA.</p>
+    <div className="mt-8">
+      {/* ── Tarjeta de apoyo ── */}
+      <div className="relative overflow-hidden rounded-[1.75rem] border border-terracota-400/30 bg-gradient-to-br from-terracota-400/[0.08] via-ink-900/70 to-avocado-700/[0.12] p-6 backdrop-blur-xl md:p-7">
+        {/* Greca decorativa esquina */}
+        <div
+          className="greca-band absolute right-0 top-0 h-3 w-32 opacity-40"
+          aria-hidden="true"
+        />
+        <div
+          className="absolute -right-8 -top-8 h-40 w-40 rounded-full bg-terracota-400/15 blur-3xl"
+          aria-hidden="true"
+        />
+
+        <div className="relative flex flex-col gap-5 md:flex-row md:items-center md:justify-between md:gap-8">
+          <div className="flex items-start gap-4 md:items-center">
+            <span
+              aria-hidden="true"
+              className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-terracota-400/15 text-terracota-400"
+            >
+              <HeartIcon className="h-6 w-6" />
+            </span>
+            <div>
+              <p className="font-serif-display text-xl font-black text-cream-50 md:text-2xl">
+                ¿Te ayuda <span className="italic text-terracota-400">VoyUruapan</span>?
+              </p>
+              <p className="mt-1 max-w-md text-sm leading-6 text-cream-100/70">
+                Esta app es independiente y se mantiene con esfuerzo propio. Una propina ayuda a pagar el mapa, el dominio y mejoras futuras.
+              </p>
+            </div>
           </div>
+
           <Link
             href={DONATION_URL}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-[#00D4AA] px-5 text-sm font-black text-[#05131a] shadow-[0_10px_30px_rgba(0,212,170,0.25)] transition hover:bg-[#12e7bd] active:scale-[0.98]"
             target="_blank"
             rel="noreferrer"
+            className="cta-shine group inline-flex h-12 items-center justify-center gap-2 self-start rounded-full bg-terracota-400 px-6 text-sm font-black text-cream-50 shadow-[0_14px_40px_rgba(232,93,47,0.35)] transition hover:bg-terracota-500 active:scale-[0.98] md:self-auto"
           >
-            <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
-              <path d="M12 20.5S4.5 16.1 4.5 9.7A4.2 4.2 0 0 1 12 7.1a4.2 4.2 0 0 1 7.5 2.6c0 6.4-7.5 10.8-7.5 10.8Z" fill="currentColor" opacity="0.28" />
-              <path d="M12 20.5S4.5 16.1 4.5 9.7A4.2 4.2 0 0 1 12 7.1a4.2 4.2 0 0 1 7.5 2.6c0 6.4-7.5 10.8-7.5 10.8Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            Donar
+            <HeartIcon className="h-4 w-4 transition group-hover:scale-110" />
+            Invitar un café
           </Link>
         </div>
       </div>
 
-      <div className="flex flex-col gap-3 text-xs text-white/40 sm:flex-row sm:items-center sm:justify-between">
-        <p className="inline-flex items-center gap-1.5">
+      {/* ── Línea de autoría + socials ── */}
+      <div className="mt-6 flex flex-col gap-4 border-t border-cream-100/10 pt-6 text-xs text-cream-100/55 sm:flex-row sm:items-center sm:justify-between">
+        <p className="inline-flex flex-wrap items-center gap-1.5">
           <span>Hecho con</span>
-          <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 text-[#FF5C35] drop-shadow-[0_0_8px_rgba(255,92,53,0.25)]" aria-label="amor" role="img">
-            <path
-              d="M12 20.5S4.5 16.1 4.5 9.7A4.2 4.2 0 0 1 12 7.1a4.2 4.2 0 0 1 7.5 2.6c0 6.4-7.5 10.8-7.5 10.8Z"
-              fill="currentColor"
-              opacity="0.22"
-            />
-            <path
-              d="M12 20.5S4.5 16.1 4.5 9.7A4.2 4.2 0 0 1 12 7.1a4.2 4.2 0 0 1 7.5 2.6c0 6.4-7.5 10.8-7.5 10.8Z"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-          <span>en Uruapan por {AUTHOR_NAME}</span>
+          <span className="text-terracota-400 drop-shadow-[0_0_10px_rgba(232,93,47,0.4)]">
+            <HeartIcon className="h-3.5 w-3.5" />
+          </span>
+          <span>en Uruapan por</span>
+          <span className="font-serif-display font-bold text-cream-50">{AUTHOR_NAME}</span>
         </p>
-        <div className="flex items-center gap-3">
+
+        <div className="flex flex-wrap items-center gap-2">
           {socialLinks.map((link) => (
             <Link
               key={link.label}
               href={link.href}
-              className="inline-flex items-center gap-1.5 text-white/40 transition hover:text-white/80"
               target="_blank"
               rel="noreferrer"
               aria-label={link.label}
+              className="group inline-flex h-9 items-center gap-2 rounded-full border border-cream-100/10 bg-cream-100/5 px-3 text-cream-100/70 transition hover:border-terracota-400/50 hover:bg-terracota-400/10 hover:text-terracota-400"
             >
               {link.icon}
-              <span>{link.text}</span>
+              <span className="text-xs font-semibold">{link.label}</span>
             </Link>
           ))}
         </div>
