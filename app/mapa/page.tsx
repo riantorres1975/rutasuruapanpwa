@@ -286,7 +286,6 @@ export default function HomePage() {
   const [selectedDirection, setSelectedDirection] = useState<RouteDirection>("ida");
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isResultSheetOpen, setIsResultSheetOpen] = useState(false);
-  const [resultSnap, setResultSnap] = useState<"mini" | "full">("mini");
   const [originPoint, setOriginPoint] = useState<Coordinates | null>(null);
   const [destinationPoint, setDestinationPoint] = useState<Coordinates | null>(null);
   const [activePoint, setActivePoint] = useState<ActivePoint>("origin");
@@ -599,14 +598,9 @@ export default function HomePage() {
     setShowHint(true);
   }, [flowStep]);
 
-  // Abrir/cerrar el result sheet según el paso del flujo
+  // Cerrar el result sheet al salir del paso 3
   useEffect(() => {
-    if (flowStep === 3) {
-      setIsResultSheetOpen(true);
-      setResultSnap("mini");
-    } else {
-      setIsResultSheetOpen(false);
-    }
+    if (flowStep !== 3) setIsResultSheetOpen(false);
   }, [flowStep]);
 
   useEffect(() => {
@@ -1243,8 +1237,7 @@ export default function HomePage() {
         <div
           aria-live="polite"
           aria-atomic="true"
-          style={{ bottom: isResultSheetOpen ? "calc(80px + 4rem)" : "6rem" }}
-          className={`pointer-events-none absolute inset-x-0 z-50 flex justify-center transition-all duration-300 ${
+          className={`pointer-events-none absolute inset-x-0 bottom-24 z-50 flex justify-center transition-all duration-300 ${
             shareStatus !== "idle" ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
           }`}
         >
@@ -1275,27 +1268,55 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* ── MOBILE ONLY: Floating "Ver rutas" button ── */}
-        <button
-          type="button"
-          onClick={() => setIsSheetOpen(true)}
-          className="absolute right-4 z-30 inline-flex h-12 items-center gap-2 rounded-2xl border border-white/15 bg-[#0E1526]/95 pl-3.5 pr-4 text-[14px] font-semibold text-white shadow-[0_8px_32px_rgba(0,0,0,0.45)] backdrop-blur-xl transition hover:border-[#00D4AA]/40 hover:shadow-[0_8px_32px_rgba(0,212,170,0.15)] active:scale-[0.97] md:hidden"
-          style={{
-            bottom: isResultSheetOpen
-              ? "calc(80px + env(safe-area-inset-bottom, 0px) + 12px)"
-              : "calc(1.5rem + env(safe-area-inset-bottom, 0px))",
-            transition: "bottom 300ms cubic-bezier(0.22,1,0.36,1)",
-          }}
-          aria-label={`Ver las ${fullRoutes.length} rutas disponibles`}
+        {/* ── MOBILE ONLY: FAB row — Resultado (izq) + Rutas (der) ── */}
+        <div
+          className="absolute inset-x-4 z-30 flex items-center justify-between md:hidden"
+          style={{ bottom: "calc(1.5rem + env(safe-area-inset-bottom, 0px))" }}
         >
-          <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 text-[#00D4AA]" aria-hidden="true">
-            <path d="M4 7H20M4 12H20M4 17H14" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
-          </svg>
-          <span>Rutas</span>
-          <span className="ml-0.5 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-[#00D4AA]/20 px-1.5 text-[11px] font-bold text-[#00D4AA]">
-            {fullRoutes.length}
-          </span>
-        </button>
+          {/* Botón resultado — solo visible en paso 3 */}
+          <button
+            type="button"
+            onClick={() => setIsResultSheetOpen(true)}
+            aria-label="Ver resultado de ruta"
+            className={`inline-flex h-12 max-w-[55%] items-center gap-2 rounded-2xl border bg-[#0E1526]/95 pl-3.5 pr-4 text-[14px] font-semibold text-white shadow-[0_8px_32px_rgba(0,0,0,0.45)] backdrop-blur-xl transition active:scale-[0.97] ${
+              isResultSheetOpen
+                ? "border-[#00D4AA]/50 shadow-[0_8px_32px_rgba(0,212,170,0.18)]"
+                : "border-white/15 hover:border-[#00D4AA]/40"
+            } ${flowStep === 3 ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"}`}
+            style={{ transition: "opacity 250ms, border-color 200ms" }}
+          >
+            <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0 text-[#00D4AA]" aria-hidden="true">
+              <path d="M9 20l-5.447-2.724A1 1 0 0 1 3 16.382V5.618a1 1 0 0 1 1.447-.894L9 7m0 13V7m0 13 6-3M9 7l6-3m6 17V4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <span className="truncate">
+              {isCalculatingSuggestions
+                ? "Buscando..."
+                : bestSuggestion
+                  ? formatRouteLabel(bestSuggestion.ruta)
+                  : selectedTransfer
+                    ? `${selectedTransfer.routeAName} → ${selectedTransfer.routeBName}`
+                    : transfers.length > 0
+                      ? `${transfers.length} con transbordo`
+                      : "Sin ruta"}
+            </span>
+          </button>
+
+          {/* Botón ver todas las rutas */}
+          <button
+            type="button"
+            onClick={() => setIsSheetOpen(true)}
+            className="inline-flex h-12 items-center gap-2 rounded-2xl border border-white/15 bg-[#0E1526]/95 pl-3.5 pr-4 text-[14px] font-semibold text-white shadow-[0_8px_32px_rgba(0,0,0,0.45)] backdrop-blur-xl transition hover:border-[#00D4AA]/40 hover:shadow-[0_8px_32px_rgba(0,212,170,0.15)] active:scale-[0.97]"
+            aria-label={`Ver las ${fullRoutes.length} rutas disponibles`}
+          >
+            <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 text-[#00D4AA]" aria-hidden="true">
+              <path d="M4 7H20M4 12H20M4 17H14" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+            </svg>
+            <span>Rutas</span>
+            <span className="ml-0.5 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-[#00D4AA]/20 px-1.5 text-[11px] font-bold text-[#00D4AA]">
+              {fullRoutes.length}
+            </span>
+          </button>
+        </div>
       </div>
 
       {/* ── MOBILE ONLY: BottomSheet con lista de rutas ── */}
@@ -1324,14 +1345,10 @@ export default function HomePage() {
         />
       </BottomSheet>
 
-      {/* ── MOBILE ONLY: Result sheet con snap mini/full ── */}
+      {/* ── MOBILE ONLY: Result sheet (full) ── */}
       <BottomSheet
         open={isResultSheetOpen}
         onOpenChange={setIsResultSheetOpen}
-        snapPoints
-        snap={resultSnap}
-        onSnapChange={setResultSnap}
-        miniHeight={80}
         title={
           isCalculatingSuggestions
             ? "Buscando ruta..."
