@@ -792,7 +792,7 @@ function MapComponent({
       return;
     }
 
-    const isDarkMode = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const isDarkMode = document.documentElement.getAttribute("data-theme") === "dark";
 
     mapboxgl.accessToken = mapToken;
 
@@ -1006,27 +1006,29 @@ function MapComponent({
       setIsLoading(false);
     };
 
-    const media = window.matchMedia("(prefers-color-scheme: dark)");
-    const onColorSchemeChange = (event: MediaQueryListEvent) => {
-      const nextStyle = getMapStyle(event.matches);
+    const themeObserver = new MutationObserver(() => {
+      const dark = document.documentElement.getAttribute("data-theme") === "dark";
+      const nextStyle = getMapStyle(dark);
       map.setStyle(nextStyle);
       map.once("style.load", () => {
         ensureRouteLayers();
         if (telefericoGeoJSONRef.current) {
           addTelefericoLayers(telefericoGeoJSONRef.current);
         }
-        // Re-trigger transfer layers after style swap
         if (selectedTransferRef.current) {
           const t = selectedTransferRef.current;
           selectedTransferRef.current = null;
           setTimeout(() => { selectedTransferRef.current = t; }, 0);
         }
       });
-    };
+    });
+    themeObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-theme"]
+    });
 
     map.on("load", onLoad);
     map.on("click", onMapClick);
-    media.addEventListener("change", onColorSchemeChange);
 
     mapRef.current = map;
 
@@ -1036,7 +1038,7 @@ function MapComponent({
       destinationMarkerRef.current?.remove();
       originMarkerRef.current = null;
       destinationMarkerRef.current = null;
-      media.removeEventListener("change", onColorSchemeChange);
+      themeObserver.disconnect();
       map.off("load", onLoad);
       map.off("click", onMapClick);
       if (map.getLayer(LAYER_HIT_ID)) {

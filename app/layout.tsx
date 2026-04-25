@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans, Space_Grotesk, Fraunces } from "next/font/google";
 import PWARegistrar from "@/components/PWARegistrar";
+import AdaptiveTheme from "@/components/AdaptiveTheme";
 import "./globals.css";
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -82,6 +83,13 @@ export default function RootLayout({
       <body
         className={`${plusJakarta.variable} ${spaceGrotesk.variable} ${fraunces.variable} min-h-dvh bg-[var(--background)] font-sans text-[var(--foreground)] antialiased`}
       >
+        {/* Inline script runs before paint to set the correct theme and avoid flash */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){var h=new Date().getHours();var dark=h<6||h>=19;document.documentElement.setAttribute('data-theme',dark?'dark':'light');if(dark)document.documentElement.classList.add('dark');})();`
+          }}
+        />
+        <AdaptiveTheme />
         <PWARegistrar />
         {children}
       </body>
