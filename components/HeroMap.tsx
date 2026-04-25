@@ -24,8 +24,13 @@ export default function HeroMap() {
   const frameRef = useRef<HTMLDivElement | null>(null);
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<import("mapbox-gl").Map | null>(null);
+  const [staticReady, setStaticReady] = useState(false);
   const [liveReady, setLiveReady] = useState(false);
   const [suggestionIdx, setSuggestionIdx] = useState(0);
+  const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+  const staticMapUrl = mapboxToken
+    ? `https://api.mapbox.com/styles/v1/mapbox/dark-v11/static/${URUAPAN_CENTER[0]},${URUAPAN_CENTER[1]},12.4,-8,35/430x520@2x?access_token=${encodeURIComponent(mapboxToken)}&logo=false&attribution=false`
+    : null;
 
   useEffect(() => {
     const id = window.setInterval(() => {
@@ -36,7 +41,26 @@ export default function HeroMap() {
   }, []);
 
   useEffect(() => {
-    const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+    if (!staticMapUrl) {
+      return;
+    }
+
+    let cancelled = false;
+    const image = new window.Image();
+    image.onload = () => {
+      if (!cancelled) {
+        setStaticReady(true);
+      }
+    };
+    image.src = staticMapUrl;
+
+    return () => {
+      cancelled = true;
+    };
+  }, [staticMapUrl]);
+
+  useEffect(() => {
+    const token = mapboxToken;
     if (!token || !frameRef.current) {
       return;
     }
@@ -114,7 +138,7 @@ export default function HeroMap() {
       mapRef.current?.remove();
       mapRef.current = null;
     };
-  }, []);
+  }, [mapboxToken]);
 
   const suggestion = SUGGESTIONS[suggestionIdx];
 
@@ -122,7 +146,7 @@ export default function HeroMap() {
     <div ref={frameRef} className="hero-map-frame aspect-[4/5] w-full max-w-md lg:aspect-[3/4]" aria-label="Vista previa de rutas de transporte en Uruapan">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_35%_25%,rgba(123,160,91,0.18),transparent_32%),radial-gradient(circle_at_70%_60%,rgba(232,93,47,0.16),transparent_34%),linear-gradient(145deg,#11170d,#07111a_55%,#0e1208)]" />
 
-      <svg className={`absolute inset-0 h-full w-full transition-opacity duration-700 ${liveReady ? "opacity-0" : "opacity-100"}`} viewBox="0 0 430 520" fill="none" aria-hidden="true">
+      <svg className={`absolute inset-0 h-full w-full transition-opacity duration-700 ${liveReady || staticReady ? "opacity-0" : "opacity-100"}`} viewBox="0 0 430 520" fill="none" aria-hidden="true">
         <defs>
           <pattern id="hero-grid" width="42" height="42" patternUnits="userSpaceOnUse">
             <path d="M 42 0 L 0 0 0 42" stroke="rgba(244,235,217,0.08)" strokeWidth="1" />
@@ -146,6 +170,14 @@ export default function HeroMap() {
         <circle cx="300" cy="120" r="8" fill="#00D4AA" stroke="#FBF5E8" strokeWidth="3" />
         <circle cx="132" cy="178" r="8" fill="#7BA05B" stroke="#FBF5E8" strokeWidth="3" />
       </svg>
+
+      {staticReady && staticMapUrl && (
+        <div
+          className={`absolute inset-0 bg-cover bg-center transition-opacity duration-700 ${liveReady ? "opacity-0" : "opacity-100"}`}
+          style={{ backgroundImage: `url(${staticMapUrl})` }}
+          aria-hidden="true"
+        />
+      )}
 
       <div
         ref={mapContainerRef}
