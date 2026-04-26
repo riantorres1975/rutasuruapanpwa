@@ -203,7 +203,7 @@ Mostrar todas las rutas con su resolución completa (miles de puntos) degrada el
 - [x] **Rutas con trasbordo** — sugerencias A→B con máximo 1 cambio de camión y visualización diferenciada
 - [x] **Auto-encuadre inteligente** — la cámara se ajusta al marcar A, B o al mostrar una ruta sugerida
 - [x] **Búsqueda de paradas por nombre** — campo de texto con autocomplete fuzzy por colonia, destino o número
-- [ ] **Horarios estimados** — basados en patrones históricos de la ciudad
+- [x] **Horarios estimados** — primera salida, última salida y próximo camión estimado por ruta
 - [x] **Modo nocturno adaptativo** — cambio automático según hora del día
 - [ ] **Panel de accesibilidad** — contraste alto, texto grande, screen reader
 
@@ -425,7 +425,7 @@ Rendering all routes at full resolution (thousands of points) degrades FPS when 
 - [x] **Transfer routes** — A→B suggestions with up to 1 bus change, with dimmed secondary-route styling
 - [x] **Smart camera framing** — viewport auto-adjusts when A or B are placed, or when a suggested route is selected
 - [x] **Stop search by name** — text field with fuzzy autocomplete by neighborhood, destination or route number
-- [ ] **Estimated schedules** — based on historical city traffic patterns
+- [x] **Estimated schedules** — first/last departure and estimated next bus per route
 - [x] **Adaptive dark mode** — automatic switch based on time of day
 - [ ] **Accessibility panel** — high contrast, large text, screen reader support
 

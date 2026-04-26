@@ -12,6 +12,7 @@ import BottomSheet from "@/components/BottomSheet";
 import NearbyToast from "@/components/NearbyToast";
 import OnboardingOverlay from "@/components/OnboardingOverlay";
 import RouteList from "@/components/RouteList";
+import RouteSchedule from "@/components/RouteSchedule";
 import { useShareRoute } from "@/hooks/useShareRoute";
 import { formatRouteLabel } from "@/lib/route-names";
 import type { Coordinates, GroupedRouteData, ResolvedRouteData, RouteDirection } from "@/lib/types";
@@ -657,7 +658,7 @@ export default function HomePage() {
     return (
       <>
         {/* A→B pill bar */}
-        <div className={`${isMobile ? "w-full" : "w-full"} rounded-2xl border border-cream-100/10 bg-ink-900/95 p-1.5 shadow-soft backdrop-blur-xl`}>
+        <div className="ov-panel w-full rounded-2xl border p-1.5 shadow-soft backdrop-blur-xl">
           <div className="flex items-center gap-1.5">
             {/* Origin button */}
             <button
@@ -671,7 +672,7 @@ export default function HomePage() {
                   ? "border-terracota-400/50 bg-terracota-400/15 text-terracota-400"
                   : activePoint === "origin"
                     ? "ring-pulse-active border-terracota-400/60 bg-terracota-400/10 text-terracota-400"
-                    : "border-cream-100/10 bg-cream-100/5 text-cream-100/40"
+                    : "ov-pill ov-border ov-text-muted"
               }`}
               aria-label={originPoint ? "Punto A marcado, toca para cambiar" : "Toca para marcar punto de origen"}
             >
@@ -688,7 +689,7 @@ export default function HomePage() {
             </button>
 
             {/* Separator */}
-            <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0 text-cream-100/50" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" className="ov-text-muted h-4 w-4 shrink-0" aria-hidden="true">
               <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
 
@@ -705,7 +706,7 @@ export default function HomePage() {
                   ? "border-terracota-400/50 bg-terracota-400/15 text-terracota-400"
                   : activePoint === "destination"
                     ? "ring-pulse-active border-terracota-400/60 bg-terracota-400/10 text-terracota-400"
-                    : "border-cream-100/10 bg-cream-100/5 text-cream-100/40"
+                    : "ov-pill ov-border ov-text-muted"
               }`}
               aria-label={destinationPoint ? "Punto B marcado, toca para cambiar" : "Toca para marcar punto de destino"}
             >
@@ -731,7 +732,7 @@ export default function HomePage() {
                   setActivePoint("origin");
                   setShowHint(true);
                 }}
-                className="inline-flex h-10 items-center rounded-xl border border-red-400/20 bg-red-500/8 px-2.5 text-[12px] font-semibold text-red-300 transition active:scale-[0.97]"
+                className="inline-flex h-10 items-center rounded-xl border border-red-500/30 bg-red-500/10 px-2.5 text-[12px] font-semibold text-red-500 transition active:scale-[0.97]"
                 aria-label="Reiniciar puntos A y B"
               >
                 <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
@@ -746,12 +747,12 @@ export default function HomePage() {
         {/* Context action — pasos 1 y 2 */}
         {(flowStep === 1 || flowStep === 2) && (
           <div className="w-full">
-            <div className="flex items-center gap-1.5 rounded-2xl border border-terracota-400/25 bg-ink-900/92 px-3.5 py-2.5 backdrop-blur-xl">
+            <div className="ov-panel flex items-center gap-1.5 rounded-2xl border px-3.5 py-2.5 shadow-[0_2px_12px_rgba(0,0,0,0.15)] backdrop-blur-xl">
               <span className="relative flex h-3 w-3 shrink-0" aria-hidden="true">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-terracota-400/60 opacity-75" />
                 <span className="relative inline-flex h-3 w-3 rounded-full bg-terracota-400" />
               </span>
-              <p className="flex-1 text-[13px] font-medium text-cream-100/85">
+              <p className="ov-text flex-1 text-[13px] font-medium">
                 {flowStep === 1 ? "Toca el mapa para marcar tu" : "Ahora toca para marcar tu"}{" "}
                 <span className="font-bold text-terracota-400">{flowStep === 1 ? "origen" : "destino"}</span>
               </p>
@@ -763,18 +764,18 @@ export default function HomePage() {
         {flowStep === 3 && !hideStep3 && (
           <div
             aria-live="polite"
-            className="w-full overflow-hidden rounded-2xl border border-cream-100/10 bg-ink-800 shadow-[0_4px_24px_rgba(232,93,47,0.10)] backdrop-blur-xl transition-all duration-300"
+            className="ov-panel-soft w-full overflow-hidden rounded-2xl border shadow-[0_4px_24px_rgba(232,93,47,0.10)] backdrop-blur-xl transition-all duration-300"
             style={{ borderLeftWidth: "3px", borderLeftColor: selectedRoute?.color ?? "#E85D2F" }}
           >
             {isCalculatingSuggestions ? (
               <div className="flex items-center gap-3 px-4 py-3.5">
                 <span className="h-5 w-5 shrink-0 animate-spin rounded-full border-2 border-terracota-400/60 border-t-transparent" />
-                <span className="text-[13px] font-medium text-cream-100/85">Buscando mejor ruta...</span>
+                <span className="ov-text text-[13px] font-medium">Buscando mejor ruta...</span>
               </div>
             ) : bestSuggestion ? (
               <div className="px-4 py-3">
-                <p className="text-[10px] font-bold tracking-[2px] text-terracota-400/80">RUTA RECOMENDADA</p>
-                <p className="mt-0.5 truncate font-display text-[17px] font-bold leading-tight text-cream-50">
+                <p className="text-[10px] font-bold tracking-[2px] text-terracota-400">RUTA RECOMENDADA</p>
+                <p className="ov-text mt-0.5 truncate font-display text-[17px] font-bold leading-tight">
                   {formatRouteLabel(bestSuggestion.ruta)}
                 </p>
                 <div className="mt-2 flex flex-wrap items-center gap-1.5">
@@ -786,7 +787,7 @@ export default function HomePage() {
                     {bestSuggestionEta} min aprox
                   </span>
                   {suggestions.length > 1 && (
-                    <span className="inline-flex items-center rounded-lg border border-cream-100/10 bg-cream-100/5 px-2.5 py-1 text-[12px] font-medium text-cream-100/60">
+                    <span className="ov-pill ov-border ov-text-muted inline-flex items-center rounded-lg border px-2.5 py-1 text-[12px] font-medium">
                       +{suggestions.length - 1} alternativa{suggestions.length > 2 ? "s" : ""}
                     </span>
                   )}
@@ -795,14 +796,14 @@ export default function HomePage() {
                   <button
                     type="button"
                     onClick={() => { setActivePoint("destination"); setShowHint(true); }}
-                    className="inline-flex h-10 flex-1 items-center justify-center rounded-xl border border-cream-100/10 bg-cream-100/5 text-[12px] font-semibold text-cream-100/75 transition active:scale-[0.97]"
+                    className="ov-pill ov-border ov-text-muted inline-flex h-10 flex-1 items-center justify-center rounded-xl border text-[12px] font-semibold transition active:scale-[0.97]"
                   >
                     Ajustar
                   </button>
                   <button
                     type="button"
                     onClick={() => shareRoute(formatRouteLabel(bestSuggestion.ruta))}
-                    className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-cream-100/10 bg-cream-100/5 text-cream-100/75 transition active:scale-[0.97]"
+                    className="ov-pill ov-border ov-text-muted inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition active:scale-[0.97]"
                     aria-label={`Compartir ruta ${formatRouteLabel(bestSuggestion.ruta)}`}
                   >
                     <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
@@ -823,8 +824,8 @@ export default function HomePage() {
               </div>
             ) : transfers.length > 0 ? (
               <div className="px-4 py-3">
-                <p className="text-[10px] font-bold tracking-[2px] text-avocado-400/80">CON TRANSBORDO</p>
-                <p className="mt-0.5 text-[12px] text-cream-100/60">No hay ruta directa. Opciones con cambio de ruta:</p>
+                <p className="text-[10px] font-bold tracking-[2px] text-avocado-400">CON TRANSBORDO</p>
+                <p className="ov-text-muted mt-0.5 text-[12px]">No hay ruta directa. Opciones con cambio de ruta:</p>
                 <ul className="mt-2 max-h-[200px] space-y-1.5 overflow-y-auto">
                   {transfers.map((t) => (
                     <li key={`${t.routeAId}-${t.routeBId}`}>
@@ -837,14 +838,14 @@ export default function HomePage() {
                           <path d="M8 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3M16 3h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3M12 8v8M9 11l3-3 3 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                         <span className="min-w-0 flex-1">
-                          <span className="block truncate text-[12px] font-semibold text-cream-50">
+                          <span className="ov-text block truncate text-[12px] font-semibold">
                             {t.routeAName}
                           </span>
-                          <span className="block truncate text-[11px] text-cream-100/60">
+                          <span className="ov-text-muted block truncate text-[11px]">
                             → transbordo → {t.routeBName}
                           </span>
                         </span>
-                        <span className="shrink-0 rounded-full bg-avocado-400/15 px-2 py-0.5 text-[10px] font-semibold text-avocado-100">
+                        <span className="shrink-0 rounded-full bg-avocado-400/15 px-2 py-0.5 text-[10px] font-semibold text-avocado-600">
                           ~{Math.round(t.walkMeters)}m
                         </span>
                       </button>
@@ -854,26 +855,26 @@ export default function HomePage() {
                 <button
                   type="button"
                   onClick={() => { setActivePoint("destination"); setShowHint(true); }}
-                    className="mt-3 inline-flex h-10 w-full items-center justify-center rounded-xl border border-cream-100/10 bg-cream-100/5 text-[12px] font-semibold text-cream-100/75 transition active:scale-[0.97]"
+                  className="ov-pill ov-border ov-text-muted mt-3 inline-flex h-10 w-full items-center justify-center rounded-xl border text-[12px] font-semibold transition active:scale-[0.97]"
                 >
                   Mover destino
                 </button>
               </div>
             ) : selectedTransfer ? (
               <div className="px-4 py-3">
-                <p className="text-[10px] font-bold tracking-[2px] text-avocado-400/80">TRANSBORDO SELECCIONADO</p>
+                <p className="text-[10px] font-bold tracking-[2px] text-avocado-400">TRANSBORDO SELECCIONADO</p>
                 <div className="mt-2 flex items-center gap-2">
-                  <span className="flex-1 truncate text-[13px] font-semibold text-cream-50">{selectedTransfer.routeAName}</span>
+                  <span className="ov-text flex-1 truncate text-[13px] font-semibold">{selectedTransfer.routeAName}</span>
                   <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0 text-avocado-400" aria-hidden="true">
                     <path d="M8 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3M16 3h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3M12 8v8M9 11l3-3 3 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
-                  <span className="flex-1 truncate text-[13px] font-semibold text-cream-50">{selectedTransfer.routeBName}</span>
+                  <span className="ov-text flex-1 truncate text-[13px] font-semibold">{selectedTransfer.routeBName}</span>
                 </div>
-                <p className="mt-1 text-[11px] text-cream-100/60">Camina ~{Math.round(selectedTransfer.walkMeters)} m en el punto de transbordo</p>
+                <p className="ov-text-muted mt-1 text-[11px]">Camina ~{Math.round(selectedTransfer.walkMeters)} m en el punto de transbordo</p>
                 <button
                   type="button"
                   onClick={() => { setSelectedTransfer(null); setTransfers(transfers.length === 0 ? [] : transfers); handleClearSelection(); }}
-                  className="mt-3 inline-flex h-10 w-full items-center justify-center rounded-xl border border-cream-100/10 bg-cream-100/5 text-[12px] font-semibold text-cream-100/75 transition active:scale-[0.97]"
+                  className="ov-pill ov-border ov-text-muted mt-3 inline-flex h-10 w-full items-center justify-center rounded-xl border text-[12px] font-semibold transition active:scale-[0.97]"
                 >
                   Limpiar
                 </button>
@@ -887,11 +888,10 @@ export default function HomePage() {
                     </svg>
                   </span>
                   <div className="flex-1">
-                    <p className="text-[13px] font-semibold text-cream-50">Sin ruta directa</p>
-                    <p className="mt-0.5 text-[12px] leading-snug text-cream-100/60">Ajusta alguno de los puntos e intenta de nuevo.</p>
+                    <p className="ov-text text-[13px] font-semibold">Sin ruta directa</p>
+                    <p className="ov-text-muted mt-0.5 text-[12px] leading-snug">Ajusta alguno de los puntos e intenta de nuevo.</p>
                   </div>
                 </div>
-                {/* Sugerencia de cambiar dirección */}
                 <button
                   type="button"
                   onClick={() => setSelectedDirection((d) => (d === "ida" ? "vuelta" : "ida"))}
@@ -905,7 +905,7 @@ export default function HomePage() {
                 <button
                   type="button"
                   onClick={() => { setActivePoint("destination"); setShowHint(true); }}
-                  className="mt-2 inline-flex h-10 w-full items-center justify-center rounded-xl border border-cream-100/10 bg-cream-100/5 text-[12px] font-semibold text-cream-100/75 transition active:scale-[0.97]"
+                  className="ov-pill ov-border ov-text-muted mt-2 inline-flex h-10 w-full items-center justify-center rounded-xl border text-[12px] font-semibold transition active:scale-[0.97]"
                 >
                   Mover destino
                 </button>
@@ -914,20 +914,20 @@ export default function HomePage() {
 
             {/* Ruta activa / transbordo activo */}
             {(selectedRoute || showTeleferico || selectedTransfer) && (
-              <div className="flex items-center gap-2 border-t border-cream-100/8 px-4 py-2.5">
+              <div className="ov-border flex items-center gap-2 border-t px-4 py-2.5">
                 {selectedTransfer ? (
                   <>
                     <span className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden">
                       <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-blue-400" aria-hidden="true" />
-                      <span className="truncate text-[12px] font-medium text-cream-100/75">{formatRouteLabel(selectedTransfer.routeAName)}</span>
+                      <span className="ov-text-muted truncate text-[12px] font-medium">{formatRouteLabel(selectedTransfer.routeAName)}</span>
                       <span className="shrink-0 text-[10px] text-avocado-400 font-bold">→</span>
                       <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-emerald-400" aria-hidden="true" />
-                      <span className="truncate text-[12px] font-medium text-cream-100/75">{formatRouteLabel(selectedTransfer.routeBName)}</span>
+                      <span className="ov-text-muted truncate text-[12px] font-medium">{formatRouteLabel(selectedTransfer.routeBName)}</span>
                     </span>
                     <button
                       type="button"
                       onClick={handleClearSelection}
-                      className="h-9 shrink-0 rounded-lg border border-cream-100/10 bg-cream-100/5 px-3 text-[11px] font-semibold text-cream-100/75 transition active:scale-[0.97]"
+                      className="ov-pill ov-border ov-text-muted h-9 shrink-0 rounded-lg border px-3 text-[11px] font-semibold transition active:scale-[0.97]"
                     >
                       Limpiar
                     </button>
@@ -935,13 +935,13 @@ export default function HomePage() {
                 ) : (
                   <>
                     <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: selectedRoute?.color ?? "#14b8a6" }} aria-hidden="true" />
-                    <span className="min-w-0 flex-1 truncate text-[12px] font-medium text-cream-100/75">
+                    <span className="ov-text-muted min-w-0 flex-1 truncate text-[12px] font-medium">
                       {selectedRoute ? formatRouteLabel(selectedRoute.nombre, selectedRoute.ruta) : "Teleférico Uruapan"}
                     </span>
                     <button
                       type="button"
                       onClick={() => shareRoute(selectedRoute ? formatRouteLabel(selectedRoute.nombre, selectedRoute.ruta) : "Teleférico")}
-                      className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-cream-100/5 text-cream-100/60 transition hover:bg-cream-100/10 active:scale-95"
+                      className="ov-pill ov-text-muted grid h-9 w-9 shrink-0 place-items-center rounded-lg transition hover:opacity-80 active:scale-95"
                       aria-label={`Compartir ${selectedRoute ? formatRouteLabel(selectedRoute.nombre, selectedRoute.ruta) : "Teleférico"}`}
                     >
                       <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
@@ -951,7 +951,7 @@ export default function HomePage() {
                     <button
                       type="button"
                       onClick={handleClearSelection}
-                      className="h-9 shrink-0 rounded-lg border border-cream-100/10 bg-cream-100/5 px-3 text-[11px] font-semibold text-cream-100/75 transition active:scale-[0.97]"
+                      className="ov-pill ov-border ov-text-muted h-9 shrink-0 rounded-lg border px-3 text-[11px] font-semibold transition active:scale-[0.97]"
                     >
                       Limpiar
                     </button>
@@ -960,10 +960,14 @@ export default function HomePage() {
               </div>
             )}
 
+            {selectedRoute && (
+              <RouteSchedule routeName={selectedRoute.ruta} />
+            )}
+
             {routeTextSummary && (
-              <section className="border-t border-cream-100/8 px-4 py-3" aria-label={routeTextSummary.title}>
-                <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-cream-100/60">{routeTextSummary.title}</h2>
-                <ol className="mt-2 space-y-1.5 text-[12px] leading-5 text-cream-100/75">
+              <section className="ov-border border-t px-4 py-3" aria-label={routeTextSummary.title}>
+                <h2 className="ov-text-muted text-[11px] font-bold uppercase tracking-[0.18em]">{routeTextSummary.title}</h2>
+                <ol className="ov-text mt-2 space-y-1.5 text-[12px] leading-5">
                   {routeTextSummary.items.map((item) => (
                     <li key={item} className="flex gap-2">
                       <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-terracota-400" aria-hidden="true" />
@@ -1172,10 +1176,10 @@ export default function HomePage() {
         <section className="pointer-events-none absolute inset-x-0 top-0 z-20 px-4 pt-safe-or-4 md:hidden">
           {/* Row 1: logo pill + mode toggle */}
           <div className="flex items-center gap-2">
-            <div className="pointer-events-auto inline-flex items-center gap-2 rounded-2xl border border-terracota-400/20 bg-ink-900/95 px-3 py-2 shadow-[0_4px_24px_rgba(232,93,47,0.08)] backdrop-blur-xl">
+            <div className="ov-panel pointer-events-auto inline-flex items-center gap-2 rounded-2xl border px-3 py-2 shadow-[0_4px_24px_rgba(0,0,0,0.18)] backdrop-blur-xl">
               <span className="h-2 w-2 rounded-full bg-terracota-400" aria-hidden="true" />
-              <p className="font-serif-display text-[15px] font-black leading-none tracking-tight text-cream-50">VoyUruapan</p>
-              <span className="rounded-full bg-cream-100/8 px-1.5 py-0.5 text-[11px] font-medium text-cream-100/60">
+              <p className="ov-text font-serif-display text-[15px] font-black leading-none tracking-tight">VoyUruapan</p>
+              <span className="ov-pill ov-text-muted rounded-full px-1.5 py-0.5 text-[11px] font-medium">
                 {fullRoutes.length}
               </span>
               <span className="ml-0.5 inline-flex items-center gap-1" role="img" aria-label={`Paso ${flowStep} de 3`}>
@@ -1186,7 +1190,7 @@ export default function HomePage() {
                     <span
                       key={step}
                       className={`rounded-full transition-all duration-300 ${
-                        isActive ? "h-2 w-4 bg-terracota-400" : isDone ? "h-2 w-2 bg-terracota-400/50" : "h-2 w-2 bg-cream-100/20"
+                        isActive ? "h-2 w-4 bg-terracota-400" : isDone ? "h-2 w-2 bg-terracota-400/50" : "h-2 w-2 bg-black/15"
                       }`}
                     />
                   );
@@ -1196,10 +1200,10 @@ export default function HomePage() {
             <button
               type="button"
               onClick={() => setRoutesMapMode((current) => (current === "all-visible" ? "all-highlighted" : "all-visible"))}
-              className={`pointer-events-auto inline-flex h-11 w-11 items-center justify-center rounded-xl border text-sm transition active:scale-[0.97] ${
+              className={`ov-panel pointer-events-auto inline-flex h-11 w-11 items-center justify-center rounded-xl border text-sm shadow-[0_4px_16px_rgba(0,0,0,0.18)] backdrop-blur-xl transition active:scale-[0.97] ${
                 routesMapMode === "all-highlighted"
-                  ? "border-terracota-400/50 bg-terracota-400/15 text-terracota-400"
-                  : "border-cream-100/15 bg-ink-900/95 text-cream-100/60"
+                  ? "border-terracota-400/50 !bg-terracota-400/15 text-terracota-400"
+                  : ""
               }`}
               aria-label={routesMapMode === "all-visible" ? "Cambiar a modo todas destacadas" : "Cambiar a modo todas visibles"}
               title={routesMapMode === "all-visible" ? "Modo: todas visibles" : "Modo: todas destacadas"}
@@ -1219,8 +1223,9 @@ export default function HomePage() {
 
           {/* Row 3: Hint pill */}
           <div className={`pointer-events-none mt-2 transition-all duration-300 ${showHint ? "translate-y-0 opacity-100" : "-translate-y-1 opacity-0"}`}>
-            <div className="inline-flex max-w-[95%] items-center gap-2 rounded-full border border-terracota-400/30 bg-ink-900/92 px-3 py-1.5 text-[12px] font-medium leading-snug text-terracota-400 backdrop-blur-md">
-              <span>{hintMessage}</span>
+            <div className="ov-panel inline-flex max-w-[95%] items-center gap-2 rounded-full border px-3 py-1.5 text-[12px] font-semibold leading-snug backdrop-blur-md shadow-[0_2px_12px_rgba(0,0,0,0.2)]">
+              <span className="h-2 w-2 shrink-0 rounded-full bg-terracota-400" aria-hidden="true" />
+              <span className="ov-text">{hintMessage}</span>
             </div>
           </div>
 
@@ -1274,17 +1279,17 @@ export default function HomePage() {
           <button
             type="button"
             onClick={() => setIsResultSheetOpen(true)}
-            className={`inline-flex h-12 max-w-[55%] items-center gap-2 rounded-2xl border bg-ink-900/95 pl-3.5 pr-4 text-[14px] font-semibold text-cream-50 shadow-[0_8px_32px_rgba(0,0,0,0.45)] backdrop-blur-xl transition active:scale-[0.97] ${
+            className={`ov-panel inline-flex h-12 max-w-[55%] items-center gap-2 rounded-2xl border pl-3.5 pr-4 text-[14px] font-semibold shadow-[0_8px_32px_rgba(0,0,0,0.3)] backdrop-blur-xl transition active:scale-[0.97] ${
               isResultSheetOpen
                 ? "border-terracota-400/50 shadow-[0_8px_32px_rgba(232,93,47,0.18)]"
-                : "border-cream-100/15 hover:border-terracota-400/40"
+                : "hover:border-terracota-400/40"
             } ${flowStep === 3 ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"}`}
             style={{ transition: "opacity 250ms, border-color 200ms" }}
           >
             <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0 text-terracota-400" aria-hidden="true">
               <path d="M9 20l-5.447-2.724A1 1 0 0 1 3 16.382V5.618a1 1 0 0 1 1.447-.894L9 7m0 13V7m0 13 6-3M9 7l6-3m6 17V4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            <span className="truncate">
+            <span className="ov-text truncate">
               {isCalculatingSuggestions
                 ? "Buscando..."
                 : bestSuggestion
@@ -1301,13 +1306,13 @@ export default function HomePage() {
           <button
             type="button"
             onClick={() => setIsSheetOpen(true)}
-            className="inline-flex h-12 items-center gap-2 rounded-2xl border border-cream-100/15 bg-ink-900/95 pl-3.5 pr-4 text-[14px] font-semibold text-cream-50 shadow-[0_8px_32px_rgba(0,0,0,0.45)] backdrop-blur-xl transition hover:border-terracota-400/40 hover:shadow-[0_8px_32px_rgba(232,93,47,0.15)] active:scale-[0.97]"
+            className="ov-panel inline-flex h-12 items-center gap-2 rounded-2xl border pl-3.5 pr-4 text-[14px] font-semibold shadow-[0_8px_32px_rgba(0,0,0,0.3)] backdrop-blur-xl transition hover:border-terracota-400/40 hover:shadow-[0_8px_32px_rgba(232,93,47,0.15)] active:scale-[0.97]"
             aria-label={`Rutas, ver las ${fullRoutes.length} rutas disponibles`}
           >
             <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 text-terracota-400" aria-hidden="true">
               <path d="M4 7H20M4 12H20M4 17H14" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
             </svg>
-            <span>Rutas</span>
+            <span className="ov-text">Rutas</span>
             <span className="ml-0.5 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-terracota-400/20 px-1.5 text-[11px] font-bold text-terracota-400">
               {fullRoutes.length}
             </span>
