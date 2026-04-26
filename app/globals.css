@@ -50,12 +50,12 @@
   --foreground:    #1a2e12;
   --surface:       #e4dfd0;
   --surface-strong:#d8d2c0;
-  --ov-bg:         rgba(240,236,224,0.98);
-  --ov-bg-soft:    rgba(228,223,208,0.98);
-  --ov-border:     rgba(74,120,52,0.15);
+  --ov-bg:         rgba(232,228,214,0.98);
+  --ov-bg-soft:    rgba(220,215,200,0.98);
+  --ov-border:     rgba(74,120,52,0.25);
   --ov-text:       #1a2e12;
-  --ov-text-muted: rgba(26,46,18,0.60);
-  --ov-pill-bg:    rgba(74,120,52,0.07);
+  --ov-text-muted: rgba(26,46,18,0.75);
+  --ov-pill-bg:    rgba(74,120,52,0.12);
 }
 
 
