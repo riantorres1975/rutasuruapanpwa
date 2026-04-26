@@ -802,7 +802,7 @@ export default function HomePage() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => shareRoute(formatRouteLabel(bestSuggestion.ruta), bestSuggestion.routeId)}
+                    onClick={() => shareRoute(formatRouteLabel(bestSuggestion.ruta))}
                     className="ov-pill ov-border ov-text-muted inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition active:scale-[0.97]"
                     aria-label={`Compartir ruta ${formatRouteLabel(bestSuggestion.ruta)}`}
                   >
@@ -940,7 +940,7 @@ export default function HomePage() {
                     </span>
                     <button
                       type="button"
-                      onClick={() => shareRoute(selectedRoute ? formatRouteLabel(selectedRoute.nombre, selectedRoute.ruta) : "Teleférico", selectedRoute?.id)}
+                      onClick={() => shareRoute(selectedRoute ? formatRouteLabel(selectedRoute.nombre, selectedRoute.ruta) : "Teleférico")}
                       className="ov-pill ov-text-muted grid h-9 w-9 shrink-0 place-items-center rounded-lg transition hover:opacity-80 active:scale-95"
                       aria-label={`Compartir ${selectedRoute ? formatRouteLabel(selectedRoute.nombre, selectedRoute.ruta) : "Teleférico"}`}
                     >

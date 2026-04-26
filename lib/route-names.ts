@@ -1,3 +1,38 @@
+const ALIASES: Record<string, string[]> = {
+  // Hospitales y clínicas
+  "Ruta 1":   ["hospital", "hospital regional", "IMSS bienestar", "mercado municipal", "centro histórico", "centro"],
+  "Ruta 1A":  ["hospital", "hospital regional", "IMSS bienestar", "palito verde", "san jose"],
+  "Ruta 45":  ["interclínicas", "interClinicas", "clínicas", "clinicas", "hospitales", "zona médica", "IMSS"],
+  "Ruta 176": ["clínica 76", "clinica 76", "IMSS", "brisas", "Las Brisas", "quinta"],
+
+  // Escuelas y centros de capacitación
+  "Ruta 11":  ["central", "camionera", "central camionera", "presidencia", "presidencia municipal", "héroes", "heroes", "estudiantes"],
+  "Ruta 31":  ["jaramillo", "cecati", "capacitación", "capacitacion"],
+  "Ruta 66":  ["plan de ayala", "eti", "ETI 30", "secundaria técnica", "secundaria tecnica", "estudiantes"],
+  "Ruta 102": ["EST 102", "escuela secundaria", "secundaria técnica", "secundaria tecnica", "estudiantes"],
+
+  // Comercial, industrial y plazas
+  "Ruta 5":   ["caltzontzin", "central camionera", "central", "boulevard industrial", "boulevard", "industrial", "empacadoras", "plaza ágora", "plaza agora", "ágora", "agora"],
+  "Ruta 7":   ["pemex", "colonia pemex", "centro histórico", "centro historico", "primer cuadro", "centro"],
+
+  // Colonias y zonas residenciales
+  "Ruta 2":   ["constituyentes", "jicalán", "jicalan", "san joaquín", "san joaquin", "zorrillos"],
+  "Ruta 2A":  ["constituyentes", "zumpimito"],
+  "Ruta 6":   ["pemex", "taximacuaro"],
+  "Ruta 9":   ["arroyo", "colorado"],
+  "Ruta 15":  ["patria", "infonavit patria", "deportiva", "unidad deportiva"],
+  "Ruta 15A": ["patria", "infonavit patria", "cuauhtémoc", "cuauhtemoc"],
+  "Ruta 19":  ["quirindavara", "taximacuaro"],
+  "Ruta 20":  ["cuba", "mexico", "méxico", "circunvalación", "circunvalacion", "morelos", "topilejo"],
+  "Ruta 24":  ["jucutacato", "centro"],
+  "Ruta 26":  ["constituyentes", "unidad", "sol naciente"],
+  "Ruta 27":  ["balcones", "tec", "tecnológico", "tecnologico", "Tec Uruapan"],
+  "Ruta 33":  ["toreo"],
+  "Ruta 40":  ["jucutacato"],
+  "Ruta 76":  ["constituyentes", "sol naciente"],
+  "Ruta 85":  ["toreo"],
+};
+
 const DESTINATIONS: Record<string, string> = {
   "Ruta 1": "PALITO VERDE ↔ Unidad",
   "Ruta 1A": "San José de la Mina ↔ Palito Verde",
@@ -56,6 +91,21 @@ const LOOKUP = new Map<string, string>(
 
 export function getRouteDestination(routeName: string): string | null {
   return LOOKUP.get(normalize(routeName)) ?? null;
+}
+
+export function getRouteSearchTerms(routeName: string): string[] {
+  const destino = getRouteDestination(routeName);
+  const terms: string[] = [];
+
+  if (destino) {
+    // Split "A ↔ B" into individual searchable terms
+    terms.push(...destino.split(/\s*↔\s*/).map((t) => t.trim()).filter(Boolean));
+  }
+
+  const aliases = ALIASES[routeName] ?? [];
+  terms.push(...aliases);
+
+  return terms;
 }
 
 export function formatRouteLabel(routeName: string, baseName?: string): string {
