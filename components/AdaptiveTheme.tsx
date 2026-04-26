@@ -9,7 +9,9 @@ function isDarkHour(): boolean {
 
 function applyTheme(dark: boolean) {
   const root = document.documentElement;
-  root.setAttribute("data-theme", dark ? "dark" : "light");
+  const next = dark ? "dark" : "light";
+  if (root.getAttribute("data-theme") === next) return;
+  root.setAttribute("data-theme", next);
   root.classList.toggle("dark", dark);
 }
 
