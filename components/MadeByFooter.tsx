@@ -5,7 +5,7 @@ const GITHUB_URL = "https://github.com/riantorres1975";
 const X_URL = "https://x.com/rian_1975";
 const LINKEDIN_URL = "https://www.linkedin.com/in/josé-antonio-rivera-torres-b44559244?utm_source=share_via&utm_content=profile&utm_medium=member_android";
 const REPO_URL = "https://github.com/riantorres1975/rutasuruapanpwa";
-const DONATION_URL = "https://example.com/tu-link-de-donacion";
+const DONATION_URL = "https://paypal.me/wh0code";
 
 const socialLinks = [
   {
