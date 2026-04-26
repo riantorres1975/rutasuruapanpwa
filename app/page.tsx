@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import MadeByFooter from "@/components/MadeByFooter";
-import HeroMapAnimado from "@/components/HeroMapAnimado";
+import HeroMap from "@/components/HeroMap";
 import FareTicket from "@/components/FareTicket";
 import NotGovernmentNotice from "@/components/NotGovernmentNotice";
 import Logo from "@/components/Logo";
@@ -247,7 +247,7 @@ export default function LandingPage() {
         {/* Columna derecha: mapa animado */}
         <div className="relative mx-auto w-full max-w-sm lg:max-w-none">
           <div className="absolute -inset-8 rounded-[3rem] blur-3xl" style={{ background: "rgba(106,171,72,0.08)" }} />
-          <HeroMapAnimado />
+          <HeroMap />
         </div>
       </section>
 
