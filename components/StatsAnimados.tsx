@@ -52,7 +52,7 @@ function AnimatedStat({
 const STATS = [
   { target: 41, label: "rutas urbanas", color: "var(--lima)", prefix: "" },
   { target: 6, label: "estaciones Teleférico", color: "var(--ink)", prefix: "" },
-  { target: 11, label: "tarifa base 2026", color: "var(--ink)", prefix: "$" },
+  { target: 11, label: "tarifa base 2026 MXN", color: "var(--ink)", prefix: "$" },
   { target: 0, label: "anuncios ni cuentas", color: "var(--ink)", prefix: "" },
 ] as const;
 
@@ -75,9 +75,12 @@ export default function StatsAnimados() {
             }}
           >
             <div className="font-serif text-4xl font-black leading-none tracking-tight">
+              {s.prefix && (
+                <span className="font-sans" style={{ color: s.color }}>{s.prefix}</span>
+              )}
               <AnimatedStat
                 target={s.target}
-                prefix={s.prefix}
+                prefix=""
                 style={{ color: s.color }}
               />
             </div>
