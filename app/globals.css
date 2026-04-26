@@ -5,27 +5,59 @@
 @tailwind utilities;
 
 :root {
-  --background: #080c18;
-  --foreground: #e2e8f0;
-  --surface: #0e1526;
-  --surface-strong: #141d33;
-  --accent: #00d4aa;
-  --accent-warm: #ff5c35;
+  /* Paleta aguacate oscura (default dark) */
+  --background:     #0c110a;
+  --foreground:     #e8f2d8;
+  --surface:        #111a0d;
+  --surface-strong: #172012;
 
-  /* Identidad Uruapan: aguacate + terracota + crema */
-  --avocado-50: #F1F5EC;
-  --avocado-400: #7BA05B;
-  --avocado-600: #4A6B35;
-  --avocado-700: #365024;
-  --avocado-900: #1F2F14;
-  --terracota-400: #E85D2F;
-  --terracota-500: #D24A1F;
-  --cream-50: #FBF5E8;
-  --cream-100: #F4EBD9;
-  --cream-200: #EADBB8;
-  --ink-900: #0E1208;
-  --ink-800: #161B0E;
+  /* Tokens de acento */
+  --verde:   #6aab48;
+  --verde-d: #3d6828;
+  --verde-l: rgba(106,171,72,0.12);
+  --lima:    #b8e840;
+  --agua:    #48a878;
+  --agua-l:  rgba(72,168,120,0.12);
+
+  /* Texto */
+  --ink:   #e8f2d8;
+  --ink2:  #a8c888;
+  --muted: #5a7848;
+
+  /* Overlay tokens — modo oscuro (default) */
+  --ov-bg:         rgba(12,17,10,0.97);
+  --ov-bg-soft:    rgba(20,28,16,0.96);
+  --ov-border:     rgba(140,200,80,0.10);
+  --ov-text:       #e8f2d8;
+  --ov-text-muted: rgba(168,200,136,0.65);
+  --ov-pill-bg:    rgba(106,171,72,0.08);
+
+  /* Compatibilidad con variables antiguas */
+  --terracota-400: #b8e840;
+  --terracota-500: #6aab48;
+  --cream-50:  #e8f2d8;
+  --cream-100: #a8c888;
+  --ink-900:   #0c110a;
+  --ink-800:   #111a0d;
+  --avocado-400: #6aab48;
+  --avocado-600: #3d6828;
+  --avocado-900: #0c110a;
 }
+
+/* Modo claro (si AdaptiveTheme lo activa) */
+[data-theme="light"] {
+  --background:    #f0ece0;
+  --foreground:    #1a2e12;
+  --surface:       #e4dfd0;
+  --surface-strong:#d8d2c0;
+  --ov-bg:         rgba(240,236,224,0.98);
+  --ov-bg-soft:    rgba(228,223,208,0.98);
+  --ov-border:     rgba(74,120,52,0.15);
+  --ov-text:       #1a2e12;
+  --ov-text-muted: rgba(26,46,18,0.60);
+  --ov-pill-bg:    rgba(74,120,52,0.07);
+}
+
 
 @layer components {
   .card-base {
@@ -49,12 +81,10 @@
 }
 
 body {
-  background:
-    radial-gradient(ellipse at 0% 0%, rgba(0, 212, 170, 0.06), transparent 50%),
-    radial-gradient(circle at 100% 100%, rgba(20, 29, 51, 0.35), transparent 46%),
-    var(--background);
+  background: var(--background);
   color: var(--foreground);
 }
+
 
 @keyframes landing-fade-up {
   from {
@@ -184,8 +214,8 @@ body {
 }
 
 .card-lift:hover {
-  border-color: rgba(232, 93, 47, 0.45);
-  box-shadow: 0 18px 60px rgba(232, 93, 47, 0.12);
+  border-color: rgba(184,232,64,0.25);
+  box-shadow: 0 18px 60px rgba(106,171,72,0.12);
   transform: translateY(-4px);
 }
 
@@ -268,10 +298,10 @@ body {
 /* Ring pulsante para botones A/B activos */
 @keyframes ring-pulse {
   0%, 100% {
-    box-shadow: 0 0 0 0 rgba(0, 212, 170, 0.55);
+    box-shadow: 0 0 0 0 rgba(106,171,72,0.55);
   }
   50% {
-    box-shadow: 0 0 0 5px rgba(0, 212, 170, 0);
+    box-shadow: 0 0 0 5px rgba(106,171,72,0);
   }
 }
 
@@ -305,33 +335,39 @@ body {
   }
 }
 
+/* ── Overlay adaptive: usa tokens que cambian con data-theme ── */
+.ov-panel {
+  background: var(--ov-bg);
+  border-color: var(--ov-border);
+  color: var(--ov-text);
+}
+.ov-panel-soft {
+  background: var(--ov-bg-soft);
+  border-color: var(--ov-border);
+  color: var(--ov-text);
+}
+.ov-text { color: var(--ov-text); }
+.ov-text-muted { color: var(--ov-text-muted); }
+.ov-border { border-color: var(--ov-border); }
+.ov-pill { background: var(--ov-pill-bg); }
+
 .mapboxgl-ctrl-bottom-left,
 .mapboxgl-ctrl-bottom-right {
   display: none;
 }
 
-/* ── Identidad Uruapan: greca purépecha de fondo ── */
+/* ── Fondo gradiente verde aguacate ── */
 .greca-bg {
-  background-color: var(--ink-900);
-  background-image:
-    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'><g fill='none' stroke='%237BA05B' stroke-width='1.2' opacity='0.06'><path d='M0 40 L20 40 L20 20 L40 20 L40 40 L60 40 L60 60 L80 60'/><path d='M0 0 L0 20 L20 20'/><path d='M60 0 L80 0 L80 20'/></g></svg>");
-  background-size: 80px 80px;
+  background:
+    radial-gradient(ellipse 55% 45% at 75% 15%, rgba(106,171,72,0.10), transparent 65%),
+    radial-gradient(ellipse 40% 50% at 10% 80%, rgba(72,168,120,0.07), transparent 65%),
+    var(--background);
   position: relative;
 }
 
-.greca-bg::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-  background:
-    radial-gradient(ellipse 80vw 60vh at 50% 0%, rgba(123, 160, 91, 0.10), transparent 70%),
-    radial-gradient(ellipse 80vw 50vh at 50% 100%, rgba(232, 93, 47, 0.07), transparent 70%);
-}
 
 .greca-band {
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='40' height='12' viewBox='0 0 40 12'><g fill='none' stroke='%23E85D2F' stroke-width='1.4'><path d='M0 6 L6 6 L6 0 L14 0 L14 6 L20 6 L20 12 L26 12 L26 6 L34 6 L34 0 L40 0'/></g></svg>");
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='40' height='12' viewBox='0 0 40 12'><g fill='none' stroke='%236aab48' stroke-width='1.4'><path d='M0 6 L6 6 L6 0 L14 0 L14 6 L20 6 L20 12 L26 12 L26 6 L34 6 L34 0 L40 0'/></g></svg>");
   background-size: 40px 12px;
   background-repeat: repeat-x;
 }
@@ -347,12 +383,12 @@ body {
 /* ── Ticket / boleto troquelado ── */
 .ticket {
   --notch: 14px;
-  background: var(--cream-100);
-  color: var(--ink-900);
+  background: #141c10;
+  color: #e8f2d8;
   position: relative;
   border-radius: 18px;
   padding: 1.4rem 1.25rem;
-  box-shadow: 0 18px 40px -20px rgba(31, 47, 20, 0.55), inset 0 0 0 1px rgba(31, 47, 20, 0.06);
+  box-shadow: 0 18px 40px -20px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(140,200,80,0.12);
   /* Troquel: dos semicírculos cortados a los lados */
   -webkit-mask:
     radial-gradient(circle var(--notch) at 0 50%, transparent 98%, #000 100%) 0 0/100% 100%,
@@ -370,7 +406,7 @@ body {
   left: var(--notch);
   right: var(--notch);
   top: 50%;
-  border-top: 2px dashed rgba(31, 47, 20, 0.25);
+  border-top: 2px dashed rgba(140,200,80,0.20);
   transform: translateY(-50%);
   pointer-events: none;
 }
@@ -435,19 +471,23 @@ body {
   .suggestion-fade { animation: none; }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .greca-bg-animated {
+    animation: none;
+  }
+}
+
 /* ── Tipografía con carácter ── */
 .font-serif-display {
-  font-family: var(--font-fraunces), Georgia, serif;
-  font-feature-settings: "ss01", "ss02";
-  font-variation-settings: "SOFT" 50, "opsz" 144;
+  font-family: var(--font-playfair), Georgia, serif;
+  font-feature-settings: "ss01";
   letter-spacing: -0.02em;
 }
 
 .text-purepecha {
-  font-family: var(--font-fraunces), Georgia, serif;
+  font-family: var(--font-playfair), Georgia, serif;
   font-style: italic;
-  font-variation-settings: "SOFT" 100, "opsz" 14;
-  color: var(--terracota-400);
+  color: var(--verde);
   letter-spacing: 0.04em;
 }
 

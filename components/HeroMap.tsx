@@ -166,15 +166,15 @@ export default function HeroMap() {
       />
 
       <div className="pointer-events-none absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2">
-        <span className="absolute -inset-4 animate-ping rounded-full bg-terracota-400/40" />
-        <span className="relative grid h-7 w-7 place-items-center rounded-full bg-terracota-400 shadow-[0_0_20px_rgba(232,93,47,0.7)]">
+        <span className="absolute -inset-4 animate-ping rounded-full bg-lima/40" />
+        <span className="relative grid h-7 w-7 place-items-center rounded-full bg-lima shadow-[0_0_20px_rgba(184,232,64,0.7)]">
           <span className="h-2 w-2 rounded-full bg-cream-50" />
         </span>
       </div>
 
       <div className="absolute left-4 right-4 top-4 z-10 flex items-center justify-between">
         <span className="inline-flex items-center gap-2 rounded-full bg-cream-100/95 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-ink-900 backdrop-blur">
-          <span className="h-1.5 w-1.5 rounded-full bg-terracota-400" />
+          <span className="h-1.5 w-1.5 rounded-full bg-lima" />
           {liveReady ? "En vivo · Uruapan" : "Uruapan"}
         </span>
         <span className="rounded-full bg-ink-900/80 px-2.5 py-1 text-[10px] font-bold text-cream-100 backdrop-blur">
@@ -184,7 +184,7 @@ export default function HeroMap() {
 
       <div className="absolute bottom-4 left-4 right-4 z-10 rounded-2xl border border-cream-100/15 bg-ink-900/85 p-4 backdrop-blur-xl">
         <div key={suggestionIdx} className="suggestion-fade">
-          <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-terracota-400">
+          <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-lima">
             {suggestion.kicker}
           </p>
           <p className="mt-1 font-serif-display text-xl font-bold text-cream-50">
@@ -199,7 +199,7 @@ export default function HeroMap() {
             <span
               key={i}
               className={`h-1 rounded-full transition-all duration-500 ${
-                i === suggestionIdx ? "w-6 bg-terracota-400" : "w-1 bg-cream-100/20"
+                i === suggestionIdx ? "w-6 bg-lima" : "w-1 bg-cream-100/20"
               }`}
             />
           ))}

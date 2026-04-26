@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import PageHeader from "@/components/PageHeader";
 import NotGovernmentNotice from "@/components/NotGovernmentNotice";
+import ForceDark from "@/components/ForceDark";
 import { FARES_2026, TELEFERICO_URUAPAN } from "@/lib/mobility-config";
 
 export const metadata: Metadata = {
@@ -58,7 +59,8 @@ const SECTIONS = [
 
 export default function TelefericoBlogArticlePage() {
   return (
-    <main className="greca-bg greca-bg-animated min-h-dvh px-5 py-8 text-cream-100 sm:px-8 lg:px-10">
+    <main className="greca-bg greca-bg-animated min-h-dvh px-5 py-8 sm:px-8 lg:px-10" style={{ background: "#0c110a", color: "#e8f2d8" }}>
+      <ForceDark />
       <article className="relative z-10 mx-auto max-w-3xl">
         <PageHeader
           backHref="/blog"
@@ -67,7 +69,7 @@ export default function TelefericoBlogArticlePage() {
           eyebrow="Guía 2026"
           title={
             <>
-              Cómo usar el <span className="italic text-terracota-400">Teleférico</span> de Uruapan paso a paso.
+              Cómo usar el <span className="italic text-lima">Teleférico</span> de Uruapan paso a paso.
             </>
           }
           intro="Aprende cómo abordar, pagar y combinar el Teleférico de Uruapan con rutas de camión urbano desde VoyUruapan."
@@ -77,38 +79,38 @@ export default function TelefericoBlogArticlePage() {
           {SECTIONS.map((section) => (
             <section
               key={section.n}
-              className="rounded-2xl border border-cream-100/10 bg-ink-900/55 p-6 backdrop-blur"
+              className="rounded-2xl border border-foreground/10 bg-ink-900/55 p-6 backdrop-blur"
             >
-              <p className="font-serif-display text-3xl font-black text-terracota-400">
+              <p className="font-serif-display text-3xl font-black text-lima">
                 {section.n}
               </p>
-              <h2 className="mt-2 font-serif-display text-2xl font-black text-cream-50">
+              <h2 className="mt-2 font-serif-display text-2xl font-black text-white">
                 {section.title}
               </h2>
-              <p className="mt-3 text-sm leading-7 text-cream-100/75">
+              <p className="mt-3 text-sm leading-7 text-foreground/75">
                 {section.body}
               </p>
             </section>
           ))}
 
           <section>
-            <p className="font-serif-display text-3xl font-black text-terracota-400">06</p>
-            <h2 className="mt-2 font-serif-display text-2xl font-black text-cream-50">
+            <p className="font-serif-display text-3xl font-black text-lima">06</p>
+            <h2 className="mt-2 font-serif-display text-2xl font-black text-white">
               Las 6 estaciones, de oriente a poniente
             </h2>
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
               {TELEFERICO_URUAPAN.stations.map((station, index) => (
                 <article
                   key={station}
-                  className="card-lift rounded-2xl border border-cream-100/10 bg-ink-900/65 p-4 backdrop-blur"
+                  className="card-lift rounded-2xl border border-foreground/10 bg-ink-900/65 p-4 backdrop-blur"
                 >
-                  <p className="font-serif-display text-xs font-black text-terracota-400">
+                  <p className="font-serif-display text-xs font-black text-lima">
                     E{index + 1}
                   </p>
-                  <h3 className="mt-2 font-serif-display text-lg font-black text-cream-50">
+                  <h3 className="mt-2 font-serif-display text-lg font-black text-white">
                     {station}
                   </h3>
-                  <p className="mt-2 text-xs leading-6 text-cream-100/65">
+                  <p className="mt-2 text-xs leading-6 text-foreground/65">
                     {stationDescriptions[index]}
                   </p>
                 </article>
@@ -119,7 +121,7 @@ export default function TelefericoBlogArticlePage() {
 
         <Link
           href="/mapa"
-          className="cta-shine mt-10 inline-flex h-12 items-center rounded-full bg-terracota-400 px-6 text-sm font-black text-cream-50 hover:bg-terracota-500"
+          className="cta-shine mt-10 inline-flex h-12 items-center rounded-full bg-verde px-6 py-2 text-sm font-black text-white hover:opacity-90"
         >
           Ver el mapa de rutas →
         </Link>

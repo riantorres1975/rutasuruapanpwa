@@ -1,7 +1,7 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
-  darkMode: "media",
+  darkMode: "class",
   content: [
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -10,35 +10,56 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["var(--font-plus-jakarta)", "sans-serif"],
-        display: ["var(--font-space-grotesk)", "sans-serif"],
-        serif: ["var(--font-fraunces)", "Georgia", "serif"]
+        sans:    ["var(--font-dm-sans)", "sans-serif"],
+        display: ["var(--font-playfair)", "Georgia", "serif"],
+        serif:   ["var(--font-playfair)", "Georgia", "serif"],
+        "serif-display": ["var(--font-playfair)", "Georgia", "serif"],
       },
       colors: {
+        bg: {
+          DEFAULT: "#0c110a",
+          2: "#111a0d",
+          3: "#172012",
+        },
+        card: "#141c10",
+        verde: {
+          DEFAULT: "#6aab48",
+          d: "#3d6828",
+          l: "rgba(106,171,72,0.12)",
+        },
+        lima: {
+          DEFAULT: "#b8e840",
+          l: "rgba(184,232,64,0.10)",
+        },
+        agua: {
+          DEFAULT: "#48a878",
+          l: "rgba(72,168,120,0.12)",
+        },
+        // Compatibilidad con código existente
         avocado: {
-          50: "#F1F5EC",
-          100: "#DCE7CC",
-          400: "#7BA05B",
-          600: "#4A6B35",
-          700: "#365024",
-          900: "#1F2F14"
+          50:  "#e8f2d8",
+          100: "#a8c888",
+          400: "#6aab48",
+          600: "#3d6828",
+          700: "#172012",
+          900: "#0c110a",
         },
         terracota: {
-          50: "#FBEDE5",
-          400: "#E85D2F",
-          500: "#D24A1F",
-          600: "#B33A14"
+          50:  "#fde8d4",
+          400: "#b8e840",
+          500: "#6aab48",
+          600: "#3d6828",
         },
         cream: {
-          50: "#FBF5E8",
-          100: "#F4EBD9",
-          200: "#EADBB8"
+          50:  "#e8f2d8",
+          100: "#a8c888",
+          200: "#5a7848",
         },
         ink: {
-          900: "#0E1208",
-          800: "#161B0E",
-          700: "#1F2614"
-        }
+          900: "#0c110a",
+          800: "#111a0d",
+          700: "#172012",
+        },
       },
       boxShadow: {
         soft: "0 12px 36px -20px rgba(2, 6, 23, 0.45)",

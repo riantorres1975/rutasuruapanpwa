@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Logo from "@/components/Logo";
 
 const AUTHOR_NAME = "José Antonio Rivera Torres";
 const GITHUB_URL = "https://github.com/riantorres1975";
@@ -68,14 +69,21 @@ export default function MadeByFooter() {
   return (
     <div className="mt-8">
       {/* ── Tarjeta de apoyo ── */}
-      <div className="relative overflow-hidden rounded-[1.75rem] border border-terracota-400/30 bg-gradient-to-br from-terracota-400/[0.08] via-ink-900/70 to-avocado-700/[0.12] p-6 backdrop-blur-xl md:p-7">
+      <div
+        className="relative overflow-hidden rounded-[1.75rem] p-6 backdrop-blur-xl md:p-7"
+        style={{
+          border: "1px solid rgba(184,232,64,0.2)",
+          background: "linear-gradient(135deg, rgba(106,171,72,0.08) 0%, rgba(20,28,16,0.7) 50%, rgba(106,171,72,0.06) 100%)",
+        }}
+      >
         {/* Greca decorativa esquina */}
         <div
           className="greca-band absolute right-0 top-0 h-3 w-32 opacity-40"
           aria-hidden="true"
         />
         <div
-          className="absolute -right-8 -top-8 h-40 w-40 rounded-full bg-terracota-400/15 blur-3xl"
+          className="absolute -right-8 -top-8 h-40 w-40 rounded-full blur-3xl"
+          style={{ background: "rgba(106,171,72,0.12)" }}
           aria-hidden="true"
         />
 
@@ -83,15 +91,22 @@ export default function MadeByFooter() {
           <div className="flex items-start gap-4 md:items-center">
             <span
               aria-hidden="true"
-              className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-terracota-400/15 text-terracota-400"
+              className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl"
+              style={{ background: "rgba(106,171,72,0.15)", color: "#6aab48" }}
             >
               <HeartIcon className="h-6 w-6" />
             </span>
             <div>
-              <p className="font-serif-display text-xl font-black text-cream-50 md:text-2xl">
-                ¿Te ayuda <span className="italic text-terracota-400">VoyUruapan</span>?
+              <p
+                className="font-serif text-xl font-black md:text-2xl"
+                style={{ color: "#e8f2d8" }}
+              >
+                ¿Te ayuda <Logo size={22} showName href="" />?
               </p>
-              <p className="mt-1 max-w-md text-sm leading-6 text-cream-100/70">
+              <p
+                className="mt-1 max-w-md text-sm leading-6"
+                style={{ color: "rgba(232,242,216,0.6)" }}
+              >
                 Esta app es independiente y se mantiene con esfuerzo propio. Una propina ayuda a pagar el mapa, el dominio y mejoras futuras.
               </p>
             </div>
@@ -101,7 +116,12 @@ export default function MadeByFooter() {
             href={DONATION_URL}
             target="_blank"
             rel="noreferrer"
-            className="cta-shine group inline-flex h-12 items-center justify-center gap-2 self-start rounded-full bg-terracota-400 px-6 text-sm font-black text-cream-50 shadow-[0_14px_40px_rgba(232,93,47,0.35)] transition hover:bg-terracota-500 active:scale-[0.98] md:self-auto"
+            className="cta-shine group inline-flex h-12 items-center justify-center gap-2 self-start rounded-full px-6 text-sm font-black transition active:scale-[0.98] md:self-auto"
+            style={{
+              background: "#6aab48",
+              color: "#e8f2d8",
+              boxShadow: "0 14px 40px rgba(106,171,72,0.3)",
+            }}
           >
             <HeartIcon className="h-4 w-4 transition group-hover:scale-110" />
             Invitar un café
@@ -110,14 +130,20 @@ export default function MadeByFooter() {
       </div>
 
       {/* ── Línea de autoría + socials ── */}
-      <div className="mt-6 flex flex-col gap-4 border-t border-cream-100/10 pt-6 text-xs text-cream-100/55 sm:flex-row sm:items-center sm:justify-between">
+      <div
+        className="mt-6 flex flex-col gap-4 pt-6 text-xs sm:flex-row sm:items-center sm:justify-between"
+        style={{
+          borderTop: "1px solid rgba(140,200,80,0.1)",
+          color: "rgba(232,242,216,0.45)",
+        }}
+      >
         <p className="inline-flex flex-wrap items-center gap-1.5">
           <span>Hecho con</span>
-          <span className="text-terracota-400 drop-shadow-[0_0_10px_rgba(232,93,47,0.4)]">
+          <span style={{ color: "#6aab48", filter: "drop-shadow(0 0 10px rgba(106,171,72,0.4))" }}>
             <HeartIcon className="h-3.5 w-3.5" />
           </span>
           <span>en Uruapan por</span>
-          <span className="font-serif-display font-bold text-cream-50">{AUTHOR_NAME}</span>
+          <span className="font-serif font-bold" style={{ color: "#e8f2d8" }}>{AUTHOR_NAME}</span>
         </p>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -128,7 +154,12 @@ export default function MadeByFooter() {
               target="_blank"
               rel="noreferrer"
               aria-label={link.label}
-              className="group inline-flex h-9 items-center gap-2 rounded-full border border-cream-100/10 bg-cream-100/5 px-3 text-cream-100/70 transition hover:border-terracota-400/50 hover:bg-terracota-400/10 hover:text-terracota-400"
+              className="group inline-flex h-9 items-center gap-2 rounded-full border px-3 transition"
+              style={{
+                borderColor: "rgba(140,200,80,0.1)",
+                background: "rgba(106,171,72,0.05)",
+                color: "rgba(232,242,216,0.55)",
+              }}
             >
               {link.icon}
               <span className="text-xs font-semibold">{link.label}</span>

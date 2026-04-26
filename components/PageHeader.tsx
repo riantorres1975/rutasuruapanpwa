@@ -28,15 +28,25 @@ export default function PageHeader({
       <div className="flex items-center justify-between gap-4">
         <Link
           href={backHref}
-          className="inline-flex items-center gap-2 rounded-full border border-cream-100/15 bg-ink-900/70 px-3.5 py-2 text-sm font-bold text-cream-50 backdrop-blur-xl transition hover:border-terracota-400/50"
+          className="inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-sm font-bold backdrop-blur-xl transition"
+          style={{
+            borderColor: "rgba(140,200,80,0.15)",
+            background: "rgba(20,28,16,0.7)",
+            color: "#e8f2d8",
+          }}
         >
           <span aria-hidden="true">←</span>
-          <span className="h-2 w-2 rounded-full bg-terracota-400" />
+          <span className="h-2 w-2 rounded-full" style={{ background: "#6aab48" }} />
           {backLabel}
         </Link>
         <Link
           href="/mapa"
-          className="inline-flex h-9 items-center rounded-full border border-cream-100/15 bg-cream-100/5 px-4 text-xs font-semibold text-cream-50 transition hover:border-terracota-400/60 hover:text-terracota-400"
+          className="inline-flex h-9 items-center rounded-full border px-4 text-xs font-semibold transition"
+          style={{
+            borderColor: "rgba(140,200,80,0.15)",
+            background: "rgba(106,171,72,0.05)",
+            color: "#e8f2d8",
+          }}
         >
           Abrir mapa →
         </Link>
@@ -51,15 +61,24 @@ export default function PageHeader({
       <header className="mt-5 max-w-3xl">
         {kicker && <p className="text-purepecha text-sm">{kicker}</p>}
         {eyebrow && (
-          <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-terracota-400">
+          <p
+            className="text-[11px] font-bold uppercase tracking-[0.24em]"
+            style={{ color: "#b8e840" }}
+          >
             {eyebrow}
           </p>
         )}
-        <h1 className="mt-3 font-serif-display text-4xl font-black leading-[1.05] tracking-tight text-cream-50 md:text-5xl lg:text-6xl">
+        <h1
+          className="mt-3 font-serif text-4xl font-black leading-[1.05] tracking-tight md:text-5xl lg:text-6xl"
+          style={{ color: "#e8f2d8" }}
+        >
           {title}
         </h1>
         {intro && (
-          <p className="mt-5 text-base leading-7 text-cream-100/75 md:text-lg">
+          <p
+            className="mt-5 text-base leading-7 md:text-lg"
+            style={{ color: "rgba(232,242,216,0.65)" }}
+          >
             {intro}
           </p>
         )}

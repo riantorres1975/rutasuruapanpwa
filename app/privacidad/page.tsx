@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import PageHeader from "@/components/PageHeader";
 import NotGovernmentNotice from "@/components/NotGovernmentNotice";
+import Logo from "@/components/Logo";
+import ForceDark from "@/components/ForceDark";
 import { APP_BRAND } from "@/lib/mobility-config";
 
 export const metadata: Metadata = {
@@ -30,14 +32,33 @@ const SECTIONS = [
 
 export default function PrivacyPage() {
   return (
-    <main className="greca-bg greca-bg-animated min-h-dvh px-5 py-8 text-cream-100 sm:px-8 lg:px-10">
+    <main style={{ background: "#0c110a", color: "#e8f2d8", minHeight: "100dvh" }}>
+      <ForceDark />
+      <nav
+        className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-5 py-4"
+        style={{
+          background: "rgba(12,17,10,0.9)",
+          backdropFilter: "blur(20px)",
+          borderBottom: "1px solid rgba(140,200,80,0.08)",
+        }}
+      >
+        <Logo size={28} showName showSub />
+        <Link
+          href="/mapa"
+          className="inline-flex items-center gap-1.5 rounded-full px-5 py-2.5 text-sm font-semibold text-white"
+          style={{ background: "#6aab48" }}
+        >
+          Abrir mapa
+        </Link>
+      </nav>
+      <div className="greca-bg greca-bg-animated px-5 pt-28 pb-8 sm:px-8 lg:px-10">
       <div className="relative z-10 mx-auto max-w-3xl">
         <PageHeader
           eyebrow="Privacidad"
           kicker="Sin trucos, sin letra chica"
           title={
             <>
-              Aviso de <span className="italic text-terracota-400">privacidad</span>.
+              Aviso de <span className="italic" style={{ color: "#b8e840" }}>privacidad</span>.
             </>
           }
           intro={`${APP_BRAND.name} es una PWA de consulta de rutas para Uruapan. No requiere cuenta, no solicita datos personales y no guarda tu ubicación en servidores propios.`}
@@ -51,17 +72,18 @@ export default function PrivacyPage() {
           {SECTIONS.map((s, i) => (
             <article
               key={s.title}
-              className="rounded-2xl border border-cream-100/10 bg-ink-900/60 p-6 backdrop-blur"
+              className="rounded-2xl border p-6 backdrop-blur"
+              style={{ borderColor: "rgba(140,200,80,0.1)", background: "rgba(20,28,16,0.6)" }}
             >
               <div className="flex items-baseline gap-3">
-                <span className="font-serif-display text-xl font-black text-terracota-400">
+                <span className="font-serif text-xl font-black" style={{ color: "#b8e840" }}>
                   0{i + 1}
                 </span>
-                <h2 className="font-serif-display text-xl font-black text-cream-50">
+                <h2 className="font-serif text-xl font-black" style={{ color: "#e8f2d8" }}>
                   {s.title}
                 </h2>
               </div>
-              <p className="mt-3 text-sm leading-7 text-cream-100/75">{s.body}</p>
+              <p className="mt-3 text-sm leading-7" style={{ color: "rgba(232,242,216,0.65)" }}>{s.body}</p>
             </article>
           ))}
         </section>
@@ -69,17 +91,20 @@ export default function PrivacyPage() {
         <div className="mt-10 flex flex-wrap gap-3">
           <Link
             href="/mapa"
-            className="cta-shine inline-flex h-11 items-center rounded-full bg-terracota-400 px-5 text-sm font-black text-cream-50 hover:bg-terracota-500"
+            className="cta-shine inline-flex h-11 items-center rounded-full px-5 text-sm font-black transition hover:opacity-90"
+            style={{ background: "#6aab48", color: "#e8f2d8" }}
           >
             Volver al mapa →
           </Link>
           <Link
             href="/"
-            className="inline-flex h-11 items-center rounded-full border border-cream-100/15 bg-cream-100/5 px-5 text-sm font-bold text-cream-50 hover:border-terracota-400/50"
+            className="inline-flex h-11 items-center rounded-full border px-5 text-sm font-bold transition"
+            style={{ borderColor: "rgba(140,200,80,0.15)", background: "rgba(106,171,72,0.06)", color: "#e8f2d8" }}
           >
             Inicio
           </Link>
         </div>
+      </div>
       </div>
     </main>
   );

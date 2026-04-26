@@ -15,7 +15,7 @@ type Step = {
 
 const steps: Step[] = [
   {
-    accentColor: "rgba(6,182,212,0.18)",  // cyan
+    accentColor: "rgba(106,171,72,0.18)",
     title: "Marca tu origen",
     description: "Toca cualquier punto del mapa para marcar desde dónde sales (punto A).",
     icon: (
@@ -34,7 +34,7 @@ const steps: Step[] = [
     ),
   },
   {
-    accentColor: "rgba(16,185,129,0.18)", // emerald
+    accentColor: "rgba(123,160,91,0.20)", // avocado-400
     title: "Marca tu destino",
     description: "Toca el mapa de nuevo para fijar a dónde quieres llegar (punto B).",
     icon: (
@@ -59,7 +59,7 @@ const steps: Step[] = [
     ),
   },
   {
-    accentColor: "rgba(139,92,246,0.18)", // violet
+    accentColor: "rgba(244,235,217,0.16)", // cream
     title: "Te sugerimos la mejor ruta",
     description: "Nuestro motor compara las 40 rutas reales y te muestra la opción más rápida automáticamente.",
     icon: (
@@ -92,8 +92,8 @@ function StepDots({ total, current }: { total: number; current: number }) {
           key={i}
           className={`block rounded-full transition-all duration-300 ${
             i === current
-              ? "h-2 w-6 bg-cyan-400"
-              : "h-2 w-2 bg-slate-600"
+              ? "h-2 w-6 bg-lima"
+              : "h-2 w-2 bg-cream-100/20"
           }`}
         />
       ))}
@@ -219,7 +219,7 @@ export default function OnboardingOverlay() {
         aria-modal="true"
         aria-label="Bienvenida a VoyUruapan"
         aria-live="polite"
-        className={`fixed z-50 mx-auto max-w-sm rounded-3xl border border-white/15 bg-[var(--surface-strong)] shadow-[0_24px_60px_rgba(0,0,0,0.55)] backdrop-blur-2xl transition-all duration-500 will-change-transform
+        className={`fixed z-50 mx-auto max-w-sm rounded-3xl border border-cream-100/15 bg-[var(--surface-strong)] shadow-[0_24px_60px_rgba(0,0,0,0.55)] backdrop-blur-2xl transition-all duration-500 will-change-transform
           inset-x-4 bottom-10
           md:inset-x-auto md:bottom-10 md:left-[calc(380px+5%)] md:right-[5%]
           lg:left-[calc(420px+5%)] lg:right-[5%]
@@ -236,7 +236,7 @@ export default function OnboardingOverlay() {
           <button
             type="button"
             onClick={dismiss}
-            className="absolute right-4 top-4 z-10 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[12px] font-medium text-slate-400 transition hover:bg-white/10 hover:text-slate-200 active:scale-[0.97]"
+            className="absolute right-4 top-4 z-10 rounded-full border border-cream-100/10 bg-cream-100/5 px-2.5 py-1 text-[12px] font-medium text-cream-100/60 transition hover:bg-cream-100/10 hover:text-cream-100/85 active:scale-[0.97]"
             aria-label="Saltar introducción"
           >
             Saltar
@@ -270,25 +270,25 @@ export default function OnboardingOverlay() {
                   style={{ background: current.accentColor }}
                   aria-hidden="true"
                 />
-                <span className="relative text-cyan-300 dark:text-cyan-200 transition-colors duration-500"
-                  style={{ color: step === 0 ? "#67e8f9" : step === 1 ? "#6ee7b7" : "#c4b5fd" }}
+                <span className="relative transition-colors duration-500"
+                  style={{ color: step === 0 ? "#E85D2F" : step === 1 ? "#7BA05B" : "#FBF5E8" }}
                 >
                   {current.icon}
                 </span>
               </div>
 
               {/* Step number */}
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-cream-100/50 dark:text-cream-100/60">
                 Paso {step + 1} de {steps.length}
               </p>
 
               {/* Title */}
-              <h2 className="text-center text-xl font-bold leading-snug text-slate-50">
+              <h2 className="text-center font-serif-display text-2xl font-black leading-snug tracking-tight text-cream-50">
                 {current.title}
               </h2>
 
               {/* Description */}
-              <p className="text-center text-[14px] leading-relaxed text-slate-400">
+              <p className="text-center text-[14px] leading-relaxed text-cream-100/60">
                 {current.description}
               </p>
             </div>
@@ -296,7 +296,7 @@ export default function OnboardingOverlay() {
         </div>
 
         {/* ── Footer: dots + button ───────────────────────────────────────── */}
-        <div className="flex items-center justify-between gap-4 border-t border-white/8 px-7 py-5">
+        <div className="flex items-center justify-between gap-4 border-t border-cream-100/8 px-7 py-5">
           <StepDots total={steps.length} current={step} />
 
           <button
@@ -304,8 +304,8 @@ export default function OnboardingOverlay() {
             onClick={goNext}
             className={`inline-flex h-11 items-center gap-1.5 rounded-full px-5 text-[14px] font-semibold transition active:scale-[0.97] ${
               isLast
-                ? "bg-[#00D4AA] text-[#05131a] shadow-[0_4px_20px_rgba(0,212,170,0.40)] hover:bg-[#00bfa0]"
-                : "border border-white/15 bg-white/8 text-slate-100 hover:bg-white/15"
+                ? "bg-verde text-white shadow-[0_4px_20px_rgba(106,171,72,0.40)] hover:opacity-90"
+                : "border border-cream-100/15 bg-cream-100/8 text-cream-50 hover:bg-cream-100/15"
             }`}
           >
             {isLast ? (

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import Logo from "@/components/Logo";
 import { APP_BRAND, FARES_2026 } from "@/lib/mobility-config";
 import { findRouteSeoItem, getRouteSeoItems } from "@/lib/route-seo";
 
@@ -75,56 +76,107 @@ export default function RoutePage({ params }: RoutePageProps) {
   };
 
   return (
-    <main className="min-h-dvh bg-[#080C18] px-5 py-8 text-slate-100 sm:px-8 lg:px-10">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-
-      <div className="mx-auto max-w-3xl">
-        <Link href="/" className="inline-flex items-center gap-2 rounded-2xl border border-[#00D4AA]/20 bg-[#0E1526] px-3.5 py-2 text-sm font-bold text-white">
-          <span className="h-2.5 w-2.5 rounded-full bg-[#00D4AA]" />
-          {APP_BRAND.name}
+    <main style={{ background: "#0c110a", color: "#e8f2d8", minHeight: "100dvh" }}>
+      <nav
+        className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-5 py-4"
+        style={{
+          background: "rgba(12,17,10,0.9)",
+          backdropFilter: "blur(20px)",
+          borderBottom: "1px solid rgba(140,200,80,0.08)",
+        }}
+      >
+        <Logo size={28} showName showSub />
+        <Link
+          href="/mapa"
+          className="inline-flex items-center gap-1.5 rounded-full px-5 py-2.5 text-sm font-semibold text-white"
+          style={{ background: "#6aab48" }}
+        >
+          Abrir mapa
         </Link>
+      </nav>
 
-        <article className="mt-10 overflow-hidden rounded-[2rem] border border-white/10 bg-[#0E1526]/80 shadow-[0_20px_80px_rgba(0,0,0,0.35)]">
-          <div className="h-2" style={{ backgroundColor: route.color }} />
-          <div className="p-6 md:p-8">
-            <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#00D4AA]">Ruta de camión Uruapan</p>
-            <h1 className="mt-3 font-display text-4xl font-black tracking-tight text-white md:text-5xl">{title}</h1>
-            <p className="mt-4 text-sm leading-7 text-slate-300">
-              Consulta información básica de la {route.name} en Uruapan y abre el mapa interactivo para marcar origen, destino, paradas cercanas y posibles transbordos.
-            </p>
+      <div className="px-5 pt-28 pb-8 sm:px-8 lg:px-10">
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
-            <dl className="mt-8 grid gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                <dt className="text-xs font-bold uppercase tracking-widest text-slate-400">Destino</dt>
-                <dd className="mt-2 text-sm font-bold text-white">{route.destination ?? "Ruta local"}</dd>
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                <dt className="text-xs font-bold uppercase tracking-widest text-slate-400">Tarifa base</dt>
-                <dd className="mt-2 text-sm font-bold text-white">{FARES_2026.urbanBus.price}</dd>
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                <dt className="text-xs font-bold uppercase tracking-widest text-slate-400">Sentidos</dt>
-                <dd className="mt-2 text-sm font-bold text-white">{route.hasIda && route.hasVuelta ? "Ida y vuelta" : route.hasIda ? "Ida" : "Vuelta"}</dd>
-              </div>
-            </dl>
-
-            <section className="mt-8 rounded-2xl border border-[#00D4AA]/20 bg-[#00D4AA]/10 p-5">
-              <h2 className="font-display text-xl font-black text-white">Cómo usar esta ruta</h2>
-              <p className="mt-3 text-sm leading-7 text-slate-300">
-                Abre el mapa, marca tu punto de origen y destino, y VoyUruapan calculará si esta ruta es conveniente o si necesitas caminar o transbordar con otra ruta o el Teleférico.
+        <div className="mx-auto max-w-3xl">
+          <article
+            className="overflow-hidden rounded-[2rem] border shadow-[0_20px_80px_rgba(0,0,0,0.35)]"
+            style={{ borderColor: "rgba(140,200,80,0.12)", background: "rgba(20,28,16,0.8)" }}
+          >
+            <div className="h-2" style={{ backgroundColor: route.color }} />
+            <div className="p-6 md:p-8">
+              <p className="text-xs font-bold uppercase tracking-[0.24em]" style={{ color: "#b8e840" }}>
+                Ruta de camión Uruapan
               </p>
-            </section>
+              <h1
+                className="mt-3 font-serif text-4xl font-black tracking-tight md:text-5xl"
+                style={{ color: "#e8f2d8" }}
+              >
+                {title}
+              </h1>
+              <p className="mt-4 text-sm leading-7" style={{ color: "#5a7848" }}>
+                Consulta información básica de la {route.name} en Uruapan y abre el mapa interactivo para marcar origen, destino, paradas cercanas y posibles transbordos.
+              </p>
 
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link href={`/mapa?destino=${encodeURIComponent(route.destination ?? route.name)}`} className="inline-flex h-12 items-center justify-center rounded-full bg-[#00D4AA] px-6 text-sm font-black text-gray-950">
-                Ver en el mapa
-              </Link>
-              <Link href="/" className="inline-flex h-12 items-center justify-center rounded-full border border-white/10 bg-white/5 px-6 text-sm font-bold text-slate-200">
-                Volver al inicio
-              </Link>
+              <dl className="mt-8 grid gap-3 sm:grid-cols-3">
+                <div
+                  className="rounded-2xl border p-4"
+                  style={{ borderColor: "rgba(140,200,80,0.12)", background: "rgba(106,171,72,0.06)" }}
+                >
+                  <dt className="text-xs font-bold uppercase tracking-widest" style={{ color: "#5a7848" }}>Destino</dt>
+                  <dd className="mt-2 text-sm font-bold" style={{ color: "#e8f2d8" }}>{route.destination ?? "Ruta local"}</dd>
+                </div>
+                <div
+                  className="rounded-2xl border p-4"
+                  style={{ borderColor: "rgba(140,200,80,0.12)", background: "rgba(106,171,72,0.06)" }}
+                >
+                  <dt className="text-xs font-bold uppercase tracking-widest" style={{ color: "#5a7848" }}>Tarifa base</dt>
+                  <dd className="mt-2 text-sm font-bold" style={{ color: "#e8f2d8" }}>{FARES_2026.urbanBus.price}</dd>
+                </div>
+                <div
+                  className="rounded-2xl border p-4"
+                  style={{ borderColor: "rgba(140,200,80,0.12)", background: "rgba(106,171,72,0.06)" }}
+                >
+                  <dt className="text-xs font-bold uppercase tracking-widest" style={{ color: "#5a7848" }}>Sentidos</dt>
+                  <dd className="mt-2 text-sm font-bold" style={{ color: "#e8f2d8" }}>
+                    {route.hasIda && route.hasVuelta ? "Ida y vuelta" : route.hasIda ? "Ida" : "Vuelta"}
+                  </dd>
+                </div>
+              </dl>
+
+              <section
+                className="mt-8 rounded-2xl border p-5"
+                style={{ borderColor: "rgba(184,232,64,0.2)", background: "rgba(184,232,64,0.06)" }}
+              >
+                <h2 className="font-serif text-xl font-black" style={{ color: "#e8f2d8" }}>Cómo usar esta ruta</h2>
+                <p className="mt-3 text-sm leading-7" style={{ color: "#5a7848" }}>
+                  Abre el mapa, marca tu punto de origen y destino, y VoyUruapan calculará si esta ruta es conveniente o si necesitas caminar o transbordar con otra ruta o el Teleférico.
+                </p>
+              </section>
+
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                <Link
+                  href={`/mapa?destino=${encodeURIComponent(route.destination ?? route.name)}`}
+                  className="inline-flex h-12 items-center justify-center rounded-full px-6 text-sm font-black text-white transition hover:opacity-90"
+                  style={{ background: "#6aab48" }}
+                >
+                  Ver en el mapa
+                </Link>
+                <Link
+                  href="/"
+                  className="inline-flex h-12 items-center justify-center rounded-full border px-6 text-sm font-bold transition"
+                  style={{
+                    borderColor: "rgba(140,200,80,0.15)",
+                    background: "rgba(106,171,72,0.06)",
+                    color: "#e8f2d8",
+                  }}
+                >
+                  Volver al inicio
+                </Link>
+              </div>
             </div>
-          </div>
-        </article>
+          </article>
+        </div>
       </div>
     </main>
   );

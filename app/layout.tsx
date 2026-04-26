@@ -1,25 +1,22 @@
 import type { Metadata, Viewport } from "next";
-import { Plus_Jakarta_Sans, Space_Grotesk, Fraunces } from "next/font/google";
+import { DM_Sans, Playfair_Display } from "next/font/google";
 import PWARegistrar from "@/components/PWARegistrar";
+import AdaptiveTheme from "@/components/AdaptiveTheme";
 import "./globals.css";
 
-const plusJakarta = Plus_Jakarta_Sans({
+const dmSans = DM_Sans({
   subsets: ["latin"],
-  variable: "--font-plus-jakarta",
-  display: "swap"
+  variable: "--font-dm-sans",
+  display: "swap",
+  weight: ["400", "500", "600"],
 });
 
-const spaceGrotesk = Space_Grotesk({
+const playfair = Playfair_Display({
   subsets: ["latin"],
-  variable: "--font-space-grotesk",
-  display: "swap"
-});
-
-const fraunces = Fraunces({
-  subsets: ["latin"],
-  variable: "--font-fraunces",
-  axes: ["SOFT", "opsz"],
-  display: "swap"
+  variable: "--font-playfair",
+  display: "swap",
+  weight: ["700", "900"],
+  style: ["normal", "italic"],
 });
 
 export const metadata: Metadata = {
@@ -28,7 +25,7 @@ export const metadata: Metadata = {
     default: "VoyUruapan | Rutas de camiones y Teleférico en Uruapan",
     template: "%s | VoyUruapan"
   },
-  description: "Rutas de camiones, combis suburbanas y Teleférico en Uruapan, Michoacán.",
+  description: "Rutas de camiones urbanos y Teleférico en Uruapan, Michoacán.",
   applicationName: "VoyUruapan",
   manifest: "/manifest.json",
   icons: {
@@ -46,12 +43,12 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "VoyUruapan — Rutas de camiones y Teleférico en Uruapan",
-    description: "Encuentra tu ruta en Uruapan. Camiones urbanos, Teleférico y combis en un solo mapa interactivo.",
+    description: "Encuentra tu ruta en Uruapan. Camiones urbanos y Teleférico en un solo mapa interactivo.",
     url: "https://rutasuruapanpwa.vercel.app",
     siteName: "VoyUruapan",
     images: [
       {
-        url: "/og-image.png",
+        url: "/opengraph-image",
         width: 1200,
         height: 630,
         alt: "VoyUruapan — Mapa de rutas de transporte en Uruapan"
@@ -63,13 +60,13 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "VoyUruapan — Rutas Uruapan",
-    description: "Camiones, Teleférico y combis en Uruapan en un mapa interactivo.",
-    images: ["/og-image.png"]
+    description: "Camiones urbanos y Teleférico en Uruapan en un mapa interactivo.",
+    images: ["/opengraph-image"]
   }
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0b1220"
+  themeColor: "#0c110a"
 };
 
 export default function RootLayout({
@@ -80,8 +77,15 @@ export default function RootLayout({
   return (
     <html lang="es-MX" suppressHydrationWarning>
       <body
-        className={`${plusJakarta.variable} ${spaceGrotesk.variable} ${fraunces.variable} min-h-dvh bg-[var(--background)] font-sans text-[var(--foreground)] antialiased`}
+        className={`${dmSans.variable} ${playfair.variable} min-h-dvh bg-[var(--background)] font-sans text-[var(--foreground)] antialiased`}
       >
+        {/* Inline script runs before paint to set the correct theme and avoid flash */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){var h=new Date().getHours();var dark=h<6||h>=19;document.documentElement.setAttribute('data-theme',dark?'dark':'light');if(dark)document.documentElement.classList.add('dark');})();`
+          }}
+        />
+        <AdaptiveTheme />
         <PWARegistrar />
         {children}
       </body>
