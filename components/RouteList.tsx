@@ -182,7 +182,7 @@ export default function RouteList({
               <path d="m20 20-3.8-3.8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
             </svg>
             <input
-              type="search"
+              type="text"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Colonia, destino o número de ruta…"
