@@ -3,7 +3,7 @@
 import Fuse from "fuse.js";
 import { useDeferredValue, useMemo, useState } from "react";
 import TelefericoSection from "@/components/TelefericoSection";
-import { getRouteDestination } from "@/lib/route-names";
+import { getRouteDestination, getRouteSearchTerms } from "@/lib/route-names";
 import type { ResolvedRouteData, RouteDirection } from "@/lib/types";
 
 type RouteListProps = {
@@ -42,7 +42,8 @@ export default function RouteList({
     () =>
       routes.map((route) => ({
         ...route,
-        _destino: getRouteDestination(route.ruta) ?? ""
+        _destino: getRouteDestination(route.ruta) ?? "",
+        _terminos: getRouteSearchTerms(route.ruta).join(" ")
       })),
     [routes]
   );
@@ -50,7 +51,11 @@ export default function RouteList({
   const fuse = useMemo(
     () =>
       new Fuse(searchableRoutes, {
-        keys: ["nombre", "_destino"],
+        keys: [
+          { name: "nombre", weight: 0.4 },
+          { name: "_destino", weight: 0.4 },
+          { name: "_terminos", weight: 0.2 }
+        ],
         threshold: 0.35,
         minMatchCharLength: 1,
         includeScore: false
@@ -115,8 +120,8 @@ export default function RouteList({
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h2 className="font-display text-[18px] font-bold text-cream-50">Rutas disponibles</h2>
-            <p className="mt-0.5 text-[13px] text-cream-100/60">
+            <h2 className="ov-text font-display text-[18px] font-bold">Rutas disponibles</h2>
+            <p className="ov-text-muted mt-0.5 text-[13px]">
               Toca una ruta para verla en el mapa.
             </p>
           </div>
@@ -124,7 +129,7 @@ export default function RouteList({
             <button
               type="button"
               onClick={onClearSelection}
-              className="shrink-0 rounded-xl border border-cream-100/10 bg-cream-100/5 px-3 py-2 text-[12px] font-semibold text-cream-100/75 transition hover:bg-cream-100/10 active:scale-[0.97]"
+              className="ov-pill ov-border ov-text-muted shrink-0 rounded-xl border px-3 py-2 text-[12px] font-semibold transition hover:opacity-80 active:scale-[0.97]"
             >
               Limpiar
             </button>
@@ -133,14 +138,14 @@ export default function RouteList({
 
         {/* Direction toggle + route count on same row */}
         <div className="flex items-center gap-3">
-          <div className="inline-flex rounded-xl border border-cream-100/10 bg-cream-100/5 p-1">
+          <div className="ov-pill ov-border inline-flex rounded-xl border p-1">
             <button
               type="button"
               onClick={() => onDirectionChange("ida")}
               className={`h-9 rounded-lg px-4 text-[13px] font-semibold transition active:scale-[0.97] ${
                 direction === "ida"
-                  ? "bg-terracota-400 text-gray-900 shadow-sm"
-                  : "text-cream-100/50 hover:bg-cream-100/10 hover:text-cream-100/80"
+                  ? "bg-terracota-400 text-white shadow-sm"
+                  : "ov-text-muted hover:opacity-80"
               }`}
             >
               Ida
@@ -150,52 +155,72 @@ export default function RouteList({
               onClick={() => onDirectionChange("vuelta")}
               className={`h-9 rounded-lg px-4 text-[13px] font-semibold transition active:scale-[0.97] ${
                 direction === "vuelta"
-                  ? "bg-terracota-400 text-gray-900 shadow-sm"
-                  : "text-cream-100/50 hover:bg-cream-100/10 hover:text-cream-100/80"
+                  ? "bg-terracota-400 text-white shadow-sm"
+                  : "ov-text-muted hover:opacity-80"
               }`}
             >
               Vuelta
             </button>
           </div>
-          <span className="text-[12px] font-medium text-cream-100/50">
+          <span className="ov-text-muted text-[12px] font-medium">
             {filteredRoutes.length} ruta{filteredRoutes.length !== 1 ? "s" : ""}
           </span>
         </div>
       </div>
 
-      <label className="block">
-        <span className="sr-only">Buscar ruta</span>
-        <div className="relative">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-cream-100/35"
-            aria-hidden="true"
-          >
-            <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.8" />
-            <path d="m20 20-3.8-3.8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-          </svg>
-          <input
-            type="search"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Busca por nombre de ruta"
-            className="h-12 w-full rounded-2xl border border-cream-100/8 bg-cream-100/5 pl-10 pr-11 text-sm text-cream-50 outline-none transition placeholder:text-cream-100/25 focus:border-terracota-400/40 focus:ring-1 focus:ring-terracota-400/10"
-          />
-          {query && (
-            <button
-              type="button"
-              onClick={() => setQuery("")}
-              className="absolute right-2 top-2.5 grid h-7 w-7 place-items-center rounded-full bg-cream-100/5 text-cream-100/60 transition hover:bg-cream-100/10"
-              aria-label="Limpiar busqueda"
+      <div className="space-y-2">
+        <label className="block">
+          <span className="sr-only">Buscar ruta por colonia o número</span>
+          <div className="relative">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              className="ov-text-muted pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2"
+              aria-hidden="true"
             >
-              <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
-                <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              </svg>
-            </button>
-          )}
-        </div>
-      </label>
+              <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.8" />
+              <path d="m20 20-3.8-3.8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            </svg>
+            <input
+              type="search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Colonia, destino o número de ruta…"
+              style={{ background: "var(--ov-pill-bg)", color: "var(--ov-text)", borderColor: "var(--ov-border)" }}
+              className="h-12 w-full rounded-2xl border pl-10 pr-11 text-sm outline-none transition focus:border-terracota-400/40 focus:ring-1 focus:ring-terracota-400/10 [&::placeholder]:opacity-40"
+            />
+            {query && (
+              <button
+                type="button"
+                onClick={() => setQuery("")}
+                className="ov-pill ov-text-muted absolute right-2 top-2.5 grid h-7 w-7 place-items-center rounded-full transition hover:opacity-80"
+                aria-label="Limpiar busqueda"
+              >
+                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
+                  <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+              </button>
+            )}
+          </div>
+        </label>
+
+        {/* Quick-search chips — hidden while user has typed something */}
+        {!query && (
+          <div className="flex flex-wrap gap-1.5" role="list" aria-label="Búsquedas rápidas">
+            {["Jucutacato", "Constituyentes", "Pemex", "Taximacuaro", "Central", "Balcones"].map((chip) => (
+              <button
+                key={chip}
+                type="button"
+                role="listitem"
+                onClick={() => setQuery(chip)}
+                className="ov-pill ov-border ov-text-muted rounded-full border px-2.5 py-1 text-[11px] font-medium transition hover:border-terracota-400/40 hover:text-terracota-400 active:scale-[0.97]"
+              >
+                {chip}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* ── Teleférico featured card (hidden while searching) ────────────── */}
       {!normalizedQuery && (
@@ -303,17 +328,17 @@ export default function RouteList({
                             : "Solo vuelta disponible";
                         return destino ? (
                           <>
-                            <span className="block font-display text-sm font-bold text-cream-50 truncate">{destino}</span>
-                            <span className="block text-[11px] text-cream-100/45">
-                              <span className="font-semibold text-cream-100/60">{route.ruta}</span>
-                              <span className="mx-1.5 text-cream-100/25">·</span>
+                            <span className="ov-text block truncate font-display text-sm font-bold">{destino}</span>
+                            <span className="ov-text-muted block text-[11px]">
+                              <span className="font-semibold">{route.ruta}</span>
+                              <span className="mx-1.5 opacity-40">·</span>
                               {availability}
                             </span>
                           </>
                         ) : (
                           <>
-                            <span className="block font-display text-sm font-bold text-cream-50">{route.nombre}</span>
-                            <span className="block text-xs text-cream-100/35">{availability}</span>
+                            <span className="ov-text block font-display text-sm font-bold">{route.nombre}</span>
+                            <span className="ov-text-muted block text-xs">{availability}</span>
                           </>
                         );
                       })()}
@@ -339,17 +364,17 @@ export default function RouteList({
           })}
         </ul>
       ) : (
-        <div className="flex flex-col items-center gap-3 rounded-2xl border border-cream-100/8 bg-cream-100/4 px-4 py-8 text-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-cream-100/5">
-            <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6 text-cream-100/50" aria-hidden="true">
+        <div className="ov-panel ov-border flex flex-col items-center gap-3 rounded-2xl border px-4 py-8 text-center">
+          <div className="ov-pill flex h-12 w-12 items-center justify-center rounded-2xl">
+            <svg viewBox="0 0 24 24" fill="none" className="ov-text-muted h-6 w-6" aria-hidden="true">
               <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.8" />
               <path d="m20 20-3.8-3.8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
               <path d="M8.5 11h5M11 8.5v5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeOpacity="0.5" />
             </svg>
           </div>
           <div>
-            <p className="text-[14px] font-semibold text-cream-100/75">Sin resultados</p>
-            <p className="mt-1 text-[12px] text-cream-100/50">
+            <p className="ov-text text-[14px] font-semibold">Sin resultados</p>
+            <p className="ov-text-muted mt-1 text-[12px]">
               No hay rutas con ese nombre. Prueba con otra palabra.
             </p>
           </div>

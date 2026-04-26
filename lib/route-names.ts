@@ -1,3 +1,18 @@
+const ALIASES: Record<string, string[]> = {
+  "Ruta 6":  ["pemex", "taximacuaro"],
+  "Ruta 7":  ["pemex", "centro"],
+  "Ruta 9":  ["arroyo", "colorado"],
+  "Ruta 11": ["central", "camionera", "central camionera"],
+  "Ruta 15": ["patria", "deportiva", "unidad deportiva"],
+  "Ruta 19": ["quirindavara", "taximacuaro"],
+  "Ruta 20": ["cuba", "mexico"],
+  "Ruta 26": ["constituyentes", "unidad"],
+  "Ruta 31": ["jaramillo", "cecati"],
+  "Ruta 45": ["interClinicas", "clinicas", "IMSS"],
+  "Ruta 66": ["plan de ayala", "eti"],
+  "Ruta 176": ["quinta", "clinica 76"],
+};
+
 const DESTINATIONS: Record<string, string> = {
   "Ruta 1": "PALITO VERDE ↔ Unidad",
   "Ruta 1A": "San José de la Mina ↔ Palito Verde",
@@ -56,6 +71,21 @@ const LOOKUP = new Map<string, string>(
 
 export function getRouteDestination(routeName: string): string | null {
   return LOOKUP.get(normalize(routeName)) ?? null;
+}
+
+export function getRouteSearchTerms(routeName: string): string[] {
+  const destino = getRouteDestination(routeName);
+  const terms: string[] = [];
+
+  if (destino) {
+    // Split "A ↔ B" into individual searchable terms
+    terms.push(...destino.split(/\s*↔\s*/).map((t) => t.trim()).filter(Boolean));
+  }
+
+  const aliases = ALIASES[routeName] ?? [];
+  terms.push(...aliases);
+
+  return terms;
 }
 
 export function formatRouteLabel(routeName: string, baseName?: string): string {
