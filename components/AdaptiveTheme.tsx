@@ -19,11 +19,19 @@ export default function AdaptiveTheme() {
   useEffect(() => {
     applyTheme(isDarkHour());
 
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") applyTheme(isDarkHour());
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
     const interval = setInterval(() => {
       applyTheme(isDarkHour());
     }, 60_000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
   }, []);
 
   return null;

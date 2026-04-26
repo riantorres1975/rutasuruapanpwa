@@ -12,33 +12,32 @@ const APP_URL =
 export function useShareRoute() {
   const [status, setStatus] = useState<ShareStatus>("idle");
 
-  const share = useCallback(async (routeName: string) => {
-    const text = `Toma la ${routeName} en Uruapan 🚌 Consulta todas las rutas en: ${APP_URL}`;
-    // Capture navigator reference to avoid TypeScript's "in" narrowing to never.
-    // This hook is always client-side ("use client"), so navigator is always defined.
+  const share = useCallback(async (routeName: string, routeId?: number) => {
+    const routeUrl = routeId
+      ? `${APP_URL}/mapa?ruta=${routeId}`
+      : APP_URL;
+
+    const text = `Toma la ${routeName} en Uruapan 🚌 Consúltala en:`;
+
     const nav = navigator as Navigator & {
       share?: (data: ShareData) => Promise<void>;
     };
 
-    // Reset after 2 s
     const reset = () => setTimeout(() => setStatus("idle"), 2000);
 
-    // Prefer native share sheet (mobile)
     if (typeof nav.share === "function") {
       try {
-        await nav.share({ title: "VoyUruapan", text, url: APP_URL });
+        await nav.share({ title: "VoyUruapan", text, url: routeUrl });
         setStatus("shared");
         reset();
         return;
       } catch {
-        // User cancelled — treat as idle, not error
         return;
       }
     }
 
-    // Fallback: copy to clipboard
     try {
-      await nav.clipboard.writeText(text);
+      await nav.clipboard.writeText(`${text} ${routeUrl}`);
       setStatus("copied");
       reset();
     } catch {

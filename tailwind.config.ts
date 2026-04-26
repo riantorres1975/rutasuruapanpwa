@@ -11,7 +11,7 @@ const config: Config = {
     extend: {
       fontFamily: {
         sans: ["var(--font-plus-jakarta)", "sans-serif"],
-        display: ["var(--font-space-grotesk)", "sans-serif"],
+        display: ["var(--font-fraunces)", "Georgia", "serif"],
         serif: ["var(--font-fraunces)", "Georgia", "serif"]
       },
       colors: {

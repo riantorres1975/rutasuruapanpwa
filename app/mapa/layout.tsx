@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import PWAInstallBanner from "@/components/PWAInstallBanner";
 
 export const metadata: Metadata = {
   title: {
@@ -16,5 +17,10 @@ export const metadata: Metadata = {
 };
 
 export default function MapaLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return children;
+  return (
+    <>
+      {children}
+      <PWAInstallBanner />
+    </>
+  );
 }

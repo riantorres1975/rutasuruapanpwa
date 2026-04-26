@@ -25,6 +25,24 @@
   --cream-200: #EADBB8;
   --ink-900: #0E1208;
   --ink-800: #161B0E;
+
+  /* Overlay tokens — modo oscuro (default) */
+  --ov-bg: rgba(14, 18, 8, 0.97);
+  --ov-bg-soft: rgba(22, 27, 14, 0.96);
+  --ov-border: rgba(255, 255, 255, 0.10);
+  --ov-text: #F4EBD9;
+  --ov-text-muted: rgba(244, 235, 217, 0.65);
+  --ov-pill-bg: rgba(255, 255, 255, 0.06);
+}
+
+/* Tema claro (día) — se activa cuando AdaptiveTheme pone data-theme="light" */
+[data-theme="light"] {
+  --ov-bg: rgba(255, 252, 247, 0.98);
+  --ov-bg-soft: rgba(245, 240, 232, 0.98);
+  --ov-border: rgba(0, 0, 0, 0.12);
+  --ov-text: #1a1a0e;
+  --ov-text-muted: rgba(26, 26, 14, 0.60);
+  --ov-pill-bg: rgba(0, 0, 0, 0.05);
 }
 
 
@@ -307,6 +325,22 @@ body {
   }
 }
 
+/* ── Overlay adaptive: usa tokens que cambian con data-theme ── */
+.ov-panel {
+  background: var(--ov-bg);
+  border-color: var(--ov-border);
+  color: var(--ov-text);
+}
+.ov-panel-soft {
+  background: var(--ov-bg-soft);
+  border-color: var(--ov-border);
+  color: var(--ov-text);
+}
+.ov-text { color: var(--ov-text); }
+.ov-text-muted { color: var(--ov-text-muted); }
+.ov-border { border-color: var(--ov-border); }
+.ov-pill { background: var(--ov-pill-bg); }
+
 .mapboxgl-ctrl-bottom-left,
 .mapboxgl-ctrl-bottom-right {
   display: none;
@@ -435,6 +469,12 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .suggestion-fade { animation: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .greca-bg-animated {
+    animation: none;
+  }
 }
 
 /* ── Tipografía con carácter ── */

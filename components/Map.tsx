@@ -24,7 +24,7 @@ const TELEFERICO_SOURCE = "teleferico-source";
 const TELEFERICO_LINE_LAYER = "teleferico-line";
 const TELEFERICO_GLOW_LAYER = "teleferico-glow";
 const TELEFERICO_STATIONS_LAYER = "teleferico-stations";
-const TELEFERICO_COLOR = "#E85D2F";
+const TELEFERICO_COLOR = "#0EA5E9";
 const TELEFERICO_ROUTE_NAME = "Teleférico Uruapan";
 const TRANSFER_SOURCE = "transfer-source";
 const TRANSFER_SEG_A_LAYER = "transfer-seg-a";
@@ -71,7 +71,7 @@ function glowColorExpression(selectedRouteId: number | null) {
   return [
     "case",
     ["all", ["==", ["get", "id"], selectedRouteId], telefericoRouteExpression()],
-    "#E85D2F",
+    TELEFERICO_COLOR,
     ["get", "color"]
   ] as any;
 }
@@ -855,9 +855,11 @@ function MapComponent({
     };
 
     const onMapClick = (event: mapboxgl.MapMouseEvent) => {
-      const hitFeature = map.queryRenderedFeatures(event.point, { layers: [LAYER_HIT_ID] });
-      if (hitFeature.length > 0) {
-        return;
+      if (map.getLayer(LAYER_HIT_ID)) {
+        const hitFeature = map.queryRenderedFeatures(event.point, { layers: [LAYER_HIT_ID] });
+        if (hitFeature.length > 0) {
+          return;
+        }
       }
 
       onMapPickRef.current([Number(event.lngLat.lng.toFixed(6)), Number(event.lngLat.lat.toFixed(6))]);
@@ -975,8 +977,31 @@ function MapComponent({
       }
     };
 
+    const boostNeighborhoodLabels = () => {
+      // Layers del estilo base de Mapbox que contienen nombres de colonias/barrios.
+      // Bajamos el minzoom para que aparezcan desde zoom 11 en lugar de ~13-14.
+      const neighborhoodLayers = [
+        "settlement-subdivision-label",  // colonias y fraccionamientos (streets-v12)
+        "settlement-minor-label",         // pueblos y localidades pequeñas
+        "neighborhood-labels",            // alias en algunos estilos
+      ];
+
+      for (const layerId of neighborhoodLayers) {
+        if (map.getLayer(layerId)) {
+          map.setLayerZoomRange(layerId, 10, 24);
+          // Aumentar el tamaño del texto un poco para que sea más legible
+          map.setPaintProperty(layerId, "text-opacity", [
+            "interpolate", ["linear"], ["zoom"],
+            10, 0.7,
+            12, 1
+          ]);
+        }
+      }
+    };
+
     const onLoad = async () => {
       ensureRouteLayers();
+      boostNeighborhoodLabels();
 
       // Load teleférico GeoJSON
       try {
@@ -1006,12 +1031,16 @@ function MapComponent({
       setIsLoading(false);
     };
 
+    let currentMapStyle = getMapStyle(isDarkMode);
     const themeObserver = new MutationObserver(() => {
       const dark = document.documentElement.getAttribute("data-theme") === "dark";
       const nextStyle = getMapStyle(dark);
+      if (nextStyle === currentMapStyle) return;
+      currentMapStyle = nextStyle;
       map.setStyle(nextStyle);
       map.once("style.load", () => {
         ensureRouteLayers();
+        boostNeighborhoodLabels();
         if (telefericoGeoJSONRef.current) {
           addTelefericoLayers(telefericoGeoJSONRef.current);
         }

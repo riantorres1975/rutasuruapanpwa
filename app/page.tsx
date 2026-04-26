@@ -352,10 +352,16 @@ export default function LandingPage() {
           <h2 className="font-serif-display text-3xl font-black text-cream-50 md:text-4xl">Preguntas frecuentes</h2>
           <div className="mt-6 grid gap-3 md:grid-cols-2">
             {LANDING_FAQS.map((item) => (
-              <article key={item.question} className="card-lift rounded-2xl border border-cream-100/10 bg-ink-900/60 p-5 backdrop-blur">
-                <h3 className="font-serif-display text-base font-black text-cream-50">{item.question}</h3>
-                <p className="mt-3 text-sm leading-6 text-cream-100/70">{item.answer}</p>
-              </article>
+              <details
+                key={item.question}
+                className="card-lift group rounded-2xl border border-cream-100/10 bg-ink-900/60 backdrop-blur open:border-terracota-400/30"
+              >
+                <summary className="font-serif-display flex cursor-pointer list-none items-center justify-between gap-3 p-5 text-base font-black text-cream-50 [&::-webkit-details-marker]:hidden">
+                  {item.question}
+                  <span className="shrink-0 text-lg text-terracota-400 transition-transform duration-200 group-open:rotate-45" aria-hidden="true">+</span>
+                </summary>
+                <p className="px-5 pb-5 text-sm leading-6 text-cream-100/70">{item.answer}</p>
+              </details>
             ))}
           </div>
         </div>

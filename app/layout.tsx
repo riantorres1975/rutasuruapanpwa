@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Plus_Jakarta_Sans, Space_Grotesk, Fraunces } from "next/font/google";
+import { Plus_Jakarta_Sans, Fraunces } from "next/font/google";
 import PWARegistrar from "@/components/PWARegistrar";
 import AdaptiveTheme from "@/components/AdaptiveTheme";
 import "./globals.css";
@@ -7,12 +7,6 @@ import "./globals.css";
 const plusJakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
   variable: "--font-plus-jakarta",
-  display: "swap"
-});
-
-const spaceGrotesk = Space_Grotesk({
-  subsets: ["latin"],
-  variable: "--font-space-grotesk",
   display: "swap"
 });
 
@@ -81,7 +75,7 @@ export default function RootLayout({
   return (
     <html lang="es-MX" suppressHydrationWarning>
       <body
-        className={`${plusJakarta.variable} ${spaceGrotesk.variable} ${fraunces.variable} min-h-dvh bg-[var(--background)] font-sans text-[var(--foreground)] antialiased`}
+        className={`${plusJakarta.variable} ${fraunces.variable} min-h-dvh bg-[var(--background)] font-sans text-[var(--foreground)] antialiased`}
       >
         {/* Inline script runs before paint to set the correct theme and avoid flash */}
         <script
