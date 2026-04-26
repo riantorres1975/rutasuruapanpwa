@@ -28,6 +28,7 @@
   --ov-bg:         rgba(12,17,10,0.97);
   --ov-bg-soft:    rgba(20,28,16,0.96);
   --ov-border:     rgba(140,200,80,0.10);
+  --ov-border2:    rgba(140,200,80,0.20);
   --ov-text:       #e8f2d8;
   --ov-text-muted: rgba(168,200,136,0.65);
   --ov-pill-bg:    rgba(106,171,72,0.08);
@@ -46,34 +47,35 @@
 
 /* Modo claro (si AdaptiveTheme lo activa) */
 [data-theme="light"] {
-  --background:    #f0ece0;
-  --foreground:    #1a2e12;
-  --surface:       #e4dfd0;
-  --surface-strong:#d8d2c0;
+  --background:     #ffffff;
+  --foreground:     #0f1a0a;
+  --surface:        #f4f7f0;
+  --surface-strong: #e8f0e0;
 
-  /* Acentos oscurecidos para legibilidad sobre fondo claro */
-  --verde:   #3a7a28;
-  --verde-d: #235018;
-  --verde-l: rgba(58,122,40,0.10);
-  --lima:    #4a8a20;
-  --agua:    #1e7850;
-  --muted:   #4a6e38;
-  --ink:     #1a2e12;
-  --ink2:    #3a5828;
+  /* Acentos — versión oscura para contraste sobre fondo claro */
+  --verde:   #4a8a30;
+  --verde-d: #2d5a18;
+  --verde-l: rgba(90,140,60,0.10);
+  --lima:    #7ab800;
+  --agua:    #2a7a50;
+  --muted:   #5a7848;
+  --ink:     #0f1a0a;
+  --ink2:    #3d5a2a;
 
   /* Compat vars */
-  --cream-50:  #1a2e12;
-  --cream-100: #3a5828;
-  --ink-900:   #f0ece0;
-  --ink-800:   #e4dfd0;
+  --cream-50:  #0f1a0a;
+  --cream-100: #3d5a2a;
+  --ink-900:   #ffffff;
+  --ink-800:   #f4f7f0;
 
-  /* Overlays */
-  --ov-bg:         rgba(232,228,214,0.98);
-  --ov-bg-soft:    rgba(220,215,200,0.98);
-  --ov-border:     rgba(58,122,40,0.20);
-  --ov-text:       #1a2e12;
-  --ov-text-muted: rgba(26,46,18,0.65);
-  --ov-pill-bg:    rgba(58,122,40,0.08);
+  /* Overlays — blancos limpios para paneles y bottom sheets */
+  --ov-bg:         rgba(255,255,255,0.97);
+  --ov-bg-soft:    rgba(244,247,240,0.98);
+  --ov-border:     rgba(60,100,40,0.15);
+  --ov-border2:    rgba(60,100,40,0.25);
+  --ov-text:       #0f1a0a;
+  --ov-text-muted: #3d5a2a;
+  --ov-pill-bg:    rgba(90,140,60,0.08);
 }
 
 

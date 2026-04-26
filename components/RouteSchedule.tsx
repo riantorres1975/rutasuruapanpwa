@@ -63,9 +63,9 @@ export default function RouteSchedule({ routeName }: Props) {
 
 function Pill({ color, children }: { color: "emerald" | "amber" | "slate"; children: string }) {
   const styles = {
-    emerald: "bg-emerald-500/10 text-emerald-400",
-    amber:   "bg-amber-500/10 text-amber-400",
-    slate:   "bg-cream-100/8 text-cream-100/50",
+    emerald: "bg-emerald-500/15 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400",
+    amber:   "bg-amber-500/15 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400",
+    slate:   "bg-slate-200 text-slate-600 dark:bg-slate-700/40 dark:text-slate-400",
   };
   return (
     <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${styles[color]}`}>

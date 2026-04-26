@@ -235,19 +235,25 @@ export default function RouteList({
         <ul className="space-y-2 pb-10" aria-busy="true" aria-label="Cargando rutas">
           {Array.from({ length: 6 }).map((_, i) => (
             <li key={i}>
-              <div className="flex min-h-16 w-full items-stretch gap-3 rounded-2xl border border-cream-100/8 bg-cream-100/4 px-2 py-3">
+              <div
+                className="flex min-h-16 w-full items-stretch gap-3 rounded-2xl px-2 py-3"
+                style={{ border: "1px solid var(--ov-border)", background: "var(--surface)" }}
+              >
                 {/* Color strip skeleton */}
-                <div className="w-1 self-stretch rounded-full bg-cream-100/10 animate-pulse" />
+                <div
+                  className="w-1 self-stretch rounded-full animate-pulse"
+                  style={{ background: "var(--ov-border2, var(--ov-border))" }}
+                />
                 <div className="ml-1 flex flex-1 flex-col justify-center gap-2 py-0.5">
                   {/* Route name skeleton — varying widths for realistic feel */}
                   <div
-                    className="h-3.5 animate-pulse rounded-full bg-cream-100/10"
-                    style={{ width: `${52 + (i % 3) * 14}%`, animationDelay: `${i * 80}ms` }}
+                    className="h-3.5 animate-pulse rounded-full"
+                    style={{ width: `${52 + (i % 3) * 14}%`, animationDelay: `${i * 80}ms`, background: "var(--ov-border)" }}
                   />
                   {/* Subtitle skeleton */}
                   <div
-                    className="h-2.5 animate-pulse rounded-full bg-cream-100/6"
-                    style={{ width: `${36 + (i % 2) * 12}%`, animationDelay: `${i * 80 + 40}ms` }}
+                    className="h-2.5 animate-pulse rounded-full"
+                    style={{ width: `${36 + (i % 2) * 12}%`, animationDelay: `${i * 80 + 40}ms`, background: "var(--ov-pill-bg)" }}
                   />
                 </div>
               </div>
@@ -289,7 +295,7 @@ export default function RouteList({
                 {showDivider && (
                   <div className="flex items-center gap-2 pb-2 pt-1" aria-hidden="true">
                     <span className="flex-1 border-t border-slate-200/70 dark:border-slate-700/70" />
-                    <span className="text-[10px] font-medium uppercase tracking-widest text-cream-100/60 dark:text-cream-100/50">
+                    <span className="ov-text-muted text-[10px] font-medium uppercase tracking-widest" style={{ color: "var(--ov-text-muted)" }}>
                       Otras rutas
                     </span>
                     <span className="flex-1 border-t border-slate-200/70 dark:border-slate-700/70" />
@@ -298,6 +304,11 @@ export default function RouteList({
                 <button
                   type="button"
                   onClick={() => onSelectRoute(route.id)}
+                  style={
+                    !isSelected && !isNearby && !isBestSuggestion && !isSuggested
+                      ? { borderColor: "var(--ov-border)", background: "var(--surface)" }
+                      : undefined
+                  }
                   className={`flex min-h-16 w-full items-stretch justify-between rounded-2xl border px-2 py-3 text-left transition active:scale-[0.995] ${
                     isSelected
                       ? "border-lima/70 bg-lima/10 shadow-[0_4px_24px_rgba(184,232,64,0.08)]"
@@ -307,7 +318,7 @@ export default function RouteList({
                           ? "border-emerald-400/70 bg-emerald-500/10"
                           : isSuggested
                             ? "border-lima/30 bg-lima/5"
-                            : "border-cream-100/10 bg-cream-100/5 hover:border-cream-100/20 hover:bg-cream-100/7"
+                            : "hover:border-lima/20"
                   }`}
                 >
                   <span className="w-1 self-stretch rounded-full" style={{ backgroundColor: route.color }} />

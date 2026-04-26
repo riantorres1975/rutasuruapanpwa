@@ -153,15 +153,21 @@ type TelefericoDetailProps = {
 
 function InfoRow({ icon, label, value }: { icon: string; label: string; value: string }) {
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-cream-100/8 bg-cream-100/5 px-3.5 py-3">
+    <div
+      className="flex items-center gap-3 rounded-xl px-3.5 py-3"
+      style={{ background: "var(--surface)", border: "1px solid var(--ov-border)" }}
+    >
       <span className="text-xl" aria-hidden="true">
         {icon}
       </span>
       <div className="min-w-0">
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-cream-100/45">
+        <p
+          className="text-[10px] font-semibold uppercase tracking-wider"
+          style={{ color: "var(--muted)" }}
+        >
           {label}
         </p>
-        <p className="truncate text-[13px] font-semibold text-cream-50">{value}</p>
+        <p className="truncate text-[13px] font-semibold" style={{ color: "var(--ink)" }}>{value}</p>
       </div>
     </div>
   );
@@ -243,7 +249,10 @@ export function TelefericoDetail({ onClose, onShowOnMap }: TelefericoDetailProps
 
       {/* Stations timeline */}
       <div>
-        <h3 className="mb-2.5 text-[11px] font-semibold uppercase tracking-widest text-cream-100/45 dark:text-cream-100/60">
+        <h3
+          className="mb-2.5 text-[11px] font-semibold uppercase tracking-widest"
+          style={{ color: "var(--muted)" }}
+        >
           Estaciones ({TELEFERICO_STATIONS.length})
         </h3>
         <div className="relative space-y-0">
@@ -251,26 +260,36 @@ export function TelefericoDetail({ onClose, onShowOnMap }: TelefericoDetailProps
             <div key={station.id} className="flex gap-3">
               {/* Timeline */}
               <div className="flex flex-col items-center">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-avocado-400 bg-avocado-400/15 text-[11px] font-bold text-avocado-600 dark:text-avocado-100">
+                <div
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[11px] font-bold"
+                  style={{
+                    border: "2px solid var(--verde)",
+                    background: "var(--verde-l)",
+                    color: "var(--verde-d)",
+                  }}
+                >
                   {station.id}
                 </div>
                 {index < TELEFERICO_STATIONS.length - 1 && (
                   <div
-                    className="my-0.5 w-0.5 flex-1 border-l-2 border-dashed border-avocado-400/50"
-                    style={{ minHeight: "1.5rem" }}
+                    className="my-0.5 w-0.5 flex-1"
+                    style={{ borderLeft: "2px dashed var(--ov-border)", minHeight: "1.5rem" }}
                   />
                 )}
               </div>
               {/* Content */}
               <div className="flex-1 pb-3">
-                <div className="rounded-xl border border-cream-100/8 bg-cream-100/5 px-3.5 py-2.5">
+                <div
+                  className="rounded-xl px-3.5 py-2.5"
+                  style={{ background: "var(--surface)", border: "1px solid var(--ov-border)" }}
+                >
                   <div className="flex items-center gap-2">
                     <span aria-hidden="true">{station.icon}</span>
-                    <p className="text-[13px] font-semibold text-cream-50">
+                    <p className="text-[13px] font-semibold" style={{ color: "var(--ink)" }}>
                       {station.fullName}
                     </p>
                   </div>
-                  <p className="mt-0.5 text-[11px] text-cream-100/45">
+                  <p className="mt-0.5 text-[11px]" style={{ color: "var(--muted)" }}>
                     {station.desc}
                   </p>
                 </div>
@@ -282,22 +301,26 @@ export function TelefericoDetail({ onClose, onShowOnMap }: TelefericoDetailProps
 
       {/* Fares */}
       <div>
-        <h3 className="mb-2.5 text-[11px] font-semibold uppercase tracking-widest text-cream-100/45">
+        <h3
+          className="mb-2.5 text-[11px] font-semibold uppercase tracking-widest"
+          style={{ color: "var(--muted)" }}
+        >
           Tarifas
         </h3>
         <div className="grid grid-cols-2 gap-2">
           {FARES.map((fare) => (
             <div
               key={fare.label}
-              className="rounded-xl border border-avocado-400/20 bg-avocado-400/10 px-4 py-3"
+              className="rounded-xl px-4 py-3"
+              style={{ background: "var(--surface)", border: "1px solid var(--ov-border)" }}
             >
               <p className="text-xl" aria-hidden="true">
                 {fare.icon}
               </p>
-              <p className="mt-1 text-2xl font-extrabold text-avocado-100">
+              <p className="mt-1 text-2xl font-extrabold" style={{ color: "var(--verde-d)" }}>
                 {fare.price}
               </p>
-              <p className="text-[11px] font-medium text-cream-100/60">
+              <p className="text-[11px] font-medium" style={{ color: "var(--muted)" }}>
                 {fare.label}
               </p>
             </div>
@@ -307,7 +330,10 @@ export function TelefericoDetail({ onClose, onShowOnMap }: TelefericoDetailProps
 
       {/* Operational info */}
       <div>
-        <h3 className="mb-2.5 text-[11px] font-semibold uppercase tracking-widest text-cream-100/45 dark:text-cream-100/60">
+        <h3
+          className="mb-2.5 text-[11px] font-semibold uppercase tracking-widest"
+          style={{ color: "var(--muted)" }}
+        >
           Operación
         </h3>
         <div className="space-y-2">
@@ -318,8 +344,11 @@ export function TelefericoDetail({ onClose, onShowOnMap }: TelefericoDetailProps
       </div>
 
       {/* Disclaimer */}
-      <div className="rounded-xl border border-amber-400/20 bg-amber-500/8 px-4 py-3">
-        <p className="text-[11px] leading-relaxed text-amber-300/90">
+      <div
+        className="rounded-xl px-4 py-3"
+        style={{ background: "var(--surface)", border: "1px solid var(--ov-border)" }}
+      >
+        <p className="text-[11px] leading-relaxed" style={{ color: "var(--muted)", fontStyle: "italic" }}>
           La informacion de horarios y tarifas puede variar. Se recomienda confirmar en taquilla antes de abordar.
         </p>
       </div>

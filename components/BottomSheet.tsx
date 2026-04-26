@@ -120,8 +120,8 @@ export default function BottomSheet({
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        style={{ transform: baseTransform, height: "80dvh" }}
-        className={`fixed inset-x-0 bottom-0 z-40 rounded-t-[28px] border border-white/15 bg-[var(--surface-strong)] shadow-soft backdrop-blur-2xl will-change-transform md:hidden ${
+        style={{ transform: baseTransform, height: "80dvh", background: "var(--ov-bg)", borderTop: "1px solid var(--ov-border)" }}
+        className={`fixed inset-x-0 bottom-0 z-40 rounded-t-[28px] shadow-soft backdrop-blur-2xl will-change-transform md:hidden ${
           isDragging ? "transition-none" : "transition-[transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
         }`}
       >
@@ -131,9 +131,10 @@ export default function BottomSheet({
           onPointerMove={onPointerMove}
           onPointerUp={onPointerEnd}
           onPointerCancel={onPointerEnd}
-          className="relative cursor-grab touch-none select-none border-b border-white/8 px-5 pb-4 pt-3.5 active:cursor-grabbing"
+          style={{ borderBottomColor: "var(--ov-border)" }}
+          className="relative cursor-grab touch-none select-none border-b px-5 pb-4 pt-3.5 active:cursor-grabbing"
         >
-          <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20" />
+          <div className="mx-auto mb-3 h-1 w-10 rounded-full" style={{ background: "var(--ov-border2, rgba(60,100,40,0.25))" }} />
 
           {snapPoints ? (
             /* En modo snap: la cabecera es solo el handle + contenido mini */
@@ -141,11 +142,12 @@ export default function BottomSheet({
               className="flex items-center gap-3"
               onClick={() => !isDragging && setSnap(snap === "mini" ? "full" : "mini")}
             >
-              <p className="flex-1 font-display text-[15px] font-bold text-slate-100">{title}</p>
+              <p className="flex-1 font-display text-[15px] font-bold ov-text" style={{ color: "var(--ov-text)" }}>{title}</p>
               <svg
                 viewBox="0 0 24 24"
                 fill="none"
-                className={`h-4 w-4 shrink-0 text-slate-400 transition-transform duration-300 ${snap === "full" ? "rotate-180" : ""}`}
+                className={`h-4 w-4 shrink-0 transition-transform duration-300 ${snap === "full" ? "rotate-180" : ""}`}
+                style={{ color: "var(--ov-text-muted)" }}
                 aria-hidden="true"
               >
                 <path d="M18 15l-6-6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -153,11 +155,12 @@ export default function BottomSheet({
             </div>
           ) : (
             <>
-              <p className="pr-12 font-display text-lg font-bold text-slate-100">{title}</p>
+              <p className="pr-12 font-display text-lg font-bold" style={{ color: "var(--ov-text)" }}>{title}</p>
               <button
                 type="button"
                 onClick={() => onOpenChange(false)}
-                className="absolute right-4 top-2.5 rounded-full bg-white/5 p-2.5 text-slate-200 transition hover:bg-white/10 active:scale-[0.97]"
+                className="absolute right-4 top-2.5 rounded-full p-2.5 transition active:scale-[0.97]"
+                style={{ background: "var(--ov-pill-bg)", color: "var(--ov-text)" }}
                 aria-label="Cerrar panel"
               >
                 <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
