@@ -50,12 +50,30 @@
   --foreground:    #1a2e12;
   --surface:       #e4dfd0;
   --surface-strong:#d8d2c0;
+
+  /* Acentos oscurecidos para legibilidad sobre fondo claro */
+  --verde:   #3a7a28;
+  --verde-d: #235018;
+  --verde-l: rgba(58,122,40,0.10);
+  --lima:    #4a8a20;
+  --agua:    #1e7850;
+  --muted:   #4a6e38;
+  --ink:     #1a2e12;
+  --ink2:    #3a5828;
+
+  /* Compat vars */
+  --cream-50:  #1a2e12;
+  --cream-100: #3a5828;
+  --ink-900:   #f0ece0;
+  --ink-800:   #e4dfd0;
+
+  /* Overlays */
   --ov-bg:         rgba(232,228,214,0.98);
   --ov-bg-soft:    rgba(220,215,200,0.98);
-  --ov-border:     rgba(74,120,52,0.25);
+  --ov-border:     rgba(58,122,40,0.20);
   --ov-text:       #1a2e12;
-  --ov-text-muted: rgba(26,46,18,0.75);
-  --ov-pill-bg:    rgba(74,120,52,0.12);
+  --ov-text-muted: rgba(26,46,18,0.65);
+  --ov-pill-bg:    rgba(58,122,40,0.08);
 }
 
 
