@@ -285,7 +285,7 @@ export default function LandingPage() {
               >Efectivo</span>
             </div>
             <div className="font-serif text-5xl font-black leading-none tracking-tight" style={{ color: "var(--ink)" }}>
-              {FARES_2026.urbanBus.price} <span className="text-base font-sans font-normal" style={{ color: "var(--muted)" }}>MXN</span>
+              <span className="font-sans">$</span>{FARES_2026.urbanBus.price.replace(/^\$/, "")} <span className="text-base font-sans font-normal" style={{ color: "var(--muted)" }}>MXN</span>
             </div>
             <p className="mt-1.5 text-sm font-semibold" style={{ color: "var(--ink2)" }}>Camión urbano</p>
             <p className="mt-2.5 text-sm leading-relaxed" style={{ color: "var(--muted)" }}>
@@ -306,7 +306,7 @@ export default function LandingPage() {
               >Tarjeta movilidad</span>
             </div>
             <div className="font-serif text-5xl font-black leading-none tracking-tight" style={{ color: "var(--ink)" }}>
-              {FARES_2026.teleferico.price} <span className="text-base font-sans font-normal" style={{ color: "var(--muted)" }}>MXN</span>
+              <span className="font-sans">$</span>{FARES_2026.teleferico.price.replace(/^\$/, "")} <span className="text-base font-sans font-normal" style={{ color: "var(--muted)" }}>MXN</span>
             </div>
             <p className="mt-1.5 text-sm font-semibold" style={{ color: "var(--ink2)" }}>Teleférico Uruapan</p>
             <p className="mt-2.5 text-sm leading-relaxed" style={{ color: "var(--muted)" }}>

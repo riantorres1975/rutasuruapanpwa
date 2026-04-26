@@ -39,7 +39,8 @@ export default function FareTicket({ label, price, payment, serial, variant }: P
       <div>
         <p className="text-sm font-bold" style={{ color: "#e8f2d8" }}>{label}</p>
         <p className="mt-1 font-serif-display text-4xl font-black leading-none" style={{ color: "#b8e840" }}>
-          {price}
+          <span className="font-sans">$</span>{price.replace(/^\$/, "")}
+          <span className="ml-1.5 font-sans text-base font-normal" style={{ color: "#5a7848" }}>MXN</span>
         </p>
       </div>
 

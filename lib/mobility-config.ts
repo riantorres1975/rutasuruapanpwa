@@ -7,17 +7,17 @@ export const APP_BRAND = {
 export const FARES_2026 = {
   urbanBus: {
     label: "Camión urbano",
-    price: "$11.00 MXN",
+    price: "$11.00",
     payment: "La mayoría de las rutas urbanas se pagan en efectivo."
   },
   teleferico: {
     label: "Teleférico Uruapan",
-    price: "$11.00 MXN",
+    price: "$11.00",
     payment: "Solo acepta tarjeta electrónica de movilidad. No acepta efectivo."
   },
   mobilityCard: {
     label: "Tarjeta de movilidad",
-    price: "$19.00 MXN",
+    price: "$19.00",
     payment: "Tarjeta requerida para validar el acceso al Teleférico."
   }
 } as const;
@@ -27,7 +27,7 @@ export const TELEFERICO_URUAPAN = {
   schemaName: "Teleférico Uruapan",
   color: "#00D4AA",
   hours: "05:00 a 23:00",
-  fare: "$11.00 MXN",
+  fare: "$11.00 MXN",  // mantener MXN aquí — se usa en texto narrativo
   payment: "Solo tarjeta electrónica de movilidad",
   frequency: "Cada 5 minutos",
   tripDuration: "~8 minutos de extremo a extremo",

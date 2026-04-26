@@ -318,7 +318,8 @@ export function TelefericoDetail({ onClose, onShowOnMap }: TelefericoDetailProps
                 {fare.icon}
               </p>
               <p className="mt-1 text-2xl font-extrabold" style={{ color: "var(--verde-d)" }}>
-                {fare.price}
+                {fare.price.replace(" MXN", "")}
+                <span className="ml-1 text-sm font-normal" style={{ color: "var(--muted)" }}>MXN</span>
               </p>
               <p className="text-[11px] font-medium" style={{ color: "var(--muted)" }}>
                 {fare.label}
