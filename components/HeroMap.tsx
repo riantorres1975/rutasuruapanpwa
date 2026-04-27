@@ -173,8 +173,8 @@ export default function HeroMap() {
       </div>
 
       <div className="absolute left-4 right-4 top-4 z-10 flex items-center justify-between">
-        <span className="inline-flex items-center gap-2 rounded-full bg-cream-100/95 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-ink-900 backdrop-blur">
-          <span className="h-1.5 w-1.5 rounded-full bg-lima" />
+        <span className="inline-flex whitespace-nowrap items-center gap-1.5 rounded-full bg-cream-100/95 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.1em] text-ink-900 backdrop-blur">
+          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-lima" />
           {liveReady ? "En vivo · Uruapan" : "Uruapan"}
         </span>
         <span className="whitespace-nowrap rounded-full bg-ink-900/80 px-2.5 py-1 text-[10px] font-bold text-cream-100 backdrop-blur">
