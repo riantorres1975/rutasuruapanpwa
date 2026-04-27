@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     description: "Rutas de camiones urbanos y Teleférico en un solo mapa para Uruapan, Michoacán.",
     url: "/",
     siteName: "VoyUruapan",
-    images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "VoyUruapan — rutas de camiones y Teleférico en Uruapan" }],
+    images: [{ url: "/api/og", width: 1200, height: 630, alt: "VoyUruapan — rutas de camiones y Teleférico en Uruapan" }],
     locale: "es_MX",
     type: "website"
   }

@@ -8,9 +8,16 @@ export default function FallingLeaves() {
           0%   { transform: translateY(-60px) rotate(0deg) translateX(0); }
           100% { transform: translateY(110vh) rotate(360deg) translateX(40px); }
         }
+
+        @media (max-width: 767px), (prefers-reduced-motion: reduce) {
+          .falling-leaves {
+            display: none;
+          }
+        }
       `}</style>
 
       <div
+        className="falling-leaves"
         aria-hidden="true"
         style={{
           position: "fixed",

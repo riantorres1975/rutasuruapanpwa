@@ -48,7 +48,7 @@ export const metadata: Metadata = {
     siteName: "VoyUruapan",
     images: [
       {
-        url: "/opengraph-image",
+        url: "/api/og",
         width: 1200,
         height: 630,
         alt: "VoyUruapan — Mapa de rutas de transporte en Uruapan"
@@ -61,7 +61,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "VoyUruapan — Rutas Uruapan",
     description: "Camiones urbanos y Teleférico en Uruapan en un mapa interactivo.",
-    images: ["/opengraph-image"]
+    images: ["/api/og"]
   }
 };
 
