@@ -37,10 +37,14 @@ export default function NotGovernmentNotice({ variant = "compact" }: Props) {
       <div className="flex items-start gap-3">
         <span
           aria-hidden="true"
-          className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-base"
-          style={{ background: "rgba(106,171,72,0.12)" }}
+          className="grid h-9 w-9 shrink-0 place-items-center rounded-full"
+          style={{ background: "rgba(106,171,72,0.12)", color: "#6aab48" }}
         >
-          🛈
+          <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
+            <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
+            <path d="M12 11v5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            <circle cx="12" cy="8" r="1" fill="currentColor" />
+          </svg>
         </span>
         <div>
           <p className="font-serif text-lg font-black" style={{ color: "#e8f2d8" }}>

@@ -76,11 +76,6 @@ export default function MadeByFooter() {
           background: "linear-gradient(135deg, rgba(106,171,72,0.08) 0%, rgba(20,28,16,0.7) 50%, rgba(106,171,72,0.06) 100%)",
         }}
       >
-        {/* Greca decorativa esquina */}
-        <div
-          className="greca-band absolute right-0 top-0 h-3 w-32 opacity-40"
-          aria-hidden="true"
-        />
         <div
           className="absolute -right-8 -top-8 h-40 w-40 rounded-full blur-3xl"
           style={{ background: "rgba(106,171,72,0.12)" }}
