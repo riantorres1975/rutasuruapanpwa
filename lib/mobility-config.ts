@@ -30,7 +30,7 @@ export const TELEFERICO_URUAPAN = {
   fare: "$11.00 MXN",  // mantener MXN aquí — se usa en texto narrativo
   payment: "Solo tarjeta electrónica de movilidad",
   frequency: "Cada 5 minutos",
-  tripDuration: "~8 minutos de extremo a extremo",
+  tripDuration: "~27 minutos de extremo a extremo",
   stations: [
     "Hospital Regional",
     "Libramiento Aeropuerto",
