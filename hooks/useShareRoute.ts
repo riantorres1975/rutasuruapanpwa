@@ -12,8 +12,9 @@ const APP_URL =
 export function useShareRoute() {
   const [status, setStatus] = useState<ShareStatus>("idle");
 
-  const share = useCallback(async (routeName: string) => {
-    const text = `Toma la ${routeName} en Uruapan 🚌 Consulta todas las rutas en: ${APP_URL}`;
+  const share = useCallback(async (routeName: string, url?: string) => {
+    const shareUrl = url ?? (typeof window !== "undefined" ? `${window.location.origin}/mapa` : `${APP_URL}/mapa`);
+    const text = `Toma la ${routeName} en Uruapan. Abre el mapa: ${shareUrl}`;
     // Capture navigator reference to avoid TypeScript's "in" narrowing to never.
     // This hook is always client-side ("use client"), so navigator is always defined.
     const nav = navigator as Navigator & {
@@ -26,7 +27,7 @@ export function useShareRoute() {
     // Prefer native share sheet (mobile)
     if (typeof nav.share === "function") {
       try {
-        await nav.share({ title: "VoyUruapan", text, url: APP_URL });
+        await nav.share({ title: "VoyUruapan", text, url: shareUrl });
         setStatus("shared");
         reset();
         return;

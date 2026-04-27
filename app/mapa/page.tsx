@@ -56,6 +56,91 @@ type RouteOption = {
 type ActivePoint = "origin" | "destination" | null;
 type FlowStep = 1 | 2 | 3;
 type RoutesMapMode = "all-visible" | "all-highlighted";
+type SharedMapState = {
+  direction: RouteDirection | null;
+  routeId: number | null;
+  routeName: string | null;
+  transferRouteAId: number | null;
+  transferRouteBId: number | null;
+  transferRouteAStartIndex: number | null;
+  transferRouteATransferIndex: number | null;
+  transferRouteBTransferIndex: number | null;
+  transferRouteBEndIndex: number | null;
+  segmentStartIndex: number | null;
+  segmentEndIndex: number | null;
+  origin: Coordinates | null;
+  destination: Coordinates | null;
+  showTeleferico: boolean;
+};
+
+function formatCoordinateParam(point: Coordinates) {
+  return `${point[0].toFixed(6)},${point[1].toFixed(6)}`;
+}
+
+function parseCoordinateParam(value: string | null): Coordinates | null {
+  if (!value) {
+    return null;
+  }
+
+  const [lngRaw, latRaw] = value.split(",");
+  const lng = Number(lngRaw);
+  const lat = Number(latRaw);
+
+  if (!Number.isFinite(lng) || !Number.isFinite(lat) || Math.abs(lng) > 180 || Math.abs(lat) > 90) {
+    return null;
+  }
+
+  return [Number(lng.toFixed(6)), Number(lat.toFixed(6))];
+}
+
+function parsePositiveIntParam(value: string | null) {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+}
+
+function parseNonNegativeIntParam(value: string | null) {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed >= 0 ? parsed : null;
+}
+
+function parseSharedMapState(search: string): SharedMapState | null {
+  const params = new URLSearchParams(search);
+  const dir = params.get("dir");
+  const routeId = parsePositiveIntParam(params.get("rid"));
+  const segmentStartIndex = parseNonNegativeIntParam(params.get("ia"));
+  const segmentEndIndex = parseNonNegativeIntParam(params.get("ib"));
+  const transferRouteAId = parsePositiveIntParam(params.get("tra"));
+  const transferRouteBId = parsePositiveIntParam(params.get("trb"));
+  const transferRouteAStartIndex = parseNonNegativeIntParam(params.get("tas"));
+  const transferRouteATransferIndex = parseNonNegativeIntParam(params.get("tax"));
+  const transferRouteBTransferIndex = parseNonNegativeIntParam(params.get("tbx"));
+  const transferRouteBEndIndex = parseNonNegativeIntParam(params.get("tbe"));
+  const routeName = params.get("r")?.trim() || null;
+  const origin = parseCoordinateParam(params.get("a"));
+  const destination = parseCoordinateParam(params.get("b"));
+  const showTeleferico = params.get("teleferico") === "1";
+
+  if (!routeId && !routeName && !transferRouteAId && !transferRouteBId && !origin && !destination && !showTeleferico) {
+    return null;
+  }
+
+  return {
+    direction: dir === "ida" || dir === "vuelta" ? dir : null,
+    routeId,
+    routeName,
+    transferRouteAId,
+    transferRouteBId,
+    transferRouteAStartIndex,
+    transferRouteATransferIndex,
+    transferRouteBTransferIndex,
+    transferRouteBEndIndex,
+    segmentStartIndex,
+    segmentEndIndex,
+    origin,
+    destination,
+    showTeleferico
+  };
+}
 
 function getFlowStep(originPoint: Coordinates | null, destinationPoint: Coordinates | null): FlowStep {
   if (!originPoint) {
@@ -198,40 +283,42 @@ function simplifyBackgroundCoordinates(points: Coordinates[]) {
   return decimateCoordinates(simplified, BACKGROUND_MAX_POINTS);
 }
 
+function computeRouteOption(route: ResolvedRouteData, originPoint: Coordinates, destinationPoint: Coordinates) {
+  const closestA = getClosestIndex(originPoint, route.coordenadas);
+  const closestB = getClosestIndex(destinationPoint, route.coordenadas);
+
+  if (closestA.distance > PROXIMITY_METERS || closestB.distance > PROXIMITY_METERS) {
+    return null;
+  }
+
+  if (closestA.index >= closestB.index) {
+    return null;
+  }
+
+  const segment = route.coordenadas.slice(closestA.index, closestB.index + 1);
+  if (segment.length < 2) {
+    return null;
+  }
+
+  const segmentMeters = getSegmentLengthMeters(segment);
+  const score = closestA.distance + closestB.distance + segmentMeters * SEGMENT_LENGTH_FACTOR;
+
+  return {
+    routeId: route.id,
+    ruta: route.nombre,
+    direccion: route.direccion,
+    distanciaA: closestA.distance,
+    distanciaB: closestB.distance,
+    indexA: closestA.index,
+    indexB: closestB.index,
+    segment,
+    score
+  } satisfies RouteOption;
+}
+
 function computeRouteSuggestions(routes: ResolvedRouteData[], originPoint: Coordinates, destinationPoint: Coordinates) {
   return routes
-    .map((route) => {
-      const closestA = getClosestIndex(originPoint, route.coordenadas);
-      const closestB = getClosestIndex(destinationPoint, route.coordenadas);
-
-      if (closestA.distance > PROXIMITY_METERS || closestB.distance > PROXIMITY_METERS) {
-        return null;
-      }
-
-      if (closestA.index >= closestB.index) {
-        return null;
-      }
-
-      const segment = route.coordenadas.slice(closestA.index, closestB.index + 1);
-      if (segment.length < 2) {
-        return null;
-      }
-
-      const segmentMeters = getSegmentLengthMeters(segment);
-      const score = closestA.distance + closestB.distance + segmentMeters * SEGMENT_LENGTH_FACTOR;
-
-      return {
-        routeId: route.id,
-        ruta: route.nombre,
-        direccion: route.direccion,
-        distanciaA: closestA.distance,
-        distanciaB: closestB.distance,
-        indexA: closestA.index,
-        indexB: closestB.index,
-        segment,
-        score
-      };
-    })
+    .map((route) => computeRouteOption(route, originPoint, destinationPoint))
     .filter((item): item is RouteOption => item !== null)
     .sort((a, b) => a.score - b.score)
     .slice(0, 3);
@@ -241,6 +328,58 @@ function getEstimatedMinutes(segment: Coordinates[]) {
   const kilometers = getSegmentLengthMeters(segment) / 1000;
   const minutes = (kilometers / AVG_TRIP_SPEED_KMH) * 60;
   return Math.max(4, Math.round(minutes));
+}
+
+function buildTransferFromIndexes(sharedState: SharedMapState, fullRoutesById: Map<number, ResolvedRouteData>): TransferOption | null {
+  if (
+    sharedState.transferRouteAId === null ||
+    sharedState.transferRouteBId === null ||
+    sharedState.transferRouteAStartIndex === null ||
+    sharedState.transferRouteATransferIndex === null ||
+    sharedState.transferRouteBTransferIndex === null ||
+    sharedState.transferRouteBEndIndex === null
+  ) {
+    return null;
+  }
+
+  const routeA = fullRoutesById.get(sharedState.transferRouteAId);
+  const routeB = fullRoutesById.get(sharedState.transferRouteBId);
+  if (!routeA || !routeB) {
+    return null;
+  }
+
+  const { transferRouteAStartIndex, transferRouteATransferIndex, transferRouteBTransferIndex, transferRouteBEndIndex } = sharedState;
+  const indexesAreValid =
+    transferRouteAStartIndex < transferRouteATransferIndex &&
+    transferRouteATransferIndex < routeA.coordenadas.length &&
+    transferRouteBTransferIndex < transferRouteBEndIndex &&
+    transferRouteBEndIndex < routeB.coordenadas.length;
+
+  if (!indexesAreValid) {
+    return null;
+  }
+
+  const segmentA = routeA.coordenadas.slice(transferRouteAStartIndex, transferRouteATransferIndex + 1);
+  const segmentB = routeB.coordenadas.slice(transferRouteBTransferIndex, transferRouteBEndIndex + 1);
+  const transferPoint = routeA.coordenadas[transferRouteATransferIndex];
+  const routeBTransferPoint = routeB.coordenadas[transferRouteBTransferIndex];
+  const walkMeters = haversineMeters(transferPoint, routeBTransferPoint);
+
+  return {
+    routeAId: routeA.id,
+    routeBId: routeB.id,
+    routeAName: routeA.nombre,
+    routeBName: routeB.nombre,
+    routeAStartIndex: transferRouteAStartIndex,
+    routeATransferIndex: transferRouteATransferIndex,
+    routeBTransferIndex: transferRouteBTransferIndex,
+    routeBEndIndex: transferRouteBEndIndex,
+    transferPoint,
+    segmentA,
+    segmentB,
+    walkMeters,
+    score: getSegmentLengthMeters(segmentA) + walkMeters * 2 + getSegmentLengthMeters(segmentB)
+  };
 }
 
 export default function HomePage() {
@@ -304,6 +443,7 @@ export default function HomePage() {
   const [nearbyToast, setNearbyToast] = useState<number | null>(null);
   const [nearbyRouteIds, setNearbyRouteIds] = useState<number[]>([]);
   const [showTeleferico, setShowTeleferico] = useState(false);
+  const [sharedRouteSegment, setSharedRouteSegment] = useState<Coordinates[] | null>(null);
   const [routesMapMode, setRoutesMapMode] = useState<RoutesMapMode>("all-visible");
   const [isOnline, setIsOnline] = useState(true);
   const { share: shareRoute, status: shareStatus } = useShareRoute();
@@ -311,6 +451,92 @@ export default function HomePage() {
   const originPointRef = useRef(originPoint);
   const destinationPointRef = useRef(destinationPoint);
   const hasHydratedMapModeRef = useRef(false);
+  const pendingSharedStateRef = useRef<SharedMapState | null>(null);
+
+  const buildShareUrl = useCallback((options: {
+    routeId?: number | null;
+    routeName?: string | null;
+    origin?: Coordinates | null;
+    destination?: Coordinates | null;
+    segmentStartIndex?: number | null;
+    segmentEndIndex?: number | null;
+    transfer?: TransferOption | null;
+    showTeleferico?: boolean;
+  }) => {
+    const url = new URL("/mapa", window.location.origin);
+    url.searchParams.set("dir", selectedDirection);
+
+    if (options.routeId) {
+      url.searchParams.set("rid", String(options.routeId));
+    }
+
+    if (options.routeName) {
+      url.searchParams.set("r", options.routeName);
+    }
+
+    if (options.origin) {
+      url.searchParams.set("a", formatCoordinateParam(options.origin));
+    }
+
+    if (options.destination) {
+      url.searchParams.set("b", formatCoordinateParam(options.destination));
+    }
+
+    if (Number.isInteger(options.segmentStartIndex) && Number.isInteger(options.segmentEndIndex)) {
+      url.searchParams.set("ia", String(options.segmentStartIndex));
+      url.searchParams.set("ib", String(options.segmentEndIndex));
+    }
+
+    if (options.transfer) {
+      url.searchParams.set("transfer", "1");
+      url.searchParams.set("tra", String(options.transfer.routeAId));
+      url.searchParams.set("trb", String(options.transfer.routeBId));
+      url.searchParams.set("tas", String(options.transfer.routeAStartIndex));
+      url.searchParams.set("tax", String(options.transfer.routeATransferIndex));
+      url.searchParams.set("tbx", String(options.transfer.routeBTransferIndex));
+      url.searchParams.set("tbe", String(options.transfer.routeBEndIndex));
+    }
+
+    if (options.showTeleferico) {
+      url.searchParams.set("teleferico", "1");
+    }
+
+    return url.toString();
+  }, [selectedDirection]);
+
+  useEffect(() => {
+    const sharedState = parseSharedMapState(window.location.search);
+    if (!sharedState) {
+      return;
+    }
+
+    pendingSharedStateRef.current = sharedState;
+
+    if (sharedState.direction) {
+      setSelectedDirection(sharedState.direction);
+    }
+
+    if (sharedState.origin) {
+      setOriginPoint(sharedState.origin);
+    }
+
+    if (sharedState.destination) {
+      setDestinationPoint(sharedState.destination);
+    }
+
+    if (sharedState.origin && sharedState.destination) {
+      setActivePoint(null);
+      setShowHint(false);
+      setIsResultSheetOpen(true);
+    } else if (sharedState.origin) {
+      setActivePoint("destination");
+      setShowHint(true);
+    }
+
+    if (sharedState.showTeleferico) {
+      setShowTeleferico(true);
+    }
+  }, []);
 
   useEffect(() => {
     setIsOnline(navigator.onLine);
@@ -437,24 +663,13 @@ export default function HomePage() {
     [fullRoutes]
   );
 
-  const mapRoutes = useMemo(() => {
-    if (selectedRouteId === null) {
-      return backgroundRoutes;
-    }
-
-    const selectedFullRoute = fullRoutesById.get(selectedRouteId);
-    if (!selectedFullRoute) {
-      return backgroundRoutes;
-    }
-
-    return backgroundRoutes.map((route) => (route.id === selectedRouteId ? selectedFullRoute : route));
-  }, [backgroundRoutes, fullRoutesById, selectedRouteId]);
-
   const handleSelectRoute = useCallback((routeId: number) => {
+    setSharedRouteSegment(null);
     setSelectedRouteId((current) => (current === routeId ? null : routeId));
   }, []);
 
   const handleClearSelection = useCallback(() => {
+    setSharedRouteSegment(null);
     setSelectedRouteId(null);
     setSelectedTransfer(null);
     setShowTeleferico(false);
@@ -467,6 +682,7 @@ export default function HomePage() {
 
   const handleMapPick = useCallback((point: Coordinates) => {
     setShowHint(false);
+    setSharedRouteSegment(null);
 
     const active = activePointRef.current;
 
@@ -505,6 +721,75 @@ export default function HomePage() {
   );
 
   useEffect(() => {
+    const sharedState = pendingSharedStateRef.current;
+    if (!sharedState || fullRoutes.length === 0) {
+      return;
+    }
+
+    const sharedTransfer = buildTransferFromIndexes(sharedState, fullRoutesById);
+    if (sharedTransfer) {
+      setSelectedRouteId(null);
+      setSelectedTransfer(sharedTransfer);
+      setTransfers([]);
+      setIsResultSheetOpen(true);
+      pendingSharedStateRef.current = null;
+      return;
+    }
+
+    if (sharedState.routeId) {
+      const route = fullRoutesById.get(sharedState.routeId);
+      if (route) {
+        setSelectedRouteId(route.id);
+        if (
+          sharedState.segmentStartIndex !== null &&
+          sharedState.segmentEndIndex !== null &&
+          sharedState.segmentStartIndex < sharedState.segmentEndIndex &&
+          sharedState.segmentEndIndex < route.coordenadas.length
+        ) {
+          setSharedRouteSegment(route.coordenadas.slice(sharedState.segmentStartIndex, sharedState.segmentEndIndex + 1));
+        }
+        pendingSharedStateRef.current = null;
+        return;
+      }
+    }
+
+    if (sharedState.routeName) {
+      const normalizedRouteName = sharedState.routeName.toLowerCase();
+      const route = fullRoutes.find((item) => {
+        const ruta = item.ruta.toLowerCase();
+        const nombre = item.nombre.toLowerCase();
+        return ruta === normalizedRouteName || nombre === normalizedRouteName || ruta.includes(normalizedRouteName) || nombre.includes(normalizedRouteName);
+      });
+      if (route) {
+        setSelectedRouteId(route.id);
+        if (
+          sharedState.segmentStartIndex !== null &&
+          sharedState.segmentEndIndex !== null &&
+          sharedState.segmentStartIndex < sharedState.segmentEndIndex &&
+          sharedState.segmentEndIndex < route.coordenadas.length
+        ) {
+          setSharedRouteSegment(route.coordenadas.slice(sharedState.segmentStartIndex, sharedState.segmentEndIndex + 1));
+        }
+        pendingSharedStateRef.current = null;
+        return;
+      }
+    }
+
+    if (sharedState.showTeleferico) {
+      const telefericoRoute = fullRoutes.find((item) => item.nombre === "Teleférico Uruapan" || item.ruta === "Teleférico Uruapan");
+      if (telefericoRoute) {
+        setSelectedRouteId(telefericoRoute.id);
+      }
+      pendingSharedStateRef.current = null;
+      return;
+    }
+
+    if (sharedState.origin || sharedState.destination) {
+      pendingSharedStateRef.current = null;
+    }
+  }, [fullRoutes, fullRoutesById]);
+
+  useEffect(() => {
     if (!originPoint || !destinationPoint) {
       setSuggestions([]);
       setTransfers([]);
@@ -537,6 +822,30 @@ export default function HomePage() {
     () => suggestions.find((item) => item.routeId === selectedRouteId) ?? null,
     [selectedRouteId, suggestions]
   );
+  const selectedRoutePinSegment = useMemo(() => {
+    if (!selectedRoute || !originPoint || !destinationPoint) {
+      return null;
+    }
+
+    return computeRouteOption(selectedRoute, originPoint, destinationPoint);
+  }, [destinationPoint, originPoint, selectedRoute]);
+  const selectedMapSegment = selectedSuggestion?.segment ?? sharedRouteSegment ?? selectedRoutePinSegment?.segment ?? null;
+  const mapRoutes = useMemo(() => {
+    if (selectedRouteId === null) {
+      return backgroundRoutes;
+    }
+
+    const selectedFullRoute = fullRoutesById.get(selectedRouteId);
+    if (!selectedFullRoute) {
+      return backgroundRoutes;
+    }
+
+    const selectedDisplayRoute = selectedMapSegment
+      ? { ...selectedFullRoute, coordenadas: selectedMapSegment }
+      : selectedFullRoute;
+
+    return backgroundRoutes.map((route) => (route.id === selectedRouteId ? selectedDisplayRoute : route));
+  }, [backgroundRoutes, fullRoutesById, selectedMapSegment, selectedRouteId]);
   const bestSuggestionEta = useMemo(
     () => (bestSuggestion ? getEstimatedMinutes(bestSuggestion.segment) : null),
     [bestSuggestion]
@@ -727,6 +1036,7 @@ export default function HomePage() {
               <button
                 type="button"
                 onClick={() => {
+                  setSharedRouteSegment(null);
                   setOriginPoint(null);
                   setDestinationPoint(null);
                   setActivePoint("origin");
@@ -802,7 +1112,14 @@ export default function HomePage() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => shareRoute(formatRouteLabel(bestSuggestion.ruta))}
+                    onClick={() => shareRoute(formatRouteLabel(bestSuggestion.ruta), buildShareUrl({
+                      routeId: bestSuggestion.routeId,
+                      routeName: bestSuggestion.ruta,
+                      origin: originPoint,
+                      destination: destinationPoint,
+                      segmentStartIndex: bestSuggestion.indexA,
+                      segmentEndIndex: bestSuggestion.indexB
+                    }))}
                     className="ov-pill ov-border ov-text-muted inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition active:scale-[0.97]"
                     aria-label={`Compartir ruta ${formatRouteLabel(bestSuggestion.ruta)}`}
                   >
@@ -819,6 +1136,42 @@ export default function HomePage() {
                       <path d="M9 20l-5.447-2.724A1 1 0 0 1 3 16.382V5.618a1 1 0 0 1 1.447-.894L9 7m0 13V7m0 13 6-3M9 7l6-3m6 17V4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                     Ver en mapa
+                  </button>
+                </div>
+              </div>
+            ) : selectedTransfer ? (
+              <div className="px-4 py-3">
+                <p className="text-[10px] font-bold tracking-[2px] text-avocado-400">TRANSBORDO SELECCIONADO</p>
+                <div className="mt-2 flex items-center gap-2">
+                  <span className="ov-text flex-1 truncate text-[13px] font-semibold">{selectedTransfer.routeAName}</span>
+                  <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0 text-avocado-400" aria-hidden="true">
+                    <path d="M8 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3M16 3h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3M12 8v8M9 11l3-3 3 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  <span className="ov-text flex-1 truncate text-[13px] font-semibold">{selectedTransfer.routeBName}</span>
+                </div>
+                <p className="ov-text-muted mt-1 text-[11px]">Camina ~{Math.round(selectedTransfer.walkMeters)} m en el punto de transbordo</p>
+                <div className="mt-3 grid grid-cols-[1fr_auto] gap-2">
+                  <button
+                    type="button"
+                    onClick={() => { setSelectedTransfer(null); setTransfers(transfers.length === 0 ? [] : transfers); handleClearSelection(); }}
+                    className="ov-pill ov-border ov-text-muted inline-flex h-10 items-center justify-center rounded-xl border text-[12px] font-semibold transition active:scale-[0.97]"
+                  >
+                    Limpiar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => shareRoute(`${formatRouteLabel(selectedTransfer.routeAName)} → ${formatRouteLabel(selectedTransfer.routeBName)}`, buildShareUrl({
+                      routeName: `${selectedTransfer.routeAName} → ${selectedTransfer.routeBName}`,
+                      origin: originPoint,
+                      destination: destinationPoint,
+                      transfer: selectedTransfer
+                    }))}
+                    className="ov-pill ov-border ov-text-muted inline-flex h-10 w-10 items-center justify-center rounded-xl border transition active:scale-[0.97]"
+                    aria-label="Compartir transbordo"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
+                      <path d="M8.59 13.51l6.83 3.98m-.01-10.98-6.82 3.98M21 5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm0 14a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM3 12a3 3 0 1 1 6 0 3 3 0 0 1-6 0Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
                   </button>
                 </div>
               </div>
@@ -858,25 +1211,6 @@ export default function HomePage() {
                   className="ov-pill ov-border ov-text-muted mt-3 inline-flex h-10 w-full items-center justify-center rounded-xl border text-[12px] font-semibold transition active:scale-[0.97]"
                 >
                   Mover destino
-                </button>
-              </div>
-            ) : selectedTransfer ? (
-              <div className="px-4 py-3">
-                <p className="text-[10px] font-bold tracking-[2px] text-avocado-400">TRANSBORDO SELECCIONADO</p>
-                <div className="mt-2 flex items-center gap-2">
-                  <span className="ov-text flex-1 truncate text-[13px] font-semibold">{selectedTransfer.routeAName}</span>
-                  <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0 text-avocado-400" aria-hidden="true">
-                    <path d="M8 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3M16 3h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3M12 8v8M9 11l3-3 3 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  <span className="ov-text flex-1 truncate text-[13px] font-semibold">{selectedTransfer.routeBName}</span>
-                </div>
-                <p className="ov-text-muted mt-1 text-[11px]">Camina ~{Math.round(selectedTransfer.walkMeters)} m en el punto de transbordo</p>
-                <button
-                  type="button"
-                  onClick={() => { setSelectedTransfer(null); setTransfers(transfers.length === 0 ? [] : transfers); handleClearSelection(); }}
-                  className="ov-pill ov-border ov-text-muted mt-3 inline-flex h-10 w-full items-center justify-center rounded-xl border text-[12px] font-semibold transition active:scale-[0.97]"
-                >
-                  Limpiar
                 </button>
               </div>
             ) : (
@@ -926,6 +1260,21 @@ export default function HomePage() {
                     </span>
                     <button
                       type="button"
+                      onClick={() => shareRoute(`${formatRouteLabel(selectedTransfer.routeAName)} → ${formatRouteLabel(selectedTransfer.routeBName)}`, buildShareUrl({
+                        routeName: `${selectedTransfer.routeAName} → ${selectedTransfer.routeBName}`,
+                        origin: originPoint,
+                        destination: destinationPoint,
+                        transfer: selectedTransfer
+                      }))}
+                      className="ov-pill ov-text-muted grid h-9 w-9 shrink-0 place-items-center rounded-lg transition hover:opacity-80 active:scale-95"
+                      aria-label="Compartir transbordo"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
+                        <path d="M8.59 13.51l6.83 3.98m-.01-10.98-6.82 3.98M21 5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm0 14a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM3 12a3 3 0 1 1 6 0 3 3 0 0 1-6 0Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
                       onClick={handleClearSelection}
                       className="ov-pill ov-border ov-text-muted h-9 shrink-0 rounded-lg border px-3 text-[11px] font-semibold transition active:scale-[0.97]"
                     >
@@ -940,7 +1289,18 @@ export default function HomePage() {
                     </span>
                     <button
                       type="button"
-                      onClick={() => shareRoute(selectedRoute ? formatRouteLabel(selectedRoute.nombre, selectedRoute.ruta) : "Teleférico")}
+                      onClick={() => shareRoute(
+                        selectedRoute ? formatRouteLabel(selectedRoute.nombre, selectedRoute.ruta) : "Teleférico",
+                        buildShareUrl({
+                          routeId: selectedRoute?.id ?? null,
+                          routeName: selectedRoute?.ruta ?? "Teleférico Uruapan",
+                          origin: originPoint,
+                          destination: destinationPoint,
+                          segmentStartIndex: selectedSuggestion?.indexA ?? selectedRoutePinSegment?.indexA,
+                          segmentEndIndex: selectedSuggestion?.indexB ?? selectedRoutePinSegment?.indexB,
+                          showTeleferico: !selectedRoute
+                        })
+                      )}
                       className="ov-pill ov-text-muted grid h-9 w-9 shrink-0 place-items-center rounded-lg transition hover:opacity-80 active:scale-95"
                       aria-label={`Compartir ${selectedRoute ? formatRouteLabel(selectedRoute.nombre, selectedRoute.ruta) : "Teleférico"}`}
                     >
@@ -1160,7 +1520,7 @@ export default function HomePage() {
             suggestedRouteIds={suggestedRouteIds}
             allRoutesMode={routesMapMode}
             bestSuggestedRouteId={bestSuggestion?.routeId ?? null}
-            selectedRouteSegment={selectedSuggestion?.segment ?? null}
+            selectedRouteSegment={selectedMapSegment}
             originPoint={originPoint}
             destinationPoint={destinationPoint}
             showTeleferico={showTeleferico}

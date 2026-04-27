@@ -38,6 +38,28 @@ const IDLE_ROUTE_OPACITY = 0.35;
 type RoutesMapMode = "all-visible" | "all-highlighted";
 const cameraEasing = (t: number) => 1 - (1 - t) ** 3;
 
+function createEndpointMarkerElement(color: string, label: string) {
+  const element = document.createElement("div");
+  element.className = "endpoint-marker";
+  element.style.color = color;
+  element.setAttribute("aria-label", label === "A" ? "Punto de origen" : "Punto de destino");
+  element.innerHTML = `
+    <svg width="38" height="48" viewBox="0 0 38 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <g filter="url(#endpoint-shadow-${label})">
+        <path d="M19 3.5C10.44 3.5 3.5 10.35 3.5 18.8C3.5 30.55 19 44.5 19 44.5C19 44.5 34.5 30.55 34.5 18.8C34.5 10.35 27.56 3.5 19 3.5Z" fill="currentColor" stroke="white" stroke-width="3" stroke-linejoin="round" />
+        <circle cx="19" cy="18.8" r="9.2" fill="rgba(255,255,255,0.95)" />
+        <text x="19" y="22.2" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="900" fill="currentColor">${label}</text>
+      </g>
+      <defs>
+        <filter id="endpoint-shadow-${label}" x="0" y="0" width="38" height="48" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+          <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#000000" flood-opacity="0.32" />
+        </filter>
+      </defs>
+    </svg>
+  `;
+  return element;
+}
+
 function applyComfortLightMapPalette(map: mapboxgl.Map) {
   for (const layer of map.getStyle().layers ?? []) {
     const id = layer.id.toLowerCase();
@@ -812,7 +834,7 @@ function MapComponent({
     if (bounds) {
       fitBoundsAnimated(map, bounds, { top: 120, right: 32, bottom: 160, left: 32, duration: 1200, maxZoom: 15 });
     }
-  }, [selectedTransfer]);
+  }, [isLoading, selectedTransfer]);
 
   const stopRouteAnimation = useCallback(() => {
     animationTokenRef.current += 1;
@@ -1114,11 +1136,8 @@ function MapComponent({
       }
 
       if (!markerRef.current) {
-        const element = document.createElement("div");
-        element.className = "grid h-8 w-8 place-items-center rounded-full border-2 border-white text-[10px] font-bold text-white shadow-soft";
-        element.style.backgroundColor = color;
-        element.textContent = label;
-        markerRef.current = new mapboxgl.Marker({ element, anchor: "center" });
+        const element = createEndpointMarkerElement(color, label);
+        markerRef.current = new mapboxgl.Marker({ element, anchor: "bottom", offset: [0, -2] });
       }
 
       markerRef.current.setLngLat(point).addTo(map);
@@ -1127,8 +1146,8 @@ function MapComponent({
     const segmentStart = selectedRouteSegment?.[0] ?? null;
     const segmentEnd = selectedRouteSegment ? selectedRouteSegment[selectedRouteSegment.length - 1] ?? null : null;
 
-    const effectiveOrigin = segmentStart ?? originPoint;
-    const effectiveDestination = segmentEnd ?? destinationPoint;
+    const effectiveOrigin = originPoint ?? segmentStart;
+    const effectiveDestination = destinationPoint ?? segmentEnd;
 
     updateMarker(originMarkerRef, effectiveOrigin, "#16a34a", "A");
     updateMarker(destinationMarkerRef, effectiveDestination, "#dc2626", "B");
@@ -1160,7 +1179,7 @@ function MapComponent({
         });
       }
     }
-  }, [destinationPoint, originPoint, selectedRouteSegment]);
+  }, [destinationPoint, isLoading, originPoint, selectedRouteSegment]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -1470,7 +1489,7 @@ function MapComponent({
           type="button"
           onClick={handleLocateMe}
           disabled={locationLoading}
-          className="grid h-10 w-10 place-items-center rounded-md border border-black/10 bg-white text-slate-800 shadow-[0_1px_4px_rgba(0,0,0,0.18)] transition hover:bg-slate-50 active:scale-95 disabled:opacity-60 dark:border-white/10 dark:bg-[#1a2236] dark:text-slate-100 dark:hover:bg-[#222b42]"
+          className="ov-panel ov-border grid h-10 w-10 place-items-center rounded-xl border text-lima shadow-[0_4px_16px_rgba(0,0,0,0.22)] backdrop-blur-xl transition hover:opacity-90 active:scale-95 disabled:opacity-60"
           aria-label="Ir a mi ubicacion"
         >
           {locationLoading ? (

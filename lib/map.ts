@@ -4,7 +4,7 @@ export const SOURCE_ID = "routes-source";
 export const URUAPAN_CENTER: [number, number] = [-102.0584, 19.4208];
 export const DEFAULT_ZOOM = 12.3;
 
-const LIGHT_STYLE = "mapbox://styles/mapbox/navigation-day-v1";
+const LIGHT_STYLE = "mapbox://styles/mapbox/light-v11";
 const DARK_STYLE = "mapbox://styles/mapbox/dark-v11";
 
 export function getMapStyle(isDark: boolean) {

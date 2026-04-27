@@ -10,6 +10,10 @@ export type TransferOption = {
   routeBId: number;
   routeAName: string;
   routeBName: string;
+  routeAStartIndex: number;
+  routeATransferIndex: number;
+  routeBTransferIndex: number;
+  routeBEndIndex: number;
   transferPoint: Coordinates;
   segmentA: Coordinates[];
   segmentB: Coordinates[];
@@ -109,6 +113,10 @@ export function computeTransferOptions(
           routeBId: rB.id,
           routeAName: rA.nombre,
           routeBName: rB.nombre,
+          routeAStartIndex: indexA,
+          routeATransferIndex: xi,
+          routeBTransferIndex: cX.index,
+          routeBEndIndex: indexB,
           transferPoint: xPoint,
           segmentA: segA,
           segmentB: segB,
