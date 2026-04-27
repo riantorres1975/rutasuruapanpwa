@@ -6,6 +6,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://rutasuruapanpwa.vercel.app";
   const now = new Date();
 
+  const ROUTES_LAST_MODIFIED = new Date("2026-04-01");
+  const STATIC_LAST_MODIFIED = new Date("2026-01-01");
+
   const staticUrls: MetadataRoute.Sitemap = [
     {
       url: baseUrl,
@@ -21,7 +24,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     {
       url: `${baseUrl}/privacidad`,
-      lastModified: now,
+      lastModified: STATIC_LAST_MODIFIED,
       changeFrequency: "yearly",
       priority: 0.3
     },
@@ -41,7 +44,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   const routeUrls: MetadataRoute.Sitemap = getRouteSeoItems().map((route) => ({
     url: `${baseUrl}/ruta/${route.slug}`,
-    lastModified: now,
+    lastModified: ROUTES_LAST_MODIFIED,
     changeFrequency: "monthly",
     priority: 0.7
   }));

@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     default: "VoyUruapan | Rutas de camiones y Teleférico en Uruapan",
     template: "%s | VoyUruapan"
   },
-  description: "Rutas de camiones urbanos y Teleférico en Uruapan, Michoacán.",
+  description: "Consulta rutas de camiones Uruapan, horario y tarifa del Teleférico 2026. Mapa interactivo multimodal, sin registro ni instalación.",
   applicationName: "VoyUruapan",
   manifest: "/manifest.json",
   icons: {
@@ -44,7 +44,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "VoyUruapan — Rutas de camiones y Teleférico en Uruapan",
     description: "Encuentra tu ruta en Uruapan. Camiones urbanos y Teleférico en un solo mapa interactivo.",
-    url: "https://rutasuruapanpwa.vercel.app",
+    url: process.env.NEXT_PUBLIC_SITE_URL || "https://rutasuruapanpwa.vercel.app",
     siteName: "VoyUruapan",
     images: [
       {

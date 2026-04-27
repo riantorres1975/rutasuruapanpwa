@@ -16,8 +16,24 @@ export const metadata: Metadata = {
     title: "Cómo usar el Teleférico de Uruapan paso a paso",
     description: "Tarjeta de movilidad, tarifa, estaciones, horario y tips para combinar el Teleférico con camiones urbanos.",
     url: "/blog/como-usar-el-teleferico-uruapan",
-    type: "article"
+    type: "article",
+    publishedTime: "2026-01-10T00:00:00-06:00",
+    modifiedTime: "2026-04-27T00:00:00-06:00"
   }
+};
+
+const blogPostingJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  headline: "Cómo usar el Teleférico de Uruapan paso a paso",
+  description: "Guía completa para usar el Teleférico de Uruapan: tarjeta de movilidad, tarifa por viaje, estaciones, horario y combinación con camiones urbanos.",
+  datePublished: "2026-01-10",
+  dateModified: "2026-04-27",
+  author: { "@type": "Organization", name: "VoyUruapan" },
+  publisher: { "@type": "Organization", name: "VoyUruapan" },
+  mainEntityOfPage: { "@type": "WebPage", "@id": "/blog/como-usar-el-teleferico-uruapan" },
+  inLanguage: "es-MX",
+  keywords: "teleférico Uruapan, cómo usar teleférico, tarjeta movilidad Uruapan, estaciones teleférico, horario teleférico"
 };
 
 const stationDescriptions = [
@@ -61,6 +77,7 @@ export default function TelefericoBlogArticlePage() {
   return (
     <main className="greca-bg greca-bg-animated min-h-dvh px-5 py-8 sm:px-8 lg:px-10" style={{ background: "#0c110a", color: "#e8f2d8" }}>
       <ForceDark />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(blogPostingJsonLd) }} />
       <article className="relative z-10 mx-auto max-w-3xl">
         <PageHeader
           backHref="/blog"

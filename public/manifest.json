@@ -1,14 +1,15 @@
 {
   "name": "VoyUruapan",
-  "short_name": "Voy",
+  "short_name": "VoyUru",
+  "lang": "es",
   "id": "/mapa",
   "description": "Rutas de camiones, combis suburbanas y Teleférico en Uruapan, Michoacán",
   "start_url": "/mapa",
   "scope": "/",
   "display": "standalone",
   "categories": ["travel", "navigation", "utilities"],
-  "theme_color": "#0b1220",
-  "background_color": "#0b1220",
+  "theme_color": "#0c110a",
+  "background_color": "#0c110a",
   "orientation": "portrait",
   "shortcuts": [
     {

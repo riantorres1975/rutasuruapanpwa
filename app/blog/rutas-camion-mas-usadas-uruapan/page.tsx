@@ -9,13 +9,36 @@ export const metadata: Metadata = {
   description: "Estamos preparando un ranking detallado de las rutas más consultadas, sus destinos principales y cómo conectan con el Teleférico.",
   alternates: {
     canonical: "/blog/rutas-camion-mas-usadas-uruapan"
+  },
+  openGraph: {
+    title: "Las rutas de camión más usadas en Uruapan",
+    description: "Rutas de camión más consultadas en Uruapan: destinos, conexiones con Teleférico y mapa interactivo.",
+    url: "/blog/rutas-camion-mas-usadas-uruapan",
+    type: "article",
+    publishedTime: "2026-01-15T00:00:00-06:00",
+    modifiedTime: "2026-04-27T00:00:00-06:00"
   }
+};
+
+const blogPostingJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  headline: "Las rutas de camión más usadas en Uruapan y para qué sirven",
+  description: "Resumen de las rutas de camión más consultadas en Uruapan, sus destinos principales y cómo conectan con el Teleférico.",
+  datePublished: "2026-01-15",
+  dateModified: "2026-04-27",
+  author: { "@type": "Organization", name: "VoyUruapan" },
+  publisher: { "@type": "Organization", name: "VoyUruapan" },
+  mainEntityOfPage: { "@type": "WebPage", "@id": "/blog/rutas-camion-mas-usadas-uruapan" },
+  inLanguage: "es-MX",
+  keywords: "rutas de camión Uruapan, ruta 11 Uruapan, transporte público Uruapan, camiones urbanos Uruapan"
 };
 
 export default function RutasCamionMasUsadasPage() {
   return (
     <main className="greca-bg greca-bg-animated min-h-dvh px-5 py-8 sm:px-8 lg:px-10" style={{ background: "#0c110a", color: "#e8f2d8" }}>
       <ForceDark />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(blogPostingJsonLd) }} />
       <article className="relative z-10 mx-auto max-w-3xl">
         <PageHeader
           backHref="/blog"

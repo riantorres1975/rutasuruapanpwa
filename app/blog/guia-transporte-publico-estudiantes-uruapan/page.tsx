@@ -9,7 +9,29 @@ export const metadata: Metadata = {
   description: "37 escuelas conectadas al sistema, horarios que cubren todos los turnos, Wi-Fi en el Teleférico y cámaras en los camiones. Todo lo que necesitas saber.",
   alternates: {
     canonical: "/blog/guia-transporte-publico-estudiantes-uruapan"
+  },
+  openGraph: {
+    title: "Guía de transporte público para estudiantes en Uruapan",
+    description: "37 escuelas conectadas, todos los turnos cubiertos y tips para moverte en camión y Teleférico siendo estudiante en Uruapan.",
+    url: "/blog/guia-transporte-publico-estudiantes-uruapan",
+    type: "article",
+    publishedTime: "2026-01-20T00:00:00-06:00",
+    modifiedTime: "2026-04-27T00:00:00-06:00"
   }
+};
+
+const blogPostingJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  headline: "Guía de transporte público para estudiantes en Uruapan",
+  description: "Guía para estudiantes que se mueven en camión urbano, Teleférico y rutas cercanas a escuelas en Uruapan.",
+  datePublished: "2026-01-20",
+  dateModified: "2026-04-27",
+  author: { "@type": "Organization", name: "VoyUruapan" },
+  publisher: { "@type": "Organization", name: "VoyUruapan" },
+  mainEntityOfPage: { "@type": "WebPage", "@id": "/blog/guia-transporte-publico-estudiantes-uruapan" },
+  inLanguage: "es-MX",
+  keywords: "transporte escolar Uruapan, camión estudiantes Uruapan, teleférico estudiantes, rutas camión escuelas Uruapan"
 };
 
 const CARDS = [
@@ -43,6 +65,7 @@ const CARDS = [
 export default function GuiaEstudiantesPage() {
   return (
     <main className="greca-bg greca-bg-animated min-h-dvh px-5 py-8 sm:px-8 lg:px-10" style={{ background: "#0c110a", color: "#e8f2d8" }}>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(blogPostingJsonLd) }} />
       <ForceDark />
       <article className="relative z-10 mx-auto max-w-3xl">
         <PageHeader

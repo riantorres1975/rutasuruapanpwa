@@ -50,12 +50,12 @@ export const TELEFERICO_URUAPAN = {
 } as const;
 
 export const LANDING_SEARCH_SUGGESTIONS = [
-  "Centro Historico",
+  "Centro Histórico",
   "Mercado Poniente",
   "Hospital Regional",
   "Presidencia",
   "Parque Nacional",
-  "Plaza Agora",
+  "Plaza Ágora",
   "IMSS",
   "Ruta 11 Uruapan"
 ] as const;

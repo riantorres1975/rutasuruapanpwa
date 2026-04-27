@@ -114,7 +114,7 @@ export default function RoutePage({ params }: RoutePageProps) {
               >
                 {title}
               </h1>
-              <p className="mt-4 text-sm leading-7" style={{ color: "#5a7848" }}>
+              <p className="mt-4 text-sm leading-7" style={{ color: "#a8c888" }}>
                 Consulta información básica de la {route.name} en Uruapan y abre el mapa interactivo para marcar origen, destino, paradas cercanas y posibles transbordos.
               </p>
 
@@ -123,21 +123,21 @@ export default function RoutePage({ params }: RoutePageProps) {
                   className="rounded-2xl border p-4"
                   style={{ borderColor: "rgba(140,200,80,0.12)", background: "rgba(106,171,72,0.06)" }}
                 >
-                  <dt className="text-xs font-bold uppercase tracking-widest" style={{ color: "#5a7848" }}>Destino</dt>
+                  <dt className="text-xs font-bold uppercase tracking-widest" style={{ color: "#a8c888" }}>Destino</dt>
                   <dd className="mt-2 text-sm font-bold" style={{ color: "#e8f2d8" }}>{route.destination ?? "Ruta local"}</dd>
                 </div>
                 <div
                   className="rounded-2xl border p-4"
                   style={{ borderColor: "rgba(140,200,80,0.12)", background: "rgba(106,171,72,0.06)" }}
                 >
-                  <dt className="text-xs font-bold uppercase tracking-widest" style={{ color: "#5a7848" }}>Tarifa base</dt>
+                  <dt className="text-xs font-bold uppercase tracking-widest" style={{ color: "#a8c888" }}>Tarifa base</dt>
                   <dd className="mt-2 text-sm font-bold" style={{ color: "#e8f2d8" }}>{FARES_2026.urbanBus.price}</dd>
                 </div>
                 <div
                   className="rounded-2xl border p-4"
                   style={{ borderColor: "rgba(140,200,80,0.12)", background: "rgba(106,171,72,0.06)" }}
                 >
-                  <dt className="text-xs font-bold uppercase tracking-widest" style={{ color: "#5a7848" }}>Sentidos</dt>
+                  <dt className="text-xs font-bold uppercase tracking-widest" style={{ color: "#a8c888" }}>Sentidos</dt>
                   <dd className="mt-2 text-sm font-bold" style={{ color: "#e8f2d8" }}>
                     {route.hasIda && route.hasVuelta ? "Ida y vuelta" : route.hasIda ? "Ida" : "Vuelta"}
                   </dd>
@@ -149,7 +149,7 @@ export default function RoutePage({ params }: RoutePageProps) {
                 style={{ borderColor: "rgba(184,232,64,0.2)", background: "rgba(184,232,64,0.06)" }}
               >
                 <h2 className="font-serif text-xl font-black" style={{ color: "#e8f2d8" }}>Cómo usar esta ruta</h2>
-                <p className="mt-3 text-sm leading-7" style={{ color: "#5a7848" }}>
+                <p className="mt-3 text-sm leading-7" style={{ color: "#a8c888" }}>
                   Abre el mapa, marca tu punto de origen y destino, y VoyUruapan calculará si esta ruta es conveniente o si necesitas caminar o transbordar con otra ruta o el Teleférico.
                 </p>
               </section>

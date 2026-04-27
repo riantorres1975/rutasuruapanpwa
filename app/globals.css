@@ -274,6 +274,30 @@ body {
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .landing-aurora,
+  .animate-fade-up,
+  .animate-float-panel,
+  .animate-glow-breathe,
+  .route-flow,
+  .station-pulse,
+  .map-grid-drift,
+  .card-lift {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .animate-float-panel,
+  .animate-glow-breathe,
+  .station-pulse {
+    transform: none;
+  }
+
+  .station-pulse {
+    filter: none;
+  }
+}
+
 .cta-shine {
   position: relative;
   overflow: hidden;
