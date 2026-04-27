@@ -288,7 +288,7 @@ export default function LandingPage() {
             </div>
             <p className="mt-1.5 text-sm font-semibold" style={{ color: "var(--ink2)" }}>Camión urbano</p>
             <p className="mt-2.5 text-sm leading-relaxed" style={{ color: "var(--muted)" }}>
-              41 rutas para moverte por toda la ciudad. La mayoría se pagan en efectivo al subir.
+              40 rutas de camión para moverte por toda la ciudad. La mayoría se pagan en efectivo al subir.
             </p>
           </div>
 
