@@ -38,6 +38,41 @@ const IDLE_ROUTE_OPACITY = 0.35;
 type RoutesMapMode = "all-visible" | "all-highlighted";
 const cameraEasing = (t: number) => 1 - (1 - t) ** 3;
 
+function applyComfortLightMapPalette(map: mapboxgl.Map) {
+  for (const layer of map.getStyle().layers ?? []) {
+    const id = layer.id.toLowerCase();
+
+    try {
+      if (layer.type === "background") {
+        map.setPaintProperty(layer.id, "background-color", "#cfd4ce");
+      } else if (layer.type === "fill") {
+        const color = id.includes("water")
+          ? "#aebdc0"
+          : id.includes("park") || id.includes("landuse") || id.includes("landcover") || id.includes("national-park")
+            ? "#b9c4b2"
+            : id.includes("building")
+              ? "#b2b8b0"
+              : "#cbd1c8";
+        map.setPaintProperty(layer.id, "fill-color", color);
+        map.setPaintProperty(layer.id, "fill-opacity", id.includes("building") ? 0.45 : 1);
+      } else if (layer.type === "line") {
+        const color = id.includes("road")
+          ? "#e7e9e2"
+          : id.includes("water")
+            ? "#96a8aa"
+            : "#9ba39a";
+        map.setPaintProperty(layer.id, "line-color", color);
+      } else if (layer.type === "symbol") {
+        map.setPaintProperty(layer.id, "text-color", "#30382f");
+        map.setPaintProperty(layer.id, "text-halo-color", "#cfd4ce");
+        map.setPaintProperty(layer.id, "text-halo-width", 1.2);
+      }
+    } catch {
+      // Some Mapbox base layers do not expose every paint property consistently.
+    }
+  }
+}
+
 type MapProps = {
   routes: RouteData[];
   selectedRouteId: number | null;
@@ -977,6 +1012,9 @@ function MapComponent({
     };
 
     const onLoad = async () => {
+      if (!getThemeIsDark()) {
+        applyComfortLightMapPalette(map);
+      }
       ensureRouteLayers();
 
       // Load teleférico GeoJSON
@@ -1015,6 +1053,9 @@ function MapComponent({
       const nextStyle = getMapStyle(nowDark);
       map.setStyle(nextStyle);
       map.once("style.load", () => {
+        if (!nowDark) {
+          applyComfortLightMapPalette(map);
+        }
         ensureRouteLayers();
         if (telefericoGeoJSONRef.current) {
           addTelefericoLayers(telefericoGeoJSONRef.current);

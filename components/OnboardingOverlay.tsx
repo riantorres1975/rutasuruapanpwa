@@ -93,8 +93,9 @@ function StepDots({ total, current }: { total: number; current: number }) {
           className={`block rounded-full transition-all duration-300 ${
             i === current
               ? "h-2 w-6 bg-lima"
-              : "h-2 w-2 bg-cream-100/20"
+              : "h-2 w-2"
           }`}
+          style={i === current ? undefined : { background: "var(--ov-border2)" }}
         />
       ))}
     </div>
@@ -219,7 +220,7 @@ export default function OnboardingOverlay() {
         aria-modal="true"
         aria-label="Bienvenida a VoyUruapan"
         aria-live="polite"
-        className={`fixed z-50 mx-auto max-w-sm rounded-3xl border border-cream-100/15 bg-[var(--surface-strong)] shadow-[0_24px_60px_rgba(0,0,0,0.55)] backdrop-blur-2xl transition-all duration-500 will-change-transform
+          className={`ov-panel fixed z-50 mx-auto max-w-sm rounded-3xl border shadow-[0_24px_60px_rgba(0,0,0,0.35)] backdrop-blur-2xl transition-all duration-500 will-change-transform
           inset-x-4 bottom-10
           md:inset-x-auto md:bottom-10 md:left-[calc(380px+5%)] md:right-[5%]
           lg:left-[calc(420px+5%)] lg:right-[5%]
@@ -236,7 +237,7 @@ export default function OnboardingOverlay() {
           <button
             type="button"
             onClick={dismiss}
-            className="absolute right-4 top-4 z-10 rounded-full border border-cream-100/10 bg-cream-100/5 px-2.5 py-1 text-[12px] font-medium text-cream-100/60 transition hover:bg-cream-100/10 hover:text-cream-100/85 active:scale-[0.97]"
+            className="ov-pill ov-border ov-text-muted absolute right-4 top-4 z-10 rounded-full border px-2.5 py-1 text-[12px] font-semibold transition hover:opacity-80 active:scale-[0.97]"
             aria-label="Saltar introducción"
           >
             Saltar
@@ -271,24 +272,24 @@ export default function OnboardingOverlay() {
                   aria-hidden="true"
                 />
                 <span className="relative transition-colors duration-500"
-                  style={{ color: step === 0 ? "#E85D2F" : step === 1 ? "#7BA05B" : "#FBF5E8" }}
+                  style={{ color: step === 0 ? "#E85D2F" : step === 1 ? "var(--verde-d)" : "var(--verde)" }}
                 >
                   {current.icon}
                 </span>
               </div>
 
               {/* Step number */}
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-cream-100/50 dark:text-cream-100/60">
+              <p className="ov-text-muted text-[11px] font-bold uppercase tracking-widest">
                 Paso {step + 1} de {steps.length}
               </p>
 
               {/* Title */}
-              <h2 className="text-center font-serif-display text-2xl font-black leading-snug tracking-tight text-cream-50">
+              <h2 className="ov-text text-center font-serif-display text-2xl font-black leading-snug tracking-tight">
                 {current.title}
               </h2>
 
               {/* Description */}
-              <p className="text-center text-[14px] leading-relaxed text-cream-100/60">
+              <p className="ov-text-muted text-center text-[14px] font-medium leading-relaxed">
                 {current.description}
               </p>
             </div>
@@ -296,7 +297,7 @@ export default function OnboardingOverlay() {
         </div>
 
         {/* ── Footer: dots + button ───────────────────────────────────────── */}
-        <div className="flex items-center justify-between gap-4 border-t border-cream-100/8 px-7 py-5">
+        <div className="ov-border flex items-center justify-between gap-4 border-t px-7 py-5">
           <StepDots total={steps.length} current={step} />
 
           <button
@@ -305,7 +306,7 @@ export default function OnboardingOverlay() {
             className={`inline-flex h-11 items-center gap-1.5 rounded-full px-5 text-[14px] font-semibold transition active:scale-[0.97] ${
               isLast
                 ? "bg-verde text-white shadow-[0_4px_20px_rgba(106,171,72,0.40)] hover:opacity-90"
-                : "border border-cream-100/15 bg-cream-100/8 text-cream-50 hover:bg-cream-100/15"
+                : "ov-pill ov-border ov-text border hover:opacity-80"
             }`}
           >
             {isLast ? (

@@ -45,37 +45,37 @@
   --avocado-900: #0c110a;
 }
 
-/* Modo claro (si AdaptiveTheme lo activa) */
+/* Modo claro del mapa con UI oscura: menos brillo sin perder contraste. */
 [data-theme="light"] {
-  --background:     #ffffff;
-  --foreground:     #0f1a0a;
-  --surface:        #f4f7f0;
-  --surface-strong: #e8f0e0;
+  --background:     #0c110a;
+  --foreground:     #e8f2d8;
+  --surface:        #111a0d;
+  --surface-strong: #172012;
 
-  /* Acentos — versión oscura para contraste sobre fondo claro */
-  --verde:   #4a8a30;
-  --verde-d: #2d5a18;
-  --verde-l: rgba(90,140,60,0.10);
-  --lima:    #7ab800;
-  --agua:    #2a7a50;
+  /* Acentos */
+  --verde:   #6aab48;
+  --verde-d: #3d6828;
+  --verde-l: rgba(106,171,72,0.12);
+  --lima:    #b8e840;
+  --agua:    #48a878;
   --muted:   #5a7848;
-  --ink:     #0f1a0a;
-  --ink2:    #3d5a2a;
+  --ink:     #e8f2d8;
+  --ink2:    #a8c888;
 
   /* Compat vars */
-  --cream-50:  #0f1a0a;
-  --cream-100: #3d5a2a;
-  --ink-900:   #ffffff;
-  --ink-800:   #f4f7f0;
+  --cream-50:  #e8f2d8;
+  --cream-100: #a8c888;
+  --ink-900:   #0c110a;
+  --ink-800:   #111a0d;
 
-  /* Overlays — blancos limpios para paneles y bottom sheets */
-  --ov-bg:         rgba(255,255,255,0.97);
-  --ov-bg-soft:    rgba(244,247,240,0.98);
-  --ov-border:     rgba(60,100,40,0.15);
-  --ov-border2:    rgba(60,100,40,0.25);
-  --ov-text:       #0f1a0a;
-  --ov-text-muted: #3d5a2a;
-  --ov-pill-bg:    rgba(90,140,60,0.08);
+  /* Overlays oscuros sobre mapa claro. */
+  --ov-bg:         rgba(12,17,10,0.94);
+  --ov-bg-soft:    rgba(20,28,16,0.94);
+  --ov-border:     rgba(184,232,64,0.14);
+  --ov-border2:    rgba(184,232,64,0.24);
+  --ov-text:       #e8f2d8;
+  --ov-text-muted: rgba(168,200,136,0.72);
+  --ov-pill-bg:    rgba(184,232,64,0.09);
 }
 
 
