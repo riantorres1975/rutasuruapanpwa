@@ -146,11 +146,10 @@ export default function LandingPage() {
             className="font-serif text-5xl font-black leading-[1.02] tracking-tight sm:text-6xl lg:text-7xl"
             style={{ letterSpacing: "-0.025em" }}
           >
-            Moverse por{" "}
+            Muévete por{" "}
             <em style={{ fontStyle: "italic", color: "var(--verde)" }}>Uruapan,</em>
             <br />
-            tan fácil<br />
-            <span style={{ color: "var(--lima)" }}>como respirar.</span>
+            <span style={{ color: "var(--lima)" }}>sin preguntar.</span>
           </h1>
 
           <p className="mt-5 max-w-sm text-base leading-relaxed" style={{ color: "var(--ink2)" }}>
