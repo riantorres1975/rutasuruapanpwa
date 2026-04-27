@@ -177,7 +177,7 @@ export default function HeroMap() {
           <span className="h-1.5 w-1.5 rounded-full bg-lima" />
           {liveReady ? "En vivo · Uruapan" : "Uruapan"}
         </span>
-        <span className="rounded-full bg-ink-900/80 px-2.5 py-1 text-[10px] font-bold text-cream-100 backdrop-blur">
+        <span className="whitespace-nowrap rounded-full bg-ink-900/80 px-2.5 py-1 text-[10px] font-bold text-cream-100 backdrop-blur">
           40 rutas + Teleférico
         </span>
       </div>

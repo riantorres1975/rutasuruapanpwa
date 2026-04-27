@@ -152,7 +152,7 @@ export default function HeroMapAnimado() {
         <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--ink2)" }}>
           EN VIVO · URUAPAN
         </span>
-        <span className="text-xs" style={{ color: "var(--muted)" }}>40 rutas + Teleférico</span>
+        <span className="whitespace-nowrap text-xs" style={{ color: "var(--muted)" }}>40 rutas + Teleférico</span>
       </div>
 
       {/* Marcador Parque Nacional */}
