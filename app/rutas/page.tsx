@@ -19,14 +19,15 @@ export const metadata: Metadata = {
 
 export default function RutasPage() {
   const routes = getRouteSeoItems();
+  const busRoutes = routes.filter((r) => !r.name.toLowerCase().includes("teleférico"));
 
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "ItemList",
     name: "Rutas de camión urbano en Uruapan",
     description: "Directorio de las 40 rutas de transporte público urbano en Uruapan, Michoacán.",
-    numberOfItems: routes.length,
-    itemListElement: routes.map((route, i) => ({
+    numberOfItems: busRoutes.length,
+    itemListElement: busRoutes.map((route, i) => ({
       "@type": "ListItem",
       position: i + 1,
       name: route.destination ? `${route.name} — ${route.destination}` : route.name,
@@ -77,7 +78,7 @@ export default function RutasPage() {
             className="mt-2 font-serif text-4xl font-black tracking-tight md:text-5xl"
             style={{ color: "#e8f2d8", letterSpacing: "-0.025em" }}
           >
-            Las <em style={{ fontStyle: "italic", color: "#b8e840" }}>{routes.length} rutas</em> de camión en Uruapan
+            Las <em style={{ fontStyle: "italic", color: "#b8e840" }}>40 rutas</em> de camión en Uruapan
           </h1>
           <p className="mt-4 max-w-xl text-sm leading-7" style={{ color: "#a8c888" }}>
             Directorio completo de rutas de camión urbano. Toca cualquier ruta para ver destino, tarifa y abrirla en el mapa interactivo.
@@ -90,7 +91,7 @@ export default function RutasPage() {
           >
             <div>
               <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "#6aab48" }}>Rutas</p>
-              <p className="font-serif text-2xl font-black" style={{ color: "#e8f2d8" }}>{routes.length}</p>
+              <p className="font-serif text-2xl font-black" style={{ color: "#e8f2d8" }}>40</p>
             </div>
             <div style={{ borderLeft: "1px solid rgba(140,200,80,0.12)", paddingLeft: "1rem" }}>
               <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "#6aab48" }}>Tarifa</p>
@@ -104,7 +105,7 @@ export default function RutasPage() {
 
           {/* Grid de rutas */}
           <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {routes.map((route) => (
+            {busRoutes.map((route) => (
               <Link
                 key={route.slug}
                 href={`/ruta/${route.slug}`}
