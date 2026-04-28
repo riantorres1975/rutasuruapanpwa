@@ -446,6 +446,13 @@ export default function LandingPage() {
               <p className="mt-3 text-sm leading-7" style={{ color: "var(--ink2)" }}>
                 Busca rutas como Ruta 11 Uruapan, Ruta 1 o Ruta 5, además de estaciones clave del Teleférico.
               </p>
+              <Link
+                href="/rutas"
+                className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold transition hover:opacity-80"
+                style={{ color: "var(--lima)" }}
+              >
+                Ver las 40 rutas →
+              </Link>
             </div>
             <div className="flex flex-wrap gap-2">
               {["Ruta 11 Uruapan", "Ruta 1", "Ruta 5", "Hospital Regional", "Centro Histórico", "Mercado Poniente"].map((item) => (
@@ -584,6 +591,7 @@ export default function LandingPage() {
           </p>
           <div className="flex gap-4">
             <Link href="/mapa" className="font-semibold transition hover:opacity-80" style={{ color: "var(--ink2)" }}>Mapa</Link>
+            <Link href="/rutas" className="font-semibold transition hover:opacity-80" style={{ color: "var(--ink2)" }}>Rutas</Link>
             <Link href="/blog" className="font-semibold transition hover:opacity-80" style={{ color: "var(--ink2)" }}>Blog</Link>
             <Link href="/privacidad" className="font-semibold transition hover:opacity-80" style={{ color: "var(--ink2)" }}>Privacidad</Link>
           </div>

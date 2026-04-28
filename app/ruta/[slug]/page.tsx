@@ -54,7 +54,7 @@ export default function RoutePage({ params }: RoutePageProps) {
         "@type": "BreadcrumbList",
         itemListElement: [
           { "@type": "ListItem", position: 1, name: "Inicio", item: "/" },
-          { "@type": "ListItem", position: 2, name: "Rutas", item: "/mapa" },
+          { "@type": "ListItem", position: 2, name: "Rutas", item: "/rutas" },
           { "@type": "ListItem", position: 3, name: route.name, item: `/ruta/${route.slug}` }
         ]
       },
@@ -99,6 +99,15 @@ export default function RoutePage({ params }: RoutePageProps) {
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
         <div className="mx-auto max-w-3xl">
+          <div className="mb-4">
+            <Link
+              href="/rutas"
+              className="text-xs font-semibold uppercase tracking-widest transition hover:opacity-80"
+              style={{ color: "#6aab48" }}
+            >
+              ← Todas las rutas
+            </Link>
+          </div>
           <article
             className="overflow-hidden rounded-[2rem] border shadow-[0_20px_80px_rgba(0,0,0,0.35)]"
             style={{ borderColor: "rgba(140,200,80,0.12)", background: "rgba(20,28,16,0.8)" }}
