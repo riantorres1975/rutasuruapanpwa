@@ -8,14 +8,15 @@
 
 **Aplicación web progresiva (PWA) mobile-first para visualizar y navegar las 40 rutas de transporte público de Uruapan, Michoacán — sin depender de APIs externas de enrutamiento.**
 
-> 📸 **Screenshot**
->
-> _Coloca aquí una captura de pantalla de la app en funcionamiento._
-> _Recomendado: imagen de 1280×720 px o captura móvil. Puedes nombrarla `docs/screenshot.png` y referenciarla así:_
->
-> ```md
-> ![Rutas Uruapan en acción](docs/screenshot.png)
-> ```
+## Demos
+
+### Landing page
+
+![Demo de la landing page de VoyUruapan](./public/readme/demoLandipageUruGO.gif)
+
+### Mapa interactivo
+
+![Demo del mapa interactivo de VoyUruapan](./public/readme/demoMapaUruGO.gif)
 
 ---
 
@@ -230,14 +231,15 @@ Mostrar todas las rutas con su resolución completa (miles de puntos) degrada el
 
 **A mobile-first Progressive Web App (PWA) for visualizing and navigating the 40 public transit routes of Uruapan, Michoacán, Mexico — with no dependency on external routing APIs.**
 
-> 📸 **Screenshot**
->
-> _Place a screenshot of the running app here._
-> _Recommended: 1280×720 px or a mobile capture. Name it `docs/screenshot.png` and reference it like this:_
->
-> ```md
-> ![Rutas Uruapan in action](docs/screenshot.png)
-> ```
+## Demos
+
+### Landing Page
+
+![VoyUruapan landing page demo](./public/readme/demoLandipageUruGO.gif)
+
+### Interactive Map
+
+![VoyUruapan interactive map demo](./public/readme/demoMapaUruGO.gif)
 
 ---
 
