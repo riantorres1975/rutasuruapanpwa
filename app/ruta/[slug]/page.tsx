@@ -150,7 +150,7 @@ export default function RoutePage({ params }: RoutePageProps) {
               >
                 <h2 className="font-serif text-xl font-black" style={{ color: "#e8f2d8" }}>Cómo usar esta ruta</h2>
                 <p className="mt-3 text-sm leading-7" style={{ color: "#a8c888" }}>
-                  Abre el mapa, marca tu punto de origen y destino, y VoyUruapan calculará si esta ruta es conveniente o si necesitas caminar o transbordar con otra ruta o el Teleférico.
+                  Abre el mapa, marca tu punto de origen y destino, y UruGo calculará si esta ruta es conveniente o si necesitas caminar o transbordar con otra ruta o el Teleférico.
                 </p>
               </section>
 

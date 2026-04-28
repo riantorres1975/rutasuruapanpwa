@@ -29,8 +29,8 @@ const blogPostingJsonLd = {
   description: "Guía completa para usar el Teleférico de Uruapan: tarjeta de movilidad, tarifa por viaje, estaciones, horario y combinación con camiones urbanos.",
   datePublished: "2026-01-10",
   dateModified: "2026-04-27",
-  author: { "@type": "Organization", name: "VoyUruapan" },
-  publisher: { "@type": "Organization", name: "VoyUruapan" },
+  author: { "@type": "Organization", name: "UruGo" },
+  publisher: { "@type": "Organization", name: "UruGo" },
   mainEntityOfPage: { "@type": "WebPage", "@id": "/blog/como-usar-el-teleferico-uruapan" },
   inLanguage: "es-MX",
   keywords: "teleférico Uruapan, cómo usar teleférico, tarjeta movilidad Uruapan, estaciones teleférico, horario teleférico"
@@ -49,7 +49,7 @@ const SECTIONS = [
   {
     n: "01",
     title: "Qué es el Teleférico",
-    body: "El Teleférico de Uruapan es un sistema de transporte urbano que conecta zonas clave de la ciudad mediante estaciones elevadas. En VoyUruapan aparece integrado con rutas de camión para planear viajes multimodales."
+    body: "El Teleférico de Uruapan es un sistema de transporte urbano que conecta zonas clave de la ciudad mediante estaciones elevadas. En UruGo aparece integrado con rutas de camión para planear viajes multimodales."
   },
   {
     n: "02",
@@ -89,7 +89,7 @@ export default function TelefericoBlogArticlePage() {
               Cómo usar el <span className="italic text-lima">Teleférico</span> de Uruapan paso a paso.
             </>
           }
-          intro="Aprende cómo abordar, pagar y combinar el Teleférico de Uruapan con rutas de camión urbano desde VoyUruapan."
+          intro="Aprende cómo abordar, pagar y combinar el Teleférico de Uruapan con rutas de camión urbano desde UruGo."
         />
 
         <div className="mt-12 space-y-8">

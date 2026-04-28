@@ -27,7 +27,7 @@ export function useShareRoute() {
     // Prefer native share sheet (mobile)
     if (typeof nav.share === "function") {
       try {
-        await nav.share({ title: "VoyUruapan", text, url: shareUrl });
+        await nav.share({ title: "UruGo", text, url: shareUrl });
         setStatus("shared");
         reset();
         return;

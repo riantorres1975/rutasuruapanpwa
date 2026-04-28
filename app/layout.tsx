@@ -22,11 +22,11 @@ const playfair = Playfair_Display({
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://rutasuruapanpwa.vercel.app"),
   title: {
-    default: "VoyUruapan | Rutas de camiones y Teleférico en Uruapan",
-    template: "%s | VoyUruapan"
+    default: "UruGo | Rutas de camiones y Teleférico en Uruapan",
+    template: "%s | UruGo"
   },
   description: "Consulta rutas de camiones Uruapan, horario y tarifa del Teleférico 2026. Mapa interactivo multimodal, sin registro ni instalación.",
-  applicationName: "VoyUruapan",
+  applicationName: "UruGo",
   manifest: "/manifest.json",
   icons: {
     icon: [
@@ -39,19 +39,19 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "VoyUruapan"
+    title: "UruGo"
   },
   openGraph: {
-    title: "VoyUruapan — Rutas de camiones y Teleférico en Uruapan",
+    title: "UruGo — Rutas de camiones y Teleférico en Uruapan",
     description: "Encuentra tu ruta en Uruapan. Camiones urbanos y Teleférico en un solo mapa interactivo.",
     url: process.env.NEXT_PUBLIC_SITE_URL || "https://rutasuruapanpwa.vercel.app",
-    siteName: "VoyUruapan",
+    siteName: "UruGo",
     images: [
       {
         url: "/api/og",
         width: 1200,
         height: 630,
-        alt: "VoyUruapan — Mapa de rutas de transporte en Uruapan"
+        alt: "UruGo — Mapa de rutas de transporte en Uruapan"
       }
     ],
     locale: "es_MX",
@@ -59,7 +59,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "VoyUruapan — Rutas Uruapan",
+    title: "UruGo — Rutas Uruapan",
     description: "Camiones urbanos y Teleférico en Uruapan en un mapa interactivo.",
     images: ["/api/og"]
   }

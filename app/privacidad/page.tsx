@@ -7,8 +7,8 @@ import ForceDark from "@/components/ForceDark";
 import { APP_BRAND } from "@/lib/mobility-config";
 
 export const metadata: Metadata = {
-  title: "Privacidad | VoyUruapan",
-  description: "Aviso de privacidad de VoyUruapan sobre uso de ubicación, datos locales y soporte PWA."
+  title: "Privacidad | UruGo",
+  description: "Aviso de privacidad de UruGo sobre uso de ubicación, datos locales y soporte PWA."
 };
 
 const SECTIONS = [

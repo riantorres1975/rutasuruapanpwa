@@ -105,7 +105,7 @@ export default function Logo({
               color: "var(--ov-text, #e8f2d8)",
             }}
           >
-            VoyUruapan
+            UruGo
           </span>
           {showSub && (
             <span

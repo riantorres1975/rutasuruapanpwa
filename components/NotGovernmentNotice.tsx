@@ -51,7 +51,7 @@ export default function NotGovernmentNotice({ variant = "compact" }: Props) {
             Este sitio <span className="italic" style={{ color: "#b8e840" }}>no es oficial</span>.
           </p>
           <p className="mt-2 text-sm leading-7" style={{ color: "rgba(232,242,216,0.65)" }}>
-            VoyUruapan es un proyecto <strong style={{ color: "#e8f2d8" }}>independiente y sin fines de lucro</strong> hecho por un vecino de Uruapan como una herramienta para todas las personas — habitantes, estudiantes y turistas — que necesitan moverse en transporte público por la ciudad.
+            UruGo es un proyecto <strong style={{ color: "#e8f2d8" }}>independiente y sin fines de lucro</strong> hecho por un vecino de Uruapan como una herramienta para todas las personas — habitantes, estudiantes y turistas — que necesitan moverse en transporte público por la ciudad.
           </p>
           <p className="mt-3 text-sm leading-7" style={{ color: "rgba(232,242,216,0.65)" }}>
             <strong style={{ color: "#e8f2d8" }}>No pertenece al Gobierno de Uruapan</strong>, al Gobierno del Estado de Michoacán, al SITU, al COCOTRA ni a ninguna empresa concesionaria. La información se basa en datos públicos y observación de campo. Para trámites o cambios oficiales, consulta los canales oficiales del transporte de Uruapan.

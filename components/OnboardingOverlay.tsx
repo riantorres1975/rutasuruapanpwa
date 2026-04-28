@@ -218,7 +218,7 @@ export default function OnboardingOverlay() {
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Bienvenida a VoyUruapan"
+        aria-label="Bienvenida a UruGo"
         aria-live="polite"
           className={`ov-panel fixed z-50 mx-auto max-w-sm rounded-3xl border shadow-[0_24px_60px_rgba(0,0,0,0.35)] backdrop-blur-2xl transition-all duration-500 will-change-transform
           inset-x-4 bottom-10

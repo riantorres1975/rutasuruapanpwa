@@ -1367,7 +1367,7 @@ export default function HomePage() {
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-lima opacity-50" />
               <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-lima" />
             </span>
-            <p className="font-serif-display text-[16px] font-black tracking-tight text-white">VoyUruapan</p>
+            <p className="font-serif-display text-[16px] font-black tracking-tight text-white">UruGo</p>
             <span className="rounded-full border border-lima/25 bg-lima/10 px-2 py-0.5 text-[11px] font-semibold text-lima">
               {fullRoutes.length} rutas
             </span>
@@ -1455,7 +1455,7 @@ export default function HomePage() {
         {/* ── Footer del sidebar: creditos ────────────────────────────────── */}
         <div className="shrink-0 border-t border-foreground/5 px-5 py-3">
           <p className="text-[11px] text-foreground/45">
-            VoyUruapan · Datos actualizados · Uruapan, Mich.
+            UruGo · Datos actualizados · Uruapan, Mich.
           </p>
         </div>
       </aside>
@@ -1538,7 +1538,7 @@ export default function HomePage() {
           <div className="flex items-center gap-2">
             <div className="ov-panel pointer-events-auto inline-flex items-center gap-2 rounded-2xl border px-3 py-2 shadow-[0_4px_24px_rgba(0,0,0,0.18)] backdrop-blur-xl">
               <span className="h-2 w-2 rounded-full bg-lima" aria-hidden="true" />
-              <p className="ov-text font-serif-display text-[15px] font-black leading-none tracking-tight">VoyUruapan</p>
+              <p className="ov-text font-serif-display text-[15px] font-black leading-none tracking-tight">UruGo</p>
               <span className="ov-pill ov-text-muted rounded-full px-1.5 py-0.5 text-[11px] font-medium">
                 {fullRoutes.length}
               </span>

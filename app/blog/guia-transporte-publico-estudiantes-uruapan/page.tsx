@@ -27,8 +27,8 @@ const blogPostingJsonLd = {
   description: "Guía para estudiantes que se mueven en camión urbano, Teleférico y rutas cercanas a escuelas en Uruapan.",
   datePublished: "2026-01-20",
   dateModified: "2026-04-27",
-  author: { "@type": "Organization", name: "VoyUruapan" },
-  publisher: { "@type": "Organization", name: "VoyUruapan" },
+  author: { "@type": "Organization", name: "UruGo" },
+  publisher: { "@type": "Organization", name: "UruGo" },
   mainEntityOfPage: { "@type": "WebPage", "@id": "/blog/guia-transporte-publico-estudiantes-uruapan" },
   inLanguage: "es-MX",
   keywords: "transporte escolar Uruapan, camión estudiantes Uruapan, teleférico estudiantes, rutas camión escuelas Uruapan"

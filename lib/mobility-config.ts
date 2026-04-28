@@ -1,5 +1,5 @@
 export const APP_BRAND = {
-  name: "VoyUruapan",
+  name: "UruGo",
   tagline: "Encuentra tu ruta en Uruapan",
   description: "Rutas de camiones, combis suburbanas y Teleférico en un solo mapa."
 } as const;
@@ -94,11 +94,11 @@ export const LANDING_FAQS = [
   },
   {
     question: "¿Cómo llegar al Parque Nacional en camión?",
-    answer: "VoyUruapan permite marcar origen y destino en el mapa para encontrar rutas urbanas cercanas hacia zonas como el Parque Nacional."
+    answer: "UruGo permite marcar origen y destino en el mapa para encontrar rutas urbanas cercanas hacia zonas como el Parque Nacional."
   },
   {
     question: "¿La app funciona sin internet?",
-    answer: "VoyUruapan es una PWA ligera con soporte offline para cargar la aplicación y datos guardados; el mapa puede requerir conexión para mostrar tiles actualizados."
+    answer: "UruGo es una PWA ligera con soporte offline para cargar la aplicación y datos guardados; el mapa puede requerir conexión para mostrar tiles actualizados."
   },
   {
     question: "¿Dónde están las estaciones del Teleférico de Uruapan?",
@@ -106,11 +106,11 @@ export const LANDING_FAQS = [
   },
   {
     question: "¿Puedo combinar camión y Teleférico en Uruapan?",
-    answer: "Sí. VoyUruapan muestra rutas urbanas y el Teleférico en el mismo mapa para comparar trayectos, revisar transbordos posibles y calcular caminatas cortas entre puntos cercanos."
+    answer: "Sí. UruGo muestra rutas urbanas y el Teleférico en el mismo mapa para comparar trayectos, revisar transbordos posibles y calcular caminatas cortas entre puntos cercanos."
   },
   {
     question: "¿Cómo encuentro rutas cercanas a mi ubicación?",
-    answer: "Abre el mapa y usa el botón de ubicación. El navegador pedirá permiso y VoyUruapan usará tu posición en el dispositivo para detectar rutas cercanas sin guardarla en servidores propios."
+    answer: "Abre el mapa y usa el botón de ubicación. El navegador pedirá permiso y UruGo usará tu posición en el dispositivo para detectar rutas cercanas sin guardarla en servidores propios."
   },
   {
     question: "¿Qué hago si no aparece mi destino?",

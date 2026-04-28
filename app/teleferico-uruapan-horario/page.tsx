@@ -35,7 +35,7 @@ const telefericoFaqs = [
   },
   {
     question: "¿Cómo se paga el Teleférico de Uruapan?",
-    answer: `El acceso se valida con tarjeta electrónica de movilidad. La tarjeta configurada en VoyUruapan tiene costo de ${FARES_2026.mobilityCard.price}.`
+    answer: `El acceso se valida con tarjeta electrónica de movilidad. La tarjeta configurada en UruGo tiene costo de ${FARES_2026.mobilityCard.price}.`
   },
   {
     question: "¿Qué estaciones tiene el Teleférico de Uruapan?",
@@ -124,7 +124,7 @@ export default function TelefericoHorarioPage() {
               <span className="italic" style={{ color: "#b8e840" }}>Teleférico</span>: horario, estaciones y tarifa.
             </>
           }
-          intro="Guía rápida para moverte en el Teleférico de Uruapan y combinarlo con rutas de camión urbano desde el mapa de VoyUruapan."
+          intro="Guía rápida para moverte en el Teleférico de Uruapan y combinarlo con rutas de camión urbano desde el mapa de UruGo."
         />
 
         <div className="mt-7 flex flex-col gap-3 sm:flex-row">

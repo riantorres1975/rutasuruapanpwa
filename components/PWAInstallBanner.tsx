@@ -48,7 +48,7 @@ export default function PWAInstallBanner() {
       className="fixed bottom-24 left-4 right-4 z-50 flex animate-fade-up items-center gap-3 rounded-2xl border border-avocado-400/30 bg-ink-900/95 p-4 shadow-[0_20px_60px_rgba(0,0,0,0.5)] backdrop-blur-xl md:bottom-6 md:left-auto md:right-6 md:w-80"
     >
       <div className="flex-1">
-        <p className="font-serif-display text-sm font-black text-cream-50">Instala VoyUruapan</p>
+        <p className="font-serif-display text-sm font-black text-cream-50">Instala UruGo</p>
         <p className="mt-0.5 text-xs text-cream-100/60">Sin App Store · funciona offline</p>
       </div>
       <button

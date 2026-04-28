@@ -27,8 +27,8 @@ const blogPostingJsonLd = {
   description: "Resumen de las rutas de camión más consultadas en Uruapan, sus destinos principales y cómo conectan con el Teleférico.",
   datePublished: "2026-01-15",
   dateModified: "2026-04-27",
-  author: { "@type": "Organization", name: "VoyUruapan" },
-  publisher: { "@type": "Organization", name: "VoyUruapan" },
+  author: { "@type": "Organization", name: "UruGo" },
+  publisher: { "@type": "Organization", name: "UruGo" },
   mainEntityOfPage: { "@type": "WebPage", "@id": "/blog/rutas-camion-mas-usadas-uruapan" },
   inLanguage: "es-MX",
   keywords: "rutas de camión Uruapan, ruta 11 Uruapan, transporte público Uruapan, camiones urbanos Uruapan"

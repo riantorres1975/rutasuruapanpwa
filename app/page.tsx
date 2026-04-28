@@ -25,17 +25,17 @@ const HOW_IT_WORKS_STEPS = [
 
 export const metadata: Metadata = {
   title: {
-    absolute: "VoyUruapan | Rutas de camiones y Teleférico en Uruapan"
+    absolute: "UruGo | Rutas de camiones y Teleférico en Uruapan"
   },
   description:
     "Consulta rutas de camiones Uruapan, horario del Teleférico Uruapan, tarifas 2026 y opciones para moverte en transporte público.",
   alternates: { canonical: "/" },
   openGraph: {
-    title: "VoyUruapan | Encuentra tu ruta en Uruapan",
+    title: "UruGo | Encuentra tu ruta en Uruapan",
     description: "Rutas de camiones urbanos y Teleférico en un solo mapa para Uruapan, Michoacán.",
     url: "/",
-    siteName: "VoyUruapan",
-    images: [{ url: "/api/og", width: 1200, height: 630, alt: "VoyUruapan — rutas de camiones y Teleférico en Uruapan" }],
+    siteName: "UruGo",
+    images: [{ url: "/api/og", width: 1200, height: 630, alt: "UruGo — rutas de camiones y Teleférico en Uruapan" }],
     locale: "es_MX",
     type: "website"
   }

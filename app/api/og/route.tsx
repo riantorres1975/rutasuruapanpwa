@@ -76,7 +76,7 @@ export async function GET() {
             textAlign: "center"
           }}
         >
-          VoyUruapan
+          UruGo
         </div>
         <div
           style={{
