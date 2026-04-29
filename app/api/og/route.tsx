@@ -56,7 +56,7 @@ export async function GET() {
           style={{
             display: "flex",
             flexDirection: "column",
-            flex: 1,
+            flexGrow: 1,
             justifyContent: "center",
             padding: "72px 80px",
             position: "relative"
@@ -76,7 +76,7 @@ export async function GET() {
               marginBottom: 36,
               padding: "8px 20px",
               textTransform: "uppercase",
-              width: "fit-content"
+              width: "auto"
             }}
           >
             Uruapan, Michoacán
