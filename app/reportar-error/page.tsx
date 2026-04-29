@@ -15,7 +15,7 @@ const REPORT_TIPS = [
   "Nombre o número de la ruta afectada.",
   "Colonia, calle o punto de referencia donde ocurre el problema.",
   "Qué viste en la app y qué debería mostrarse.",
-  "Captura de pantalla si el reporte en GitHub te permite adjuntarla."
+  "Captura de pantalla si tu app de correo te permite adjuntarla."
 ] as const;
 
 export default function ReportErrorPage() {

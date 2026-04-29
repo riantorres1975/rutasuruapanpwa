@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 const ISSUE_URL = "https://github.com/riantorres1975/rutasuruapanpwa/issues/new";
+const REPORT_EMAIL = "contacto@urugo.app";
 
 const REPORT_TYPES = [
   "Ruta incorrecta",
@@ -30,9 +31,43 @@ export default function ReportBugForm() {
     setUserAgent(window.navigator.userAgent);
   }, []);
 
+  const reportSubject = useMemo(() => {
+    const reportTarget = routeName.trim() || place.trim();
+    return reportTarget ? `Reporte ${reportType}: ${reportTarget}` : `Reporte ${reportType}`;
+  }, [place, reportType, routeName]);
+
+  const reportBody = useMemo(() => {
+    return [
+      "Tipo de problema:",
+      reportType,
+      "",
+      "Ruta, colonia o lugar relacionado:",
+      routeName || "No especificado",
+      "",
+      "Ubicación aproximada:",
+      place || "No especificada",
+      "",
+      "Qué pasó:",
+      description || "No especificado",
+      "",
+      "Qué debería pasar:",
+      expected || "No especificado",
+      "",
+      "Contacto opcional:",
+      contact || "No proporcionado",
+      "",
+      "Contexto técnico:",
+      `Página: ${sourceUrl || "No disponible"}`,
+      `Navegador: ${userAgent || "No disponible"}`
+    ].join("\n");
+  }, [contact, description, expected, place, reportType, routeName, sourceUrl, userAgent]);
+
+  const emailHref = useMemo(() => {
+    return `mailto:${REPORT_EMAIL}?subject=${encodeURIComponent(reportSubject)}&body=${encodeURIComponent(reportBody)}`;
+  }, [reportBody, reportSubject]);
+
   const issueHref = useMemo(() => {
-    const titleSubject = routeName || place || reportType;
-    const title = `[Reporte] ${titleSubject}`;
+    const title = `[Reporte] ${routeName || place || reportType}`;
     const body = [
       "## Tipo de problema",
       reportType,
@@ -75,7 +110,7 @@ export default function ReportBugForm() {
       onSubmit={(event) => {
         event.preventDefault();
         if (canSubmit) {
-          window.open(issueHref, "_blank", "noopener,noreferrer");
+          window.location.href = emailHref;
         }
       }}
     >
@@ -156,16 +191,27 @@ export default function ReportBugForm() {
 
       <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-xs leading-5" style={{ color: "rgba(232,242,216,0.52)" }}>
-          Se abrirá GitHub con el reporte prellenado. Revisa el texto antes de enviarlo.
+          Se abrirá tu app de correo con destino a {REPORT_EMAIL}, asunto y mensaje prellenados.
         </p>
-        <button
-          type="submit"
-          disabled={!canSubmit}
-          className="cta-shine inline-flex h-12 items-center justify-center rounded-full px-6 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-45"
-          style={{ background: "#6aab48", color: "#e8f2d8" }}
-        >
-          Crear reporte
-        </button>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <a
+            href={issueHref}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex h-12 items-center justify-center rounded-full border px-5 text-sm font-bold transition hover:border-lima/50"
+            style={{ borderColor: "rgba(140,200,80,0.18)", color: "rgba(232,242,216,0.72)" }}
+          >
+            Usar GitHub
+          </a>
+          <button
+            type="submit"
+            disabled={!canSubmit}
+            className="cta-shine inline-flex h-12 items-center justify-center rounded-full px-6 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-45"
+            style={{ background: "#6aab48", color: "#e8f2d8" }}
+          >
+            Enviar por correo
+          </button>
+        </div>
       </div>
     </form>
   );
