@@ -593,6 +593,7 @@ export default function LandingPage() {
             <Link href="/mapa" className="font-semibold transition hover:opacity-80" style={{ color: "var(--ink2)" }}>Mapa</Link>
             <Link href="/rutas" className="font-semibold transition hover:opacity-80" style={{ color: "var(--ink2)" }}>Rutas</Link>
             <Link href="/blog" className="font-semibold transition hover:opacity-80" style={{ color: "var(--ink2)" }}>Blog</Link>
+            <Link href="/reportar-error" className="font-semibold transition hover:opacity-80" style={{ color: "var(--ink2)" }}>Reportar error</Link>
             <Link href="/privacidad" className="font-semibold transition hover:opacity-80" style={{ color: "var(--ink2)" }}>Privacidad</Link>
           </div>
         </div>

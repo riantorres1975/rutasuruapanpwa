@@ -8,6 +8,11 @@ const LINKEDIN_URL = "https://www.linkedin.com/in/josé-antonio-rivera-torres-b4
 const REPO_URL = "https://github.com/riantorres1975/rutasuruapanpwa";
 const DONATION_URL = "https://www.paypal.com/paypalme/wh0code";
 
+const footerLinks = [
+  { label: "Reportar error", href: "/reportar-error" },
+  { label: "Privacidad", href: "/privacidad" }
+] as const;
+
 const socialLinks = [
   {
     label: "GitHub",
@@ -132,14 +137,24 @@ export default function MadeByFooter() {
           color: "rgba(232,242,216,0.45)",
         }}
       >
-        <p className="inline-flex flex-wrap items-center gap-1.5">
-          <span>Hecho con</span>
-          <span style={{ color: "#6aab48", filter: "drop-shadow(0 0 10px rgba(106,171,72,0.4))" }}>
-            <HeartIcon className="h-3.5 w-3.5" />
-          </span>
-          <span>en Uruapan por</span>
-          <span className="font-serif font-bold" style={{ color: "#e8f2d8" }}>{AUTHOR_NAME}</span>
-        </p>
+        <div className="flex flex-col gap-2">
+          <p className="inline-flex flex-wrap items-center gap-1.5">
+            <span>Hecho con</span>
+            <span style={{ color: "#6aab48", filter: "drop-shadow(0 0 10px rgba(106,171,72,0.4))" }}>
+              <HeartIcon className="h-3.5 w-3.5" />
+            </span>
+            <span>en Uruapan por</span>
+            <span className="font-serif font-bold" style={{ color: "#e8f2d8" }}>{AUTHOR_NAME}</span>
+          </p>
+
+          <div className="flex flex-wrap gap-3">
+            {footerLinks.map((link) => (
+              <Link key={link.href} href={link.href} className="font-semibold transition hover:opacity-80">
+                {link.label}
+              </Link>
+            ))}
+          </div>
+        </div>
 
         <div className="flex flex-wrap items-center gap-2">
           {socialLinks.map((link) => (

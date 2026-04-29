@@ -1,6 +1,7 @@
 "use client";
 
 import Fuse from "fuse.js";
+import Link from "next/link";
 import { useDeferredValue, useMemo, useState } from "react";
 import TelefericoSection from "@/components/TelefericoSection";
 import { getRouteDestination, getRouteSearchTerms } from "@/lib/route-names";
@@ -390,6 +391,13 @@ export default function RouteList({
           </div>
         </div>
       )}
+
+      <Link
+        href="/reportar-error?from=mapa"
+        className="ov-pill ov-border ov-text-muted inline-flex w-full items-center justify-center rounded-2xl border px-4 py-3 text-center text-[12px] font-semibold transition hover:border-lima/40 hover:text-lima"
+      >
+        ¿Viste una ruta mal? Reportar error
+      </Link>
     </div>
   );
 }
