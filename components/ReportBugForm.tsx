@@ -189,16 +189,16 @@ export default function ReportBugForm() {
         />
       </label>
 
-      <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mt-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <p className="text-xs leading-5" style={{ color: "rgba(232,242,216,0.52)" }}>
           Se abrirá tu app de correo con destino a {REPORT_EMAIL}, asunto y mensaje prellenados.
         </p>
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center lg:w-auto lg:shrink-0">
           <a
             href={issueHref}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex h-12 items-center justify-center rounded-full border px-5 text-sm font-bold transition hover:border-lima/50"
+            className="inline-flex h-12 w-full min-w-[136px] items-center justify-center rounded-full border px-5 text-sm font-bold transition hover:border-lima/50 sm:w-auto whitespace-nowrap"
             style={{ borderColor: "rgba(140,200,80,0.18)", color: "rgba(232,242,216,0.72)" }}
           >
             Usar GitHub
@@ -206,7 +206,7 @@ export default function ReportBugForm() {
           <button
             type="submit"
             disabled={!canSubmit}
-            className="cta-shine inline-flex h-12 items-center justify-center rounded-full px-6 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-45"
+            className="cta-shine inline-flex h-12 w-full min-w-[168px] items-center justify-center rounded-full px-6 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-45 sm:w-auto whitespace-nowrap"
             style={{ background: "#6aab48", color: "#e8f2d8" }}
           >
             Enviar por correo
