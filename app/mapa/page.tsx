@@ -23,6 +23,7 @@ const SEGMENT_LENGTH_FACTOR = 0.04;
 const AVG_TRIP_SPEED_KMH = 18;
 const BACKGROUND_SIMPLIFY_TOLERANCE = 0.00008;
 const BACKGROUND_MAX_POINTS = 180;
+const MOBILE_MAP_BOOT_DELAY_MS = 3200;
 
 const MapView = dynamic(() => import("@/components/Map"), {
   ssr: false,
@@ -425,6 +426,7 @@ export default function HomePage() {
 
   const [groupedRoutes, setGroupedRoutes] = useState<GroupedRouteData[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
+  const [shouldLoadMap, setShouldLoadMap] = useState(false);
   const [fetchError, setFetchError] = useState(false);
   const [fetchAttempt, setFetchAttempt] = useState(0);
   const [selectedRouteId, setSelectedRouteId] = useState<number | null>(null);
@@ -580,6 +582,7 @@ export default function HomePage() {
 
   useEffect(() => {
     let cancelled = false;
+    setShouldLoadMap(false);
     fetch("/api/rutas")
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -605,6 +608,27 @@ export default function HomePage() {
       });
     return () => { cancelled = true; };
   }, [fetchAttempt]);
+
+  useEffect(() => {
+    if (isLoadingData || fetchError || shouldLoadMap) {
+      return;
+    }
+
+    const loadMap = () => setShouldLoadMap(true);
+    const isMobile = window.matchMedia("(max-width: 767px)").matches;
+    const hasSharedState = window.location.search.length > 0;
+    const delay = hasSharedState ? 0 : isMobile ? MOBILE_MAP_BOOT_DELAY_MS : 250;
+    const timer = window.setTimeout(loadMap, delay);
+
+    window.addEventListener("pointerdown", loadMap, { once: true, passive: true });
+    window.addEventListener("keydown", loadMap, { once: true });
+
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("pointerdown", loadMap);
+      window.removeEventListener("keydown", loadMap);
+    };
+  }, [fetchError, isLoadingData, shouldLoadMap]);
 
   const flowStep = useMemo(() => getFlowStep(originPoint, destinationPoint), [destinationPoint, originPoint]);
 
@@ -1491,8 +1515,20 @@ export default function HomePage() {
           En desktop: ocupa flex-1 (el resto del ancho tras el sidebar)
       ══════════════════════════════════════════════════════════════════════ */}
       <div className="relative flex-1">
-        {isLoadingData ? (
-          <div className="relative h-full w-full overflow-hidden bg-ink-900">
+        {isLoadingData || !shouldLoadMap ? (
+          <div
+            className="relative h-full w-full overflow-hidden bg-ink-900"
+            role="button"
+            tabIndex={0}
+            aria-label={isLoadingData ? "Cargando rutas" : "Activar mapa interactivo"}
+            onClick={() => setShouldLoadMap(true)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                setShouldLoadMap(true);
+              }
+            }}
+          >
             <div className="absolute inset-0 animate-pulse bg-gradient-to-b from-ink-800 to-ink-900" />
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 opacity-30" aria-hidden="true">
               {Array.from({ length: 6 }).map((_, i) => (
@@ -1508,8 +1544,8 @@ export default function HomePage() {
             </div>
             <div className="absolute inset-0 grid place-items-center">
               <div className="flex items-center gap-2 rounded-full border border-foreground/10 bg-ink-900/90 px-4 py-2 text-sm font-semibold text-foreground/75 shadow-soft backdrop-blur-xl">
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-lima/60 border-t-transparent" />
-                Cargando rutas...
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-lima/60 border-t-transparent" aria-hidden="true" />
+                {isLoadingData ? "Cargando rutas..." : "Preparando mapa interactivo..."}
               </div>
             </div>
           </div>
@@ -1667,7 +1703,7 @@ export default function HomePage() {
             type="button"
             onClick={() => setIsSheetOpen(true)}
             className="ov-panel inline-flex h-12 items-center gap-2 rounded-2xl border pl-3.5 pr-4 text-[14px] font-semibold shadow-[0_8px_32px_rgba(0,0,0,0.3)] backdrop-blur-xl transition hover:border-lima/40 hover:shadow-[0_8px_32px_rgba(232,93,47,0.15)] active:scale-[0.97]"
-            aria-label={`Rutas, ver las ${fullRoutes.length} rutas disponibles`}
+            aria-label={`Rutas ${fullRoutes.length}, ver rutas disponibles`}
           >
             <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 text-lima" aria-hidden="true">
               <path d="M4 7H20M4 12H20M4 17H14" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />

@@ -206,12 +206,11 @@ export default function RouteList({
 
         {/* Quick-search chips — hidden while user has typed something */}
         {!query && (
-          <div className="flex flex-wrap gap-1.5" role="list" aria-label="Búsquedas rápidas">
+          <div className="flex flex-wrap gap-1.5" aria-label="Búsquedas rápidas">
             {["Jucutacato", "Constituyentes", "Pemex", "Taximacuaro", "Central", "Balcones"].map((chip) => (
               <button
                 key={chip}
                 type="button"
-                role="listitem"
                 onClick={() => setQuery(chip)}
                 className="ov-pill ov-border ov-text-muted rounded-full border px-2.5 py-1 text-[11px] font-medium transition hover:border-lima/40 hover:text-lima active:scale-[0.97]"
               >
