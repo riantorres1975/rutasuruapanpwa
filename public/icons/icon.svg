@@ -1,23 +1,62 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Rutas Uruapan">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="UruGo">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#0f172a" />
-      <stop offset="100%" stop-color="#1d4ed8" />
+    <radialGradient id="bg" cx="36%" cy="24%" r="84%">
+      <stop offset="0%" stop-color="#243d18" />
+      <stop offset="58%" stop-color="#0c110a" />
+      <stop offset="100%" stop-color="#070a06" />
+    </radialGradient>
+    <radialGradient id="pinOuter" cx="36%" cy="24%" r="78%">
+      <stop offset="0%" stop-color="#7aba54" />
+      <stop offset="100%" stop-color="#3a6425" />
+    </radialGradient>
+    <radialGradient id="pinInner" cx="42%" cy="30%" r="74%">
+      <stop offset="0%" stop-color="#518c3a" />
+      <stop offset="100%" stop-color="#1c3612" />
+    </radialGradient>
+    <linearGradient id="glow" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#b8e840" />
+      <stop offset="100%" stop-color="#6aab48" />
     </linearGradient>
-    <linearGradient id="path" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#22d3ee" />
-      <stop offset="100%" stop-color="#34d399" />
-    </linearGradient>
+    <filter id="softShadow" x="-30%" y="-30%" width="160%" height="170%">
+      <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#000000" flood-opacity="0.45" />
+    </filter>
   </defs>
   <rect width="512" height="512" rx="112" fill="url(#bg)" />
+  <circle cx="136" cy="116" r="122" fill="#6aab48" opacity="0.12" />
+  <circle cx="410" cy="392" r="150" fill="#b8e840" opacity="0.08" />
+
   <path
-    d="M124 366c62 0 96-42 132-96 28-42 48-66 84-66 33 0 53 20 72 44"
+    d="M92 358C152 318 198 316 256 350C312 382 354 366 420 310"
     fill="none"
-    stroke="url(#path)"
+    stroke="#e8f2d8"
     stroke-linecap="round"
-    stroke-linejoin="round"
-    stroke-width="44"
+    stroke-width="24"
+    opacity="0.13"
   />
-  <circle cx="124" cy="366" r="24" fill="#22d3ee" />
-  <circle cx="412" cy="248" r="24" fill="#34d399" />
+  <circle cx="92" cy="358" r="13" fill="#b8e840" opacity="0.9" />
+  <circle cx="420" cy="310" r="13" fill="#b8e840" opacity="0.9" />
+
+  <g filter="url(#softShadow)">
+    <path
+      d="M256 68C165 68 104 130 104 208C104 302 256 454 256 454C256 454 408 302 408 208C408 130 347 68 256 68Z"
+      fill="url(#pinOuter)"
+    />
+    <path
+      d="M256 104C188 104 142 150 142 209C142 280 256 393 256 393C256 393 370 280 370 209C370 150 324 104 256 104Z"
+      fill="url(#pinInner)"
+    />
+    <path
+      d="M170 129C149 152 139 180 142 215C146 257 162 295 189 334C166 279 157 236 162 196C166 164 176 143 190 124C182 125 175 126 170 129Z"
+      fill="#ffffff"
+      opacity="0.08"
+    />
+  </g>
+
+  <path d="M110 208H402" stroke="url(#glow)" stroke-linecap="round" stroke-width="18" />
+  <path d="M160 208V238M352 208V238" stroke="#b8e840" stroke-linecap="round" stroke-width="8" opacity="0.58" />
+  <rect x="190" y="210" width="132" height="78" rx="26" fill="#b8e840" />
+  <rect x="240" y="176" width="32" height="42" rx="12" fill="#b8e840" />
+  <rect x="211" y="232" width="34" height="28" rx="9" fill="#1c3612" opacity="0.5" />
+  <rect x="267" y="232" width="34" height="28" rx="9" fill="#1c3612" opacity="0.5" />
+  <path d="M209 275H303" stroke="#ffffff" stroke-linecap="round" stroke-width="6" opacity="0.18" />
 </svg>
