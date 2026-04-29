@@ -161,13 +161,13 @@ export async function GET() {
         {/* Footer */}
         <div
           style={{
-            borderTop: "1px solid rgba(140,200,80,0.08)",
-            color: "rgba(232,242,216,0.25)",
+            borderTop: "1px solid rgba(140,200,80,0.15)",
+            color: "rgba(232,242,216,0.55)",
             display: "flex",
-            fontSize: 16,
-            fontWeight: 600,
+            fontSize: 22,
+            fontWeight: 700,
             justifyContent: "space-between",
-            padding: "18px 80px"
+            padding: "22px 80px"
           }}
         >
           <span>urugo.app</span>
