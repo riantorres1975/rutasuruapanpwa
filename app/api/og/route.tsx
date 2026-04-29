@@ -58,7 +58,7 @@ export async function GET() {
             flexDirection: "column",
             flexGrow: 1,
             justifyContent: "center",
-            padding: "72px 80px",
+            padding: "40px 80px",
             position: "relative"
           }}
         >
@@ -73,7 +73,7 @@ export async function GET() {
               fontSize: 18,
               fontWeight: 700,
               letterSpacing: 3,
-              marginBottom: 36,
+              marginBottom: 20,
               padding: "8px 20px",
               textTransform: "uppercase",
               width: "auto"
@@ -90,7 +90,7 @@ export async function GET() {
               fontWeight: 900,
               letterSpacing: -4,
               lineHeight: 1,
-              marginBottom: 24
+              marginBottom: 16
             }}
           >
             <span style={{ color: "#e8f2d8" }}>Uru</span>
@@ -104,7 +104,7 @@ export async function GET() {
               fontSize: 32,
               fontWeight: 500,
               lineHeight: 1.4,
-              marginBottom: 52,
+              marginBottom: 28,
               maxWidth: 680
             }}
           >
