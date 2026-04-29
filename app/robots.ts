@@ -9,6 +9,10 @@ export default function robots(): MetadataRoute.Robots {
         userAgent: "*",
         allow: "/",
         disallow: ["/api/", "/mapa?*"]
+      },
+      {
+        userAgent: "facebookexternalhit",
+        allow: "/"
       }
     ],
     sitemap: `${baseUrl}/sitemap.xml`
