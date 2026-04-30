@@ -1098,6 +1098,10 @@ function MapComponent({
 
 
     const onRouteClick = (event: mapboxgl.MapLayerMouseEvent) => {
+      if (debugActive && (debugPhaseRef.current === "drawing" || debugPhaseRef.current === "preview")) {
+        return;
+      }
+
       const feature = event.features?.[0];
       const routeId = Number(feature?.properties?.id);
 
