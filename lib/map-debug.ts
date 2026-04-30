@@ -67,6 +67,19 @@ export function buildDebugPointsGeoJSON(
   return { type: "FeatureCollection", features };
 }
 
+export function replaceSegment(
+  coords: Coordinates[],
+  startIndex: number,
+  endIndex: number,
+  newSegment: Coordinates[]
+): Coordinates[] {
+  return [
+    ...coords.slice(0, startIndex),
+    ...newSegment,
+    ...coords.slice(endIndex + 1)
+  ];
+}
+
 export function exportRouteCoords(coordinates: Coordinates[], filename = "ruta-export.json"): void {
   const blob = new Blob([JSON.stringify(coordinates, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);

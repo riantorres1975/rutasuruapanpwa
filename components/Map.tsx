@@ -15,7 +15,7 @@ import type { Coordinates, RouteData } from "@/lib/types";
 
 type ArrowSegment = { coords: Coordinates[]; color: string; showLine?: boolean };
 import type { TransferOption } from "@/lib/transfers";
-import { isDebugMode, getClosestPoint, buildDebugPointsGeoJSON, exportRouteCoords } from "@/lib/map-debug";
+import { isDebugMode, getClosestPoint, buildDebugPointsGeoJSON, exportRouteCoords, replaceSegment } from "@/lib/map-debug";
 
 const LAYER_GLOW_ID = "routes-glow";
 const LAYER_LINE_ID = "routes-line";
@@ -46,6 +46,8 @@ const DEBUG_POINTS_CIRCLE = "debug-points-circle";
 const DEBUG_POINTS_LABEL = "debug-points-label";
 const DEBUG_SEGMENT_SOURCE = "debug-segment-source";
 const DEBUG_SEGMENT_LINE = "debug-segment-line";
+const DEBUG_DRAW_SOURCE = "debug-draw-source";
+const DEBUG_DRAW_LINE = "debug-draw-line";
 type RoutesMapMode = "all-visible" | "all-highlighted";
 const cameraEasing = (t: number) => 1 - (1 - t) ** 3;
 
@@ -738,9 +740,41 @@ function clearDebugSegmentLayer(map: mapboxgl.Map) {
   if (map.getSource(DEBUG_SEGMENT_SOURCE)) map.removeSource(DEBUG_SEGMENT_SOURCE);
 }
 
+function updateDrawLayer(map: mapboxgl.Map, segment: Coordinates[]) {
+  const geojson: GeoJSON.FeatureCollection<GeoJSON.LineString> = {
+    type: "FeatureCollection",
+    features: [{
+      type: "Feature",
+      properties: {},
+      geometry: { type: "LineString", coordinates: segment }
+    }]
+  };
+  const source = map.getSource(DEBUG_DRAW_SOURCE) as mapboxgl.GeoJSONSource | undefined;
+  if (source) {
+    source.setData(geojson);
+  } else {
+    map.addSource(DEBUG_DRAW_SOURCE, { type: "geojson", data: geojson });
+  }
+  if (!map.getLayer(DEBUG_DRAW_LINE)) {
+    map.addLayer({
+      id: DEBUG_DRAW_LINE,
+      type: "line",
+      source: DEBUG_DRAW_SOURCE,
+      layout: { "line-cap": "round", "line-join": "round" },
+      paint: { "line-color": "#22c55e", "line-width": 5, "line-opacity": 0.95 }
+    });
+  }
+}
+
+function clearDrawLayer(map: mapboxgl.Map) {
+  if (map.getLayer(DEBUG_DRAW_LINE)) map.removeLayer(DEBUG_DRAW_LINE);
+  if (map.getSource(DEBUG_DRAW_SOURCE)) map.removeSource(DEBUG_DRAW_SOURCE);
+}
+
 function clearAllDebugLayers(map: mapboxgl.Map) {
   clearDebugPointLayers(map);
   clearDebugSegmentLayer(map);
+  clearDrawLayer(map);
 }
 
 function MapComponent({
@@ -788,6 +822,8 @@ function MapComponent({
   const debugCoordsRef = useRef<Coordinates[]>([]);
   const debugStartIdxRef = useRef<number | null>(null);
   const debugStepRef = useRef(10);
+  const debugPhaseRef = useRef<"idle" | "awaiting-end" | "drawing" | "preview">("idle");
+  const debugDrawSegmentRef = useRef<Coordinates[]>([]);
 
   const [isLoading, setIsLoading] = useState(true);
   const [locationLoading, setLocationLoading] = useState(false);
@@ -796,8 +832,9 @@ function MapComponent({
   const [debugStep, setDebugStep] = useState(10);
   const [debugClickInfo, setDebugClickInfo] = useState<string | null>(null);
   const [debugSelection, setDebugSelection] = useState<[number, number] | null>(null);
-  const [debugPhase, setDebugPhase] = useState<"idle" | "awaiting-end">("idle");
+  const [debugPhase, setDebugPhase] = useState<"idle" | "awaiting-end" | "drawing" | "preview">("idle");
   const [debugTotalPoints, setDebugTotalPoints] = useState(0);
+  const [debugDrawCount, setDebugDrawCount] = useState(0);
 
   const mapToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
   const routeFeatures = useMemo(() => toFeatureCollection(routes), [routes]);
@@ -853,6 +890,10 @@ function MapComponent({
   useEffect(() => {
     debugStepRef.current = debugStep;
   }, [debugStep]);
+
+  useEffect(() => {
+    debugPhaseRef.current = debugPhase;
+  }, [debugPhase]);
 
   // Update direction arrows whenever arrowSegments changes
   useEffect(() => {
@@ -1104,6 +1145,16 @@ function MapComponent({
     };
 
     const onMapClick = (event: mapboxgl.MapMouseEvent) => {
+      if (debugActive && debugPhaseRef.current === "drawing") {
+        const pt: Coordinates = [event.lngLat.lng, event.lngLat.lat];
+        debugDrawSegmentRef.current = [...debugDrawSegmentRef.current, pt];
+        setDebugDrawCount(debugDrawSegmentRef.current.length);
+        if (debugDrawSegmentRef.current.length >= 2) {
+          updateDrawLayer(map, debugDrawSegmentRef.current);
+        }
+        return;
+      }
+
       if (debugActive && debugCoordsRef.current.length > 0) {
         const lngLat: [number, number] = [event.lngLat.lng, event.lngLat.lat];
         const result = getClosestPoint(lngLat, debugCoordsRef.current);
@@ -1608,6 +1659,12 @@ function MapComponent({
   }, [awaitingPick]);
 
   useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !debugActive) return;
+    map.getCanvas().style.cursor = debugPhase === "drawing" ? "crosshair" : "";
+  }, [debugActive, debugPhase]);
+
+  useEffect(() => {
     if (!debugActive) return;
     const map = mapRef.current;
     if (!map || !isMapReadyRef.current) return;
@@ -1836,7 +1893,7 @@ function MapComponent({
       </div>
 
       {debugActive && (
-        <aside className="absolute bottom-20 left-2.5 z-20 w-60 rounded-xl border border-amber-500/40 bg-slate-950/90 p-3 text-xs text-white shadow-soft backdrop-blur-xl">
+        <aside className="absolute bottom-20 left-2.5 z-20 w-64 rounded-xl border border-amber-500/40 bg-slate-950/90 p-3 text-xs text-white shadow-soft backdrop-blur-xl">
           <div className="mb-2 flex items-center justify-between">
             <span className="font-bold text-amber-400">⬡ DEBUG</span>
             {debugTotalPoints > 0 && (
@@ -1846,7 +1903,142 @@ function MapComponent({
 
           {selectedRouteId === null ? (
             <p className="text-slate-400">Selecciona una ruta para depurar</p>
+          ) : debugPhase === "drawing" ? (
+            /* ── Modo dibujo ── */
+            <>
+              <div className="mb-2 flex items-center gap-1.5">
+                <span className="h-2 w-2 animate-pulse rounded-full bg-green-400" />
+                <span className="font-semibold text-green-400">Dibujando</span>
+                <span className="ml-auto text-slate-400">{debugDrawCount} pts</span>
+              </div>
+              <p className="mb-2 text-slate-400">
+                Click en el mapa para agregar puntos al nuevo tramo
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                <button
+                  type="button"
+                  disabled={debugDrawCount === 0}
+                  onClick={() => {
+                    debugDrawSegmentRef.current = debugDrawSegmentRef.current.slice(0, -1);
+                    setDebugDrawCount(debugDrawSegmentRef.current.length);
+                    const map = mapRef.current;
+                    if (!map) return;
+                    if (debugDrawSegmentRef.current.length >= 2) {
+                      updateDrawLayer(map, debugDrawSegmentRef.current);
+                    } else {
+                      clearDrawLayer(map);
+                    }
+                  }}
+                  className="rounded bg-slate-700 px-2 py-1 transition hover:bg-slate-600 disabled:opacity-40"
+                >
+                  ↩ Deshacer
+                </button>
+                <button
+                  type="button"
+                  disabled={debugDrawCount < 2}
+                  onClick={() => {
+                    setDebugPhase("preview");
+                    debugPhaseRef.current = "preview";
+                  }}
+                  className="rounded bg-green-700 px-2 py-1 transition hover:bg-green-600 disabled:opacity-40"
+                >
+                  Finalizar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const map = mapRef.current;
+                    if (map) clearDrawLayer(map);
+                    debugDrawSegmentRef.current = [];
+                    setDebugDrawCount(0);
+                    setDebugPhase("idle");
+                    debugPhaseRef.current = "idle";
+                  }}
+                  className="rounded bg-slate-700 px-2 py-1 transition hover:bg-slate-600"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </>
+          ) : debugPhase === "preview" ? (
+            /* ── Vista previa ── */
+            <>
+              <div className="mb-2 rounded bg-slate-800/80 px-2 py-1.5 leading-snug">
+                <span className="text-red-400">Rojo</span>
+                {" → "}
+                <span className="text-green-400">Verde</span>
+                {" (nuevo tramo)"}
+              </div>
+              <p className="mb-2 text-slate-400">
+                Segmento original reemplazado por <span className="text-green-400">{debugDrawCount} puntos</span>
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!debugSelection) return;
+                    const map = mapRef.current;
+                    if (!map || selectedRouteId === null) return;
+                    const [s, e] = debugSelection;
+                    const newCoords = replaceSegment(debugCoordsRef.current, s, e, debugDrawSegmentRef.current);
+                    debugCoordsRef.current = newCoords;
+                    setDebugTotalPoints(newCoords.length);
+                    const featureIndex = routeFeaturesRef.current.features.findIndex(
+                      (f) => Number((f.properties as { id?: number })?.id) === selectedRouteId
+                    );
+                    if (featureIndex !== -1) {
+                      const updatedFeatures = routeFeaturesRef.current.features.map((f, i) =>
+                        i === featureIndex
+                          ? { ...f, geometry: { type: "LineString" as const, coordinates: newCoords } }
+                          : f
+                      ) as GeoJSON.Feature<GeoJSON.LineString>[];
+                      routeFeaturesRef.current = { type: "FeatureCollection", features: updatedFeatures };
+                      (map.getSource(SOURCE_ID) as mapboxgl.GeoJSONSource | undefined)
+                        ?.setData(routeFeaturesRef.current);
+                    }
+                    clearDrawLayer(map);
+                    clearDebugSegmentLayer(map);
+                    debugDrawSegmentRef.current = [];
+                    debugStartIdxRef.current = null;
+                    setDebugDrawCount(0);
+                    setDebugSelection(null);
+                    setDebugClickInfo(null);
+                    setDebugPhase("idle");
+                    debugPhaseRef.current = "idle";
+                    renderDebugPointLayer(map, newCoords, debugStepRef.current);
+                  }}
+                  className="rounded bg-green-700 px-2 py-1 font-semibold transition hover:bg-green-600"
+                >
+                  ✓ Aplicar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDebugPhase("drawing");
+                    debugPhaseRef.current = "drawing";
+                  }}
+                  className="rounded bg-slate-700 px-2 py-1 transition hover:bg-slate-600"
+                >
+                  ← Seguir dibujando
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const map = mapRef.current;
+                    if (map) clearDrawLayer(map);
+                    debugDrawSegmentRef.current = [];
+                    setDebugDrawCount(0);
+                    setDebugPhase("idle");
+                    debugPhaseRef.current = "idle";
+                  }}
+                  className="rounded bg-slate-700 px-2 py-1 transition hover:bg-slate-600"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </>
           ) : (
+            /* ── Modo selección (idle / awaiting-end) ── */
             <>
               <div className="mb-2 flex items-center gap-2">
                 <label className="shrink-0 text-slate-400">Paso</label>
@@ -1868,20 +2060,35 @@ function MapComponent({
 
               <div className="flex flex-wrap gap-1.5">
                 {debugSelection && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const map = mapRef.current;
-                      if (map) clearDebugSegmentLayer(map);
-                      debugStartIdxRef.current = null;
-                      setDebugSelection(null);
-                      setDebugClickInfo(null);
-                      setDebugPhase("idle");
-                    }}
-                    className="rounded bg-slate-700 px-2 py-1 transition hover:bg-slate-600"
-                  >
-                    Limpiar
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        debugDrawSegmentRef.current = [];
+                        setDebugDrawCount(0);
+                        setDebugPhase("drawing");
+                        debugPhaseRef.current = "drawing";
+                      }}
+                      className="rounded bg-green-800 px-2 py-1 transition hover:bg-green-700"
+                    >
+                      ✏ Editar segmento
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const map = mapRef.current;
+                        if (map) clearDebugSegmentLayer(map);
+                        debugStartIdxRef.current = null;
+                        setDebugSelection(null);
+                        setDebugClickInfo(null);
+                        setDebugPhase("idle");
+                        debugPhaseRef.current = "idle";
+                      }}
+                      className="rounded bg-slate-700 px-2 py-1 transition hover:bg-slate-600"
+                    >
+                      Limpiar
+                    </button>
+                  </>
                 )}
                 <button
                   type="button"
