@@ -835,6 +835,7 @@ function MapComponent({
   const [debugPhase, setDebugPhase] = useState<"idle" | "awaiting-end" | "drawing" | "preview">("idle");
   const [debugTotalPoints, setDebugTotalPoints] = useState(0);
   const [debugDrawCount, setDebugDrawCount] = useState(0);
+  const [debugSaveStatus, setDebugSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
   const mapToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
   const routeFeatures = useMemo(() => toFeatureCollection(routes), [routes]);
@@ -1688,6 +1689,8 @@ function MapComponent({
       setDebugClickInfo(null);
       setDebugSelection(null);
       setDebugPhase("idle");
+      debugPhaseRef.current = "idle";
+      setDebugSaveStatus("idle");
       clearDebugSegmentLayer(map);
     }
 
@@ -2097,6 +2100,35 @@ function MapComponent({
                   className="rounded bg-amber-700 px-2 py-1 transition hover:bg-amber-600 disabled:opacity-40"
                 >
                   Exportar
+                </button>
+                <button
+                  type="button"
+                  disabled={debugTotalPoints === 0 || debugSaveStatus === "saving"}
+                  onClick={async () => {
+                    const route = routes.find((r) => r.id === selectedRouteId);
+                    if (!route) return;
+                    setDebugSaveStatus("saving");
+                    try {
+                      const res = await fetch("/api/debug/save-route", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ nombre: route.nombre, coordenadas: debugCoordsRef.current })
+                      });
+                      setDebugSaveStatus(res.ok ? "saved" : "error");
+                    } catch {
+                      setDebugSaveStatus("error");
+                    }
+                    setTimeout(() => setDebugSaveStatus("idle"), 3000);
+                  }}
+                  className={`rounded px-2 py-1 transition disabled:opacity-40 ${
+                    debugSaveStatus === "saved"
+                      ? "bg-green-700"
+                      : debugSaveStatus === "error"
+                        ? "bg-red-700"
+                        : "bg-blue-700 hover:bg-blue-600"
+                  }`}
+                >
+                  {debugSaveStatus === "saving" ? "..." : debugSaveStatus === "saved" ? "✓ Guardado" : debugSaveStatus === "error" ? "✗ Error" : "Guardar"}
                 </button>
               </div>
 
