@@ -1201,9 +1201,16 @@ export default function HomePage() {
                     {bestSuggestionEta} min aprox
                   </span>
                   {suggestions.length > 1 && (
-                    <span className="ov-pill ov-border ov-text-muted inline-flex items-center rounded-lg border px-2.5 py-1 text-[12px] font-medium">
+                    <button
+                      type="button"
+                      onClick={() => { if (isMobile) { setIsResultSheetOpen(false); setTimeout(() => setIsSheetOpen(true), 50); } }}
+                      className={`ov-pill ov-border ov-text-muted inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-[12px] font-medium transition active:scale-[0.97] hover:border-lima/40 hover:text-lima ${isMobile ? "cursor-pointer" : "cursor-default"}`}
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3" aria-hidden="true">
+                        <path d="M9 20l-5.447-2.724A1 1 0 0 1 3 16.382V5.618a1 1 0 0 1 1.447-.894L9 7m0 13V7m0 13 6-3M9 7l6-3m6 17V4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
                       +{suggestions.length - 1} alternativa{suggestions.length > 2 ? "s" : ""}
-                    </span>
+                    </button>
                   )}
                 </div>
                 <div className="mt-3 flex items-center gap-2">
