@@ -88,10 +88,38 @@ export default function RouteList({
     [nearbyRouteIds]
   );
 
+  const suggestedRankMap = useMemo(
+    () => new Map(suggestedRouteIds.map((id, i) => [id, i])),
+    [suggestedRouteIds]
+  );
+  const hasSuggested = suggestedRouteIds.length > 0;
+
   const filteredRoutes = useMemo(() => {
     const base = normalizedQuery
       ? fuse.search(normalizedQuery).map((result) => result.item)
       : searchableRoutes;
+
+    // When there are suggestions, pin them to top (best first), then nearby, then rest
+    if (hasSuggested && !normalizedQuery) {
+      const suggested: ResolvedRouteData[] = [];
+      const nearby: ResolvedRouteData[] = [];
+      const rest: ResolvedRouteData[] = [];
+
+      for (const route of base) {
+        if (suggestedRankMap.has(route.id)) {
+          suggested.push(route);
+        } else if (nearbyRankMap.has(route.id)) {
+          nearby.push(route);
+        } else {
+          rest.push(route);
+        }
+      }
+
+      suggested.sort((a, b) => (suggestedRankMap.get(a.id) ?? 0) - (suggestedRankMap.get(b.id) ?? 0));
+      nearby.sort((a, b) => (nearbyRankMap.get(a.id) ?? 0) - (nearbyRankMap.get(b.id) ?? 0));
+
+      return [...suggested, ...nearby, ...rest];
+    }
 
     if (!hasNearby) return base;
 
@@ -107,11 +135,10 @@ export default function RouteList({
       }
     }
 
-    // Keep the distance-sorted order from nearbyRouteIds
     nearby.sort((a, b) => (nearbyRankMap.get(a.id) ?? 0) - (nearbyRankMap.get(b.id) ?? 0));
 
     return [...nearby, ...rest];
-  }, [normalizedQuery, searchableRoutes, hasNearby, nearbyRankMap, fuse]);
+  }, [normalizedQuery, searchableRoutes, hasNearby, hasSuggested, suggestedRankMap, nearbyRankMap, fuse]);
 
   return (
     <div className="space-y-5">
