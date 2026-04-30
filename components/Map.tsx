@@ -2105,14 +2105,18 @@ function MapComponent({
                   type="button"
                   disabled={debugTotalPoints === 0 || debugSaveStatus === "saving"}
                   onClick={async () => {
-                    const route = routes.find((r) => r.id === selectedRouteId);
+                    const route = routes.find((r) => r.id === selectedRouteId) as (typeof routes[0] & { ruta?: string; direccion?: string }) | undefined;
                     if (!route) return;
                     setDebugSaveStatus("saving");
                     try {
                       const res = await fetch("/api/debug/save-route", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ nombre: route.nombre, coordenadas: debugCoordsRef.current })
+                        body: JSON.stringify({
+                          ruta: route.ruta ?? route.nombre,
+                          direccion: route.direccion ?? "ida",
+                          coordenadas: debugCoordsRef.current
+                        })
                       });
                       setDebugSaveStatus(res.ok ? "saved" : "error");
                     } catch {
