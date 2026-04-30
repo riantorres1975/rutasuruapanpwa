@@ -10,9 +10,8 @@ import type { ResolvedRouteData, RouteDirection } from "@/lib/types";
 type RouteListProps = {
   routes: ResolvedRouteData[];
   isLoading?: boolean;
-  direction: RouteDirection;
-  onDirectionChange: (direction: RouteDirection) => void;
   suggestedRouteIds: number[];
+  suggestedRouteDirections?: Map<number, RouteDirection>;
   bestSuggestedRouteId: number | null;
   nearbyRouteIds: number[];
   selectedRouteId: number | null;
@@ -24,9 +23,8 @@ type RouteListProps = {
 export default function RouteList({
   routes,
   isLoading = false,
-  direction,
-  onDirectionChange,
   suggestedRouteIds,
+  suggestedRouteDirections,
   bestSuggestedRouteId,
   nearbyRouteIds,
   selectedRouteId,
@@ -137,36 +135,10 @@ export default function RouteList({
           )}
         </div>
 
-        {/* Direction toggle + route count on same row */}
-        <div className="flex items-center gap-3">
-          <div className="ov-pill ov-border inline-flex rounded-xl border p-1">
-            <button
-              type="button"
-              onClick={() => onDirectionChange("ida")}
-              className={`h-9 rounded-lg px-4 text-[13px] font-semibold transition active:scale-[0.97] ${
-                direction === "ida"
-                  ? "bg-verde text-white shadow-sm"
-                  : "ov-text-muted hover:opacity-80"
-              }`}
-            >
-              Ida
-            </button>
-            <button
-              type="button"
-              onClick={() => onDirectionChange("vuelta")}
-              className={`h-9 rounded-lg px-4 text-[13px] font-semibold transition active:scale-[0.97] ${
-                direction === "vuelta"
-                  ? "bg-verde text-white shadow-sm"
-                  : "ov-text-muted hover:opacity-80"
-              }`}
-            >
-              Vuelta
-            </button>
-          </div>
-          <span className="ov-text-muted text-[12px] font-medium">
-            {filteredRoutes.length} ruta{filteredRoutes.length !== 1 ? "s" : ""}
-          </span>
-        </div>
+        {/* Route count */}
+        <span className="ov-text-muted text-[12px] font-medium">
+          {filteredRoutes.length} ruta{filteredRoutes.length !== 1 ? "s" : ""}
+        </span>
       </div>
 
       <div className="space-y-2">
@@ -284,6 +256,7 @@ export default function RouteList({
             const isBestSuggestion = bestSuggestedRouteId === route.id;
             const nearbyRank = nearbyRankMap.get(route.id);
             const isNearby = nearbyRank !== undefined;
+            const suggestionDir = suggestedRouteDirections?.get(route.id);
 
             // Divider between nearby block and rest (only first non-nearby item)
             const prevRoute = filteredRoutes[listIndex - 1];
@@ -365,6 +338,11 @@ export default function RouteList({
                     {isBestSuggestion && (
                       <span className="rounded-full bg-lima/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-lima">
                         MEJOR
+                      </span>
+                    )}
+                    {isSuggested && suggestionDir !== undefined && (
+                      <span className="rounded-full bg-sky-500/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-sky-400">
+                        {suggestionDir === "ida" ? "IDA" : "VUELTA"}
                       </span>
                     )}
                     {isSelected && <span className="rounded-full bg-lima/15 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-lima">ACTIVA</span>}

@@ -317,12 +317,60 @@ function computeRouteOption(route: ResolvedRouteData, originPoint: Coordinates, 
   } satisfies RouteOption;
 }
 
-function computeRouteSuggestions(routes: ResolvedRouteData[], originPoint: Coordinates, destinationPoint: Coordinates) {
-  return routes
-    .map((route) => computeRouteOption(route, originPoint, destinationPoint))
-    .filter((item): item is RouteOption => item !== null)
+function computeRouteSuggestions(
+  routes: ResolvedRouteData[],
+  groupedRoutes: GroupedRouteData[],
+  originPoint: Coordinates,
+  destinationPoint: Coordinates
+) {
+  // For each route in fullRoutes, also evaluate the opposite direction coords.
+  // We build a flat list of (route-with-possibly-alternate-coords, routeId).
+  type Candidate = { route: ResolvedRouteData; routeId: number };
+  const candidates: Candidate[] = [];
+
+  for (const route of routes) {
+    // The route already has coords for the active direction
+    candidates.push({ route, routeId: route.id });
+
+    // Find the grouped source to get the opposite direction coords
+    // routes[i].id === i+1 based on the groupedRoutes.map((r,i) => ({id: i+1,...})) logic,
+    // but filtered — so we match by ruta name (unique per grouped entry)
+    const grouped = groupedRoutes.find((g) => g.ruta === route.ruta);
+    if (!grouped) continue;
+
+    const oppositeDir: RouteDirection = route.direccion === "ida" ? "vuelta" : "ida";
+    const oppositeCoords = oppositeDir === "ida" ? grouped.ida ?? [] : grouped.vuelta ?? [];
+    if (oppositeCoords.length <= 1) continue;
+
+    candidates.push({
+      route: { ...route, coordenadas: oppositeCoords, direccion: oppositeDir },
+      routeId: route.id
+    });
+  }
+
+  type OptionWithId = RouteOption & { _routeId: number };
+
+  const allOptions = candidates
+    .map(({ route, routeId }) => {
+      const option = computeRouteOption(route, originPoint, destinationPoint);
+      if (!option) return null;
+      return { ...option, _routeId: routeId } as OptionWithId;
+    })
+    .filter((item): item is OptionWithId => item !== null);
+
+  // Deduplicate: keep best score per routeId
+  const bestByRouteId = new Map<number, OptionWithId>();
+  for (const option of allOptions) {
+    const existing = bestByRouteId.get(option._routeId);
+    if (!existing || option.score < existing.score) {
+      bestByRouteId.set(option._routeId, option);
+    }
+  }
+
+  return Array.from(bestByRouteId.values())
     .sort((a, b) => a.score - b.score)
-    .slice(0, 3);
+    .slice(0, 3)
+    .map(({ _routeId, ...rest }) => ({ ...rest, routeId: _routeId }));
 }
 
 function getEstimatedMinutes(segment: Coordinates[]) {
@@ -825,7 +873,7 @@ export default function HomePage() {
     setIsCalculatingSuggestions(true);
 
     const timer = window.setTimeout(() => {
-      const nextSuggestions = computeRouteSuggestions(fullRoutes, originPoint, destinationPoint);
+      const nextSuggestions = computeRouteSuggestions(fullRoutes, groupedRoutes, originPoint, destinationPoint);
       setSuggestions(nextSuggestions);
       const nextTransfers =
         nextSuggestions.length === 0
@@ -841,6 +889,10 @@ export default function HomePage() {
   }, [destinationPoint, fullRoutes, originPoint]);
 
   const suggestedRouteIds = useMemo(() => suggestions.map((item) => item.routeId), [suggestions]);
+  const suggestedRouteDirections = useMemo(
+    () => new Map(suggestions.map((item) => [item.routeId, item.direccion])),
+    [suggestions]
+  );
   const bestSuggestion = suggestions[0] ?? null;
   const selectedSuggestion = useMemo(
     () => suggestions.find((item) => item.routeId === selectedRouteId) ?? null,
@@ -1153,7 +1205,7 @@ export default function HomePage() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => { setSelectedRouteId(bestSuggestion.routeId); setShowHint(false); }}
+                    onClick={() => { setSelectedRouteId(bestSuggestion.routeId); setShowHint(false); if (isMobile) setIsResultSheetOpen(false); }}
                     className="inline-flex h-10 flex-[2] items-center justify-center gap-1.5 rounded-xl bg-verde text-[12px] font-bold text-white shadow-[0_2px_12px_rgba(232,93,47,0.35)] transition active:scale-[0.97]"
                   >
                     <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
@@ -1250,16 +1302,6 @@ export default function HomePage() {
                     <p className="ov-text-muted mt-0.5 text-[12px] leading-snug">Ajusta alguno de los puntos e intenta de nuevo.</p>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setSelectedDirection((d) => (d === "ida" ? "vuelta" : "ida"))}
-                  className="mt-3 inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-lima/25 bg-lima/8 text-[12px] font-semibold text-lima transition active:scale-[0.97]"
-                >
-                  <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0" aria-hidden="true">
-                    <path d="M4 17h16M4 17l4-4m-4 4 4 4M20 7H4M20 7l-4-4m4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                  Probar en dirección {selectedDirection === "ida" ? "vuelta" : "ida"}
-                </button>
                 <button
                   type="button"
                   onClick={() => { setActivePoint("destination"); setShowHint(true); }}
@@ -1464,9 +1506,8 @@ export default function HomePage() {
           <RouteList
             routes={fullRoutes}
             isLoading={isLoadingData}
-            direction={selectedDirection}
-            onDirectionChange={setSelectedDirection}
             suggestedRouteIds={suggestedRouteIds}
+            suggestedRouteDirections={suggestedRouteDirections}
             bestSuggestedRouteId={bestSuggestion?.routeId ?? null}
             nearbyRouteIds={nearbyRouteIds}
             selectedRouteId={selectedRouteId}
@@ -1721,9 +1762,8 @@ export default function HomePage() {
         <RouteList
           routes={fullRoutes}
           isLoading={isLoadingData}
-          direction={selectedDirection}
-          onDirectionChange={setSelectedDirection}
           suggestedRouteIds={suggestedRouteIds}
+          suggestedRouteDirections={suggestedRouteDirections}
           bestSuggestedRouteId={bestSuggestion?.routeId ?? null}
           nearbyRouteIds={nearbyRouteIds}
           selectedRouteId={selectedRouteId}
