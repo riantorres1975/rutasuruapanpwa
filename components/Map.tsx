@@ -15,6 +15,7 @@ import type { Coordinates, RouteData } from "@/lib/types";
 
 type ArrowSegment = { coords: Coordinates[]; color: string; showLine?: boolean };
 import type { TransferOption } from "@/lib/transfers";
+import { isDebugMode, getClosestPoint, buildDebugPointsGeoJSON, exportRouteCoords } from "@/lib/map-debug";
 
 const LAYER_GLOW_ID = "routes-glow";
 const LAYER_LINE_ID = "routes-line";
@@ -40,6 +41,11 @@ const MIN_DRAW_DURATION = 1200;
 const MAX_DRAW_DURATION = 1800;
 const SHORT_ROUTE_THRESHOLD = 24;
 const IDLE_ROUTE_OPACITY = 0.35;
+const DEBUG_POINTS_SOURCE = "debug-points-source";
+const DEBUG_POINTS_CIRCLE = "debug-points-circle";
+const DEBUG_POINTS_LABEL = "debug-points-label";
+const DEBUG_SEGMENT_SOURCE = "debug-segment-source";
+const DEBUG_SEGMENT_LINE = "debug-segment-line";
 type RoutesMapMode = "all-visible" | "all-highlighted";
 const cameraEasing = (t: number) => 1 - (1 - t) ** 3;
 
@@ -648,6 +654,95 @@ function buildArrowsGeoJSON(segments: ArrowSegment[]): GeoJSON.FeatureCollection
   };
 }
 
+function renderDebugPointLayer(map: mapboxgl.Map, coordinates: Coordinates[], step: number) {
+  const geojson = buildDebugPointsGeoJSON(coordinates, step);
+  const source = map.getSource(DEBUG_POINTS_SOURCE) as mapboxgl.GeoJSONSource | undefined;
+  if (source) {
+    source.setData(geojson);
+  } else {
+    map.addSource(DEBUG_POINTS_SOURCE, { type: "geojson", data: geojson });
+  }
+  if (!map.getLayer(DEBUG_POINTS_CIRCLE)) {
+    map.addLayer({
+      id: DEBUG_POINTS_CIRCLE,
+      type: "circle",
+      source: DEBUG_POINTS_SOURCE,
+      paint: {
+        "circle-radius": 5,
+        "circle-color": "#f59e0b",
+        "circle-stroke-color": "#1a1a1a",
+        "circle-stroke-width": 1.5,
+        "circle-opacity": 0.9
+      }
+    });
+  }
+  if (!map.getLayer(DEBUG_POINTS_LABEL)) {
+    map.addLayer({
+      id: DEBUG_POINTS_LABEL,
+      type: "symbol",
+      source: DEBUG_POINTS_SOURCE,
+      layout: {
+        "text-field": ["get", "label"],
+        "text-size": 10,
+        "text-offset": [0, -1.2],
+        "text-anchor": "bottom",
+        "text-allow-overlap": true,
+        "text-ignore-placement": true
+      },
+      paint: {
+        "text-color": "#f59e0b",
+        "text-halo-color": "#000",
+        "text-halo-width": 1.5
+      }
+    });
+  }
+}
+
+function clearDebugPointLayers(map: mapboxgl.Map) {
+  for (const layer of [DEBUG_POINTS_CIRCLE, DEBUG_POINTS_LABEL]) {
+    if (map.getLayer(layer)) map.removeLayer(layer);
+  }
+  if (map.getSource(DEBUG_POINTS_SOURCE)) map.removeSource(DEBUG_POINTS_SOURCE);
+}
+
+function renderDebugSegment(map: mapboxgl.Map, coordinates: Coordinates[], startIdx: number, endIdx: number) {
+  const s = Math.min(startIdx, endIdx);
+  const e = Math.max(startIdx, endIdx);
+  const geojson: GeoJSON.FeatureCollection<GeoJSON.LineString> = {
+    type: "FeatureCollection",
+    features: [{
+      type: "Feature",
+      properties: { start: s, end: e },
+      geometry: { type: "LineString", coordinates: coordinates.slice(s, e + 1) }
+    }]
+  };
+  const source = map.getSource(DEBUG_SEGMENT_SOURCE) as mapboxgl.GeoJSONSource | undefined;
+  if (source) {
+    source.setData(geojson);
+  } else {
+    map.addSource(DEBUG_SEGMENT_SOURCE, { type: "geojson", data: geojson });
+  }
+  if (!map.getLayer(DEBUG_SEGMENT_LINE)) {
+    map.addLayer({
+      id: DEBUG_SEGMENT_LINE,
+      type: "line",
+      source: DEBUG_SEGMENT_SOURCE,
+      layout: { "line-cap": "round", "line-join": "round" },
+      paint: { "line-color": "#ef4444", "line-width": 6, "line-opacity": 0.95 }
+    });
+  }
+}
+
+function clearDebugSegmentLayer(map: mapboxgl.Map) {
+  if (map.getLayer(DEBUG_SEGMENT_LINE)) map.removeLayer(DEBUG_SEGMENT_LINE);
+  if (map.getSource(DEBUG_SEGMENT_SOURCE)) map.removeSource(DEBUG_SEGMENT_SOURCE);
+}
+
+function clearAllDebugLayers(map: mapboxgl.Map) {
+  clearDebugPointLayers(map);
+  clearDebugSegmentLayer(map);
+}
+
 function MapComponent({
   routes,
   selectedRouteId,
@@ -690,10 +785,19 @@ function MapComponent({
   const transferRouteIdsRef = useRef<number[]>(
     selectedTransfer ? [selectedTransfer.routeAId, selectedTransfer.routeBId] : []
   );
+  const debugCoordsRef = useRef<Coordinates[]>([]);
+  const debugStartIdxRef = useRef<number | null>(null);
+  const debugStepRef = useRef(10);
 
   const [isLoading, setIsLoading] = useState(true);
   const [locationLoading, setLocationLoading] = useState(false);
   const [locationAccuracy, setLocationAccuracy] = useState<number | null>(null);
+  const [debugActive] = useState(isDebugMode);
+  const [debugStep, setDebugStep] = useState(10);
+  const [debugClickInfo, setDebugClickInfo] = useState<string | null>(null);
+  const [debugSelection, setDebugSelection] = useState<[number, number] | null>(null);
+  const [debugPhase, setDebugPhase] = useState<"idle" | "awaiting-end">("idle");
+  const [debugTotalPoints, setDebugTotalPoints] = useState(0);
 
   const mapToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
   const routeFeatures = useMemo(() => toFeatureCollection(routes), [routes]);
@@ -745,6 +849,10 @@ function MapComponent({
   useEffect(() => {
     arrowSegmentsRef.current = arrowSegments;
   }, [arrowSegments]);
+
+  useEffect(() => {
+    debugStepRef.current = debugStep;
+  }, [debugStep]);
 
   // Update direction arrows whenever arrowSegments changes
   useEffect(() => {
@@ -996,6 +1104,38 @@ function MapComponent({
     };
 
     const onMapClick = (event: mapboxgl.MapMouseEvent) => {
+      if (debugActive && debugCoordsRef.current.length > 0) {
+        const lngLat: [number, number] = [event.lngLat.lng, event.lngLat.lat];
+        const result = getClosestPoint(lngLat, debugCoordsRef.current);
+        if (!result) return;
+
+        if (debugStartIdxRef.current === null) {
+          debugStartIdxRef.current = result.index;
+          setDebugClickInfo(
+            `#${result.index}  [${result.coord[0].toFixed(5)}, ${result.coord[1].toFixed(5)}]  ${Math.round(result.distanceM)} m`
+          );
+          setDebugPhase("awaiting-end");
+          setDebugSelection(null);
+          clearDebugSegmentLayer(map);
+        } else {
+          const startIdx = debugStartIdxRef.current;
+          const endIdx = result.index;
+          debugStartIdxRef.current = null;
+          setDebugPhase("idle");
+          if (startIdx === endIdx) {
+            setDebugClickInfo(null);
+            setDebugSelection(null);
+            return;
+          }
+          renderDebugSegment(map, debugCoordsRef.current, startIdx, endIdx);
+          const s = Math.min(startIdx, endIdx);
+          const e = Math.max(startIdx, endIdx);
+          setDebugSelection([s, e]);
+          setDebugClickInfo(`Segmento ${s}→${e}  (${e - s + 1} puntos)`);
+        }
+        return;
+      }
+
       const hitFeature = map.queryRenderedFeatures(event.point, { layers: [LAYER_HIT_ID] });
       if (hitFeature.length > 0) {
         return;
@@ -1211,6 +1351,9 @@ function MapComponent({
             }
           });
         }
+        if (debugActive && debugCoordsRef.current.length > 0) {
+          renderDebugPointLayer(map, debugCoordsRef.current, debugStepRef.current);
+        }
       });
     });
     themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
@@ -1235,6 +1378,7 @@ function MapComponent({
         map.off("mousemove", LAYER_HIT_ID, onRouteMove);
         map.off("mouseleave", LAYER_HIT_ID, onRouteLeave);
       }
+      clearAllDebugLayers(map);
       map.remove();
       isMapReadyRef.current = false;
       mapRef.current = null;
@@ -1463,6 +1607,38 @@ function MapComponent({
     }
   }, [awaitingPick]);
 
+  useEffect(() => {
+    if (!debugActive) return;
+    const map = mapRef.current;
+    if (!map || !isMapReadyRef.current) return;
+
+    if (selectedRouteId === null) {
+      clearAllDebugLayers(map);
+      debugCoordsRef.current = [];
+      debugStartIdxRef.current = null;
+      setDebugClickInfo(null);
+      setDebugSelection(null);
+      setDebugPhase("idle");
+      setDebugTotalPoints(0);
+      return;
+    }
+
+    const route = routes.find((r) => r.id === selectedRouteId);
+    if (!route) return;
+
+    if (debugCoordsRef.current !== route.coordenadas) {
+      debugStartIdxRef.current = null;
+      setDebugClickInfo(null);
+      setDebugSelection(null);
+      setDebugPhase("idle");
+      clearDebugSegmentLayer(map);
+    }
+
+    debugCoordsRef.current = route.coordenadas;
+    setDebugTotalPoints(route.coordenadas.length);
+    renderDebugPointLayer(map, route.coordenadas, debugStep);
+  }, [debugActive, debugStep, isLoading, routes, selectedRouteId]);
+
   const handleLocateMe = () => {
     const map = mapRef.current;
     if (!map || !navigator.geolocation) {
@@ -1658,6 +1834,72 @@ function MapComponent({
           </div>
         )}
       </div>
+
+      {debugActive && (
+        <aside className="absolute bottom-20 left-2.5 z-20 w-60 rounded-xl border border-amber-500/40 bg-slate-950/90 p-3 text-xs text-white shadow-soft backdrop-blur-xl">
+          <div className="mb-2 flex items-center justify-between">
+            <span className="font-bold text-amber-400">⬡ DEBUG</span>
+            {debugTotalPoints > 0 && (
+              <span className="text-slate-400">{debugTotalPoints} pts</span>
+            )}
+          </div>
+
+          {selectedRouteId === null ? (
+            <p className="text-slate-400">Selecciona una ruta para depurar</p>
+          ) : (
+            <>
+              <div className="mb-2 flex items-center gap-2">
+                <label className="shrink-0 text-slate-400">Paso</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={100}
+                  value={debugStep}
+                  onChange={(e) => setDebugStep(Math.max(1, Math.min(100, Number(e.target.value) || 1)))}
+                  className="w-14 rounded border border-slate-600 bg-slate-800 px-1.5 py-0.5 text-white"
+                />
+              </div>
+
+              {debugClickInfo && (
+                <div className="mb-2 rounded bg-slate-800/80 px-2 py-1.5 font-mono leading-snug text-slate-200">
+                  {debugClickInfo}
+                </div>
+              )}
+
+              <div className="flex flex-wrap gap-1.5">
+                {debugSelection && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const map = mapRef.current;
+                      if (map) clearDebugSegmentLayer(map);
+                      debugStartIdxRef.current = null;
+                      setDebugSelection(null);
+                      setDebugClickInfo(null);
+                      setDebugPhase("idle");
+                    }}
+                    className="rounded bg-slate-700 px-2 py-1 transition hover:bg-slate-600"
+                  >
+                    Limpiar
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => exportRouteCoords(debugCoordsRef.current)}
+                  disabled={debugTotalPoints === 0}
+                  className="rounded bg-amber-700 px-2 py-1 transition hover:bg-amber-600 disabled:opacity-40"
+                >
+                  Exportar
+                </button>
+              </div>
+
+              <p className="mt-2 text-slate-500">
+                {debugPhase === "awaiting-end" ? "▶ Click para punto fin" : "▷ Click para punto inicio"}
+              </p>
+            </>
+          )}
+        </aside>
+      )}
     </section>
   );
 }
