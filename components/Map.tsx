@@ -749,7 +749,10 @@ function MapComponent({
   // Update direction arrows whenever arrowSegments changes
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !isMapReadyRef.current) return;
+    if (!map) return;
+    // Wait for map to be ready; if not yet, the onLoad callback will call ensureRouteLayers
+    // which sets up the source — but arrows are added separately so we just queue via setTimeout
+    if (!isMapReadyRef.current) return;
 
     const geojson = buildArrowsGeoJSON(arrowSegments);
     const source = map.getSource(ARROWS_SOURCE) as mapboxgl.GeoJSONSource | undefined;
@@ -782,20 +785,22 @@ function MapComponent({
         source: ARROWS_SOURCE,
         layout: {
           "symbol-placement": "line",
-          "symbol-spacing": 80,
+          "symbol-spacing": 60,
+          "symbol-avoid-edges": false,
           "text-field": "▶",
-          "text-size": 14,
+          "text-size": 16,
           "text-keep-upright": false,
           "text-rotation-alignment": "map",
           "text-pitch-alignment": "map",
           "text-allow-overlap": true,
-          "text-ignore-placement": true
+          "text-ignore-placement": true,
+          "text-offset": [0, 0]
         },
         paint: {
           "text-color": ["get", "color"],
-          "text-opacity": 0.9,
-          "text-halo-color": "rgba(0,0,0,0.55)",
-          "text-halo-width": 1.2
+          "text-opacity": 1,
+          "text-halo-color": "rgba(0,0,0,0.7)",
+          "text-halo-width": 1.5
         }
       });
     }
@@ -1187,20 +1192,22 @@ function MapComponent({
             source: ARROWS_SOURCE,
             layout: {
               "symbol-placement": "line",
-              "symbol-spacing": 80,
+              "symbol-spacing": 60,
+              "symbol-avoid-edges": false,
               "text-field": "▶",
-              "text-size": 14,
+              "text-size": 16,
               "text-keep-upright": false,
               "text-rotation-alignment": "map",
               "text-pitch-alignment": "map",
               "text-allow-overlap": true,
-              "text-ignore-placement": true
+              "text-ignore-placement": true,
+              "text-offset": [0, 0]
             },
             paint: {
               "text-color": ["get", "color"],
-              "text-opacity": 0.9,
-              "text-halo-color": "rgba(0,0,0,0.55)",
-              "text-halo-width": 1.2
+              "text-opacity": 1,
+              "text-halo-color": "rgba(0,0,0,0.7)",
+              "text-halo-width": 1.5
             }
           });
         }
@@ -1343,7 +1350,10 @@ function MapComponent({
           (feature) => Number((feature.properties as { id?: number })?.id) === selectedRouteId
         );
 
-        if (featureIndex !== -1 && selectedCoordinates.length > SHORT_ROUTE_THRESHOLD) {
+        // Skip draw animation when arrow segments are providing the visual lines (ida+vuelta mode)
+        const hasArrowLines = arrowSegmentsRef.current.some((s) => s.showLine);
+
+        if (!hasArrowLines && featureIndex !== -1 && selectedCoordinates.length > SHORT_ROUTE_THRESHOLD) {
           const duration = getDrawDuration(selectedCoordinates.length);
           const token = animationTokenRef.current + 1;
           animationTokenRef.current = token;
