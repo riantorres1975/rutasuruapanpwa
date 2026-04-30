@@ -1744,15 +1744,24 @@ export default function HomePage() {
             type="button"
             onClick={() => setIsSheetOpen(true)}
             className="ov-panel inline-flex h-12 items-center gap-2 rounded-2xl border pl-3.5 pr-4 text-[14px] font-semibold shadow-[0_8px_32px_rgba(0,0,0,0.3)] backdrop-blur-xl transition hover:border-lima/40 hover:shadow-[0_8px_32px_rgba(232,93,47,0.15)] active:scale-[0.97]"
-            aria-label={`Rutas ${fullRoutes.length}, ver rutas disponibles`}
+            aria-label={selectedRoute ? `Ruta activa: ${formatRouteLabel(selectedRoute.nombre, selectedRoute.ruta)}` : `Rutas ${fullRoutes.length}, ver rutas disponibles`}
           >
-            <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 text-lima" aria-hidden="true">
-              <path d="M4 7H20M4 12H20M4 17H14" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
-            </svg>
-            <span className="ov-text">Rutas</span>
-            <span className="ml-0.5 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-lima/20 px-1.5 text-[11px] font-bold text-lima">
-              {fullRoutes.length}
-            </span>
+            {selectedRoute ? (
+              <>
+                <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: selectedRoute.color }} aria-hidden="true" />
+                <span className="ov-text max-w-[120px] truncate">{formatRouteLabel(selectedRoute.nombre, selectedRoute.ruta)}</span>
+              </>
+            ) : (
+              <>
+                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 text-lima" aria-hidden="true">
+                  <path d="M4 7H20M4 12H20M4 17H14" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+                </svg>
+                <span className="ov-text">Rutas</span>
+                <span className="ml-0.5 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-lima/20 px-1.5 text-[11px] font-bold text-lima">
+                  {fullRoutes.length}
+                </span>
+              </>
+            )}
           </button>
         </div>
       </div>
