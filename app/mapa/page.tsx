@@ -14,7 +14,7 @@ import OnboardingOverlay from "@/components/OnboardingOverlay";
 import RouteList from "@/components/RouteList";
 import RouteSchedule from "@/components/RouteSchedule";
 import { useShareRoute } from "@/hooks/useShareRoute";
-import { formatRouteLabel } from "@/lib/route-names";
+import { formatRouteLabel, getRouteDestination } from "@/lib/route-names";
 import type { Coordinates, GroupedRouteData, ResolvedRouteData, RouteDirection } from "@/lib/types";
 import { computeTransferOptions } from "@/lib/transfers";
 import type { TransferOption } from "@/lib/transfers";
@@ -1749,7 +1749,12 @@ export default function HomePage() {
             {selectedRoute ? (
               <>
                 <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: selectedRoute.color }} aria-hidden="true" />
-                <span className="ov-text max-w-[120px] truncate">{formatRouteLabel(selectedRoute.nombre, selectedRoute.ruta)}</span>
+                <span className="flex min-w-0 flex-col">
+                  <span className="ov-text-muted text-[10px] font-semibold leading-none">{selectedRoute.ruta}</span>
+                  <span className="ov-text max-w-[120px] truncate text-[13px] leading-snug">
+                    {getRouteDestination(selectedRoute.ruta) ?? selectedRoute.nombre}
+                  </span>
+                </span>
               </>
             ) : (
               <>
