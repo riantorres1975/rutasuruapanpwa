@@ -907,13 +907,20 @@ export default function HomePage() {
   }, [destinationPoint, originPoint, selectedRoute]);
   const selectedMapSegment = selectedSuggestion?.segment ?? sharedRouteSegment ?? selectedRoutePinSegment?.segment ?? null;
 
-  // Arrow segments: show direction arrows on suggested segment or both directions of selected route
+  // Arrow segments: show direction arrows on suggested segment, transfer segments, or both directions of selected route
   const arrowSegments = useMemo<{ coords: Coordinates[]; color: string; showLine?: boolean }[]>(() => {
-    // Case 1: active suggestion with pins — arrows only, line already drawn by main layer
+    // Case 1: active transfer — arrows only, lines already drawn by transfer layers
+    if (selectedTransfer) {
+      return [
+        { coords: selectedTransfer.segmentA, color: "#60a5fa", showLine: false },
+        { coords: selectedTransfer.segmentB, color: "#34d399", showLine: false }
+      ];
+    }
+    // Case 2: active suggestion with pins — arrows only, line already drawn by main layer
     if (selectedMapSegment && selectedRoute) {
       return [{ coords: selectedMapSegment, color: selectedRoute.color, showLine: false }];
     }
-    // Case 2: route selected without pins — draw both ida+vuelta lines with their arrows
+    // Case 3: route selected without pins — draw both ida+vuelta lines with their arrows
     if (selectedRouteId !== null && !originPoint && !destinationPoint) {
       const grouped = groupedRoutes.find((g) => {
         const match = fullRoutes.find((r) => r.id === selectedRouteId);
@@ -926,7 +933,7 @@ export default function HomePage() {
       return segments;
     }
     return [];
-  }, [selectedMapSegment, selectedRoute, selectedRouteId, originPoint, destinationPoint, groupedRoutes, fullRoutes]);
+  }, [selectedTransfer, selectedMapSegment, selectedRoute, selectedRouteId, originPoint, destinationPoint, groupedRoutes, fullRoutes]);
   const mapRoutes = useMemo(() => {
     if (selectedRouteId === null) {
       return backgroundRoutes;
