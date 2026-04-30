@@ -12,11 +12,16 @@ import {
   URUAPAN_CENTER
 } from "@/lib/map";
 import type { Coordinates, RouteData } from "@/lib/types";
+
+type ArrowSegment = { coords: Coordinates[]; color: string; showLine?: boolean };
 import type { TransferOption } from "@/lib/transfers";
 
 const LAYER_GLOW_ID = "routes-glow";
 const LAYER_LINE_ID = "routes-line";
 const LAYER_HIT_ID = "routes-hit";
+const ARROWS_SOURCE = "arrows-source";
+const ARROWS_LINE_LAYER = "arrows-line";
+const ARROWS_LAYER = "arrows-layer";
 const USER_LOC_SOURCE = "user-location-source";
 const USER_LOC_ACCURACY_LAYER = "user-location-accuracy";
 const USER_LOC_DOT_LAYER = "user-location-dot";
@@ -102,6 +107,7 @@ type MapProps = {
   allRoutesMode: RoutesMapMode;
   bestSuggestedRouteId: number | null;
   selectedRouteSegment: Coordinates[] | null;
+  arrowSegments?: ArrowSegment[];
   originPoint: [number, number] | null;
   destinationPoint: [number, number] | null;
   showTeleferico?: boolean;
@@ -631,6 +637,17 @@ function isSegmentSelection(selectedRouteId: number | null, selectedRouteSegment
   return selectedRouteId !== null && Array.isArray(selectedRouteSegment) && selectedRouteSegment.length > 1;
 }
 
+function buildArrowsGeoJSON(segments: ArrowSegment[]): GeoJSON.FeatureCollection {
+  return {
+    type: "FeatureCollection",
+    features: segments.map((seg) => ({
+      type: "Feature",
+      properties: { color: seg.color, showLine: seg.showLine ? 1 : 0 },
+      geometry: { type: "LineString", coordinates: seg.coords }
+    }))
+  };
+}
+
 function MapComponent({
   routes,
   selectedRouteId,
@@ -638,6 +655,7 @@ function MapComponent({
   allRoutesMode = "all-visible",
   bestSuggestedRouteId,
   selectedRouteSegment,
+  arrowSegments = [],
   originPoint,
   destinationPoint,
   showTeleferico = false,
@@ -667,6 +685,7 @@ function MapComponent({
   const onNearbyRoutesFoundRef = useRef(onNearbyRoutesFound);
   const showTelefericoRef = useRef(showTeleferico);
   const telefericoGeoJSONRef = useRef<any>(null);
+  const arrowSegmentsRef = useRef(arrowSegments);
   const selectedTransferRef = useRef(selectedTransfer);
   const transferRouteIdsRef = useRef<number[]>(
     selectedTransfer ? [selectedTransfer.routeAId, selectedTransfer.routeBId] : []
@@ -722,6 +741,65 @@ function MapComponent({
   useEffect(() => {
     showTelefericoRef.current = showTeleferico;
   }, [showTeleferico]);
+
+  useEffect(() => {
+    arrowSegmentsRef.current = arrowSegments;
+  }, [arrowSegments]);
+
+  // Update direction arrows whenever arrowSegments changes
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !isMapReadyRef.current) return;
+
+    const geojson = buildArrowsGeoJSON(arrowSegments);
+    const source = map.getSource(ARROWS_SOURCE) as mapboxgl.GeoJSONSource | undefined;
+
+    if (source) {
+      source.setData(geojson);
+    } else {
+      map.addSource(ARROWS_SOURCE, { type: "geojson", data: geojson });
+    }
+
+    if (!map.getLayer(ARROWS_LINE_LAYER)) {
+      map.addLayer({
+        id: ARROWS_LINE_LAYER,
+        type: "line",
+        source: ARROWS_SOURCE,
+        filter: ["==", ["get", "showLine"], 1],
+        layout: { "line-cap": "round", "line-join": "round" },
+        paint: {
+          "line-color": ["get", "color"],
+          "line-width": 5,
+          "line-opacity": 0.92
+        }
+      });
+    }
+
+    if (!map.getLayer(ARROWS_LAYER)) {
+      map.addLayer({
+        id: ARROWS_LAYER,
+        type: "symbol",
+        source: ARROWS_SOURCE,
+        layout: {
+          "symbol-placement": "line",
+          "symbol-spacing": 80,
+          "text-field": "▶",
+          "text-size": 14,
+          "text-keep-upright": false,
+          "text-rotation-alignment": "map",
+          "text-pitch-alignment": "map",
+          "text-allow-overlap": true,
+          "text-ignore-placement": true
+        },
+        paint: {
+          "text-color": ["get", "color"],
+          "text-opacity": 0.9,
+          "text-halo-color": "rgba(0,0,0,0.55)",
+          "text-halo-width": 1.2
+        }
+      });
+    }
+  }, [arrowSegments, isLoading]);
 
   // Toggle teleférico layer visibility + camera
   useEffect(() => {
@@ -1086,6 +1164,45 @@ function MapComponent({
           const t = selectedTransferRef.current;
           selectedTransferRef.current = null;
           setTimeout(() => { selectedTransferRef.current = t; }, 0);
+        }
+        // Restore arrow layer after style reload
+        const arrowGeojson = buildArrowsGeoJSON(arrowSegmentsRef.current);
+        if (!map.getSource(ARROWS_SOURCE)) {
+          map.addSource(ARROWS_SOURCE, { type: "geojson", data: arrowGeojson });
+        }
+        if (!map.getLayer(ARROWS_LINE_LAYER)) {
+          map.addLayer({
+            id: ARROWS_LINE_LAYER,
+            type: "line",
+            source: ARROWS_SOURCE,
+            filter: ["==", ["get", "showLine"], 1],
+            layout: { "line-cap": "round", "line-join": "round" },
+            paint: { "line-color": ["get", "color"], "line-width": 5, "line-opacity": 0.92 }
+          });
+        }
+        if (!map.getLayer(ARROWS_LAYER)) {
+          map.addLayer({
+            id: ARROWS_LAYER,
+            type: "symbol",
+            source: ARROWS_SOURCE,
+            layout: {
+              "symbol-placement": "line",
+              "symbol-spacing": 80,
+              "text-field": "▶",
+              "text-size": 14,
+              "text-keep-upright": false,
+              "text-rotation-alignment": "map",
+              "text-pitch-alignment": "map",
+              "text-allow-overlap": true,
+              "text-ignore-placement": true
+            },
+            paint: {
+              "text-color": ["get", "color"],
+              "text-opacity": 0.9,
+              "text-halo-color": "rgba(0,0,0,0.55)",
+              "text-halo-width": 1.2
+            }
+          });
         }
       });
     });
