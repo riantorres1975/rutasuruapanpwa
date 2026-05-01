@@ -3,7 +3,7 @@ import type { Coordinates, ResolvedRouteData } from "@/lib/types";
 // Max walking distance to board/alight a route (meters)
 const PROXIMITY_METERS = 550;
 // Max walking distance between transfer point on route A and route B (meters)
-const TRANSFER_WALK_METERS = 350;
+const TRANSFER_WALK_METERS = 300;
 
 export type TransferOption = {
   routeAId: number;

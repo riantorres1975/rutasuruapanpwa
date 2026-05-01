@@ -18,8 +18,9 @@ import { formatRouteLabel, getRouteDestination } from "@/lib/route-names";
 import type { Coordinates, GroupedRouteData, ResolvedRouteData, RouteDirection } from "@/lib/types";
 import { computeTransferOptions } from "@/lib/transfers";
 import type { TransferOption } from "@/lib/transfers";
-const PROXIMITY_METERS = 550;
-const SEGMENT_LENGTH_FACTOR = 0.04;
+const PROXIMITY_METERS = 400;
+const DESTINATION_DISTANCE_WEIGHT = 1.8;
+const SEGMENT_LENGTH_FACTOR = 0.01;
 const AVG_TRIP_SPEED_KMH = 18;
 const BACKGROUND_SIMPLIFY_TOLERANCE = 0.00008;
 const BACKGROUND_MAX_POINTS = 180;
@@ -302,7 +303,7 @@ function computeRouteOption(route: ResolvedRouteData, originPoint: Coordinates, 
   }
 
   const segmentMeters = getSegmentLengthMeters(segment);
-  const score = closestA.distance + closestB.distance + segmentMeters * SEGMENT_LENGTH_FACTOR;
+  const score = closestA.distance + closestB.distance * DESTINATION_DISTANCE_WEIGHT + segmentMeters * SEGMENT_LENGTH_FACTOR;
 
   return {
     routeId: route.id,
@@ -875,10 +876,22 @@ export default function HomePage() {
     const timer = window.setTimeout(() => {
       const nextSuggestions = computeRouteSuggestions(fullRoutes, groupedRoutes, originPoint, destinationPoint);
       setSuggestions(nextSuggestions);
-      const nextTransfers =
-        nextSuggestions.length === 0
-          ? computeTransferOptions(fullRoutes, originPoint, destinationPoint)
-          : [];
+      let nextTransfers: TransferOption[] = [];
+      if (nextSuggestions.length === 0) {
+        // Expand routes with both directions so transfers can use either direction
+        const bothDirs: ResolvedRouteData[] = [];
+        for (const route of fullRoutes) {
+          bothDirs.push(route);
+          const grouped = groupedRoutes.find((g) => g.ruta === route.ruta);
+          if (!grouped) continue;
+          const oppositeDir: RouteDirection = route.direccion === "ida" ? "vuelta" : "ida";
+          const oppositeCoords = oppositeDir === "ida" ? grouped.ida ?? [] : grouped.vuelta ?? [];
+          if (oppositeCoords.length > 1) {
+            bothDirs.push({ ...route, coordenadas: oppositeCoords, direccion: oppositeDir });
+          }
+        }
+        nextTransfers = computeTransferOptions(bothDirs, originPoint, destinationPoint);
+      }
       setTransfers(nextTransfers);
       setIsCalculatingSuggestions(false);
     }, 80);
@@ -886,7 +899,7 @@ export default function HomePage() {
     return () => {
       window.clearTimeout(timer);
     };
-  }, [destinationPoint, fullRoutes, originPoint]);
+  }, [destinationPoint, fullRoutes, groupedRoutes, originPoint]);
 
   const suggestedRouteIds = useMemo(() => suggestions.map((item) => item.routeId), [suggestions]);
   const suggestedRouteDirections = useMemo(
@@ -1628,6 +1641,7 @@ export default function HomePage() {
         ) : (
           <MapView
             routes={mapRoutes}
+            groupedRoutes={groupedRoutes}
             selectedRouteId={selectedRouteId}
             suggestedRouteIds={suggestedRouteIds}
             allRoutesMode={routesMapMode}

@@ -11,7 +11,7 @@ import {
   toFeatureCollection,
   URUAPAN_CENTER
 } from "@/lib/map";
-import type { Coordinates, RouteData } from "@/lib/types";
+import type { Coordinates, GroupedRouteData, RouteData } from "@/lib/types";
 
 type ArrowSegment = { coords: Coordinates[]; color: string; showLine?: boolean };
 import type { TransferOption } from "@/lib/transfers";
@@ -110,6 +110,7 @@ function applyComfortLightMapPalette(map: mapboxgl.Map) {
 
 type MapProps = {
   routes: RouteData[];
+  groupedRoutes?: GroupedRouteData[];
   selectedRouteId: number | null;
   suggestedRouteIds: number[];
   allRoutesMode: RoutesMapMode;
@@ -154,8 +155,13 @@ function lineOpacityExpression(
   selectedSegmentActive: boolean,
   hoveredRouteId: number | null,
   allRoutesMode: RoutesMapMode,
-  transferRouteIds: number[]
+  transferRouteIds: number[],
+  debugActive = false
 ) {
+  if (debugActive && selectedRouteId !== null) {
+    return ["case", ["==", ["get", "id"], selectedRouteId], 1, 0] as any;
+  }
+
   if (transferRouteIds.length > 0) {
     return 0.06 as any;
   }
@@ -510,7 +516,8 @@ function applyRouteLayerStyles(
   selectedSegmentActive: boolean,
   allRoutesMode: RoutesMapMode,
   hoveredRouteId: number | null,
-  transferRouteIds: number[] = []
+  transferRouteIds: number[] = [],
+  debugActive = false
 ) {
   if (!map.getLayer(LAYER_LINE_ID) || !map.getLayer(LAYER_GLOW_ID)) {
     return;
@@ -526,7 +533,8 @@ function applyRouteLayerStyles(
       selectedSegmentActive,
       hoveredRouteId,
       allRoutesMode,
-      transferRouteIds
+      transferRouteIds,
+      debugActive
     )
   );
   map.setPaintProperty(
@@ -779,6 +787,7 @@ function clearAllDebugLayers(map: mapboxgl.Map) {
 
 function MapComponent({
   routes,
+  groupedRoutes = [],
   selectedRouteId,
   suggestedRouteIds,
   allRoutesMode = "all-visible",
@@ -824,7 +833,7 @@ function MapComponent({
   const debugStepRef = useRef(10);
   const debugPhaseRef = useRef<"idle" | "awaiting-end" | "drawing" | "preview">("idle");
   const debugDrawSegmentRef = useRef<Coordinates[]>([]);
-  const debugLoadedRouteIdRef = useRef<number | null>(null);
+  const debugLoadedRouteIdRef = useRef<string | null>(null);
 
   const [isLoading, setIsLoading] = useState(true);
   const [locationLoading, setLocationLoading] = useState(false);
@@ -838,6 +847,7 @@ function MapComponent({
   const [debugDrawCount, setDebugDrawCount] = useState(0);
   const [debugSaveStatus, setDebugSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [debugSaveError, setDebugSaveError] = useState<string | null>(null);
+  const [debugDir, setDebugDir] = useState<"ida" | "vuelta">("ida");
 
   const mapToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
   const routeFeatures = useMemo(() => toFeatureCollection(routes), [routes]);
@@ -996,7 +1006,8 @@ function MapComponent({
       isSegmentSelection(selectedRouteIdRef.current, selectedRouteSegmentRef.current),
       allRoutesModeRef.current,
       hoveredRouteIdRef.current,
-      transferRouteIdsRef.current
+      transferRouteIdsRef.current,
+      debugActive
     );
 
     const clearTransferLayers = () => {
@@ -1128,7 +1139,8 @@ function MapComponent({
         isSegmentSelection(selectedRouteIdRef.current, selectedRouteSegmentRef.current),
         allRoutesModeRef.current,
         hoveredRouteIdRef.current,
-        transferRouteIdsRef.current
+        transferRouteIdsRef.current,
+        debugActive
       );
     };
 
@@ -1240,7 +1252,8 @@ function MapComponent({
         isSegmentSelection(selectedRouteIdRef.current, selectedRouteSegmentRef.current),
         allRoutesModeRef.current,
         hoveredRouteIdRef.current,
-        transferRouteIdsRef.current
+        transferRouteIdsRef.current,
+        debugActive
       );
       bindRouteInteraction();
     };
@@ -1443,6 +1456,7 @@ function MapComponent({
       isMapReadyRef.current = false;
       mapRef.current = null;
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mapToken, stopRouteAnimation]);
 
   useEffect(() => {
@@ -1532,7 +1546,8 @@ function MapComponent({
       selectedSegmentActive,
       allRoutesModeRef.current,
       hoveredRouteIdRef.current,
-      transferRouteIdsRef.current
+      transferRouteIdsRef.current,
+      debugActive
     );
     map.stop();
 
@@ -1652,9 +1667,10 @@ function MapComponent({
       isSegmentSelection(selectedRouteId, selectedRouteSegment),
       allRoutesMode,
       hoveredRouteIdRef.current,
-      transferRouteIdsRef.current
+      transferRouteIdsRef.current,
+      debugActive
     );
-  }, [allRoutesMode, bestSuggestedRouteId, selectedRouteId, selectedRouteSegment, suggestedRouteIds]);
+  }, [allRoutesMode, bestSuggestedRouteId, debugActive, selectedRouteId, selectedRouteSegment, suggestedRouteIds]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -1693,11 +1709,19 @@ function MapComponent({
     const route = routes.find((r) => r.id === selectedRouteId);
     if (!route) return;
 
-    const routeChanged = debugLoadedRouteIdRef.current !== selectedRouteId;
+    // Resolve coords: prefer the selected direction from groupedRoutes if available
+    const grouped = groupedRoutes.find((g) => g.ruta === route.nombre || g.ruta === (route as any).ruta);
+    const resolvedCoords: Coordinates[] =
+      grouped
+        ? ((debugDir === "ida" ? grouped.ida : grouped.vuelta) as Coordinates[] | undefined) ?? route.coordenadas
+        : route.coordenadas;
+
+    const cacheKey = `${selectedRouteId}-${debugDir}`;
+    const routeChanged = debugLoadedRouteIdRef.current !== cacheKey;
     if (routeChanged) {
-      // Switched to a different route — reset all edit state and load fresh coords
-      debugLoadedRouteIdRef.current = selectedRouteId;
-      debugCoordsRef.current = route.coordenadas;
+      // Switched route or direction — reset all edit state and load fresh coords
+      debugLoadedRouteIdRef.current = cacheKey;
+      debugCoordsRef.current = resolvedCoords;
       debugStartIdxRef.current = null;
       setDebugClickInfo(null);
       setDebugSelection(null);
@@ -1707,15 +1731,12 @@ function MapComponent({
       setDebugSaveError(null);
       clearDebugSegmentLayer(map);
     } else if (debugCoordsRef.current.length === 0) {
-      // Same route but coords not yet loaded (e.g. first render after map ready)
-      debugCoordsRef.current = route.coordenadas;
+      debugCoordsRef.current = resolvedCoords;
     }
-    // If routeChanged is false and coords are already loaded, preserve any applied
-    // edits in debugCoordsRef.current — don't overwrite with stale routes prop.
 
     setDebugTotalPoints(debugCoordsRef.current.length);
     renderDebugPointLayer(map, debugCoordsRef.current, debugStep);
-  }, [debugActive, debugStep, isLoading, routes, selectedRouteId]);
+  }, [debugActive, debugDir, debugStep, groupedRoutes, isLoading, routes, selectedRouteId]);
 
   const handleLocateMe = () => {
     const map = mapRef.current;
@@ -1922,6 +1943,21 @@ function MapComponent({
             )}
           </div>
 
+          {selectedRouteId !== null && (
+            <div className="mb-2 flex gap-1">
+              {(["ida", "vuelta"] as const).map((dir) => (
+                <button
+                  key={dir}
+                  type="button"
+                  onClick={() => setDebugDir(dir)}
+                  className={`flex-1 rounded px-2 py-0.5 text-xs font-semibold transition ${debugDir === dir ? "bg-amber-500 text-black" : "bg-slate-700 text-slate-300 hover:bg-slate-600"}`}
+                >
+                  {dir}
+                </button>
+              ))}
+            </div>
+          )}
+
           {selectedRouteId === null ? (
             <p className="text-slate-400">Selecciona una ruta para depurar</p>
           ) : debugPhase === "drawing" ? (
@@ -2126,8 +2162,8 @@ function MapComponent({
                     const route = routes.find((r) => r.id === selectedRouteId) as (typeof routes[0] & { ruta?: string; direccion?: string }) | undefined;
                     if (!route) return;
                     const payload = {
-                      ruta: route.ruta ?? route.nombre,
-                      direccion: route.direccion ?? "ida",
+                      ruta: (route as any).ruta ?? route.nombre,
+                      direccion: debugDir,
                       coordenadas: debugCoordsRef.current
                     };
                     console.log("[debug save]", payload.ruta, payload.direccion, payload.coordenadas.length, "pts");
