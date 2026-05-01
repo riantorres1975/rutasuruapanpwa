@@ -899,7 +899,7 @@ export default function HomePage() {
     return () => {
       window.clearTimeout(timer);
     };
-  }, [destinationPoint, fullRoutes, originPoint]);
+  }, [destinationPoint, fullRoutes, groupedRoutes, originPoint]);
 
   const suggestedRouteIds = useMemo(() => suggestions.map((item) => item.routeId), [suggestions]);
   const suggestedRouteDirections = useMemo(
