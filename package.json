@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "node scripts/convert-rutas.js && node scripts/group-rutas.js && next build",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "convert:rutas": "node scripts/convert-rutas.js",
