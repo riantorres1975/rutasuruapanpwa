@@ -876,10 +876,22 @@ export default function HomePage() {
     const timer = window.setTimeout(() => {
       const nextSuggestions = computeRouteSuggestions(fullRoutes, groupedRoutes, originPoint, destinationPoint);
       setSuggestions(nextSuggestions);
-      const nextTransfers =
-        nextSuggestions.length === 0
-          ? computeTransferOptions(fullRoutes, originPoint, destinationPoint)
-          : [];
+      let nextTransfers: TransferOption[] = [];
+      if (nextSuggestions.length === 0) {
+        // Expand routes with both directions so transfers can use either direction
+        const bothDirs: ResolvedRouteData[] = [];
+        for (const route of fullRoutes) {
+          bothDirs.push(route);
+          const grouped = groupedRoutes.find((g) => g.ruta === route.ruta);
+          if (!grouped) continue;
+          const oppositeDir: RouteDirection = route.direccion === "ida" ? "vuelta" : "ida";
+          const oppositeCoords = oppositeDir === "ida" ? grouped.ida ?? [] : grouped.vuelta ?? [];
+          if (oppositeCoords.length > 1) {
+            bothDirs.push({ ...route, coordenadas: oppositeCoords, direccion: oppositeDir });
+          }
+        }
+        nextTransfers = computeTransferOptions(bothDirs, originPoint, destinationPoint);
+      }
       setTransfers(nextTransfers);
       setIsCalculatingSuggestions(false);
     }, 80);
