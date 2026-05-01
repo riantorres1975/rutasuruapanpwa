@@ -48,6 +48,34 @@ Los sistemas de transporte público en ciudades intermedias de México carecen d
 | 📴 PWA completa | Service Worker con caché offline, manifest, instalable en Android/iOS |
 | 🎨 UX fluida | Sin recrear layers de Mapbox: solo se actualiza el GeoJSON source |
 | ✨ HeroMap animado | Card de sugerencias rotatoria con fade suave y dots indicator; bearing rotatorio del mapa |
+| 🛠️ Editor de rutas (debug) | Modo visual para corregir trayectorias GPS: seleccionar segmento → dibujar reemplazo → guardar a JSON |
+
+---
+
+---
+
+## 🛠️ Editor visual de rutas (modo debug)
+
+Herramienta de desarrollo para corregir coordenadas GPS directamente desde el mapa, sin editar JSON a mano.
+
+### Activación
+
+```js
+// En la consola del navegador (solo en desarrollo)
+localStorage.setItem('debug', 'true')
+// Recargar la página
+```
+
+### Flujo de edición
+
+1. **Selecciona una ruta** en el panel lateral — aparecen los puntos GPS numerados sobre el mapa.
+2. **Haz clic en el punto de inicio** del segmento a corregir → se resalta en rojo.
+3. **Haz clic en el punto final** → el segmento completo queda marcado en rojo.
+4. Pulsa **"Editar segmento"** y luego haz clic en el mapa para dibujar el nuevo trayecto (verde).
+5. Pulsa **"Finalizar"** → **"Aplicar"** para reemplazar el segmento.
+6. Pulsa **"Guardar"** para escribir los cambios en `data/rutas.json` y `data/rutas-grouped.json`.
+
+> El botón Guardar solo está disponible en `NODE_ENV=development`. Los cambios persisten en disco y se reflejan en el siguiente reload de la página.
 
 ---
 
@@ -147,9 +175,10 @@ node scripts/group-rutas.js  # Genera data/rutas-grouped.json
 ```
 rutasuruapanpwa/
 ├── app/
-│   ├── api/rutas/route.ts    # Endpoint GET /api/rutas (lazy load)
-│   ├── layout.tsx            # Root layout, metadatos, fuentes
-│   └── page.tsx              # Página principal — lógica central
+│   ├── api/rutas/route.ts              # Endpoint GET /api/rutas (lazy load)
+│   ├── api/debug/save-route/route.ts  # Endpoint POST para guardar ediciones (solo dev)
+│   ├── layout.tsx                      # Root layout, metadatos, fuentes
+│   └── page.tsx                        # Página principal — lógica central
 ├── components/
 │   ├── BottomSheet.tsx       # Sheet deslizable con lista de rutas
 │   ├── Map.tsx               # MapView con Mapbox GL JS
@@ -159,6 +188,7 @@ rutasuruapanpwa/
 │   └── rutas-grouped.json    # Rutas agrupadas ida/vuelta (314 KB)
 ├── lib/
 │   ├── map.ts                # Utilidades de Mapbox (layers, sources)
+│   ├── map-debug.ts          # Utilidades del editor de rutas (Haversine, replaceSegment)
 │   └── types.ts              # Tipos TypeScript compartidos
 ├── public/
 │   ├── manifest.json         # PWA manifest
@@ -271,6 +301,34 @@ Public transit in mid-size Mexican cities lacks accessible digital information. 
 | 📴 Full PWA | Service Worker with offline cache, manifest, installable on Android/iOS |
 | 🎨 Smooth UX | No Mapbox layer recreation: only the GeoJSON source is updated |
 | ✨ Animated HeroMap | Rotating suggestion card with smooth fade and dots indicator; slow bearing rotation |
+| 🛠️ Route editor (debug) | Visual tool to fix GPS trajectories: select segment → draw replacement → save to JSON |
+
+---
+
+---
+
+## 🛠️ Visual Route Editor (debug mode)
+
+A development tool for correcting GPS coordinates directly on the map — no manual JSON editing required.
+
+### Activation
+
+```js
+// In the browser console (development only)
+localStorage.setItem('debug', 'true')
+// Reload the page
+```
+
+### Editing flow
+
+1. **Select a route** in the sidebar — numbered GPS points appear over the map.
+2. **Click the start point** of the segment to fix → highlighted in red.
+3. **Click the end point** → the full segment is marked in red.
+4. Press **"Editar segmento"** then click on the map to draw the new path (green).
+5. Press **"Finalizar"** → **"Aplicar"** to replace the segment.
+6. Press **"Guardar"** to write the changes to `data/rutas.json` and `data/rutas-grouped.json`.
+
+> The Save button is only available in `NODE_ENV=development`. Changes persist to disk and are reflected on the next page reload.
 
 ---
 
@@ -370,9 +428,10 @@ node scripts/group-rutas.js  # Generate data/rutas-grouped.json
 ```
 rutasuruapanpwa/
 ├── app/
-│   ├── api/rutas/route.ts    # GET /api/rutas endpoint (lazy load)
-│   ├── layout.tsx            # Root layout, metadata, fonts
-│   └── page.tsx              # Main page — core logic
+│   ├── api/rutas/route.ts              # GET /api/rutas endpoint (lazy load)
+│   ├── api/debug/save-route/route.ts  # POST endpoint for saving edits (dev only)
+│   ├── layout.tsx                      # Root layout, metadata, fonts
+│   └── page.tsx                        # Main page — core logic
 ├── components/
 │   ├── BottomSheet.tsx       # Slide-up sheet with route list
 │   ├── Map.tsx               # MapView with Mapbox GL JS
@@ -382,6 +441,7 @@ rutasuruapanpwa/
 │   └── rutas-grouped.json    # Routes grouped by direction (314 KB)
 ├── lib/
 │   ├── map.ts                # Mapbox utilities (layers, sources)
+│   ├── map-debug.ts          # Route editor utilities (Haversine, replaceSegment)
 │   └── types.ts              # Shared TypeScript types
 ├── public/
 │   ├── manifest.json         # PWA manifest
