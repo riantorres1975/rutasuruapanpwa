@@ -18,7 +18,7 @@ import { formatRouteLabel, getRouteDestination } from "@/lib/route-names";
 import type { Coordinates, GroupedRouteData, ResolvedRouteData, RouteDirection } from "@/lib/types";
 import { computeTransferOptions } from "@/lib/transfers";
 import type { TransferOption } from "@/lib/transfers";
-const PROXIMITY_METERS = 400;
+const PROXIMITY_METERS = 450;
 const DESTINATION_DISTANCE_WEIGHT = 1.8;
 const SEGMENT_LENGTH_FACTOR = 0.04;
 const AVG_TRIP_SPEED_KMH = 18;
