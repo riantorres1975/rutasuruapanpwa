@@ -46,34 +46,55 @@ export async function POST(request: Request) {
     return Response.json({ error: "Datos inválidos: se requiere ruta, direccion y coordenadas" }, { status: 400 });
   }
 
+  console.log(`[save-route] ruta="${ruta}" direccion="${direccion}" pts=${coordenadas.length}`);
+
   const rutasPath = join(process.cwd(), "data/rutas.json");
   const groupedPath = join(process.cwd(), "data/rutas-grouped.json");
 
   // Buscar en rutas.json por nombre base + dirección
-  const rutas: RutaEntry[] = JSON.parse(readFileSync(rutasPath, "utf8"));
+  let rutas: RutaEntry[];
+  try {
+    rutas = JSON.parse(readFileSync(rutasPath, "utf8"));
+  } catch (err) {
+    console.error("[save-route] failed to read/parse rutas.json:", err);
+    return Response.json({ error: `Error leyendo rutas.json: ${String(err)}` }, { status: 500 });
+  }
+
   const idx = rutas.findIndex(
     (r) => normalize(getBaseName(r.nombre)) === normalize(ruta) && getDirection(r.nombre) === direccion
   );
 
   if (idx === -1) {
-    // Log disponibles para debug
-    const available = rutas.slice(0, 5).map((r) => r.nombre).join(", ");
+    const available = rutas.slice(0, 8).map((r) => `"${r.nombre}"`).join(", ");
+    console.error(`[save-route] NOT FOUND: ruta="${ruta}" dir="${direccion}". norm="${normalize(ruta)}". Available: ${available}`);
     return Response.json(
       { error: `Ruta no encontrada: "${ruta}" (${direccion}). Primeros nombres: ${available}` },
       { status: 404 }
     );
   }
 
-  rutas[idx].coordenadas = coordenadas as number[][];
-  writeFileSync(rutasPath, JSON.stringify(rutas, null, 2));
+  try {
+    rutas[idx].coordenadas = coordenadas as number[][];
+    writeFileSync(rutasPath, JSON.stringify(rutas, null, 2), { encoding: "utf8" });
+  } catch (err) {
+    console.error("[save-route] writeFileSync rutas.json failed:", err);
+    return Response.json({ error: `Error escribiendo rutas.json: ${String(err)}` }, { status: 500 });
+  }
 
   // Actualizar rutas-grouped.json
-  const grouped: GroupedEntry[] = JSON.parse(readFileSync(groupedPath, "utf8"));
-  const gIdx = grouped.findIndex((g) => normalize(g.ruta) === normalize(ruta));
-
-  if (gIdx !== -1) {
-    grouped[gIdx][direccion as "ida" | "vuelta"] = coordenadas as number[][];
-    writeFileSync(groupedPath, JSON.stringify(grouped, null, 2));
+  try {
+    const grouped: GroupedEntry[] = JSON.parse(readFileSync(groupedPath, "utf8"));
+    const gIdx = grouped.findIndex((g) => normalize(g.ruta) === normalize(ruta));
+    if (gIdx !== -1) {
+      grouped[gIdx][direccion as "ida" | "vuelta"] = coordenadas as number[][];
+      writeFileSync(groupedPath, JSON.stringify(grouped, null, 2), { encoding: "utf8" });
+      console.log(`[save-route] OK ruta="${ruta}" dir="${direccion}" gIdx=${gIdx} pts=${coordenadas.length}`);
+    } else {
+      console.warn(`[save-route] grouped entry not found for "${ruta}" — rutas.json updated but grouped.json not`);
+    }
+  } catch (err) {
+    console.error("[save-route] grouped.json update failed:", err);
+    return Response.json({ error: `rutas.json guardado pero error en grouped.json: ${String(err)}` }, { status: 500 });
   }
 
   return Response.json({ ok: true, ruta, direccion, puntos: coordenadas.length });

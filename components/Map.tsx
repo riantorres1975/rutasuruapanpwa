@@ -824,6 +824,7 @@ function MapComponent({
   const debugStepRef = useRef(10);
   const debugPhaseRef = useRef<"idle" | "awaiting-end" | "drawing" | "preview">("idle");
   const debugDrawSegmentRef = useRef<Coordinates[]>([]);
+  const debugLoadedRouteIdRef = useRef<number | null>(null);
 
   const [isLoading, setIsLoading] = useState(true);
   const [locationLoading, setLocationLoading] = useState(false);
@@ -836,6 +837,7 @@ function MapComponent({
   const [debugTotalPoints, setDebugTotalPoints] = useState(0);
   const [debugDrawCount, setDebugDrawCount] = useState(0);
   const [debugSaveStatus, setDebugSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [debugSaveError, setDebugSaveError] = useState<string | null>(null);
 
   const mapToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
   const routeFeatures = useMemo(() => toFeatureCollection(routes), [routes]);
@@ -1098,7 +1100,9 @@ function MapComponent({
 
 
     const onRouteClick = (event: mapboxgl.MapLayerMouseEvent) => {
-      if (debugActive && (debugPhaseRef.current === "drawing" || debugPhaseRef.current === "preview")) {
+      // In debug mode with a route already loaded, block map-click switching to prevent
+      // accidentally losing applied (unsaved) edits. Use the route list panel to switch.
+      if (debugActive && debugLoadedRouteIdRef.current !== null) {
         return;
       }
 
@@ -1677,6 +1681,7 @@ function MapComponent({
     if (selectedRouteId === null) {
       clearAllDebugLayers(map);
       debugCoordsRef.current = [];
+      debugLoadedRouteIdRef.current = null;
       debugStartIdxRef.current = null;
       setDebugClickInfo(null);
       setDebugSelection(null);
@@ -1688,19 +1693,28 @@ function MapComponent({
     const route = routes.find((r) => r.id === selectedRouteId);
     if (!route) return;
 
-    if (debugCoordsRef.current !== route.coordenadas) {
+    const routeChanged = debugLoadedRouteIdRef.current !== selectedRouteId;
+    if (routeChanged) {
+      // Switched to a different route — reset all edit state and load fresh coords
+      debugLoadedRouteIdRef.current = selectedRouteId;
+      debugCoordsRef.current = route.coordenadas;
       debugStartIdxRef.current = null;
       setDebugClickInfo(null);
       setDebugSelection(null);
       setDebugPhase("idle");
       debugPhaseRef.current = "idle";
       setDebugSaveStatus("idle");
+      setDebugSaveError(null);
       clearDebugSegmentLayer(map);
+    } else if (debugCoordsRef.current.length === 0) {
+      // Same route but coords not yet loaded (e.g. first render after map ready)
+      debugCoordsRef.current = route.coordenadas;
     }
+    // If routeChanged is false and coords are already loaded, preserve any applied
+    // edits in debugCoordsRef.current — don't overwrite with stale routes prop.
 
-    debugCoordsRef.current = route.coordenadas;
-    setDebugTotalPoints(route.coordenadas.length);
-    renderDebugPointLayer(map, route.coordenadas, debugStep);
+    setDebugTotalPoints(debugCoordsRef.current.length);
+    renderDebugPointLayer(map, debugCoordsRef.current, debugStep);
   }, [debugActive, debugStep, isLoading, routes, selectedRouteId]);
 
   const handleLocateMe = () => {
@@ -2111,20 +2125,31 @@ function MapComponent({
                   onClick={async () => {
                     const route = routes.find((r) => r.id === selectedRouteId) as (typeof routes[0] & { ruta?: string; direccion?: string }) | undefined;
                     if (!route) return;
+                    const payload = {
+                      ruta: route.ruta ?? route.nombre,
+                      direccion: route.direccion ?? "ida",
+                      coordenadas: debugCoordsRef.current
+                    };
+                    console.log("[debug save]", payload.ruta, payload.direccion, payload.coordenadas.length, "pts");
                     setDebugSaveStatus("saving");
+                    setDebugSaveError(null);
                     try {
                       const res = await fetch("/api/debug/save-route", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                          ruta: route.ruta ?? route.nombre,
-                          direccion: route.direccion ?? "ida",
-                          coordenadas: debugCoordsRef.current
-                        })
+                        body: JSON.stringify(payload)
                       });
+                      if (!res.ok) {
+                        const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+                        const msg = typeof err.error === "string" ? err.error : `HTTP ${res.status}`;
+                        console.error("[debug save] error", res.status, msg);
+                        setDebugSaveError(msg);
+                      }
                       setDebugSaveStatus(res.ok ? "saved" : "error");
-                    } catch {
+                    } catch (e) {
+                      console.error("[debug save] fetch error", e);
                       setDebugSaveStatus("error");
+                      setDebugSaveError(String(e));
                     }
                     setTimeout(() => setDebugSaveStatus("idle"), 3000);
                   }}
@@ -2139,6 +2164,12 @@ function MapComponent({
                   {debugSaveStatus === "saving" ? "..." : debugSaveStatus === "saved" ? "✓ Guardado" : debugSaveStatus === "error" ? "✗ Error" : "Guardar"}
                 </button>
               </div>
+
+              {debugSaveError && (
+                <p className="mt-1.5 break-all rounded bg-red-900/60 px-2 py-1 text-[10px] text-red-300">
+                  {debugSaveError}
+                </p>
+              )}
 
               <p className="mt-2 text-slate-500">
                 {debugPhase === "awaiting-end" ? "▶ Click para punto fin" : "▷ Click para punto inicio"}
