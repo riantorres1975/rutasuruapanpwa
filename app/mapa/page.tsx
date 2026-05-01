@@ -1641,6 +1641,7 @@ export default function HomePage() {
         ) : (
           <MapView
             routes={mapRoutes}
+            groupedRoutes={groupedRoutes}
             selectedRouteId={selectedRouteId}
             suggestedRouteIds={suggestedRouteIds}
             allRoutesMode={routesMapMode}
