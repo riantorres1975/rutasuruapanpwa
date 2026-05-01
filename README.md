@@ -233,9 +233,9 @@ Mostrar todas las rutas con su resolución completa (miles de puntos) degrada el
 - [x] **Onboarding** — guía paso a paso para usuarios nuevos
 - [x] **Rutas con trasbordo** — sugerencias A→B con máximo 1 cambio de camión y visualización diferenciada
 - [x] **Auto-encuadre inteligente** — la cámara se ajusta al marcar A, B o al mostrar una ruta sugerida
-- [ ] **Búsqueda de paradas por nombre** — campo de texto con autocomplete fuzzy
-- [ ] **Horarios estimados** — basados en patrones históricos de la ciudad
-- [ ] **Modo nocturno adaptativo** — cambio automático según hora del día
+- [x] **Búsqueda de paradas por nombre** — campo de texto con autocomplete fuzzy
+- [x] **Horarios estimados** — basados en patrones históricos de la ciudad
+- [x] **Modo nocturno adaptativo** — cambio automático según hora del día
 - [ ] **Panel de accesibilidad** — contraste alto, texto grande, screen reader
 
 ---
