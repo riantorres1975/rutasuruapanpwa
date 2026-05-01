@@ -20,7 +20,7 @@ import { computeTransferOptions } from "@/lib/transfers";
 import type { TransferOption } from "@/lib/transfers";
 const PROXIMITY_METERS = 400;
 const DESTINATION_DISTANCE_WEIGHT = 1.8;
-const SEGMENT_LENGTH_FACTOR = 0.04;
+const SEGMENT_LENGTH_FACTOR = 0.01;
 const AVG_TRIP_SPEED_KMH = 18;
 const BACKGROUND_SIMPLIFY_TOLERANCE = 0.00008;
 const BACKGROUND_MAX_POINTS = 180;
