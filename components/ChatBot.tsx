@@ -18,8 +18,10 @@ export default function ChatBot() {
   const [loading, setLoading] = useState(false);
   const [location, setLocation] = useState<UserLocation>(null);
   const [locStatus, setLocStatus] = useState<'idle' | 'granted' | 'denied'>('idle');
-  const [panelStyle, setPanelStyle] = useState<React.CSSProperties>({});
+  const [desktopStyle, setDesktopStyle] = useState<React.CSSProperties>({});
   const [mounted, setMounted] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
   // Reporte
   const [reportRoute, setReportRoute] = useState('');
   const [reportError, setReportError] = useState('');
@@ -68,10 +70,28 @@ export default function ChatBot() {
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => { setMounted(true); }, []);
-
   useEffect(() => {
-    if (!open) return;
+    setMounted(true);
+    setIsMobile(window.innerWidth < 768);
+    const onResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  // Bloquear scroll del body cuando el chat está abierto en mobile
+  useEffect(() => {
+    if (!mounted) return;
+    if (open && isMobile) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [open, isMobile, mounted]);
+
+  // Click fuera para cerrar (solo desktop)
+  useEffect(() => {
+    if (!open || isMobile) return;
     function handleClickOutside(e: MouseEvent | TouchEvent) {
       const target = e.target as Node;
       if (panelRef.current?.contains(target) || btnRef.current?.contains(target)) return;
@@ -83,43 +103,37 @@ export default function ChatBot() {
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('touchstart', handleClickOutside);
     };
-  }, [open]);
+  }, [open, isMobile]);
 
-  function calcPanelStyle() {
+  // Posición del panel en desktop
+  function calcDesktopStyle() {
     if (!btnRef.current) return;
     const rect = btnRef.current.getBoundingClientRect();
     const vw = window.innerWidth;
-    // Usar visualViewport si está disponible — detecta correctamente el espacio libre cuando el teclado está abierto
-    const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-    const vvTop = window.visualViewport ? window.visualViewport.offsetTop : 0;
-    const isDesktop = vw >= 768;
-    if (isDesktop) {
-      setPanelStyle({ top: rect.bottom + 8, right: vw - rect.right, width: 320, maxHeight: vh - rect.bottom - 16 });
-    } else {
-      const spaceAboveBtn = rect.top - vvTop - 8;
-      setPanelStyle({
-        bottom: vh - (rect.top - vvTop) + 8,
-        left: 8,
-        right: 8,
-        maxHeight: Math.min(spaceAboveBtn, vh * 0.85),
-      });
-    }
+    const vh = window.innerHeight;
+    setDesktopStyle({
+      top: rect.bottom + 8,
+      right: vw - rect.right,
+      width: 320,
+      maxHeight: vh - rect.bottom - 16,
+    });
   }
 
   useEffect(() => {
-    if (!open) return;
-    calcPanelStyle();
-    const onResize = () => calcPanelStyle();
+    if (!open || isMobile) return;
+    calcDesktopStyle();
+    const onResize = () => calcDesktopStyle();
     window.addEventListener('resize', onResize);
-    window.visualViewport?.addEventListener('resize', onResize);
-    window.visualViewport?.addEventListener('scroll', onResize);
     setTimeout(() => inputRef.current?.focus(), 50);
-    return () => {
-      window.removeEventListener('resize', onResize);
-      window.visualViewport?.removeEventListener('resize', onResize);
-      window.visualViewport?.removeEventListener('scroll', onResize);
-    };
-  }, [open]);
+    return () => window.removeEventListener('resize', onResize);
+  }, [open, isMobile]);
+
+  // En mobile: focus al input cuando se abre
+  useEffect(() => {
+    if (open && isMobile) {
+      setTimeout(() => inputRef.current?.focus(), 300);
+    }
+  }, [open, isMobile]);
 
   useEffect(() => {
     if (open) bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -180,21 +194,15 @@ export default function ChatBot() {
     fontSize: 12, outline: 'none', resize: 'none' as const,
   };
 
-  const panel = open && mounted ? createPortal(
-    <div ref={panelRef} style={{
-      position: 'fixed',
-      ...panelStyle,
-      background: 'var(--surface, #111a0d)',
-      border: '1px solid rgba(140,200,80,0.18)',
-      borderRadius: 16,
-      boxShadow: '0 8px 40px rgba(0,0,0,0.65)',
-      display: 'flex',
-      flexDirection: 'column',
-      overflow: 'hidden',
-      zIndex: 99999,
-    }}>
+  // ── Contenido interior compartido entre mobile y desktop ──────────────────
+  const panelContent = (
+    <>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '11px 14px', borderBottom: '1px solid rgba(140,200,80,0.10)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '11px 14px', borderBottom: '1px solid rgba(140,200,80,0.10)', flexShrink: 0 }}>
+        {/* Handle drag (solo mobile) */}
+        {isMobile && (
+          <div style={{ position: 'absolute', top: 8, left: '50%', transform: 'translateX(-50%)', width: 36, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.15)' }} />
+        )}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--verde, #6aab48)', display: 'inline-block' }} />
           <span style={{ color: 'var(--foreground, #e8f2d8)', fontSize: 13, fontWeight: 700, letterSpacing: '-0.01em' }}>
@@ -238,18 +246,19 @@ export default function ChatBot() {
       {view === 'chat' && (
         <>
           {locStatus === 'idle' && messages.length === 0 && (
-            <button type="button" onClick={requestLocation} style={{ background: 'rgba(106,171,72,0.08)', border: 'none', borderBottom: '1px solid rgba(140,200,80,0.10)', padding: '8px 14px', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', textAlign: 'left', width: '100%' }}>
+            <button type="button" onClick={requestLocation} style={{ background: 'rgba(106,171,72,0.08)', border: 'none', borderBottom: '1px solid rgba(140,200,80,0.10)', padding: '8px 14px', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', textAlign: 'left', width: '100%', flexShrink: 0 }}>
               <span style={{ fontSize: 14 }}>📍</span>
               <span style={{ color: 'var(--foreground, #e8f2d8)', fontSize: 12, opacity: 0.7, lineHeight: 1.4 }}>Compartir ubicación para sugerencias más precisas</span>
             </button>
           )}
           {locStatus === 'granted' && (
-            <div style={{ background: 'rgba(106,171,72,0.08)', borderBottom: '1px solid rgba(140,200,80,0.10)', padding: '6px 14px', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ background: 'rgba(106,171,72,0.08)', borderBottom: '1px solid rgba(140,200,80,0.10)', padding: '6px 14px', display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
               <span style={{ fontSize: 12 }}>📍</span>
               <span style={{ color: 'var(--verde, #6aab48)', fontSize: 11, fontWeight: 600 }}>Ubicación activa</span>
             </div>
           )}
 
+          {/* Mensajes */}
           <div style={{ flex: 1, overflowY: 'auto', padding: 12, display: 'flex', flexDirection: 'column', gap: 8, minHeight: 0 }}>
             {messages.length === 0 && (
               <p style={{ color: 'var(--foreground, #e8f2d8)', opacity: 0.35, fontSize: 12, textAlign: 'center', margin: 'auto', lineHeight: 1.5 }}>
@@ -278,7 +287,7 @@ export default function ChatBot() {
           </div>
 
           {/* Banner beta */}
-          <div style={{ padding: '6px 14px', borderTop: '1px solid rgba(140,200,80,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+          <div style={{ padding: '6px 14px', borderTop: '1px solid rgba(140,200,80,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexShrink: 0 }}>
             <span style={{ fontSize: 11, color: 'var(--foreground, #e8f2d8)', opacity: 0.4, lineHeight: 1.4 }}>
               ⚠️ Info en beta, puede tener errores
             </span>
@@ -287,7 +296,8 @@ export default function ChatBot() {
             >🚩 Reportar</button>
           </div>
 
-          <div style={{ display: 'flex', gap: 6, padding: '10px 12px', borderTop: '1px solid rgba(140,200,80,0.10)' }}>
+          {/* Input */}
+          <div style={{ display: 'flex', gap: 6, padding: '10px 12px', borderTop: '1px solid rgba(140,200,80,0.10)', flexShrink: 0 }}>
             <input
               ref={inputRef}
               type="text"
@@ -307,62 +317,103 @@ export default function ChatBot() {
 
       {/* Vista: Reporte */}
       {view === 'report' && (
-        <div style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 10, overflowY: 'auto', maxHeight: 420 }}>
+        <div style={{ flex: 1, padding: 14, display: 'flex', flexDirection: 'column', gap: 10, overflowY: 'auto', minHeight: 0 }}>
           <p style={{ color: 'var(--foreground, #e8f2d8)', opacity: 0.55, fontSize: 12, lineHeight: 1.5, margin: 0 }}>
             ¿El bot dio información incorrecta? Llena los campos y elige cómo enviarlo.
           </p>
-
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             <label style={{ color: 'var(--foreground, #e8f2d8)', fontSize: 11, fontWeight: 600, opacity: 0.7 }}>Ruta (opcional)</label>
-            <input
-              type="text"
-              value={reportRoute}
-              onChange={(e) => setReportRoute(e.target.value)}
-              placeholder="Ej: Ruta 2, Ruta 25..."
-              style={inputStyle}
-            />
+            <input type="text" value={reportRoute} onChange={(e) => setReportRoute(e.target.value)} placeholder="Ej: Ruta 2, Ruta 25..." style={inputStyle} />
           </div>
-
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             <label style={{ color: 'var(--foreground, #e8f2d8)', fontSize: 11, fontWeight: 600, opacity: 0.7 }}>¿Qué dijo mal el bot? *</label>
-            <textarea
-              value={reportError}
-              onChange={(e) => setReportError(e.target.value)}
-              placeholder="Ej: Dijo que la Ruta 2 pasa por el centro..."
-              rows={3}
-              style={inputStyle}
-            />
+            <textarea value={reportError} onChange={(e) => setReportError(e.target.value)} placeholder="Ej: Dijo que la Ruta 2 pasa por el centro..." rows={3} style={inputStyle} />
           </div>
-
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             <label style={{ color: 'var(--foreground, #e8f2d8)', fontSize: 11, fontWeight: 600, opacity: 0.7 }}>¿Cuál es la información correcta?</label>
-            <textarea
-              value={reportCorrect}
-              onChange={(e) => setReportCorrect(e.target.value)}
-              placeholder="Ej: La Ruta 2 va de Constituyentes a Jicalán..."
-              rows={3}
-              style={inputStyle}
-            />
+            <textarea value={reportCorrect} onChange={(e) => setReportCorrect(e.target.value)} placeholder="Ej: La Ruta 2 va de Constituyentes a Jicalán..." rows={3} style={inputStyle} />
           </div>
-
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 2 }}>
-            <a
-              href={issueHref}
-              target="_blank"
-              rel="noreferrer"
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '8px', borderRadius: 8, border: '1px solid rgba(140,200,80,0.2)', color: 'var(--foreground, #e8f2d8)', fontSize: 12, fontWeight: 600, textDecoration: 'none', opacity: reportError.trim() ? 0.8 : 0.3, pointerEvents: reportError.trim() ? 'auto' : 'none' }}
-            >
-              Reportar en GitHub
-            </a>
-            <a
-              href={emailHref}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '8px', borderRadius: 8, background: 'var(--verde, #6aab48)', color: '#fff', fontSize: 12, fontWeight: 700, textDecoration: 'none', opacity: reportError.trim() ? 1 : 0.35, pointerEvents: reportError.trim() ? 'auto' : 'none' }}
-            >
-              Enviar por correo
-            </a>
+            <a href={issueHref} target="_blank" rel="noreferrer"
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px', borderRadius: 8, border: '1px solid rgba(140,200,80,0.2)', color: 'var(--foreground, #e8f2d8)', fontSize: 12, fontWeight: 600, textDecoration: 'none', opacity: reportError.trim() ? 0.8 : 0.3, pointerEvents: reportError.trim() ? 'auto' : 'none' }}
+            >Reportar en GitHub</a>
+            <a href={emailHref}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px', borderRadius: 8, background: 'var(--verde, #6aab48)', color: '#fff', fontSize: 12, fontWeight: 700, textDecoration: 'none', opacity: reportError.trim() ? 1 : 0.35, pointerEvents: reportError.trim() ? 'auto' : 'none' }}
+            >Enviar por correo</a>
           </div>
         </div>
       )}
+    </>
+  );
+
+  if (!mounted) return (
+    <button ref={btnRef} type="button" onClick={() => setOpen(true)}
+      className="ov-panel pointer-events-auto inline-flex h-12 w-12 items-center justify-center rounded-2xl border shadow-[0_8px_32px_rgba(0,0,0,0.3)] backdrop-blur-xl transition active:scale-[0.97] md:h-10 md:w-10 md:rounded-lg md:shadow-none border-foreground/12 bg-foreground/5 text-foreground/50"
+      aria-label="Abrir asistente de rutas"
+    >
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <path d="M14 1H2C1.45 1 1 1.45 1 2v9c0 .55.45 1 1 1h2v3l3-3h7c.55 0 1-.45 1-1V2c0-.55-.45-1-1-1z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" fill="none" />
+      </svg>
+    </button>
+  );
+
+  // ── Panel MOBILE: bottom sheet de pantalla completa ───────────────────────
+  const mobileSheet = isMobile ? createPortal(
+    <>
+      {/* Backdrop */}
+      <div
+        onClick={() => setOpen(false)}
+        style={{
+          position: 'fixed', inset: 0, zIndex: 99998,
+          background: 'rgba(0,0,0,0.55)',
+          opacity: open ? 1 : 0,
+          pointerEvents: open ? 'auto' : 'none',
+          transition: 'opacity 0.25s',
+        }}
+      />
+      {/* Sheet */}
+      <div
+        ref={panelRef}
+        style={{
+          position: 'fixed', left: 0, right: 0, bottom: 0,
+          zIndex: 99999,
+          background: 'var(--surface, #111a0d)',
+          borderTop: '1px solid rgba(140,200,80,0.18)',
+          borderRadius: '20px 20px 0 0',
+          boxShadow: '0 -8px 40px rgba(0,0,0,0.65)',
+          display: 'flex',
+          flexDirection: 'column',
+          // 70% de la pantalla, se ajusta solo con el teclado gracias a dvh
+          height: '70dvh',
+          transform: open ? 'translateY(0)' : 'translateY(100%)',
+          transition: 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)',
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+        }}
+      >
+        {panelContent}
+      </div>
+    </>,
+    document.body
+  ) : null;
+
+  // ── Panel DESKTOP: flotante posicionado sobre el botón ────────────────────
+  const desktopPanel = !isMobile && open ? createPortal(
+    <div
+      ref={panelRef}
+      style={{
+        position: 'fixed',
+        ...desktopStyle,
+        background: 'var(--surface, #111a0d)',
+        border: '1px solid rgba(140,200,80,0.18)',
+        borderRadius: 16,
+        boxShadow: '0 8px 40px rgba(0,0,0,0.65)',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+        zIndex: 99999,
+      }}
+    >
+      {panelContent}
     </div>,
     document.body
   ) : null;
@@ -383,7 +434,8 @@ export default function ChatBot() {
           <path d="M14 1H2C1.45 1 1 1.45 1 2v9c0 .55.45 1 1 1h2v3l3-3h7c.55 0 1-.45 1-1V2c0-.55-.45-1-1-1z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" fill="none" />
         </svg>
       </button>
-      {panel}
+      {mobileSheet}
+      {desktopPanel}
     </>
   );
 }
