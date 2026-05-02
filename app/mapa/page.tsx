@@ -9,6 +9,7 @@ const SIDEBAR_DEFAULT_LG = 420; // px en breakpoint lg (1024px+)
 const SIDEBAR_MIN = 300;        // px mínimo al arrastrar
 const SIDEBAR_MAX = 520;        // px máximo al arrastrar
 import BottomSheet from "@/components/BottomSheet";
+import ChatBot from "@/components/ChatBot";
 import NearbyToast from "@/components/NearbyToast";
 import OnboardingOverlay from "@/components/OnboardingOverlay";
 import RouteList from "@/components/RouteList";
@@ -1488,19 +1489,22 @@ export default function HomePage() {
           </div>
 
           {/* Mode toggle */}
-          <button
-            type="button"
-            onClick={() => setRoutesMapMode((current) => (current === "all-visible" ? "all-highlighted" : "all-visible"))}
-            className={`inline-flex h-10 w-10 items-center justify-center rounded-lg border text-sm transition hover:scale-105 active:scale-95 ${
-              routesMapMode === "all-highlighted"
-                ? "border-lima/40 bg-lima/12 text-lima"
-                : "border-foreground/12 bg-foreground/5 text-foreground/50 hover:border-foreground/25 hover:text-foreground/80"
-            }`}
-            aria-label={routesMapMode === "all-visible" ? "Cambiar a modo todas destacadas" : "Cambiar a modo todas visibles"}
-            title={routesMapMode === "all-visible" ? "Modo: todas visibles" : "Modo: todas destacadas"}
-          >
-            <span aria-hidden="true">👁</span>
-          </button>
+          <div className="relative flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setRoutesMapMode((current) => (current === "all-visible" ? "all-highlighted" : "all-visible"))}
+              className={`inline-flex h-10 w-10 items-center justify-center rounded-lg border text-sm transition hover:scale-105 active:scale-95 ${
+                routesMapMode === "all-highlighted"
+                  ? "border-lima/40 bg-lima/12 text-lima"
+                  : "border-foreground/12 bg-foreground/5 text-foreground/50 hover:border-foreground/25 hover:text-foreground/80"
+              }`}
+              aria-label={routesMapMode === "all-visible" ? "Cambiar a modo todas destacadas" : "Cambiar a modo todas visibles"}
+              title={routesMapMode === "all-visible" ? "Modo: todas visibles" : "Modo: todas destacadas"}
+            >
+              <span aria-hidden="true">👁</span>
+            </button>
+            <ChatBot />
+          </div>
         </div>
 
         {/* ── Flow step indicator + hint ──────────────────────────────────── */}
@@ -1759,7 +1763,7 @@ export default function HomePage() {
 
         {/* ── MOBILE ONLY: FAB row — Resultado (izq) + Rutas (der) ── */}
         <div
-          className="absolute inset-x-4 z-30 flex items-center justify-between md:hidden"
+          className="absolute inset-x-4 z-30 flex items-end gap-2 md:hidden"
           style={{ bottom: "calc(1.5rem + env(safe-area-inset-bottom, 0px))" }}
         >
           {/* Botón resultado — solo visible en paso 3 */}
@@ -1789,35 +1793,42 @@ export default function HomePage() {
             </span>
           </button>
 
-          {/* Botón ver todas las rutas */}
-          <button
-            type="button"
-            onClick={() => setIsSheetOpen(true)}
-            className="ov-panel inline-flex h-12 items-center gap-2 rounded-2xl border pl-3.5 pr-4 text-[14px] font-semibold shadow-[0_8px_32px_rgba(0,0,0,0.3)] backdrop-blur-xl transition hover:border-lima/40 hover:shadow-[0_8px_32px_rgba(232,93,47,0.15)] active:scale-[0.97]"
-            aria-label={selectedRoute ? `Ruta activa: ${formatRouteLabel(selectedRoute.nombre, selectedRoute.ruta)}` : `Rutas ${fullRoutes.length}, ver rutas disponibles`}
-          >
-            {selectedRoute ? (
-              <>
-                <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: selectedRoute.color }} aria-hidden="true" />
-                <span className="flex min-w-0 flex-col">
-                  <span className="ov-text-muted text-[10px] font-semibold leading-none">{selectedRoute.ruta}</span>
-                  <span className="ov-text max-w-[120px] truncate text-[13px] leading-snug">
-                    {getRouteDestination(selectedRoute.ruta) ?? selectedRoute.nombre}
+          {/* Chat + Rutas apilados verticalmente — pegados a la esquina inferior derecha */}
+          <div className="flex shrink-0 flex-col items-end gap-2 self-end ml-auto">
+            {/* Botón chat — se oculta cuando el sheet está abierto */}
+            <div className={`pointer-events-auto transition-all duration-200 ${isSheetOpen ? "pointer-events-none opacity-0 translate-y-1" : "opacity-100 translate-y-0"}`}>
+              <ChatBot />
+            </div>
+            {/* Botón ver todas las rutas */}
+            <button
+              type="button"
+              onClick={() => setIsSheetOpen(true)}
+              className="ov-panel pointer-events-auto inline-flex h-12 items-center gap-2 rounded-2xl border pl-3.5 pr-4 text-[14px] font-semibold shadow-[0_8px_32px_rgba(0,0,0,0.3)] backdrop-blur-xl transition hover:border-lima/40 hover:shadow-[0_8px_32px_rgba(232,93,47,0.15)] active:scale-[0.97]"
+              aria-label={selectedRoute ? `Ruta activa: ${formatRouteLabel(selectedRoute.nombre, selectedRoute.ruta)}` : `Rutas ${fullRoutes.length}, ver rutas disponibles`}
+            >
+              {selectedRoute ? (
+                <>
+                  <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: selectedRoute.color }} aria-hidden="true" />
+                  <span className="flex min-w-0 flex-col">
+                    <span className="ov-text-muted text-[10px] font-semibold leading-none">{selectedRoute.ruta}</span>
+                    <span className="ov-text max-w-[120px] truncate text-[13px] leading-snug">
+                      {getRouteDestination(selectedRoute.ruta) ?? selectedRoute.nombre}
+                    </span>
                   </span>
-                </span>
-              </>
-            ) : (
-              <>
-                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 text-lima" aria-hidden="true">
-                  <path d="M4 7H20M4 12H20M4 17H14" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
-                </svg>
-                <span className="ov-text">Rutas</span>
-                <span className="ml-0.5 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-lima/20 px-1.5 text-[11px] font-bold text-lima">
-                  {fullRoutes.length}
-                </span>
-              </>
-            )}
-          </button>
+                </>
+              ) : (
+                <>
+                  <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 text-lima" aria-hidden="true">
+                    <path d="M4 7H20M4 12H20M4 17H14" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+                  </svg>
+                  <span className="ov-text">Rutas</span>
+                  <span className="ml-0.5 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-lima/20 px-1.5 text-[11px] font-bold text-lima">
+                    {fullRoutes.length}
+                  </span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
 
