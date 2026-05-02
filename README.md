@@ -1,7 +1,8 @@
 # UruGo - Rutas Uruapan
 
-![Next.js](https://img.shields.io/badge/Next.js_14-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
-![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![Next.js](https://img.shields.io/badge/Next.js_16-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![React](https://img.shields.io/badge/React_19-61DAFB?style=for-the-badge&logo=react&logoColor=black)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
 ![Mapbox](https://img.shields.io/badge/Mapbox_GL_JS-000000?style=for-the-badge&logo=mapbox&logoColor=white)
 ![PWA](https://img.shields.io/badge/PWA-5A0FC8?style=for-the-badge&logo=pwa&logoColor=white)
@@ -175,10 +176,11 @@ Al seleccionar una ruta, los puntos se añaden uno a uno al GeoJSON source en ca
 
 | Tecnología | Versión | Rol |
 |---|---|---|
-| [Next.js](https://nextjs.org/) | 14 (App Router) | Framework React con SSR/RSC y API Routes |
-| [TypeScript](https://www.typescriptlang.org/) | 5.x | Tipado estático en todo el codebase |
-| [Tailwind CSS](https://tailwindcss.com/) | 3.x | Utilidades CSS, tema oscuro, responsivo |
-| [Mapbox GL JS](https://docs.mapbox.com/mapbox-gl-js/) | 3.x | Renderizado de mapas vectoriales y capas GeoJSON |
+| [Next.js](https://nextjs.org/) | 16.2.4 (App Router + webpack) | Framework React con SSR/RSC y API Routes |
+| [React](https://react.dev/) | 19.2.5 | Biblioteca de UI con Server Components |
+| [TypeScript](https://www.typescriptlang.org/) | 5.5.3 | Tipado estático en todo el codebase |
+| [Tailwind CSS](https://tailwindcss.com/) | 3.4.6 | Utilidades CSS, tema oscuro, responsivo |
+| [Mapbox GL JS](https://docs.mapbox.com/mapbox-gl-js/) | 3.12.0 | Renderizado de mapas vectoriales y capas GeoJSON |
 | Service Worker | nativo | Caché offline, instalación PWA |
 | [DeepSeek API](https://platform.deepseek.com/) | deepseek-chat | Modelo de lenguaje para el asistente IA |
 
@@ -234,8 +236,9 @@ Abre [http://localhost:3000](http://localhost:3000) en tu navegador.
 ### 5. Scripts útiles
 
 ```bash
-npm run build                    # Build de producción
-npm run lint                     # Validación ESLint
+npm run build                    # Build de producción (webpack)
+npm run dev                      # Dev server con webpack
+npm run lint                     # Validación ESLint 9
 npx tsc --noEmit                 # Validación TypeScript estricta
 npm audit --audit-level=moderate # Auditoría de dependencias
 npm run convert:rutas            # Convierte insumos raw → data/rutas.json
@@ -290,9 +293,9 @@ El proyecto usa metadata de Next.js App Router, `app/sitemap.ts` y `app/robots.t
 
 El Service Worker precarga el shell principal y cachea `/api/rutas` con estrategia stale-while-revalidate para que el mapa pueda seguir funcionando después de una primera carga exitosa.
 
-### ¿Por qué Next.js 14 con App Router?
+### ¿Por qué Next.js 16 con App Router?
 
-El App Router permite colocar el endpoint `/api/rutas` en el mismo proyecto sin backend separado. Además, los **React Server Components** reducen el JS del cliente y `revalidate = 86400` en el API route garantiza que Vercel sirva el JSON desde su CDN edge — cero latencia para los usuarios.
+El App Router permite colocar el endpoint `/api/rutas` en el mismo proyecto sin backend separado. Además, los **React Server Components** reducen el JS del cliente y `revalidate = 86400` en el API route garantiza que Vercel sirva el JSON desde su CDN edge — cero latencia para los usuarios. El build con webpack (`next dev --webpack`) proporciona compatibilidad completa con plugins y optimización de bundle.
 
 ### ¿Por qué Mapbox GL JS y no Leaflet o Google Maps?
 
@@ -343,8 +346,9 @@ Mostrar todas las rutas con su resolución completa (miles de puntos) degrada el
 
 # UruGo - Rutas Uruapan — English
 
-![Next.js](https://img.shields.io/badge/Next.js_14-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
-![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![Next.js](https://img.shields.io/badge/Next.js_16-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![React](https://img.shields.io/badge/React_19-61DAFB?style=for-the-badge&logo=react&logoColor=black)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
 ![Mapbox](https://img.shields.io/badge/Mapbox_GL_JS-000000?style=for-the-badge&logo=mapbox&logoColor=white)
 ![PWA](https://img.shields.io/badge/PWA-5A0FC8?style=for-the-badge&logo=pwa&logoColor=white)
@@ -471,10 +475,11 @@ When a route is selected, points are added one by one to the GeoJSON source on e
 
 | Technology | Version | Role |
 |---|---|---|
-| [Next.js](https://nextjs.org/) | 14 (App Router) | React framework with SSR/RSC and API Routes |
-| [TypeScript](https://www.typescriptlang.org/) | 5.x | Static typing across the entire codebase |
-| [Tailwind CSS](https://tailwindcss.com/) | 3.x | CSS utilities, dark mode, responsive layout |
-| [Mapbox GL JS](https://docs.mapbox.com/mapbox-gl-js/) | 3.x | Vector map rendering and GeoJSON layers |
+| [Next.js](https://nextjs.org/) | 16.2.4 (App Router + webpack) | React framework with SSR/RSC and API Routes |
+| [React](https://react.dev/) | 19.2.5 | UI library with Server Components |
+| [TypeScript](https://www.typescriptlang.org/) | 5.5.3 | Static typing across the entire codebase |
+| [Tailwind CSS](https://tailwindcss.com/) | 3.4.6 | CSS utilities, dark mode, responsive layout |
+| [Mapbox GL JS](https://docs.mapbox.com/mapbox-gl-js/) | 3.12.0 | Vector map rendering and GeoJSON layers |
 | Service Worker | native | Offline cache, PWA installation |
 | [DeepSeek API](https://platform.deepseek.com/) | deepseek-chat | Language model powering the AI assistant |
 
@@ -530,8 +535,9 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ### 5. Useful scripts
 
 ```bash
-npm run build              # Production build
-npm run lint               # ESLint validation
+npm run build              # Production build (webpack)
+npm run dev                # Dev server with webpack
+npm run lint               # ESLint 9 validation
 npx tsc --noEmit           # Strict TypeScript validation
 npm audit --audit-level=moderate # Dependency audit
 npm run convert:rutas      # Convert raw inputs → data/rutas.json
@@ -585,9 +591,9 @@ The project uses Next.js App Router metadata, `app/sitemap.ts`, and `app/robots.
 
 The Service Worker precaches the main shell and caches `/api/rutas` with stale-while-revalidate so the map can keep working after one successful online load.
 
-### Why Next.js 14 with App Router?
+### Why Next.js 16 with App Router?
 
-The App Router lets us place the `/api/rutas` endpoint within the same project — no separate backend. Additionally, **React Server Components** reduce client-side JS, and `revalidate = 86400` on the API route ensures Vercel serves the JSON from its edge CDN, delivering zero-latency responses to users.
+The App Router lets us place the `/api/rutas` endpoint within the same project — no separate backend. Additionally, **React Server Components** reduce client-side JS, and `revalidate = 86400` on the API route ensures Vercel serves the JSON from its edge CDN, delivering zero-latency responses to users. The webpack-based build (`next dev --webpack`) provides full plugin compatibility and bundle optimization.
 
 ### Why Mapbox GL JS instead of Leaflet or Google Maps?
 
