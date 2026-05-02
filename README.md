@@ -1,4 +1,4 @@
-# 🚌 Rutas Uruapan
+# UruGo - Rutas Uruapan
 
 ![Next.js](https://img.shields.io/badge/Next.js_14-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
@@ -7,17 +7,17 @@
 ![PWA](https://img.shields.io/badge/PWA-5A0FC8?style=for-the-badge&logo=pwa&logoColor=white)
 ![DeepSeek](https://img.shields.io/badge/DeepSeek_AI-4A90D9?style=for-the-badge&logo=openai&logoColor=white)
 
-**Aplicación web progresiva (PWA) mobile-first para visualizar y navegar las 40 rutas de transporte público de Uruapan, Michoacán — sin depender de APIs externas de enrutamiento.**
+**Aplicación web progresiva (PWA) mobile-first para visualizar y navegar las 40 rutas de transporte público de Uruapan, Michoacán, junto con información del Teleférico Uruapan, sin depender de APIs externas de enrutamiento.**
 
 ## Demos
 
 ### Landing page
 
-![Demo de la landing page de VoyUruapan](./public/readme/demoLandipageUruGO.gif)
+![Demo de la landing page de UruGo](./public/readme/demoLandipageUruGO.gif)
 
 ### Mapa interactivo
 
-![Demo del mapa interactivo de VoyUruapan](./public/readme/demoMapaUruGO.gif)
+![Demo del mapa interactivo de UruGo](./public/readme/demoMapaUruGO.gif)
 
 ---
 
@@ -36,7 +36,8 @@ Los sistemas de transporte público en ciudades intermedias de México carecen d
 | 📍 Geolocalización Inteligente | Filtra rutas a <400m del usuario, indicador de precisión y ranking de cercanía |
 | 🚀 Onboarding | Overlay de bienvenida explicativo usando `localStorage` |
 | 📲 Compartir Ruta | Integración con `navigator.share()` nativo y fallback al portapapeles |
-| 🏷️ Nombres descriptivos | Cada ruta se identifica por su destino (ej. "Jucutacato · Ruta 24") en lista, mapa y link compartido; búsqueda por número o destino |
+| 🏷️ Nombres descriptivos | Cada ruta se identifica por su destino (ej. "Jucutacato · Ruta 24") en lista, mapa y link compartido |
+| 🔎 Contexto desde landing | Los CTAs y chips envían `?destino=...`; el mapa muestra una guía contextual para marcar origen y destino |
 | 🔄 Ida / Vuelta | Cambio dinámico de dirección con re-render reactivo; botón de sugerencia rápida al no encontrar ruta directa |
 | 🎯 Motor de sugerencias A→B | Algoritmo Haversine para matching local sin APIs externas |
 | 🔀 Rutas con trasbordo | Sugerencias A→B con 1 cambio de camión; rutas secundarias atenuadas visualmente para foco en el trasbordo |
@@ -53,8 +54,21 @@ Los sistemas de transporte público en ciudades intermedias de México carecen d
 | 🤖 Asistente IA (UruGo Chat) | Chatbot con DeepSeek AI que responde preguntas sobre rutas, horarios y cómo llegar a destinos en Uruapan |
 | 🔒 Rate limiting anti-spam | Máx. 10 mensajes por IP cada 60 s en el endpoint del chat; responde 429 con mensaje legible |
 | 🚩 Reporte de errores integrado | Botón en el chat para reportar información incorrecta vía correo o GitHub Issue, con campos prellenados |
+| ♿ Accesibilidad base | Estados `:focus-visible` globales para navegación por teclado y controles con labels accesibles |
 
 ---
+
+---
+
+## Flujo landing -> mapa
+
+La landing abre la PWA en `/mapa`. Los CTAs de búsqueda y chips populares pueden enviar un destino como query param:
+
+```txt
+/mapa?destino=Parque%20Nacional
+```
+
+El mapa no inventa coordenadas ni rutas automáticas a partir de texto libre. En su lugar, muestra el destino recibido y guía al usuario a marcar primero su origen y luego la zona del destino en el mapa. Esto evita falsos positivos y mantiene el motor A→B basado en coordenadas reales.
 
 ---
 
@@ -86,14 +100,16 @@ const RATE_LIMIT = 10;       // mensajes permitidos
 const RATE_WINDOW_MS = 60_000; // ventana en ms
 ```
 
-### Tests automatizados
+### Pruebas recomendadas
 
 ```bash
-# Requiere servidor corriendo en localhost:3000
-node scripts/test-chatbot.mjs
+npm run lint
+npx tsc --noEmit
+npm run build
+npm audit --audit-level=moderate
 ```
 
-El suite cubre: seguridad (no revelar API key ni modelo), prompt injection, preguntas fuera de tema, exactitud de datos de rutas y rate limiting.
+> `npm audit` puede reportar vulnerabilidades de Next.js/PostCSS que requieren actualización controlada de dependencias. Evita `npm audit fix --force` sin revisar migración, porque puede proponer un salto mayor de Next.js.
 
 ---
 
@@ -216,9 +232,10 @@ Abre [http://localhost:3000](http://localhost:3000) en tu navegador.
 ```bash
 npm run build                    # Build de producción
 npm run lint                     # Validación ESLint
+npx tsc --noEmit                 # Validación TypeScript estricta
+npm audit --audit-level=moderate # Auditoría de dependencias
 npm run convert:rutas            # Convierte insumos raw → data/rutas.json
 node scripts/group-rutas.js      # Genera data/rutas-grouped.json
-node scripts/test-chatbot.mjs    # Tests automatizados del asistente IA (requiere servidor activo)
 ```
 
 ---
@@ -231,6 +248,8 @@ rutasuruapanpwa/
 │   ├── api/rutas/route.ts              # Endpoint GET /api/rutas (lazy load)
 │   ├── api/chat/route.ts              # Endpoint POST /api/chat — asistente IA con rate limiting
 │   ├── api/debug/save-route/route.ts  # Endpoint POST para guardar ediciones (solo dev)
+│   ├── robots.ts                       # Robots.txt generado por App Router
+│   ├── sitemap.ts                      # Sitemap XML generado por App Router
 │   ├── layout.tsx                      # Root layout, metadatos, fuentes
 │   ├── mapa/page.tsx                   # Mapa interactivo con overlays y BottomSheets
 │   └── page.tsx                        # Landing page
@@ -260,6 +279,12 @@ rutasuruapanpwa/
 ---
 
 ## 🏗 Decisiones técnicas
+
+### SEO y PWA
+
+El proyecto usa metadata de Next.js App Router, `app/sitemap.ts` y `app/robots.ts` para evitar duplicidad con archivos estáticos. El manifest vive en `public/manifest.json` y el Service Worker en `public/sw.js`, generado desde `public/sw.template.js` durante el build para estampar un identificador de versión.
+
+El Service Worker precarga el shell principal y cachea `/api/rutas` con estrategia stale-while-revalidate para que el mapa pueda seguir funcionando después de una primera carga exitosa.
 
 ### ¿Por qué Next.js 14 con App Router?
 
@@ -312,7 +337,7 @@ Mostrar todas las rutas con su resolución completa (miles de puntos) degrada el
 
 ---
 
-# 🚌 Rutas Uruapan — English
+# UruGo - Rutas Uruapan — English
 
 ![Next.js](https://img.shields.io/badge/Next.js_14-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
@@ -327,11 +352,11 @@ Mostrar todas las rutas con su resolución completa (miles de puntos) degrada el
 
 ### Landing Page
 
-![VoyUruapan landing page demo](./public/readme/demoLandipageUruGO.gif)
+![UruGo landing page demo](./public/readme/demoLandipageUruGO.gif)
 
 ### Interactive Map
 
-![VoyUruapan interactive map demo](./public/readme/demoMapaUruGO.gif)
+![UruGo interactive map demo](./public/readme/demoMapaUruGO.gif)
 
 ---
 
@@ -351,6 +376,7 @@ Public transit in mid-size Mexican cities lacks accessible digital information. 
 | 🚀 Onboarding Flow | Step-by-step explanatory overlay using `localStorage` |
 | 📲 Share Routing | Native integration via `navigator.share()` with clipboard fallback |
 | 🏷️ Descriptive names | Each route is identified by its destination (e.g. "Jucutacato · Ruta 24") in list, map, and shared link; search works by number or destination |
+| 🔎 Landing context | Landing CTAs and chips send `?destino=...`; the map shows contextual guidance for placing origin and destination |
 | 🔄 Outbound / Return | Dynamic direction toggle with reactive re-render; quick-flip button when no direct route found |
 | 🎯 A→B Suggestion Engine | Haversine-based local matching, no external APIs |
 | 🔀 Transfer routes | A→B suggestions with 1 bus change; secondary routes visually dimmed to focus on transfer |
@@ -367,8 +393,19 @@ Public transit in mid-size Mexican cities lacks accessible digital information. 
 | 🤖 AI Assistant (UruGo Chat) | DeepSeek-powered chatbot answering natural-language questions about routes, schedules, and destinations in Uruapan |
 | 🔒 Anti-spam rate limiting | Max 10 messages per IP per 60 s on the chat endpoint; returns HTTP 429 with a readable message |
 | 🚩 Integrated error reporting | Flag button in the chat that opens a pre-filled email or GitHub Issue to report incorrect information |
+| ♿ Baseline accessibility | Global `:focus-visible` states for keyboard navigation and accessible labels on core controls |
 
 ---
+
+## Landing -> Map Flow
+
+The landing page opens the PWA at `/mapa`. Search CTAs and popular chips can pass a destination query param:
+
+```txt
+/mapa?destino=Parque%20Nacional
+```
+
+The map does not guess coordinates or automatic routes from free text. Instead, it displays the requested destination and guides the user to place their origin and then the destination area on the map. This keeps the A→B engine grounded in real coordinates.
 
 ---
 
@@ -491,6 +528,8 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ```bash
 npm run build              # Production build
 npm run lint               # ESLint validation
+npx tsc --noEmit           # Strict TypeScript validation
+npm audit --audit-level=moderate # Dependency audit
 npm run convert:rutas      # Convert raw inputs → data/rutas.json
 node scripts/group-rutas.js  # Generate data/rutas-grouped.json
 ```
@@ -503,12 +542,18 @@ node scripts/group-rutas.js  # Generate data/rutas-grouped.json
 rutasuruapanpwa/
 ├── app/
 │   ├── api/rutas/route.ts              # GET /api/rutas endpoint (lazy load)
+│   ├── api/chat/route.ts               # POST /api/chat endpoint with rate limiting
 │   ├── api/debug/save-route/route.ts  # POST endpoint for saving edits (dev only)
+│   ├── robots.ts                       # robots.txt generated by App Router
+│   ├── sitemap.ts                      # sitemap.xml generated by App Router
 │   ├── layout.tsx                      # Root layout, metadata, fonts
-│   └── page.tsx                        # Main page — core logic
+│   ├── mapa/page.tsx                   # Interactive map and PWA flow
+│   └── page.tsx                        # Landing page
 ├── components/
 │   ├── BottomSheet.tsx       # Slide-up sheet with route list
+│   ├── ChatBot.tsx           # Floating AI assistant
 │   ├── Map.tsx               # MapView with Mapbox GL JS
+│   ├── ReportBugForm.tsx     # Error report form
 │   └── RouteList.tsx         # Filterable route list
 ├── data/
 │   ├── rutas.json            # Normalized routes (flat format)
@@ -529,6 +574,12 @@ rutasuruapanpwa/
 ---
 
 ## 🏗 Technical Decisions
+
+### SEO and PWA
+
+The project uses Next.js App Router metadata, `app/sitemap.ts`, and `app/robots.ts` to avoid duplicate static SEO files. The manifest lives in `public/manifest.json`; the Service Worker lives in `public/sw.js` and is generated from `public/sw.template.js` during build to stamp a version identifier.
+
+The Service Worker precaches the main shell and caches `/api/rutas` with stale-while-revalidate so the map can keep working after one successful online load.
 
 ### Why Next.js 14 with App Router?
 
