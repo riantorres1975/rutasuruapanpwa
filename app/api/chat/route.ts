@@ -219,8 +219,6 @@ ${aliasesList}
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT = 10;
 const RATE_WINDOW_MS = 60_000;
-const RATE_CLEANUP_INTERVAL_MS = 300_000;
-let lastRateLimitCleanup = 0;
 
 function cleanExpiredEntries(map: Map<string, { count: number; resetAt: number }>, now: number) {
   for (const [key, value] of map.entries()) {
@@ -266,7 +264,6 @@ function isValidLocation(location: unknown): location is { lat: number; lng: num
 
 function checkRateLimit(ip: string): boolean {
   const now = Date.now();
-  maybeCleanExpiredEntries(now);
   const entry = rateLimitMap.get(ip);
   if (!entry || now > entry.resetAt) {
     rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_WINDOW_MS });
