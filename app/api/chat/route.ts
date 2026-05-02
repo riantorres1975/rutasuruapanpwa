@@ -219,6 +219,8 @@ ${aliasesList}
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT = 10;
 const RATE_WINDOW_MS = 60_000;
+const RATE_CLEANUP_INTERVAL_MS = 300_000;
+let lastRateLimitCleanup = 0;
 
 function cleanExpiredEntries(map: Map<string, { count: number; resetAt: number }>, now: number) {
   for (const [key, value] of map.entries()) {
@@ -231,15 +233,46 @@ setInterval(() => {
   cleanExpiredEntries(rateLimitMap, Date.now());
 }, 300_000);
 
+function getClientIp(req: NextRequest) {
+  const candidates = [
+    req.headers.get("x-forwarded-for")?.split(",")[0],
+    req.headers.get("x-real-ip"),
+    req.headers.get("cf-connecting-ip"),
+    req.headers.get("x-client-ip")
+  ];
+
+  for (const raw of candidates) {
+    const value = raw?.trim();
+    if (value && value.length <= 64 && /^[a-zA-Z0-9:.%-]+$/.test(value)) {
+      return value;
+    }
+  }
+
+  return "unknown";
+}
+
+function isValidLocation(location: unknown): location is { lat: number; lng: number } {
+  if (!location || typeof location !== "object") return false;
+  const { lat, lng } = location as { lat?: unknown; lng?: unknown };
+  return (
+    typeof lat === "number" &&
+    typeof lng === "number" &&
+    Number.isFinite(lat) &&
+    Number.isFinite(lng) &&
+    Math.abs(lat) <= 90 &&
+    Math.abs(lng) <= 180
+  );
+}
+
 function checkRateLimit(ip: string): boolean {
   const now = Date.now();
+  maybeCleanExpiredEntries(now);
   const entry = rateLimitMap.get(ip);
   if (!entry || now > entry.resetAt) {
     rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_WINDOW_MS });
     return true;
   }
   if (entry.count >= RATE_LIMIT) {
-    cleanExpiredEntries(rateLimitMap, now);
     return false;
   }
   entry.count++;
@@ -247,16 +280,7 @@ function checkRateLimit(ip: string): boolean {
 }
 
 export async function POST(req: NextRequest) {
-  const ip = (() => {
-    const realIp = req.headers.get("x-real-ip");
-    if (realIp && /^(\d{1,3}\.){3}\d{1,3}$/.test(realIp)) return realIp;
-    const fwd = req.headers.get("x-forwarded-for");
-    if (fwd) {
-      const first = fwd.split(",")[0].trim();
-      if (/^(\d{1,3}\.){3}\d{1,3}$/.test(first)) return first;
-    }
-    return "unknown";
-  })();
+  const ip = getClientIp(req);
   if (!checkRateLimit(ip)) {
     return NextResponse.json({ error: "Demasiadas solicitudes. Espera un momento." }, { status: 429 });
   }
@@ -272,7 +296,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Mensaje inválido" }, { status: 400 });
     }
 
-    if (location && (!isFinite(location.lat) || !isFinite(location.lng))) {
+    if (location != null && !isValidLocation(location)) {
       return NextResponse.json({ error: "Coordenadas inválidas" }, { status: 400 });
     }
 

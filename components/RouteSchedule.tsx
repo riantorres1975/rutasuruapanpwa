@@ -19,7 +19,6 @@ export default function RouteSchedule({ routeName }: Props) {
   const schedule = getSchedule(routeName);
   if (!schedule) return null;
 
-  // eslint-disable-next-line react-hooks/rules-of-hooks
   const status = getScheduleStatus(schedule);
   void tick; // consumed only to trigger re-render
 
