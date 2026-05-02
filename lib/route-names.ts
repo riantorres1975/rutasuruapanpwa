@@ -25,7 +25,7 @@ const ALIASES: Record<string, string[]> = {
   "Ruta 19":  ["quirindavara", "taximacuaro"],
   "Ruta 20":  ["cuba", "mexico", "méxico", "circunvalación", "circunvalacion", "morelos", "topilejo"],
   "Ruta 24":  ["jucutacato", "centro"],
-  "Ruta 26":  ["constituyentes", "unidad", "sol naciente","centro","central","hospital regional"],
+  "Ruta 26":  ["constituyentes", "unidad", "sol naciente","centro","central","hospital regional","don vasco","universidad don vasco"],
   "Ruta 27":  ["balcones", "tec", "tecnológico", "tecnologico", "Tec Uruapan, centro","don vasco","central","central de autobuses"],
   "Ruta 33":  ["toreo"],
   "Ruta 40":  ["jucutacato"],
