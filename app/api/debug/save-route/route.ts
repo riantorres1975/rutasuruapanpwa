@@ -24,13 +24,9 @@ function getDirection(nombre: string): "ida" | "vuelta" | null {
   return m ? (m[1].toLowerCase() as "ida" | "vuelta") : null;
 }
 
-export async function GET() {
-  return Response.json({ status: "ok", env: process.env.NODE_ENV });
-}
-
 export async function POST(request: Request) {
-  if (process.env.NODE_ENV !== "development") {
-    return Response.json({ error: "Solo disponible en desarrollo" }, { status: 403 });
+  if (process.env.DEBUG_ROUTE_SAVE_ENABLED !== "true") {
+    return Response.json({ error: "Recurso no disponible" }, { status: 403 });
   }
 
   let body: Record<string, unknown>;
@@ -72,7 +68,7 @@ export async function POST(request: Request) {
     rutas = JSON.parse(readFileSync(rutasPath, "utf8"));
   } catch (err) {
     console.error("[save-route] failed to read/parse rutas.json:", err);
-    return Response.json({ error: `Error leyendo rutas.json: ${String(err)}` }, { status: 500 });
+    return Response.json({ error: "Error leyendo datos de rutas" }, { status: 500 });
   }
 
   const idx = rutas.findIndex(
@@ -93,7 +89,7 @@ export async function POST(request: Request) {
     writeFileSync(rutasPath, JSON.stringify(rutas, null, 2), { encoding: "utf8" });
   } catch (err) {
     console.error("[save-route] writeFileSync rutas.json failed:", err);
-    return Response.json({ error: `Error escribiendo rutas.json: ${String(err)}` }, { status: 500 });
+    return Response.json({ error: "Error guardando datos de ruta" }, { status: 500 });
   }
 
   // Actualizar rutas-grouped.json
@@ -109,7 +105,7 @@ export async function POST(request: Request) {
     }
   } catch (err) {
     console.error("[save-route] grouped.json update failed:", err);
-    return Response.json({ error: `rutas.json guardado pero error en grouped.json: ${String(err)}` }, { status: 500 });
+    return Response.json({ error: "Error actualizando datos agrupados de ruta" }, { status: 500 });
   }
 
   return Response.json({ ok: true, ruta, direccion, puntos: coordenadas.length });

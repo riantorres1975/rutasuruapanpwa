@@ -26,8 +26,12 @@ export default function ReportBugForm() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const from = params.get("from");
-    setSourceUrl(from ? `${window.location.origin}/${from.replace(/^\/+/, "")}` : window.location.href);
+    const raw = params.get("from");
+    const safePath = raw
+      ? `/${raw.replace(/^\/+/, "").replace(/\.\.\//g, "")}`
+      : null;
+    const from = safePath && /^[\w/-]+$/.test(safePath) ? safePath : null;
+    setSourceUrl(from ? `${window.location.origin}${from}` : window.location.href);
     setUserAgent(window.navigator.userAgent);
   }, []);
 
@@ -135,59 +139,59 @@ export default function ReportBugForm() {
             value={routeName}
             onChange={(event) => setRouteName(event.target.value)}
             placeholder="Ej. Ruta 11, Jucutacato, Centro"
-            className="mt-2 h-12 w-full rounded-2xl border px-4 text-sm outline-none placeholder:text-white/30"
+            className="mt-2 h-12 w-full rounded-2xl border px-4 text-sm outline-none placeholder:text-white/30 focus:ring-2 focus:ring-lima/30"
+            style={{ borderColor: "rgba(140,200,80,0.18)", background: "rgba(12,17,10,0.9)", color: "#e8f2d8" }}
+          />
+        </label>
+
+        <label className="mt-4 block">
+          <span className="text-xs font-bold uppercase tracking-[0.18em]" style={{ color: "#b8e840" }}>Ubicación aproximada</span>
+          <input
+            value={place}
+            onChange={(event) => setPlace(event.target.value)}
+            placeholder="Ej. cerca del Mercado, Hospital Regional, colonia..."
+            className="mt-2 h-12 w-full rounded-2xl border px-4 text-sm outline-none placeholder:text-white/30 focus:ring-2 focus:ring-lima/30"
+            style={{ borderColor: "rgba(140,200,80,0.18)", background: "rgba(12,17,10,0.9)", color: "#e8f2d8" }}
+          />
+        </label>
+
+        <label className="mt-4 block">
+          <span className="text-xs font-bold uppercase tracking-[0.18em]" style={{ color: "#b8e840" }}>Qué pasó</span>
+          <textarea
+            value={description}
+            onChange={(event) => setDescription(event.target.value)}
+            required
+            minLength={10}
+            rows={5}
+            placeholder="Describe el error con el mayor detalle posible."
+            className="mt-2 w-full rounded-2xl border px-4 py-3 text-sm leading-6 outline-none placeholder:text-white/30 focus:ring-2 focus:ring-lima/30"
+            style={{ borderColor: "rgba(140,200,80,0.18)", background: "rgba(12,17,10,0.9)", color: "#e8f2d8" }}
+          />
+        </label>
+
+        <label className="mt-4 block">
+          <span className="text-xs font-bold uppercase tracking-[0.18em]" style={{ color: "#b8e840" }}>Qué debería pasar</span>
+          <textarea
+            value={expected}
+            onChange={(event) => setExpected(event.target.value)}
+            rows={3}
+            placeholder="Ej. la ruta debería pasar por tal calle, el botón debería abrir..."
+            className="mt-2 w-full rounded-2xl border px-4 py-3 text-sm leading-6 outline-none placeholder:text-white/30 focus:ring-2 focus:ring-lima/30"
+            style={{ borderColor: "rgba(140,200,80,0.18)", background: "rgba(12,17,10,0.9)", color: "#e8f2d8" }}
+          />
+        </label>
+
+        <label className="mt-4 block">
+          <span className="text-xs font-bold uppercase tracking-[0.18em]" style={{ color: "#b8e840" }}>Contacto opcional</span>
+          <input
+            value={contact}
+            onChange={(event) => setContact(event.target.value)}
+            placeholder="Email, X, GitHub o teléfono si quieres seguimiento"
+            className="mt-2 h-12 w-full rounded-2xl border px-4 text-sm outline-none placeholder:text-white/30 focus:ring-2 focus:ring-lima/30"
             style={{ borderColor: "rgba(140,200,80,0.18)", background: "rgba(12,17,10,0.9)", color: "#e8f2d8" }}
           />
         </label>
       </div>
-
-      <label className="mt-4 block">
-        <span className="text-xs font-bold uppercase tracking-[0.18em]" style={{ color: "#b8e840" }}>Ubicación aproximada</span>
-        <input
-          value={place}
-          onChange={(event) => setPlace(event.target.value)}
-          placeholder="Ej. cerca del Mercado, Hospital Regional, colonia..."
-          className="mt-2 h-12 w-full rounded-2xl border px-4 text-sm outline-none placeholder:text-white/30"
-          style={{ borderColor: "rgba(140,200,80,0.18)", background: "rgba(12,17,10,0.9)", color: "#e8f2d8" }}
-        />
-      </label>
-
-      <label className="mt-4 block">
-        <span className="text-xs font-bold uppercase tracking-[0.18em]" style={{ color: "#b8e840" }}>Qué pasó</span>
-        <textarea
-          value={description}
-          onChange={(event) => setDescription(event.target.value)}
-          required
-          minLength={10}
-          rows={5}
-          placeholder="Describe el error con el mayor detalle posible."
-          className="mt-2 w-full rounded-2xl border px-4 py-3 text-sm leading-6 outline-none placeholder:text-white/30"
-          style={{ borderColor: "rgba(140,200,80,0.18)", background: "rgba(12,17,10,0.9)", color: "#e8f2d8" }}
-        />
-      </label>
-
-      <label className="mt-4 block">
-        <span className="text-xs font-bold uppercase tracking-[0.18em]" style={{ color: "#b8e840" }}>Qué debería pasar</span>
-        <textarea
-          value={expected}
-          onChange={(event) => setExpected(event.target.value)}
-          rows={3}
-          placeholder="Ej. la ruta debería pasar por tal calle, el botón debería abrir..."
-          className="mt-2 w-full rounded-2xl border px-4 py-3 text-sm leading-6 outline-none placeholder:text-white/30"
-          style={{ borderColor: "rgba(140,200,80,0.18)", background: "rgba(12,17,10,0.9)", color: "#e8f2d8" }}
-        />
-      </label>
-
-      <label className="mt-4 block">
-        <span className="text-xs font-bold uppercase tracking-[0.18em]" style={{ color: "#b8e840" }}>Contacto opcional</span>
-        <input
-          value={contact}
-          onChange={(event) => setContact(event.target.value)}
-          placeholder="Email, X, GitHub o teléfono si quieres seguimiento"
-          className="mt-2 h-12 w-full rounded-2xl border px-4 text-sm outline-none placeholder:text-white/30"
-          style={{ borderColor: "rgba(140,200,80,0.18)", background: "rgba(12,17,10,0.9)", color: "#e8f2d8" }}
-        />
-      </label>
 
       <div className="mt-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <p className="text-xs leading-5" style={{ color: "rgba(232,242,216,0.52)" }}>

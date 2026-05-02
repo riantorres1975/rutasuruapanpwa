@@ -1080,7 +1080,7 @@ function MapComponent({
     if (bounds) {
       fitBoundsAnimated(map, bounds, { top: 120, right: 32, bottom: 160, left: 32, duration: 1200, maxZoom: 15 });
     }
-  }, [isLoading, selectedTransfer]);
+  }, [debugActive, isLoading, selectedTransfer]);
 
   const stopRouteAnimation = useCallback(() => {
     animationTokenRef.current += 1;
@@ -1651,7 +1651,7 @@ function MapComponent({
         maxZoom: 14.6
       });
     }
-  }, [destinationPoint, originPoint, routeFeatures, routes, selectedRouteId, selectedRouteSegment, stopRouteAnimation]);
+  }, [debugActive, destinationPoint, originPoint, routeFeatures, routes, selectedRouteId, selectedRouteSegment, stopRouteAnimation]);
 
   useEffect(() => {
     const map = mapRef.current;

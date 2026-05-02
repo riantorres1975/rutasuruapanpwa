@@ -19,11 +19,25 @@ const securityHeaders = [
     value: "geolocation=(self), camera=(), microphone=(), payment=()"
   },
   // Basic XSS protection for older browsers
-  { key: "X-XSS-Protection", value: "1; mode=block" }
+  { key: "X-XSS-Protection", value: "1; mode=block" },
+  // Content Security Policy — 'unsafe-inline' needed for Tailwind + theme detection script
+  {
+    key: "Content-Security-Policy",
+    value: [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+      "font-src 'self' https://fonts.gstatic.com",
+      "img-src 'self' data: https://*.mapbox.com https://*.mapbox.cn https://api.mapbox.com https://images.unsplash.com",
+      "connect-src 'self' https://*.mapbox.com https://api.mapbox.com https://api.deepseek.com",
+      "worker-src 'self' blob:",
+      "frame-src 'none'",
+    ].join("; ")
+  }
 ];
 
 const nextConfig = {
-  productionBrowserSourceMaps: true,
+  productionBrowserSourceMaps: false,
 
   async headers() {
     return [

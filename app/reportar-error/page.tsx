@@ -8,7 +8,16 @@ import ReportBugForm from "@/components/ReportBugForm";
 
 export const metadata: Metadata = {
   title: "Reportar error | UruGo",
-  description: "Reporta errores de rutas, mapa, ubicación o funcionamiento de UruGo."
+  description: "Reporta errores de rutas, mapa, ubicación o funcionamiento de UruGo.",
+  alternates: {
+    canonical: "/reportar-error"
+  },
+  openGraph: {
+    title: "Reportar error | UruGo",
+    description: "Reporta errores de rutas, mapa, ubicación o funcionamiento de UruGo.",
+    url: "/reportar-error",
+    type: "website"
+  }
 };
 
 const REPORT_TIPS = [
