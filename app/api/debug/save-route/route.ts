@@ -46,6 +46,21 @@ export async function POST(request: Request) {
     return Response.json({ error: "Datos inválidos: se requiere ruta, direccion y coordenadas" }, { status: 400 });
   }
 
+  if (coordenadas.length > 5000) {
+    return Response.json({ error: "Demasiadas coordenadas (máximo 5000)" }, { status: 400 });
+  }
+
+  const isValidCoord = (c: unknown): c is [number, number] =>
+    Array.isArray(c) && c.length === 2 &&
+    typeof c[0] === "number" && isFinite(c[0]) &&
+    typeof c[1] === "number" && isFinite(c[1]) &&
+    c[0] >= -180 && c[0] <= 180 &&
+    c[1] >= -90 && c[1] <= 90;
+
+  if (!coordenadas.every(isValidCoord)) {
+    return Response.json({ error: "Coordenadas inválidas: cada elemento debe ser [lng, lat] con valores finitos dentro del rango" }, { status: 400 });
+  }
+
   console.log(`[save-route] ruta="${ruta}" direccion="${direccion}" pts=${coordenadas.length}`);
 
   const rutasPath = join(process.cwd(), "data/rutas.json");

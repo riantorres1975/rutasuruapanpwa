@@ -1,4 +1,5 @@
 import type { Coordinates, ResolvedRouteData } from "@/lib/types";
+import { haversineMeters } from "@/lib/geo";
 
 // Max walking distance to board/alight a route (meters)
 const PROXIMITY_METERS = 550;
@@ -21,17 +22,6 @@ export type TransferOption = {
   score: number;
 };
 
-function haversineMeters(a: Coordinates, b: Coordinates): number {
-  const toRad = (v: number) => (v * Math.PI) / 180;
-  const [lng1, lat1] = a;
-  const [lng2, lat2] = b;
-  const dLat = toRad(lat2 - lat1);
-  const dLng = toRad(lng2 - lng1);
-  const h =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
-  return 6371000 * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
-}
 
 function closestOnPath(point: Coordinates, path: Coordinates[]) {
   let bestIndex = 0;

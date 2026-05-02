@@ -100,6 +100,7 @@ for (const route of routes) {
     if (!group.ida) {
       group.ida = coordinates;
     } else {
+      console.warn(`[group-rutas] Ruta descartada: "${nombre}" (ida duplicada para "${key}")`);
       duplicateSegments += 1;
     }
     continue;
@@ -109,6 +110,7 @@ for (const route of routes) {
     if (!group.vuelta) {
       group.vuelta = coordinates;
     } else {
+      console.warn(`[group-rutas] Ruta descartada: "${nombre}" (vuelta duplicada para "${key}")`);
       duplicateSegments += 1;
     }
     continue;
@@ -121,6 +123,7 @@ for (const route of routes) {
     group.vuelta = coordinates;
     missingDirectionAssigned += 1;
   } else {
+    console.warn(`[group-rutas] Ruta descartada: "${nombre}" (segmento extra sin dirección para "${key}")`);
     duplicateSegments += 1;
   }
 }

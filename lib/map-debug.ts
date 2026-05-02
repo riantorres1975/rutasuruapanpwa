@@ -1,14 +1,5 @@
 import type { Coordinates } from "@/lib/types";
-
-function haversine(lng1: number, lat1: number, lng2: number, lat2: number): number {
-  const toRad = (v: number) => (v * Math.PI) / 180;
-  const dLat = toRad(lat2 - lat1);
-  const dLng = toRad(lng2 - lng1);
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
-  return 6_371_000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
+import { haversineMeters } from "@/lib/geo";
 
 export function isDebugMode(): boolean {
   if (typeof window === "undefined") return false;
@@ -33,7 +24,7 @@ export function getClosestPoint(
   let minDist = Infinity;
   let closestIndex = 0;
   for (let i = 0; i < coordinates.length; i++) {
-    const d = haversine(clickLngLat[0], clickLngLat[1], coordinates[i][0], coordinates[i][1]);
+    const d = haversineMeters(clickLngLat, coordinates[i]);
     if (d < minDist) {
       minDist = d;
       closestIndex = i;

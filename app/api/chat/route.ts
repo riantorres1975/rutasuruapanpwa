@@ -220,6 +220,14 @@ const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT = 10;
 const RATE_WINDOW_MS = 60_000;
 
+// Limpia entradas caducadas cada 5 minutos para evitar crecimiento ilimitado
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, value] of rateLimitMap.entries()) {
+    if (now > value.resetAt) rateLimitMap.delete(key);
+  }
+}, 300_000);
+
 function checkRateLimit(ip: string): boolean {
   const now = Date.now();
   const entry = rateLimitMap.get(ip);
@@ -249,6 +257,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Mensaje inválido" }, { status: 400 });
     }
 
+    if (!Array.isArray(history) || history.length > 20) {
+      return NextResponse.json({ error: "Historial inválido o demasiado largo" }, { status: 400 });
+    }
+
     const apiKey = process.env.DEEPSEEK_API_KEY;
     if (!apiKey) {
       return NextResponse.json({ error: "Servicio no configurado" }, { status: 503 });
@@ -258,9 +270,12 @@ export async function POST(req: NextRequest) {
 
     const messages = [
       { role: "system", content: systemPrompt },
-      ...history.slice(-8).map((m) => ({
-        role: m.role === "user" ? "user" : "assistant",
-        content: m.text,
+      ...history.slice(-8).filter((m) =>
+        typeof m.role === "string" && (m.role === "user" || m.role === "assistant") &&
+        typeof m.text === "string"
+      ).map((m) => ({
+        role: m.role as "user" | "assistant",
+        content: m.text.slice(0, 2000),
       })),
       { role: "user", content: message },
     ];
