@@ -89,12 +89,20 @@ export default function ChatBot() {
     if (!btnRef.current) return;
     const rect = btnRef.current.getBoundingClientRect();
     const vw = window.innerWidth;
-    const vh = window.innerHeight;
+    // Usar visualViewport si está disponible — detecta correctamente el espacio libre cuando el teclado está abierto
+    const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+    const vvTop = window.visualViewport ? window.visualViewport.offsetTop : 0;
     const isDesktop = vw >= 768;
     if (isDesktop) {
-      setPanelStyle({ top: rect.bottom + 8, right: vw - rect.right, width: 320 });
+      setPanelStyle({ top: rect.bottom + 8, right: vw - rect.right, width: 320, maxHeight: vh - rect.bottom - 16 });
     } else {
-      setPanelStyle({ bottom: vh - rect.top + 8, left: 8, right: 8 });
+      const spaceAboveBtn = rect.top - vvTop - 8;
+      setPanelStyle({
+        bottom: vh - (rect.top - vvTop) + 8,
+        left: 8,
+        right: 8,
+        maxHeight: Math.min(spaceAboveBtn, vh * 0.85),
+      });
     }
   }
 
@@ -103,8 +111,14 @@ export default function ChatBot() {
     calcPanelStyle();
     const onResize = () => calcPanelStyle();
     window.addEventListener('resize', onResize);
+    window.visualViewport?.addEventListener('resize', onResize);
+    window.visualViewport?.addEventListener('scroll', onResize);
     setTimeout(() => inputRef.current?.focus(), 50);
-    return () => window.removeEventListener('resize', onResize);
+    return () => {
+      window.removeEventListener('resize', onResize);
+      window.visualViewport?.removeEventListener('resize', onResize);
+      window.visualViewport?.removeEventListener('scroll', onResize);
+    };
   }, [open]);
 
   useEffect(() => {
@@ -236,7 +250,7 @@ export default function ChatBot() {
             </div>
           )}
 
-          <div style={{ flex: 1, overflowY: 'auto', padding: 12, display: 'flex', flexDirection: 'column', gap: 8, minHeight: 120, maxHeight: 260 }}>
+          <div style={{ flex: 1, overflowY: 'auto', padding: 12, display: 'flex', flexDirection: 'column', gap: 8, minHeight: 0 }}>
             {messages.length === 0 && (
               <p style={{ color: 'var(--foreground, #e8f2d8)', opacity: 0.35, fontSize: 12, textAlign: 'center', margin: 'auto', lineHeight: 1.5 }}>
                 Pregunta sobre rutas, horarios<br />o cómo llegar a algún lugar.
