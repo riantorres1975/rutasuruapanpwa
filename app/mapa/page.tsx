@@ -19,6 +19,7 @@ import { formatRouteLabel, getRouteDestination } from "@/lib/route-names";
 import type { Coordinates, GroupedRouteData, ResolvedRouteData, RouteDirection } from "@/lib/types";
 import { computeTransferOptions } from "@/lib/transfers";
 import type { TransferOption } from "@/lib/transfers";
+import { haversineMeters } from "@/lib/geo";
 const PROXIMITY_METERS = 400;
 const DESTINATION_DISTANCE_WEIGHT = 1.8;
 const SEGMENT_LENGTH_FACTOR = 0.01;
@@ -157,23 +158,6 @@ function getFlowStep(originPoint: Coordinates | null, destinationPoint: Coordina
   return 3;
 }
 
-function haversineMeters(a: Coordinates, b: Coordinates) {
-  const toRad = (value: number) => (value * Math.PI) / 180;
-
-  const [lng1, lat1] = a;
-  const [lng2, lat2] = b;
-
-  const dLat = toRad(lat2 - lat1);
-  const dLng = toRad(lng2 - lng1);
-  const lat1Rad = toRad(lat1);
-  const lat2Rad = toRad(lat2);
-
-  const h =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1Rad) * Math.cos(lat2Rad) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
-
-  return 6371000 * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
-}
 
 function getClosestIndex(point: Coordinates, path: Coordinates[]) {
   let bestIndex = 0;

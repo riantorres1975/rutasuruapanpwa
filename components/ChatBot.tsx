@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 
 const ISSUE_URL = 'https://github.com/riantorres1975/rutasuruapanpwa/issues/new';
@@ -105,28 +105,24 @@ export default function ChatBot() {
     };
   }, [open, isMobile]);
 
-  // Posición del panel en desktop
-  function calcDesktopStyle() {
+  const calcDesktopStyle = useCallback(() => {
     if (!btnRef.current) return;
     const rect = btnRef.current.getBoundingClientRect();
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
     setDesktopStyle({
       top: rect.bottom + 8,
-      right: vw - rect.right,
+      right: window.innerWidth - rect.right,
       width: 320,
-      maxHeight: vh - rect.bottom - 16,
+      maxHeight: window.innerHeight - rect.bottom - 16,
     });
-  }
+  }, []);
 
   useEffect(() => {
     if (!open || isMobile) return;
     calcDesktopStyle();
-    const onResize = () => calcDesktopStyle();
-    window.addEventListener('resize', onResize);
+    window.addEventListener('resize', calcDesktopStyle);
     setTimeout(() => inputRef.current?.focus(), 50);
-    return () => window.removeEventListener('resize', onResize);
-  }, [open, isMobile]);
+    return () => window.removeEventListener('resize', calcDesktopStyle);
+  }, [open, isMobile, calcDesktopStyle]);
 
   // En mobile: focus al input cuando se abre
   useEffect(() => {
@@ -139,16 +135,16 @@ export default function ChatBot() {
     if (open) bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, open]);
 
-  function requestLocation() {
+  const requestLocation = useCallback(() => {
     if (!navigator.geolocation) { setLocStatus('denied'); return; }
     navigator.geolocation.getCurrentPosition(
       (pos) => { setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }); setLocStatus('granted'); },
       () => setLocStatus('denied'),
       { timeout: 6000 }
     );
-  }
+  }, []);
 
-  async function send() {
+  const send = useCallback(async () => {
     const text = input.trim();
     if (!text || loading) return;
     const userMsg: Message = { role: 'user', text };
@@ -174,7 +170,7 @@ export default function ChatBot() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [input, loading, messages, location]);
 
   function handleKey(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
