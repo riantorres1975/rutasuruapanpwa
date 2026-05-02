@@ -8,7 +8,16 @@ import { APP_BRAND } from "@/lib/mobility-config";
 
 export const metadata: Metadata = {
   title: "Privacidad | UruGo",
-  description: "Aviso de privacidad de UruGo sobre uso de ubicación, datos locales y soporte PWA."
+  description: "Aviso de privacidad de UruGo sobre uso de ubicación, datos locales y soporte PWA.",
+  alternates: {
+    canonical: "/privacidad"
+  },
+  openGraph: {
+    title: "Privacidad | UruGo",
+    description: "UruGo es una PWA de consulta de rutas para Uruapan. No requiere cuenta, no solicita datos personales.",
+    url: "/privacidad",
+    type: "website"
+  }
 };
 
 const SECTIONS = [

@@ -108,6 +108,8 @@ export default function OnboardingOverlay() {
   const [visible, setVisible] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [step, setStep] = useState(0);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
 
   // Swipe state
   const touchStartX = useRef<number | null>(null);
@@ -132,6 +134,10 @@ export default function OnboardingOverlay() {
       localStorage.setItem(STORAGE_KEY, "1");
     } catch {
       // ignore
+    }
+    if (triggerRef.current) {
+      triggerRef.current.focus();
+      triggerRef.current = null;
     }
   }, []);
 
@@ -190,8 +196,34 @@ export default function OnboardingOverlay() {
     return () => window.removeEventListener("keydown", onKey);
   }, [visible, dismiss]);
 
-  // Don't render anything on server
-  if (!mounted) return null;
+  // Focus trap and focus restoration
+  useEffect(() => {
+    if (!visible) return;
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    const focusableSelectors = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+    const focusables = dialog.querySelectorAll<HTMLElement>(focusableSelectors);
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    if (first) first.focus();
+    const handleTab = (e: KeyboardEvent) => {
+      if (e.key !== "Tab") return;
+      if (e.shiftKey) {
+        if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+      } else {
+        if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
+    };
+    dialog.addEventListener("keydown", handleTab);
+    return () => dialog.removeEventListener("keydown", handleTab);
+  }, [visible]);
+
+  // Save trigger ref before showing
+  useEffect(() => {
+    if (!visible) return;
+    const triggers = document.querySelectorAll<HTMLButtonElement>('button[aria-label="Abrir mapa"]');
+    if (triggers.length > 0) triggerRef.current = triggers[0];
+  }, [visible]);
 
   const isLast = step === steps.length - 1;
   const current = steps[step];
@@ -200,8 +232,12 @@ export default function OnboardingOverlay() {
     <>
       {/* ── Backdrop ───────────────────────────────────────────────────────── */}
       <div
-        aria-hidden="true"
+        aria-hidden="false"
         onClick={dismiss}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") dismiss(); }}
+        role="button"
+        tabIndex={0}
+        aria-label="Cerrar introducción"
         className={`fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-[8px] transition-opacity duration-500 ${
           visible ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         }`}
@@ -215,12 +251,13 @@ export default function OnboardingOverlay() {
           Usamos left-[380px] en md y left-[420px] en lg para que el centro calculado
           sea solo sobre el mapa. bottom-10 se mantiene para que aparezca en zona inferior visible.
       */}
-      <div
+<div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-label="Bienvenida a UruGo"
         aria-live="polite"
-          className={`ov-panel fixed z-50 mx-auto max-w-sm rounded-3xl border shadow-[0_24px_60px_rgba(0,0,0,0.35)] backdrop-blur-2xl transition-all duration-500 will-change-transform
+          className={`ov-panel fixed z-50 mx-auto max-w-sm rounded-3xl border shadow-[0_24px60px_rgba(0,0,0,0.35)] backdrop-blur-2xl transition-all duration-500 will-change-transform
           inset-x-4 bottom-10
           md:inset-x-auto md:bottom-10 md:left-[calc(380px+5%)] md:right-[5%]
           lg:left-[calc(420px+5%)] lg:right-[5%]
@@ -229,7 +266,6 @@ export default function OnboardingOverlay() {
             ? "translate-y-0 opacity-100 pointer-events-auto"
             : "translate-y-10 opacity-0 pointer-events-none"
         }`}
-        // prevent backdrop click from propagating
         onClick={(e) => e.stopPropagation()}
       >
         {/* ── Skip button (top-right) ─────────────────────────────────────── */}

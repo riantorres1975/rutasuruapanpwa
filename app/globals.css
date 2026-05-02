@@ -100,6 +100,13 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+:where(a, button, input, select, textarea, [tabindex]:not([tabindex="-1"])):focus-visible {
+  outline: 2px solid var(--lima);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 4px rgba(184, 232, 64, 0.18);
+  scroll-margin: 80px;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);

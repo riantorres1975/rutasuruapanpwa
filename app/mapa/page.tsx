@@ -97,6 +97,11 @@ function parseCoordinateParam(value: string | null): Coordinates | null {
   return [Number(lng.toFixed(6)), Number(lat.toFixed(6))];
 }
 
+function parseDestinationParam(value: string | null) {
+  const destination = value?.trim();
+  return destination ? destination.slice(0, 80) : null;
+}
+
 function parsePositiveIntParam(value: string | null) {
   const parsed = Number(value);
   return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
@@ -480,6 +485,7 @@ export default function HomePage() {
   const [nearbyRouteIds, setNearbyRouteIds] = useState<number[]>([]);
   const [showTeleferico, setShowTeleferico] = useState(false);
   const [sharedRouteSegment, setSharedRouteSegment] = useState<Coordinates[] | null>(null);
+  const [requestedDestination, setRequestedDestination] = useState<string | null>(null);
   const [routesMapMode, setRoutesMapMode] = useState<RoutesMapMode>("all-visible");
   const [isOnline, setIsOnline] = useState(true);
   const { share: shareRoute, status: shareStatus } = useShareRoute();
@@ -541,6 +547,15 @@ export default function HomePage() {
   }, [selectedDirection]);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const destinationParam = parseDestinationParam(params.get("destino"));
+
+    if (destinationParam) {
+      setRequestedDestination(destinationParam);
+      setActivePoint("origin");
+      setShowHint(true);
+    }
+
     const sharedState = parseSharedMapState(window.location.search);
     if (!sharedState) {
       return;
@@ -993,10 +1008,18 @@ export default function HomePage() {
   }, [bestSuggestion, bestSuggestionEta, flowStep, isCalculatingSuggestions, selectedTransfer, transfers]);
   const hintMessage = useMemo(() => {
     if (flowStep === 1) {
+      if (requestedDestination) {
+        return `Destino: ${requestedDestination}. Primero toca el mapa para marcar tu origen.`;
+      }
+
       return "Paso 1 de 3: toca el mapa para marcar tu origen.";
     }
 
     if (flowStep === 2) {
+      if (requestedDestination) {
+        return `Ahora marca en el mapa la zona de ${requestedDestination}.`;
+      }
+
       return "Paso 2 de 3: ahora marca tu destino.";
     }
 
@@ -1009,7 +1032,7 @@ export default function HomePage() {
     }
 
     return "No encontramos ruta directa. Ajusta A o B y vuelve a intentar.";
-  }, [bestSuggestion, flowStep, isCalculatingSuggestions]);
+  }, [bestSuggestion, flowStep, isCalculatingSuggestions, requestedDestination]);
 
   useEffect(() => {
     setShowHint(true);
@@ -1172,6 +1195,28 @@ export default function HomePage() {
           </div>
         )}
 
+        {requestedDestination && flowStep !== 3 && (
+          <div className="ov-panel flex w-full items-start gap-2 rounded-2xl border px-3.5 py-3 text-left shadow-[0_2px_12px_rgba(0,0,0,0.15)] backdrop-blur-xl">
+            <svg viewBox="0 0 24 24" fill="none" className="mt-0.5 h-4 w-4 shrink-0 text-lima" aria-hidden="true">
+              <path d="M12 21s6-5.7 6-11a6 6 0 1 0-12 0c0 5.3 6 11 6 11Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              <circle cx="12" cy="10" r="2" fill="currentColor" />
+            </svg>
+            <p className="ov-text-muted min-w-0 flex-1 text-[12px] leading-snug">
+              Llegaste buscando <span className="font-bold text-lima">{requestedDestination}</span>. Marca tu origen y luego toca esa zona como destino.
+            </p>
+            <button
+              type="button"
+              onClick={() => setRequestedDestination(null)}
+              className="ov-pill ov-text-muted grid h-7 w-7 shrink-0 place-items-center rounded-lg transition hover:opacity-80 active:scale-95"
+              aria-label="Quitar destino sugerido"
+            >
+              <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
+                <path d="M18 6 6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            </button>
+          </div>
+        )}
+
         {/* Resultado de ruta — paso 3 (en mobile va en el result sheet) */}
         {flowStep === 3 && !hideStep3 && (
           <div
@@ -1216,6 +1261,7 @@ export default function HomePage() {
                     type="button"
                     onClick={() => { setActivePoint("destination"); setShowHint(true); }}
                     className="ov-pill ov-border ov-text-muted inline-flex h-10 flex-1 items-center justify-center rounded-xl border text-[12px] font-semibold transition active:scale-[0.97]"
+                    aria-label="Ajustar destino"
                   >
                     Ajustar
                   </button>
@@ -1240,6 +1286,7 @@ export default function HomePage() {
                     type="button"
                     onClick={() => { setSelectedRouteId(bestSuggestion.routeId); setShowHint(false); if (isMobile) setIsResultSheetOpen(false); }}
                     className="inline-flex h-10 flex-[2] items-center justify-center gap-1.5 rounded-xl bg-verde text-[12px] font-bold text-white shadow-[0_2px_12px_rgba(232,93,47,0.35)] transition active:scale-[0.97]"
+                    aria-label={`Ver ${formatRouteLabel(bestSuggestion.ruta)} en el mapa`}
                   >
                     <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
                       <path d="M9 20l-5.447-2.724A1 1 0 0 1 3 16.382V5.618a1 1 0 0 1 1.447-.894L9 7m0 13V7m0 13 6-3M9 7l6-3m6 17V4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
@@ -1260,13 +1307,14 @@ export default function HomePage() {
                 </div>
                 <p className="ov-text-muted mt-1 text-[11px]">Camina ~{Math.round(selectedTransfer.walkMeters)} m en el punto de transbordo</p>
                 <div className="mt-3 grid grid-cols-[1fr_auto] gap-2">
-                  <button
-                    type="button"
-                    onClick={() => { setSelectedTransfer(null); setTransfers(transfers.length === 0 ? [] : transfers); handleClearSelection(); }}
-                    className="ov-pill ov-border ov-text-muted inline-flex h-10 items-center justify-center rounded-xl border text-[12px] font-semibold transition active:scale-[0.97]"
-                  >
-                    Limpiar
-                  </button>
+<button
+                      type="button"
+                      onClick={handleClearSelection}
+                      className="ov-pill ov-border ov-text-muted h-9 shrink-0 rounded-lg border px-3 text-[11px] font-semibold transition active:scale-[0.97]"
+                      aria-label="Limpiar ruta seleccionada"
+                    >
+                      Limpiar
+                    </button>
                   <button
                     type="button"
                     onClick={() => shareRoute(`${formatRouteLabel(selectedTransfer.routeAName)} → ${formatRouteLabel(selectedTransfer.routeBName)}`, buildShareUrl({
@@ -1318,6 +1366,7 @@ export default function HomePage() {
                   type="button"
                   onClick={() => { setActivePoint("destination"); setShowHint(true); }}
                   className="ov-pill ov-border ov-text-muted mt-3 inline-flex h-10 w-full items-center justify-center rounded-xl border text-[12px] font-semibold transition active:scale-[0.97]"
+                  aria-label="Mover destino para buscar otra ruta"
                 >
                   Mover destino
                 </button>
@@ -1339,6 +1388,7 @@ export default function HomePage() {
                   type="button"
                   onClick={() => { setActivePoint("destination"); setShowHint(true); }}
                   className="ov-pill ov-border ov-text-muted mt-2 inline-flex h-10 w-full items-center justify-center rounded-xl border text-[12px] font-semibold transition active:scale-[0.97]"
+                  aria-label="Mover destino para buscar otra ruta"
                 >
                   Mover destino
                 </button>
@@ -1570,8 +1620,22 @@ export default function HomePage() {
         role="separator"
         aria-label="Redimensionar panel lateral"
         aria-orientation="vertical"
+        aria-valuemin={300}
+        aria-valuemax={520}
+        aria-valuenow={sidebarWidth ?? (typeof window !== "undefined" && window.innerWidth >= 1024 ? 420 : 380)}
+        tabIndex={0}
         className="group relative z-40 hidden w-1 shrink-0 cursor-col-resize md:flex md:flex-col md:items-center md:justify-center"
         onMouseDown={handleDragStart}
+        onKeyDown={(e) => {
+          if (e.key === "ArrowLeft" || e.key === "ArrowDown") {
+            e.preventDefault();
+            setSidebarWidth((prev) => Math.max(300, (prev ?? 420) - 20));
+          }
+          if (e.key === "ArrowRight" || e.key === "ArrowUp") {
+            e.preventDefault();
+            setSidebarWidth((prev) => Math.min(520, (prev ?? 420) + 20));
+          }
+        }}
       >
         {/* Track line */}
         <div className="absolute inset-y-0 left-0 w-1 bg-foreground/5 transition-colors duration-150 group-hover:bg-lima/30 group-active:bg-lima/50" />
@@ -1750,10 +1814,11 @@ export default function HomePage() {
           className="absolute inset-x-4 z-30 flex items-end gap-2 md:hidden"
           style={{ bottom: "calc(1.5rem + env(safe-area-inset-bottom, 0px))" }}
         >
-          {/* Botón resultado — solo visible en paso 3 */}
+{/* Botón resultado — solo visible en paso 3 */}
           <button
             type="button"
             onClick={() => setIsResultSheetOpen(true)}
+            aria-label="Ver resultado de ruta"
             className={`ov-panel inline-flex h-12 max-w-[55%] items-center gap-2 rounded-2xl border pl-3.5 pr-4 text-[14px] font-semibold shadow-[0_8px_32px_rgba(0,0,0,0.3)] backdrop-blur-xl transition active:scale-[0.97] ${
               isResultSheetOpen
                 ? "border-lima/50 shadow-[0_8px_32px_rgba(232,93,47,0.18)]"

@@ -220,13 +220,11 @@ const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT = 10;
 const RATE_WINDOW_MS = 60_000;
 
-// Limpia entradas caducadas cada 5 minutos para evitar crecimiento ilimitado
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, value] of rateLimitMap.entries()) {
-    if (now > value.resetAt) rateLimitMap.delete(key);
+function cleanExpiredEntries(map: Map<string, { count: number; resetAt: number }>, now: number) {
+  for (const [key, value] of map.entries()) {
+    if (now > value.resetAt) map.delete(key);
   }
-}, 300_000);
+}
 
 function checkRateLimit(ip: string): boolean {
   const now = Date.now();
@@ -235,13 +233,25 @@ function checkRateLimit(ip: string): boolean {
     rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_WINDOW_MS });
     return true;
   }
-  if (entry.count >= RATE_LIMIT) return false;
+  if (entry.count >= RATE_LIMIT) {
+    cleanExpiredEntries(rateLimitMap, now);
+    return false;
+  }
   entry.count++;
   return true;
 }
 
 export async function POST(req: NextRequest) {
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? "unknown";
+  const ip = (() => {
+    const realIp = req.headers.get("x-real-ip");
+    if (realIp && /^(\d{1,3}\.){3}\d{1,3}$/.test(realIp)) return realIp;
+    const fwd = req.headers.get("x-forwarded-for");
+    if (fwd) {
+      const first = fwd.split(",")[0].trim();
+      if (/^(\d{1,3}\.){3}\d{1,3}$/.test(first)) return first;
+    }
+    return "unknown";
+  })();
   if (!checkRateLimit(ip)) {
     return NextResponse.json({ error: "Demasiadas solicitudes. Espera un momento." }, { status: 429 });
   }
@@ -255,6 +265,10 @@ export async function POST(req: NextRequest) {
 
     if (!message || typeof message !== "string") {
       return NextResponse.json({ error: "Mensaje inválido" }, { status: 400 });
+    }
+
+    if (location && (!isFinite(location.lat) || !isFinite(location.lng))) {
+      return NextResponse.json({ error: "Coordenadas inválidas" }, { status: 400 });
     }
 
     if (!Array.isArray(history) || history.length > 20) {
