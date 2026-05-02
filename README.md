@@ -87,8 +87,12 @@ Botón de chat flotante integrado en el mapa que responde preguntas en lenguaje 
 ### Variables de entorno necesarias
 
 ```bash
+NEXT_PUBLIC_MAPBOX_TOKEN=pk_... # Obtener en mapbox.com
+NEXT_PUBLIC_SITE_URL=https://tu-dominio.com
 DEEPSEEK_API_KEY=sk-...   # Obtener en platform.deepseek.com
 ```
+
+El editor interno de rutas permanece desactivado por defecto. Si necesitas usarlo en local o en un entorno privado, configura `DEBUG_ROUTE_SAVE_ENABLED=true` y protege el endpoint con `DEBUG_ROUTE_SAVE_TOKEN`.
 
 ### Rate limiting
 

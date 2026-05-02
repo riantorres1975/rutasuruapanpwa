@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "next dev --webpack",
+    "build": "next build --webpack",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
     "convert:rutas": "node scripts/convert-rutas.js",
     "group:rutas": "node scripts/group-rutas.js",
     "pipeline:rutas": "node scripts/convert-rutas.js && node scripts/group-rutas.js"
@@ -14,19 +14,22 @@
   "dependencies": {
     "fuse.js": "^7.3.0",
     "mapbox-gl": "^3.12.0",
-    "next": "^14.2.24",
-    "react": "18.3.1",
-    "react-dom": "18.3.1"
+    "next": "^16.2.4",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5"
   },
   "devDependencies": {
     "@types/node": "20.14.11",
-    "@types/react": "18.3.3",
-    "@types/react-dom": "18.3.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
     "autoprefixer": "10.4.19",
-    "eslint": "^8.57.0",
-    "eslint-config-next": "^14.2.24",
-    "postcss": "8.4.39",
+    "eslint": "^9.39.4",
+    "eslint-config-next": "^16.2.4",
+    "postcss": "^8.5.13",
     "tailwindcss": "3.4.6",
     "typescript": "5.5.3"
+  },
+  "overrides": {
+    "postcss": "$postcss"
   }
 }

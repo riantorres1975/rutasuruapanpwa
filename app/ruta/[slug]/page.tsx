@@ -6,17 +6,18 @@ import { APP_BRAND, FARES_2026 } from "@/lib/mobility-config";
 import { findRouteSeoItem, getRouteSeoItems } from "@/lib/route-seo";
 
 type RoutePageProps = {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 };
 
 export function generateStaticParams() {
   return getRouteSeoItems().map((route) => ({ slug: route.slug }));
 }
 
-export function generateMetadata({ params }: RoutePageProps): Metadata {
-  const route = findRouteSeoItem(params.slug);
+export async function generateMetadata({ params }: RoutePageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const route = findRouteSeoItem(slug);
 
   if (!route) {
     return {};
@@ -39,8 +40,9 @@ export function generateMetadata({ params }: RoutePageProps): Metadata {
   };
 }
 
-export default function RoutePage({ params }: RoutePageProps) {
-  const route = findRouteSeoItem(params.slug);
+export default async function RoutePage({ params }: RoutePageProps) {
+  const { slug } = await params;
+  const route = findRouteSeoItem(slug);
 
   if (!route) {
     notFound();

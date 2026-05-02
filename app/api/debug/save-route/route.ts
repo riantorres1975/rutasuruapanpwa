@@ -5,6 +5,7 @@ export const dynamic = "force-dynamic";
 
 type RutaEntry = { id: number; nombre: string; color: string; coordenadas: number[][] };
 type GroupedEntry = { ruta: string; color: string; ida?: number[][]; vuelta?: number[][] };
+type RouteDirection = "ida" | "vuelta";
 
 function normalize(s: string) {
   return s
@@ -24,8 +25,22 @@ function getDirection(nombre: string): "ida" | "vuelta" | null {
   return m ? (m[1].toLowerCase() as "ida" | "vuelta") : null;
 }
 
+function isRouteDirection(value: unknown): value is RouteDirection {
+  return value === "ida" || value === "vuelta";
+}
+
+function isAuthorized(request: Request) {
+  const expectedToken = process.env.DEBUG_ROUTE_SAVE_TOKEN;
+  if (process.env.DEBUG_ROUTE_SAVE_ENABLED !== "true" || !expectedToken) {
+    return false;
+  }
+
+  const auth = request.headers.get("authorization");
+  return auth === `Bearer ${expectedToken}`;
+}
+
 export async function POST(request: Request) {
-  if (process.env.DEBUG_ROUTE_SAVE_ENABLED !== "true") {
+  if (!isAuthorized(request)) {
     return Response.json({ error: "Recurso no disponible" }, { status: 403 });
   }
 
@@ -42,14 +57,18 @@ export async function POST(request: Request) {
     return Response.json({ error: "Datos inválidos: se requiere ruta, direccion y coordenadas" }, { status: 400 });
   }
 
+  if (!isRouteDirection(direccion)) {
+    return Response.json({ error: "Dirección inválida: usa ida o vuelta" }, { status: 400 });
+  }
+
   if (coordenadas.length > 5000) {
     return Response.json({ error: "Demasiadas coordenadas (máximo 5000)" }, { status: 400 });
   }
 
   const isValidCoord = (c: unknown): c is [number, number] =>
     Array.isArray(c) && c.length === 2 &&
-    typeof c[0] === "number" && isFinite(c[0]) &&
-    typeof c[1] === "number" && isFinite(c[1]) &&
+    typeof c[0] === "number" && Number.isFinite(c[0]) &&
+    typeof c[1] === "number" && Number.isFinite(c[1]) &&
     c[0] >= -180 && c[0] <= 180 &&
     c[1] >= -90 && c[1] <= 90;
 
@@ -97,7 +116,7 @@ export async function POST(request: Request) {
     const grouped: GroupedEntry[] = JSON.parse(readFileSync(groupedPath, "utf8"));
     const gIdx = grouped.findIndex((g) => normalize(g.ruta) === normalize(ruta));
     if (gIdx !== -1) {
-      grouped[gIdx][direccion as "ida" | "vuelta"] = coordenadas as number[][];
+      grouped[gIdx][direccion] = coordenadas as number[][];
       writeFileSync(groupedPath, JSON.stringify(grouped, null, 2), { encoding: "utf8" });
       console.log(`[save-route] OK ruta="${ruta}" dir="${direccion}" gIdx=${gIdx} pts=${coordenadas.length}`);
     } else {
