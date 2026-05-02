@@ -4,7 +4,12 @@ import { haversineMeters } from "@/lib/geo";
 // Max walking distance to board/alight a route (meters)
 const PROXIMITY_METERS = 550;
 // Max walking distance between transfer point on route A and route B (meters)
-const TRANSFER_WALK_METERS = 300;
+const TRANSFER_WALK_METERS = 200;
+// Minimum distance traveled on route A before transferring (avoid trivial transfers at origin)
+const MIN_SEG_A_METERS = 200;
+// Maximum allowed ratio of (transfer-to-destination distance / origin-to-destination distance)
+// Rejects transfers where route A is going backwards or making excessive detours
+const MAX_PROGRESS_RATIO = 1.15;
 
 export type TransferOption = {
   routeAId: number;
@@ -74,12 +79,19 @@ export function computeTransferOptions(
 
   const results: TransferOption[] = [];
 
+  // Pre-compute origin→destination distance once for progress checks
+  const originToDestDist = haversineMeters(origin, destination);
+
   for (const { route: rA, indexA } of fromOrigin) {
     // Sample candidate transfer points along rA (every ~5 coords to keep it fast)
     const step = Math.max(1, Math.floor(rA.coordenadas.length / 20));
 
     for (let xi = indexA; xi < rA.coordenadas.length; xi += step) {
       const xPoint = rA.coordenadas[xi];
+
+      // Reject transfer point if route A is heading away from destination
+      // (allows up to MAX_PROGRESS_RATIO detour relative to straight-line distance)
+      if (haversineMeters(xPoint, destination) > originToDestDist * MAX_PROGRESS_RATIO) continue;
 
       for (const { route: rB, indexB } of toDestination) {
         if (rA.id === rB.id) continue;
@@ -96,7 +108,12 @@ export function computeTransferOptions(
 
         if (segA.length < 2 || segB.length < 2) continue;
 
-        const score = segmentLength(segA) + cX.distance * 2 + segmentLength(segB);
+        // Reject trivial transfers where route A barely moves from origin
+        const lenA = segmentLength(segA);
+        if (lenA < MIN_SEG_A_METERS) continue;
+
+        const lenB = segmentLength(segB);
+        const score = lenA + cX.distance * 2 + lenB;
 
         results.push({
           routeAId: rA.id,

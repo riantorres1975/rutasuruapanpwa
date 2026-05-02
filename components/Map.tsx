@@ -35,6 +35,7 @@ const TELEFERICO_ROUTE_NAME = "Teleférico Uruapan";
 const TRANSFER_SOURCE = "transfer-source";
 const TRANSFER_SEG_A_LAYER = "transfer-seg-a";
 const TRANSFER_SEG_B_LAYER = "transfer-seg-b";
+const TRANSFER_WALK_LAYER = "transfer-walk";
 const TRANSFER_PIN_LAYER = "transfer-pin";
 const CAMERA_DURATION = 1200;
 const MIN_DRAW_DURATION = 1200;
@@ -1011,7 +1012,7 @@ function MapComponent({
     );
 
     const clearTransferLayers = () => {
-      for (const layer of [TRANSFER_SEG_A_LAYER, TRANSFER_SEG_B_LAYER, TRANSFER_PIN_LAYER]) {
+      for (const layer of [TRANSFER_SEG_A_LAYER, TRANSFER_SEG_B_LAYER, TRANSFER_WALK_LAYER, TRANSFER_PIN_LAYER]) {
         if (map.getLayer(layer)) map.removeLayer(layer);
       }
       if (map.getSource(TRANSFER_SOURCE)) map.removeSource(TRANSFER_SOURCE);
@@ -1020,6 +1021,12 @@ function MapComponent({
     clearTransferLayers();
 
     if (!selectedTransfer) return;
+
+    // Walk segment: from route A transfer point to route B boarding point
+    const walkCoords: number[][] = [
+      selectedTransfer.transferPoint as number[],
+      selectedTransfer.segmentB[0] as number[]
+    ];
 
     const geojson: GeoJSON.FeatureCollection = {
       type: "FeatureCollection",
@@ -1033,6 +1040,11 @@ function MapComponent({
           type: "Feature",
           properties: { type: "segB" },
           geometry: { type: "LineString", coordinates: selectedTransfer.segmentB as number[][] }
+        },
+        {
+          type: "Feature",
+          properties: { type: "walk", walkMeters: selectedTransfer.walkMeters },
+          geometry: { type: "LineString", coordinates: walkCoords }
         },
         {
           type: "Feature",
@@ -1060,6 +1072,20 @@ function MapComponent({
       filter: ["==", ["get", "type"], "segB"],
       layout: { "line-cap": "round", "line-join": "round" },
       paint: { "line-color": "#34d399", "line-width": 5, "line-opacity": 0.95 }
+    });
+
+    map.addLayer({
+      id: TRANSFER_WALK_LAYER,
+      type: "line",
+      source: TRANSFER_SOURCE,
+      filter: ["==", ["get", "type"], "walk"],
+      layout: { "line-cap": "round", "line-join": "round" },
+      paint: {
+        "line-color": "#ffffff",
+        "line-width": 2.5,
+        "line-opacity": 0.7,
+        "line-dasharray": [2, 2.5]
+      }
     });
 
     map.addLayer({
