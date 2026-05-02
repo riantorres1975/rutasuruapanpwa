@@ -92,7 +92,7 @@ const ALIASES: Record<string, string[]> = {
   "Ruta 1":   ["hospital", "hospital regional", "IMSS bienestar", "mercado municipal", "palito verde"],
   "Ruta 1A":  ["hospital", "hospital regional", "IMSS bienestar", "palito verde", "san jose"],
   "Ruta 25":  ["centro", "centro histórico", "antorcha", "primer cuadro", "zócalo", "sol naciente", "parque nacional", "parque"],
-  "Ruta 26":  ["centro", "centro histórico", "constituyentes", "unidad", "primer cuadro", "sol naciente", "central", "central camionera", "camionera"],
+  "Ruta 26":  ["centro", "centro histórico", "constituyentes", "unidad", "primer cuadro", "sol naciente", "central", "central camionera", "camionera", "don vasco", "universidad don vasco"],
   "Ruta 76":  ["centro", "centro histórico", "constituyentes", "primer cuadro", "zócalo", "sol naciente"],
   "Ruta 45":  ["interclínicas", "clínicas", "clinicas", "hospitales", "zona médica", "IMSS"],
   "Ruta 176": ["clínica 76", "IMSS", "brisas", "Las Brisas", "quinta"],
@@ -130,7 +130,7 @@ const ROUTE_DETAILS: Record<string, RouteDetail> = {
   "Ruta 27": { ida: [{nombre:"Balcones",coords:[-102.0850,19.4250]},{nombre:"Yucatán",coords:[-102.0750,19.4200]},{nombre:"Centro",coords:[-102.0567,19.4205]},{nombre:"Parque Nacional",coords:[-102.0515,19.4230]},{nombre:"Francisco Villa",coords:[-102.0480,19.4250]},{nombre:"CETIS 27",coords:[-102.0450,19.4280]}], vuelta: [] },
   "Ruta 31": { ida: [{nombre:"CECATI",coords:[-102.0720,19.4100]},{nombre:"Plaza de Toros",coords:[-102.0650,19.4150]},{nombre:"Centro",coords:[-102.0567,19.4205]},{nombre:"Quinta",coords:[-102.0530,19.4220]},{nombre:"Jaramillo",coords:[-102.0480,19.4260]},{nombre:"28 de Octubre",coords:[-102.0450,19.4290]}], vuelta: [] },
   "Ruta 25": { ida: [{nombre:"Base Antorcha",coords:[-102.0820,19.4050]},{nombre:"Sol Naciente",coords:[-102.0700,19.4120]},{nombre:"Constituyentes",coords:[-102.0635,19.4180]},{nombre:"Centro Histórico",coords:[-102.0567,19.4205]},{nombre:"Parque Nacional (a un lado)",coords:[-102.0540,19.4230]}], vuelta: [] },
-  "Ruta 26": { ida: [{nombre:"Sol Naciente",coords:[-102.0700,19.4120]},{nombre:"Constituyentes",coords:[-102.0635,19.4180]},{nombre:"Central Camionera",coords:[-102.0595,19.4208]},{nombre:"Centro Histórico",coords:[-102.0567,19.4205]},{nombre:"Unidad",coords:[-102.0445,19.4332]}], vuelta: [] },
+  "Ruta 26": { ida: [{nombre:"Sol Naciente",coords:[-102.0700,19.4120]},{nombre:"Constituyentes",coords:[-102.0635,19.4180]},{nombre:"Universidad Don Vasco",coords:[-102.0610,19.4195]},{nombre:"Central Camionera",coords:[-102.0595,19.4208]},{nombre:"Centro Histórico",coords:[-102.0567,19.4205]},{nombre:"Unidad",coords:[-102.0445,19.4332]}], vuelta: [] },
   "Ruta 76": { ida: [{nombre:"Quirindavara",coords:[-102.0800,19.4000]},{nombre:"Sol Naciente",coords:[-102.0700,19.4120]},{nombre:"Constituyentes",coords:[-102.0635,19.4180]},{nombre:"Boulevard Industrial",coords:[-102.0600,19.4150]},{nombre:"Morelos",coords:[-102.0580,19.4185]},{nombre:"Centro Histórico",coords:[-102.0567,19.4205]},{nombre:"Colorín",coords:[-102.0500,19.4300]}], vuelta: [] },
 };
 
@@ -197,7 +197,7 @@ function buildSystemPrompt(location?: { lat: number; lng: number } | null): stri
 - Solo conoces el recorrido detallado de estas rutas: ${rutasConRecorrido}. Para cualquier otra ruta solo puedes decir el destino final y el horario, NO el recorrido.
 - Responde en español informal, máximo 3 oraciones, sin markdown ni listas largas.
 - Si no tienes datos suficientes para responder con certeza, di "no tengo esa información exacta, verifica en el mapa de UruGo tocando tu origen y destino".
-- Al inicio de CADA conversación (primer mensaje) incluye al final de tu respuesta: "⚠️ Beta: la info puede no ser exacta. Si algo está mal, repórtalo con el botón 🚩."
+- NUNCA añadas el aviso "⚠️ Beta" ni el emoji 🚩 en tus respuestas. Ese mensaje lo agrega el sistema automáticamente.
 
 ## Rutas disponibles (destino — horario — recorrido si disponible):
 ${routesList}
@@ -211,7 +211,7 @@ ${aliasesList}
 - Horarios sin asterisco son estimaciones típicas.
 - Para transbordos o rutas combinadas, sugiere usar el mapa de UruGo.
 - Rutas que pasan por el centro histórico: Ruta 25, Ruta 26 y Ruta 76. NUNCA digas que la Ruta 2 pasa por el centro.
-- La Ruta 26 SÍ pasa por la Central Camionera (entre Constituyentes y el Centro Histórico). NUNCA digas que no pasa por la Central.
+- La Ruta 26 SÍ pasa por la Central Camionera y por la Universidad Don Vasco. NUNCA digas que no pasa por esos lugares.
 - La Ruta 2 (destino Jicalán) pasa por Sol Naciente y va directo a Jicalán. La Ruta 2A es diferente: va a Zumpimito y Soriana La Pinera, NO llega a Jicalán. Siempre especifica "la Ruta 2 que va a Jicalán" para evitar confusión con la 2A.${locationSection}`;
 }
 
@@ -270,11 +270,12 @@ export async function POST(req: NextRequest) {
 
     const messages = [
       { role: "system", content: systemPrompt },
-      ...history.slice(-8).filter((m) =>
-        typeof m.role === "string" && (m.role === "user" || m.role === "assistant") &&
+      ...history.slice(-4).filter((m) =>
+        typeof m.role === "string" &&
+        (m.role === "user" || m.role === "assistant" || m.role === "bot") &&
         typeof m.text === "string"
       ).map((m) => ({
-        role: m.role as "user" | "assistant",
+        role: (m.role === "user" ? "user" : "assistant") as "user" | "assistant",
         content: m.text.slice(0, 2000),
       })),
       { role: "user", content: message },
@@ -304,7 +305,12 @@ export async function POST(req: NextRequest) {
     }
 
     const data = await res.json();
-    const reply = data?.choices?.[0]?.message?.content ?? "No pude generar una respuesta.";
+    let reply = (data?.choices?.[0]?.message?.content ?? "No pude generar una respuesta.")
+      .replace(/\s*⚠️ Beta[^🚩]*🚩\.?/g, "").trim();
+
+    if (history.length === 0) {
+      reply += "\n\n⚠️ Beta: la info puede no ser exacta. Si algo está mal, repórtalo con el botón 🚩.";
+    }
 
     return NextResponse.json({ reply });
   } catch (e) {
