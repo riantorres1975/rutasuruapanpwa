@@ -3,13 +3,20 @@ import { haversineMeters } from "@/lib/geo";
 
 // Max walking distance to board/alight a route (meters)
 const PROXIMITY_METERS = 550;
-// Max walking distance between transfer point on route A and route B (meters)
+// Max walking distance between route A transfer point and route B boarding point
 const TRANSFER_WALK_METERS = 200;
-// Minimum distance traveled on route A before transferring (avoid trivial transfers at origin)
+// Minimum distance traveled on route A before transferring (avoid trivial transfers near origin)
 const MIN_SEG_A_METERS = 200;
-// Maximum allowed ratio of (transfer-to-destination distance / origin-to-destination distance)
-// Rejects transfers where route A is going backwards or making excessive detours
+// Maximum ratio of (transfer-point→destination) / (origin→destination) — rejects backwards detours
 const MAX_PROGRESS_RATIO = 1.15;
+// "Same corner" threshold: transfers within this distance get a near-zero walk penalty
+const INTERSECTION_METERS = 35;
+
+// Degree tolerances for fast lat/lng pre-rejection before calling haversineMeters.
+// Coords are [lng, lat]. At Uruapan (~19.4°N): 1°lat≈111km, 1°lng≈104km.
+// Using TRANSFER_WALK_METERS + 10% margin for safety.
+const LAT_TOL = (TRANSFER_WALK_METERS * 1.1) / 111_000; // ≈ 0.00198°
+const LNG_TOL = (TRANSFER_WALK_METERS * 1.1) / 104_000; // ≈ 0.00212°
 
 export type TransferOption = {
   routeAId: number;
@@ -26,7 +33,6 @@ export type TransferOption = {
   walkMeters: number;
   score: number;
 };
-
 
 function closestOnPath(point: Coordinates, path: Coordinates[]) {
   let bestIndex = 0;
@@ -51,11 +57,17 @@ function segmentLength(seg: Coordinates[]): number {
 
 /**
  * Find transfer options when no direct route covers origin→destination.
- * Strategy: for each pair (routeA, routeB), check if routeA covers origin
- * and one of its points is within TRANSFER_WALK_METERS of routeB, and routeB
- * covers destination.
  *
- * Limited to top-5 results sorted by total travel score.
+ * Strategy: for each point on route A (starting from where it covers origin),
+ * scan route B coordinates up to its destination index looking for the closest
+ * intersection — where both routes share the same corner (≤35m) or are within
+ * walking distance (≤200m). Checks every coordinate on route A (no coarse
+ * sampling) using fast lat/lng pre-rejection before haversine to stay performant.
+ *
+ * Scoring rewards intersection-quality transfers (near-zero walk) over longer
+ * walks with a non-linear penalty.
+ *
+ * Returns top-5 results sorted by total travel score, deduplicated by route pair.
  */
 export function computeTransferOptions(
   routes: ResolvedRouteData[],
@@ -78,42 +90,56 @@ export function computeTransferOptions(
   }
 
   const results: TransferOption[] = [];
-
-  // Pre-compute origin→destination distance once for progress checks
   const originToDestDist = haversineMeters(origin, destination);
 
   for (const { route: rA, indexA } of fromOrigin) {
-    // Sample candidate transfer points along rA (every ~5 coords to keep it fast)
-    const step = Math.max(1, Math.floor(rA.coordenadas.length / 20));
-
-    for (let xi = indexA; xi < rA.coordenadas.length; xi += step) {
+    for (let xi = indexA; xi < rA.coordenadas.length; xi++) {
       const xPoint = rA.coordenadas[xi];
 
-      // Reject transfer point if route A is heading away from destination
-      // (allows up to MAX_PROGRESS_RATIO detour relative to straight-line distance)
+      // Reject if route A is heading away from destination (>15% detour allowed)
       if (haversineMeters(xPoint, destination) > originToDestDist * MAX_PROGRESS_RATIO) continue;
 
       for (const { route: rB, indexB } of toDestination) {
         if (rA.id === rB.id) continue;
 
-        // Find closest point on rB to the transfer candidate
-        const cX = closestOnPath(xPoint, rB.coordenadas);
-        if (cX.distance > TRANSFER_WALK_METERS) continue;
+        // Find the closest route B coordinate strictly before the destination index.
+        // Fast lat/lng pre-rejection avoids calling haversine for distant points.
+        let bestJ = -1;
+        let bestDist = TRANSFER_WALK_METERS + 1;
+        const xLng = xPoint[0];
+        const xLat = xPoint[1];
 
-        // rB must cover xPoint→destination in the forward direction
-        if (cX.index >= indexB) continue;
+        for (let j = 0; j < indexB; j++) {
+          const bCoord = rB.coordenadas[j];
+          if (Math.abs(bCoord[1] - xLat) > LAT_TOL) continue;
+          if (Math.abs(bCoord[0] - xLng) > LNG_TOL) continue;
+          const d = haversineMeters(xPoint, bCoord);
+          if (d < bestDist) {
+            bestDist = d;
+            bestJ = j;
+          }
+        }
+
+        if (bestJ === -1) continue;
 
         const segA = rA.coordenadas.slice(indexA, xi + 1);
-        const segB = rB.coordenadas.slice(cX.index, indexB + 1);
+        const segB = rB.coordenadas.slice(bestJ, indexB + 1);
 
         if (segA.length < 2 || segB.length < 2) continue;
 
-        // Reject trivial transfers where route A barely moves from origin
         const lenA = segmentLength(segA);
         if (lenA < MIN_SEG_A_METERS) continue;
 
         const lenB = segmentLength(segB);
-        const score = lenA + cX.distance * 2 + lenB;
+
+        // Non-linear walk penalty: intersection-quality transfers (≤35m) are nearly
+        // free; anything beyond that is penalized 3× to strongly prefer shared corners.
+        const walkPenalty =
+          bestDist <= INTERSECTION_METERS
+            ? bestDist * 0.5
+            : INTERSECTION_METERS * 0.5 + (bestDist - INTERSECTION_METERS) * 3;
+
+        const score = lenA + walkPenalty + lenB;
 
         results.push({
           routeAId: rA.id,
@@ -122,19 +148,19 @@ export function computeTransferOptions(
           routeBName: rB.nombre,
           routeAStartIndex: indexA,
           routeATransferIndex: xi,
-          routeBTransferIndex: cX.index,
+          routeBTransferIndex: bestJ,
           routeBEndIndex: indexB,
           transferPoint: xPoint,
           segmentA: segA,
           segmentB: segB,
-          walkMeters: cX.distance,
+          walkMeters: bestDist,
           score
         });
       }
     }
   }
 
-  // Sort by score, deduplicate by (routeAId, routeBId) pair, return top 5
+  // Sort ascending (lower score = better), deduplicate by route pair, return top 5
   results.sort((a, b) => a.score - b.score);
 
   const seen = new Set<string>();
