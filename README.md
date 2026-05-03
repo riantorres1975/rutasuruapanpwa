@@ -41,7 +41,7 @@ Los sistemas de transporte público en ciudades intermedias de México carecen d
 | 🔎 Contexto desde landing | Los CTAs y chips envían `?destino=...`; el mapa muestra una guía contextual para marcar origen y destino |
 | 🔄 Ida / Vuelta | Cambio dinámico de dirección con re-render reactivo; botón de sugerencia rápida al no encontrar ruta directa |
 | 🎯 Motor de sugerencias A→B | Algoritmo Haversine para matching local sin APIs externas |
-| 🔀 Rutas con trasbordo | Sugerencias A→B con 1 cambio de camión; rutas secundarias atenuadas visualmente para foco en el trasbordo |
+| 🔀 Rutas con trasbordo | Sugerencias A→B con 1 cambio de camión; detección de intersecciones reales entre rutas (misma esquina ≤35 m); línea de caminata punteada entre puntos de bajada y abordaje; rutas secundarias atenuadas visualmente |
 | 📐 Simplificación de trayectorias | Algoritmo Ramer-Douglas-Peucker (RDP) para reducir puntos en rutas de fondo |
 | 🎬 Animación de trazado | Dibujo progresivo de rutas con `requestAnimationFrame` |
 | 📍 Segmento relevante | Al seleccionar una sugerencia, se renderiza solo el segmento A→B |
@@ -163,8 +163,19 @@ Reduce la cantidad de puntos de las rutas de fondo (aquellas no seleccionadas) s
 1. Para cada ruta y dirección, busca el índice más cercano a A y a B usando Haversine.
 2. Descarta rutas donde A o B estén a más de 550 m de la ruta.
 3. Descarta rutas donde el índice de A sea posterior al de B (dirección incorrecta).
-4. Calcula un **score** = `distanciaA + distanciaB + longitudSegmento × 0.04`.
+4. Calcula un **score** = `distanciaA + distanciaB × 1.8 + longitudSegmento × 0.01`.
 5. Devuelve las 3 mejores opciones ordenadas por score.
+
+### Motor de transbordos
+
+Cuando no existe ninguna ruta directa A→B, se activa el motor de transbordos (`lib/transfers.ts`):
+
+1. **Pre-filtro**: identifica rutas que cubren el origen (≤550 m) y rutas que cubren el destino (≤550 m).
+2. **Progreso geográfico**: para cada punto de la ruta A (evaluando cada coordenada), descarta puntos cuya distancia al destino supere 1.15× la distancia origen→destino — evita que la ruta A se aleje en sentido contrario.
+3. **Detección de intersección**: para cada punto válido de la ruta A, escanea las coordenadas de la ruta B (hasta el destino) usando pre-rechazo lat/lng antes de llamar a Haversine — solo se procesan puntos dentro de la ventana de 200 m.
+4. **Umbral de esquina compartida**: si la distancia entre el punto de la ruta A y el punto más cercano de la ruta B es ≤35 m, se considera una intersección real (misma esquina); la penalización de caminata es casi nula.
+5. **Penalidad no lineal**: distancias > 35 m se penalizan 3× para privilegiar fuertemente las transferencias en esquina.
+6. **Score** = `longitudSegA + penalidad(caminata) + longitudSegB`; devuelve top 5 deduplicados por par de rutas.
 
 ### requestAnimationFrame — Animación de trazado
 
@@ -270,8 +281,10 @@ rutasuruapanpwa/
 │   ├── rutas.json            # Rutas normalizadas (formato plano)
 │   └── rutas-grouped.json    # Rutas agrupadas ida/vuelta (314 KB)
 ├── lib/
+│   ├── geo.ts                # Haversine y utilidades geométricas
 │   ├── map.ts                # Utilidades de Mapbox (layers, sources)
-│   ├── map-debug.ts          # Utilidades del editor de rutas (Haversine, replaceSegment)
+│   ├── map-debug.ts          # Utilidades del editor de rutas (replaceSegment)
+│   ├── transfers.ts          # Motor de transbordos con detección de intersecciones
 │   └── types.ts              # Tipos TypeScript compartidos
 ├── public/
 │   ├── manifest.json         # PWA manifest
@@ -387,7 +400,7 @@ Public transit in mid-size Mexican cities lacks accessible digital information. 
 | 🔎 Landing context | Landing CTAs and chips send `?destino=...`; the map shows contextual guidance for placing origin and destination |
 | 🔄 Outbound / Return | Dynamic direction toggle with reactive re-render; quick-flip button when no direct route found |
 | 🎯 A→B Suggestion Engine | Haversine-based local matching, no external APIs |
-| 🔀 Transfer routes | A→B suggestions with 1 bus change; secondary routes visually dimmed to focus on transfer |
+| 🔀 Transfer routes | A→B suggestions with 1 bus change; real intersection detection between routes (same corner ≤35 m); dashed walk line between alight and board points; secondary routes visually dimmed |
 | 📐 Path simplification | Ramer-Douglas-Peucker (RDP) algorithm for background route decimation |
 | 🎬 Route animation | Progressive drawing with `requestAnimationFrame` |
 | 📍 Relevant segment | When a suggestion is selected, only the A→B segment is rendered |
@@ -462,8 +475,19 @@ Reduces the number of points in background routes (non-selected) without losing 
 1. For each route and direction, finds the closest index to A and B using Haversine.
 2. Discards routes where A or B are more than 550 m from the route.
 3. Discards routes where the A index comes after the B index (wrong direction).
-4. Calculates a **score** = `distanceA + distanceB + segmentLength × 0.04`.
+4. Calculates a **score** = `distanceA + distanceB × 1.8 + segmentLength × 0.01`.
 5. Returns the top 3 options sorted by score.
+
+### Transfer Engine
+
+When no direct route covers A→B, the transfer engine (`lib/transfers.ts`) activates:
+
+1. **Pre-filter**: identifies routes covering the origin (≤550 m) and routes covering the destination (≤550 m).
+2. **Geographic progress**: for each coordinate of route A, discards points whose distance to the destination exceeds 1.15× the origin→destination distance — prevents route A from heading in the wrong direction.
+3. **Intersection detection**: for each valid route A point, scans route B coordinates (up to the destination index) using lat/lng pre-rejection before calling Haversine — only points within the 200 m window reach the expensive calculation.
+4. **Same-corner threshold**: if the distance between the route A point and the nearest route B point is ≤35 m, it qualifies as a real intersection (shared corner); walk penalty is near zero.
+5. **Non-linear penalty**: distances > 35 m are penalized 3× to strongly prefer corner transfers.
+6. **Score** = `lengthSegA + penalty(walk) + lengthSegB`; returns top 5 deduplicated by route pair.
 
 ### requestAnimationFrame — Route Draw Animation
 
@@ -569,8 +593,10 @@ rutasuruapanpwa/
 │   ├── rutas.json            # Normalized routes (flat format)
 │   └── rutas-grouped.json    # Routes grouped by direction (314 KB)
 ├── lib/
+│   ├── geo.ts                # Haversine and geometric utilities
 │   ├── map.ts                # Mapbox utilities (layers, sources)
-│   ├── map-debug.ts          # Route editor utilities (Haversine, replaceSegment)
+│   ├── map-debug.ts          # Route editor utilities (replaceSegment)
+│   ├── transfers.ts          # Transfer engine with intersection detection
 │   └── types.ts              # Shared TypeScript types
 ├── public/
 │   ├── manifest.json         # PWA manifest
