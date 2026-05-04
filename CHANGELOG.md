@@ -22,6 +22,50 @@ Ordenado del más reciente al más antiguo.
 
 ---
 
+## [2026-05-04] Perf: perfilar y acelerar transbordos al mover pines
+
+**Rama:** `experimental`
+**Archivos modificados:**
+- `lib/transfers.ts`
+- `CHANGELOG.md`
+
+### Problema
+
+El matcher directo ya estaba respondiendo rápido, pero el cálculo de transbordos
+seguía haciendo trabajo repetido cuando el usuario movía pines varias veces. En
+benchmarks locales, la búsqueda directa rondaba ~0.9 ms promedio, mientras que
+transbordos rondaba ~5.2 ms promedio y podía subir a ~20 ms en p99.
+
+### Cambios
+
+- Se agregó cache por ruta con `WeakMap` para métricas acumuladas de distancia.
+- El largo de cada segmento candidato ahora se obtiene por diferencia de
+  distancias acumuladas, sin volver a sumar puntos ni crear slices antes de
+  validar.
+- Los slices de segmentos se crean solo cuando el candidato ya pasó los filtros
+  de longitud y desvío.
+- Se adelantó el descarte de viajes demasiado cortos antes de escanear rutas.
+
+### Verificación
+
+- Benchmark local de transbordos:
+  - antes: ~5.2 ms promedio, p90 ~11.1 ms, p99 ~20.6 ms
+  - después: ~2.6-2.9 ms promedio, p90 ~5.3 ms, p99 ~8 ms en caliente
+- `node_modules\.bin\sucrase-node.cmd lib\__tests__\transfers.test.ts`
+  - 4/4 tests pasando
+- `node_modules\.bin\sucrase-node.cmd lib\__tests__\routeMatcher.test.ts`
+  - 40/40 tests pasando
+- `npm run lint`
+  - sin errores ni warnings
+- `npx --no-install tsc --noEmit`
+  - sin errores
+- `npm run build`
+  - compilación correcta
+
+### Estado: completo
+
+---
+
 ## [2026-05-04] Perf: reducir trabajo de Mapbox y búsqueda de rutas
 
 **Rama:** `experimental`

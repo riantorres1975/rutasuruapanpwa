@@ -27,6 +27,12 @@ const INTERSECTION_METERS = 35;
 const LAT_TOL = (TRANSFER_WALK_METERS * 1.1) / 111_000; // ≈ 0.00198°
 const LNG_TOL = (TRANSFER_WALK_METERS * 1.1) / 104_000; // ≈ 0.00212°
 
+type RouteMetrics = {
+  cumulativeLengthsM: number[];
+};
+
+const routeMetricsCache = new WeakMap<Coordinates[], RouteMetrics>();
+
 export type TransferOption = {
   routeAId: number;
   routeBId: number;
@@ -56,12 +62,24 @@ function closestOnPath(point: Coordinates, path: Coordinates[]) {
   return { index: bestIndex, distance: bestDist };
 }
 
-function segmentLength(seg: Coordinates[]): number {
-  let total = 0;
-  for (let i = 1; i < seg.length; i++) {
-    total += haversineMeters(seg[i - 1], seg[i]);
+function getRouteMetrics(path: Coordinates[]): RouteMetrics {
+  const cached = routeMetricsCache.get(path);
+  if (cached) return cached;
+
+  const cumulativeLengthsM = new Array<number>(path.length);
+  cumulativeLengthsM[0] = 0;
+
+  for (let i = 1; i < path.length; i++) {
+    cumulativeLengthsM[i] = cumulativeLengthsM[i - 1] + haversineMeters(path[i - 1], path[i]);
   }
-  return total;
+
+  const metrics = { cumulativeLengthsM };
+  routeMetricsCache.set(path, metrics);
+  return metrics;
+}
+
+function segmentLengthFromMetrics(metrics: RouteMetrics, startIndex: number, endIndex: number) {
+  return metrics.cumulativeLengthsM[endIndex] - metrics.cumulativeLengthsM[startIndex];
 }
 
 /**
@@ -79,33 +97,35 @@ export function computeTransferOptionsFromPolylines(
   origin: Coordinates,
   destination: Coordinates
 ): TransferOption[] {
-  const fromOrigin: Array<{ route: PolylineRoute; indexA: number }> = [];
-  const toDestination: Array<{ route: PolylineRoute; indexB: number }> = [];
-
-  for (const route of routes) {
-    const threshold = route.corridor_width_m;
-    const cA = closestOnPath(origin, route.path);
-    if (cA.distance <= threshold) {
-      fromOrigin.push({ route, indexA: cA.index });
-    }
-    const cB = closestOnPath(destination, route.path);
-    if (cB.distance <= threshold) {
-      toDestination.push({ route, indexB: cB.index });
-    }
-  }
-
-  const results: TransferOption[] = [];
   const originToDestDist = haversineMeters(origin, destination);
 
   if (originToDestDist < MIN_TRIP_METERS) return [];
 
-  for (const { route: rA, indexA } of fromOrigin) {
+  const fromOrigin: Array<{ route: PolylineRoute; indexA: number; metrics: RouteMetrics }> = [];
+  const toDestination: Array<{ route: PolylineRoute; indexB: number; metrics: RouteMetrics }> = [];
+
+  for (const route of routes) {
+    const threshold = route.corridor_width_m;
+    const metrics = getRouteMetrics(route.path);
+    const cA = closestOnPath(origin, route.path);
+    if (cA.distance <= threshold) {
+      fromOrigin.push({ route, indexA: cA.index, metrics });
+    }
+    const cB = closestOnPath(destination, route.path);
+    if (cB.distance <= threshold) {
+      toDestination.push({ route, indexB: cB.index, metrics });
+    }
+  }
+
+  const results: TransferOption[] = [];
+
+  for (const { route: rA, indexA, metrics: metricsA } of fromOrigin) {
     for (let xi = indexA; xi < rA.path.length; xi++) {
       const xPoint = rA.path[xi];
 
       if (haversineMeters(xPoint, destination) > originToDestDist * MAX_PROGRESS_RATIO) continue;
 
-      for (const { route: rB, indexB } of toDestination) {
+      for (const { route: rB, indexB, metrics: metricsB } of toDestination) {
         if (rA.id === rB.id) continue;
 
         let bestJ = -1;
@@ -126,18 +146,18 @@ export function computeTransferOptionsFromPolylines(
 
         if (bestJ === -1) continue;
 
-        const segA = rA.path.slice(indexA, xi + 1);
-        const segB = rB.path.slice(bestJ, indexB + 1);
+        if (xi <= indexA || indexB <= bestJ) continue;
 
-        if (segA.length < 2 || segB.length < 2) continue;
-
-        const lenA = segmentLength(segA);
+        const lenA = segmentLengthFromMetrics(metricsA, indexA, xi);
         if (lenA < MIN_SEG_A_METERS) continue;
 
-        const lenB = segmentLength(segB);
+        const lenB = segmentLengthFromMetrics(metricsB, bestJ, indexB);
         if (lenB < MIN_SEG_B_METERS) continue;
 
         if (lenA + lenB > originToDestDist * MAX_DETOUR_RATIO) continue;
+
+        const segA = rA.path.slice(indexA, xi + 1);
+        const segB = rB.path.slice(bestJ, indexB + 1);
 
         const walkPenalty =
           bestDist <= INTERSECTION_METERS
