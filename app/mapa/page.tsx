@@ -16,10 +16,11 @@ import RouteList from "@/components/RouteList";
 import RouteSchedule from "@/components/RouteSchedule";
 import { useShareRoute } from "@/hooks/useShareRoute";
 import { formatRouteLabel, getRouteDestination } from "@/lib/route-names";
-import type { Coordinates, GroupedRouteData, ResolvedRouteData, RouteDirection } from "@/lib/types";
+import type { Coordinates, GroupedRouteData, ProductionRoute, ResolvedRouteData, RouteDirection } from "@/lib/types";
 import { computeTransferOptions } from "@/lib/transfers";
 import type { TransferOption } from "@/lib/transfers";
 import { haversineMeters } from "@/lib/geo";
+import { findBestRoutes, getRankedRoutes, type PolylineRoute } from "@/lib/routeMatcher";
 const PROXIMITY_METERS = 400;
 const DESTINATION_DISTANCE_WEIGHT = 1.8;
 const SEGMENT_LENGTH_FACTOR = 0.01;
@@ -55,6 +56,7 @@ type RouteOption = {
   indexB: number;
   segment: Coordinates[];
   score: number;
+  routeColor?: string;
 };
 
 type ActivePoint = "origin" | "destination" | null;
@@ -472,10 +474,15 @@ export default function HomePage() {
   const [selectedDirection, setSelectedDirection] = useState<RouteDirection>("ida");
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isResultSheetOpen, setIsResultSheetOpen] = useState(false);
+  const [userLocation, setUserLocation] = useState<Coordinates | null>(null);
+  const [manualOrigin, setManualOrigin] = useState<Coordinates | null>(null);
+  const [geoStatus, setGeoStatus] = useState<"idle" | "locating" | "ok" | "error">("idle");
+  const [geoAccuracyWarn, setGeoAccuracyWarn] = useState(false);
   const [originPoint, setOriginPoint] = useState<Coordinates | null>(null);
   const [destinationPoint, setDestinationPoint] = useState<Coordinates | null>(null);
   const [activePoint, setActivePoint] = useState<ActivePoint>("origin");
   const [suggestions, setSuggestions] = useState<RouteOption[]>([]);
+  const [alternativeSuggestedRouteIds, setAlternativeSuggestedRouteIds] = useState<number[]>([]);
   const [transfers, setTransfers] = useState<TransferOption[]>([]);
   const [selectedTransfer, setSelectedTransfer] = useState<TransferOption | null>(null);
   const [isCalculatingSuggestions, setIsCalculatingSuggestions] = useState(false);
@@ -484,7 +491,10 @@ export default function HomePage() {
   const [nearbyToast, setNearbyToast] = useState<number | null>(null);
   const [nearbyRouteIds, setNearbyRouteIds] = useState<number[]>([]);
   const [showTeleferico, setShowTeleferico] = useState(false);
+  const [useNewRouting, setUseNewRouting] = useState(false);
+  const [polylineRoutes, setPolylineRoutes] = useState<ProductionRoute[]>([]);
   const [sharedRouteSegment, setSharedRouteSegment] = useState<Coordinates[] | null>(null);
+  const [sharedSegmentColor, setSharedSegmentColor] = useState<string | null>(null);
   const [requestedDestination, setRequestedDestination] = useState<string | null>(null);
   const [routesMapMode, setRoutesMapMode] = useState<RoutesMapMode>("all-visible");
   const [isOnline, setIsOnline] = useState(true);
@@ -494,6 +504,85 @@ export default function HomePage() {
   const destinationPointRef = useRef(destinationPoint);
   const hasHydratedMapModeRef = useRef(false);
   const pendingSharedStateRef = useRef<SharedMapState | null>(null);
+
+  useEffect(() => {
+    try { setUseNewRouting(localStorage.getItem("useNewRouting") === "true"); } catch {}
+  }, []);
+
+  // Geolocation: watch position on mount.
+  // First fix → set userLocation and mark "ok".
+  // Subsequent fixes → if drift > GEO_DRIFT_THRESHOLD_M from first fix,
+  // warn the user to use manual mode instead of silently jumping the origin.
+  // Cancels automatically when unmounted or when user already set manualOrigin.
+  useEffect(() => {
+    const GEO_DRIFT_THRESHOLD_M = 50;
+
+    if (!navigator.geolocation) {
+      setGeoStatus("error");
+      return;
+    }
+
+    setGeoStatus("locating");
+    let firstFix: Coordinates | null = null;
+
+    const watchId = navigator.geolocation.watchPosition(
+      (pos) => {
+        const coords: Coordinates = [pos.coords.longitude, pos.coords.latitude];
+
+        if (!firstFix) {
+          // First reading: accept unconditionally
+          firstFix = coords;
+          setUserLocation(coords);
+          setGeoStatus("ok");
+          return;
+        }
+
+        // Subsequent readings: check drift from the accepted first fix
+        const driftM = haversineMeters(firstFix, coords);
+
+        if (driftM > GEO_DRIFT_THRESHOLD_M) {
+          // GPS is jumping — warn instead of moving the origin silently
+          setGeoAccuracyWarn(true);
+        }
+        // If drift is within threshold, silently update (normal GPS refinement)
+      },
+      () => {
+        setGeoStatus("error");
+      },
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+    );
+
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, []);
+
+  // Keep originPoint in sync: manualOrigin overrides userLocation.
+  useEffect(() => {
+    const effective = manualOrigin ?? userLocation;
+    setOriginPoint(effective);
+  }, [manualOrigin, userLocation]);
+
+  // Auto-advance to destination step when GPS provides location and user hasn't set a destination yet.
+  useEffect(() => {
+    if (userLocation && !manualOrigin && !destinationPoint) {
+      setActivePoint("destination");
+      setShowHint(true);
+    }
+  }, [userLocation, manualOrigin, destinationPoint]);
+
+  useEffect(() => {
+    if (!useNewRouting || polylineRoutes.length > 0) return;
+    fetch("/api/rutas-polyline")
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
+      .then((data: ProductionRoute[]) => {
+        if (Array.isArray(data) && data.length > 0) setPolylineRoutes(data);
+      })
+      .catch((err: unknown) => {
+        console.error("[rutas-polyline] Failed to load:", err instanceof Error ? err.message : err);
+      });
+  }, [useNewRouting, polylineRoutes.length]);
 
   const buildShareUrl = useCallback((options: {
     routeId?: number | null;
@@ -743,6 +832,7 @@ export default function HomePage() {
 
   const handleClearSelection = useCallback(() => {
     setSharedRouteSegment(null);
+    setSharedSegmentColor(null);
     setSelectedRouteId(null);
     setSelectedTransfer(null);
     setShowTeleferico(false);
@@ -756,11 +846,13 @@ export default function HomePage() {
   const handleMapPick = useCallback((point: Coordinates) => {
     setShowHint(false);
     setSharedRouteSegment(null);
+    setSharedSegmentColor(null);
 
     const active = activePointRef.current;
 
     if (active === "origin") {
-      setOriginPoint(point);
+      // Manual tap on map overrides automatic geolocation for origin
+      setManualOrigin(point);
       setActivePoint("destination");
       return;
     }
@@ -772,7 +864,7 @@ export default function HomePage() {
     }
 
     if (!originPointRef.current) {
-      setOriginPoint(point);
+      setManualOrigin(point);
       setActivePoint("destination");
       return;
     }
@@ -783,7 +875,8 @@ export default function HomePage() {
       return;
     }
 
-    setOriginPoint(point);
+    // Reset: new trip from a manual origin tap
+    setManualOrigin(point);
     setDestinationPoint(null);
     setActivePoint("destination");
   }, []);
@@ -874,8 +967,50 @@ export default function HomePage() {
     setIsCalculatingSuggestions(true);
 
     const timer = window.setTimeout(() => {
-      const nextSuggestions = computeRouteSuggestions(fullRoutes, groupedRoutes, originPoint, destinationPoint);
+      let nextSuggestions: RouteOption[];
+      let nextAlternativeIds: number[] = [];
+
+      if (useNewRouting) {
+        // Use rutas_produccion_final.json (fuente maestra) via /api/rutas-polyline.
+        // Provides real corridor_width_m per route and landmarks for future precision.
+        // Falls back to empty — suggestions stay empty until the fetch completes.
+        const routesForMatching: PolylineRoute[] = polylineRoutes.map((r) => ({
+          id: r.id,
+          name: r.name,
+          color: r.color,
+          corridor_width_m: r.corridor_width_m,
+          path: r.path,
+          // original_name encodes direction: entries ending in "(Vuelta)" go backwards
+          direccion: r.original_name.includes("Vuelta") ? "vuelta" : "ida",
+        }));
+        const matches = findBestRoutes(originPoint, destinationPoint, routesForMatching);
+        const ranked = getRankedRoutes(matches);
+
+        const toOption = (m: (typeof matches)[number]): RouteOption => ({
+          routeId: m.routeId,
+          ruta: m.routeName,
+          direccion: m.direccion,
+          distanciaA: m.originDistM,
+          distanciaB: m.destDistM,
+          indexA: m.originSegIndex,
+          indexB: m.destSegIndex,
+          segment: m.segment,
+          score: m.score,
+          routeColor: m.routeColor,
+        });
+
+        if (ranked) {
+          nextAlternativeIds = ranked.alternatives.map((m) => m.routeId);
+          nextSuggestions = [ranked.best, ...ranked.alternatives].map(toOption);
+        } else {
+          nextSuggestions = [];
+        }
+      } else {
+        nextSuggestions = computeRouteSuggestions(fullRoutes, groupedRoutes, originPoint, destinationPoint);
+      }
+
       setSuggestions(nextSuggestions);
+      setAlternativeSuggestedRouteIds(nextAlternativeIds);
       let nextTransfers: TransferOption[] = [];
       if (nextSuggestions.length === 0) {
         // Expand routes with both directions so transfers can use either direction
@@ -899,7 +1034,7 @@ export default function HomePage() {
     return () => {
       window.clearTimeout(timer);
     };
-  }, [destinationPoint, fullRoutes, groupedRoutes, originPoint]);
+  }, [destinationPoint, fullRoutes, groupedRoutes, originPoint, polylineRoutes, useNewRouting]);
 
   const suggestedRouteIds = useMemo(() => suggestions.map((item) => item.routeId), [suggestions]);
   const suggestedRouteDirections = useMemo(
@@ -929,7 +1064,11 @@ export default function HomePage() {
         { coords: selectedTransfer.segmentB, color: "#34d399", showLine: false }
       ];
     }
-    // Case 2: active suggestion with pins — arrows only, line already drawn by main layer
+    // Case 2a: new routing — segment painted directly, no selectedRoute needed
+    if (sharedRouteSegment && sharedSegmentColor && !selectedRoute) {
+      return [{ coords: sharedRouteSegment, color: sharedSegmentColor, showLine: true }];
+    }
+    // Case 2b: active suggestion with pins — arrows only, line already drawn by main layer
     if (selectedMapSegment && selectedRoute) {
       return [{ coords: selectedMapSegment, color: selectedRoute.color, showLine: false }];
     }
@@ -946,7 +1085,7 @@ export default function HomePage() {
       return segments;
     }
     return [];
-  }, [selectedTransfer, selectedMapSegment, selectedRoute, selectedRouteId, originPoint, destinationPoint, groupedRoutes, fullRoutes]);
+  }, [selectedTransfer, selectedMapSegment, selectedRoute, selectedRouteId, originPoint, destinationPoint, groupedRoutes, fullRoutes, sharedRouteSegment, sharedSegmentColor]);
   const mapRoutes = useMemo(() => {
     if (selectedRouteId === null) {
       return backgroundRoutes;
@@ -1008,19 +1147,26 @@ export default function HomePage() {
   }, [bestSuggestion, bestSuggestionEta, flowStep, isCalculatingSuggestions, selectedTransfer, transfers]);
   const hintMessage = useMemo(() => {
     if (flowStep === 1) {
-      if (requestedDestination) {
-        return `Destino: ${requestedDestination}. Primero toca el mapa para marcar tu origen.`;
+      if (geoStatus === "locating") return "Obteniendo tu ubicación...";
+      if (geoStatus === "error") {
+        return requestedDestination
+          ? `Destino: ${requestedDestination}. No pudimos obtener tu ubicación. Toca el mapa para marcar tu origen.`
+          : "No pudimos obtener tu ubicación. Toca el mapa para marcar tu origen.";
       }
-
-      return "Paso 1 de 3: toca el mapa para marcar tu origen.";
+      // geoStatus === "ok" — origin is set automatically
+      return requestedDestination
+        ? `Destino: ${requestedDestination}. Usando tu ubicación actual como origen.`
+        : "Usando tu ubicación actual. Toca el mapa para ajustar.";
     }
 
     if (flowStep === 2) {
-      if (requestedDestination) {
-        return `Ahora marca en el mapa la zona de ${requestedDestination}.`;
+      if (geoAccuracyWarn && !manualOrigin) {
+        return "Tu GPS varía mucho. Toca el mapa para fijar tu origen manualmente.";
       }
-
-      return "Paso 2 de 3: ahora marca tu destino.";
+      if (requestedDestination) {
+        return `Ahora toca la zona de ${requestedDestination} como destino.`;
+      }
+      return "Ahora toca el mapa para marcar tu destino.";
     }
 
     if (isCalculatingSuggestions) {
@@ -1028,11 +1174,11 @@ export default function HomePage() {
     }
 
     if (bestSuggestion) {
-      return "Paso 3 de 3: revisa la mejor opcion y toca Ver ruta.";
+      return "Ruta encontrada. Revisa las opciones y toca Ver ruta.";
     }
 
-    return "No encontramos ruta directa. Ajusta A o B y vuelve a intentar.";
-  }, [bestSuggestion, flowStep, isCalculatingSuggestions, requestedDestination]);
+    return "No encontramos ruta directa. Ajusta origen o destino e intenta de nuevo.";
+  }, [bestSuggestion, flowStep, geoAccuracyWarn, geoStatus, isCalculatingSuggestions, manualOrigin, requestedDestination]);
 
   useEffect(() => {
     setShowHint(true);
@@ -1108,17 +1254,36 @@ export default function HomePage() {
                     ? "ring-pulse-active border-lima/60 bg-lima/10 text-lima"
                     : "ov-pill ov-border ov-text-muted"
               }`}
-              aria-label={originPoint ? "Punto A marcado, toca para cambiar" : "Toca para marcar punto de origen"}
+              aria-label={
+                manualOrigin
+                  ? "Origen ajustado manualmente, toca para cambiar"
+                  : geoAccuracyWarn
+                    ? "GPS impreciso, toca el mapa para fijar tu origen manualmente"
+                    : userLocation
+                      ? "Usando tu ubicación actual, toca para ajustar"
+                      : "Toca para marcar punto de origen"
+              }
             >
               <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0" aria-hidden="true">
                 <path d="M12 21s6-5.7 6-11a6 6 0 1 0-12 0c0 5.3 6 11 6 11Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                 <circle cx="12" cy="10" r="2" fill="currentColor" />
               </svg>
-              <span className="truncate">{originPoint ? "A marcado" : "Origen"}</span>
-              {originPoint && (
+              <span className="truncate">
+                {manualOrigin
+                  ? "Origen ajustado"
+                  : geoAccuracyWarn
+                    ? "GPS impreciso"
+                    : userLocation
+                      ? "Mi ubicación"
+                      : "Origen"}
+              </span>
+              {originPoint && !geoAccuracyWarn && (
                 <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 shrink-0 text-lima" aria-hidden="true">
                   <path d="M5 12l5 5L20 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
+              )}
+              {geoAccuracyWarn && !manualOrigin && (
+                <span className="h-2 w-2 shrink-0 rounded-full bg-amber-400" aria-hidden="true" />
               )}
             </button>
 
@@ -1142,13 +1307,13 @@ export default function HomePage() {
                     ? "ring-pulse-active border-lima/60 bg-lima/10 text-lima"
                     : "ov-pill ov-border ov-text-muted"
               }`}
-              aria-label={destinationPoint ? "Punto B marcado, toca para cambiar" : "Toca para marcar punto de destino"}
+              aria-label={destinationPoint ? "Destino marcado, toca para cambiar" : "Toca el mapa para marcar tu destino"}
             >
               <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0" aria-hidden="true">
                 <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.8" />
                 <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.5" />
               </svg>
-              <span className="truncate">{destinationPoint ? "B marcado" : "Destino"}</span>
+              <span className="truncate">{destinationPoint ? "Destino marcado" : "Destino"}</span>
               {destinationPoint && (
                 <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 shrink-0 text-lima" aria-hidden="true">
                   <path d="M5 12l5 5L20 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
@@ -1162,9 +1327,9 @@ export default function HomePage() {
                 type="button"
                 onClick={() => {
                   setSharedRouteSegment(null);
-                  setOriginPoint(null);
+                  setManualOrigin(null);
                   setDestinationPoint(null);
-                  setActivePoint("origin");
+                  setActivePoint("destination");
                   setShowHint(true);
                 }}
                 className="inline-flex h-10 items-center rounded-xl border border-red-500/30 bg-red-500/10 px-2.5 text-[12px] font-semibold text-red-500 transition active:scale-[0.97]"
@@ -1188,8 +1353,13 @@ export default function HomePage() {
                 <span className="relative inline-flex h-3 w-3 rounded-full bg-lima" />
               </span>
               <p className="ov-text flex-1 text-[13px] font-medium">
-                {flowStep === 1 ? "Toca el mapa para marcar tu" : "Ahora toca para marcar tu"}{" "}
-                <span className="font-bold text-lima">{flowStep === 1 ? "origen" : "destino"}</span>
+                {flowStep === 1
+                  ? (geoStatus === "locating"
+                      ? "Obteniendo tu ubicación..."
+                      : geoStatus === "error"
+                        ? <><span>No pudimos obtener tu ubicación. Toca el mapa para marcar tu </span><span className="font-bold text-lima">origen</span></>
+                        : <><span>Usando tu </span><span className="font-bold text-lima">ubicación actual</span><span>. Toca el mapa para ajustar.</span></>)
+                  : <><span>Ahora toca para marcar tu </span><span className="font-bold text-lima">destino</span></>}
               </p>
             </div>
           </div>
@@ -1202,7 +1372,8 @@ export default function HomePage() {
               <circle cx="12" cy="10" r="2" fill="currentColor" />
             </svg>
             <p className="ov-text-muted min-w-0 flex-1 text-[12px] leading-snug">
-              Llegaste buscando <span className="font-bold text-lima">{requestedDestination}</span>. Marca tu origen y luego toca esa zona como destino.
+              Llegaste buscando <span className="font-bold text-lima">{requestedDestination}</span>.{" "}
+              {userLocation ? "Usando tu ubicación actual. Toca la zona de destino." : "Toca el mapa para ajustar tu origen y luego marca el destino."}
             </p>
             <button
               type="button"
@@ -1284,7 +1455,19 @@ export default function HomePage() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => { setSelectedRouteId(bestSuggestion.routeId); setShowHint(false); if (isMobile) setIsResultSheetOpen(false); }}
+                    onClick={() => {
+                      setShowHint(false);
+                      if (useNewRouting) {
+                        // IDs from rutas_produccion_final don't map to fullRoutes IDs.
+                        // Paint the matched segment directly instead of looking up by routeId.
+                        setSharedRouteSegment(bestSuggestion.segment);
+                        setSharedSegmentColor(bestSuggestion.routeColor ?? null);
+                        setSelectedRouteId(null);
+                      } else {
+                        setSelectedRouteId(bestSuggestion.routeId);
+                      }
+                      if (isMobile) setIsResultSheetOpen(false);
+                    }}
                     className="inline-flex h-10 flex-[2] items-center justify-center gap-1.5 rounded-xl bg-verde text-[12px] font-bold text-white shadow-[0_2px_12px_rgba(232,93,47,0.35)] transition active:scale-[0.97]"
                     aria-label={`Ver ${formatRouteLabel(bestSuggestion.ruta)} en el mapa`}
                   >
@@ -1595,6 +1778,7 @@ export default function HomePage() {
             suggestedRouteIds={suggestedRouteIds}
             suggestedRouteDirections={suggestedRouteDirections}
             bestSuggestedRouteId={bestSuggestion?.routeId ?? null}
+            alternativeSuggestedRouteIds={alternativeSuggestedRouteIds}
             nearbyRouteIds={nearbyRouteIds}
             selectedRouteId={selectedRouteId}
             onClearSelection={handleClearSelection}
@@ -1889,6 +2073,7 @@ export default function HomePage() {
           suggestedRouteIds={suggestedRouteIds}
           suggestedRouteDirections={suggestedRouteDirections}
           bestSuggestedRouteId={bestSuggestion?.routeId ?? null}
+          alternativeSuggestedRouteIds={alternativeSuggestedRouteIds}
           nearbyRouteIds={nearbyRouteIds}
           selectedRouteId={selectedRouteId}
           onClearSelection={() => {
