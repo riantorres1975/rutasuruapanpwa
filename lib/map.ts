@@ -49,10 +49,28 @@ export function getBoundsFromCoordinates(coordinates: RouteData["coordenadas"]) 
 }
 
 export function getBoundsFromRoutes(routes: RouteData[]) {
-  const points = routes.flatMap((route) => route.coordenadas);
-  if (points.length === 0) {
+  let minLng = Infinity;
+  let maxLng = -Infinity;
+  let minLat = Infinity;
+  let maxLat = -Infinity;
+  let hasPoint = false;
+
+  for (const route of routes) {
+    for (const [lng, lat] of route.coordenadas) {
+      hasPoint = true;
+      if (lng < minLng) minLng = lng;
+      if (lng > maxLng) maxLng = lng;
+      if (lat < minLat) minLat = lat;
+      if (lat > maxLat) maxLat = lat;
+    }
+  }
+
+  if (!hasPoint) {
     return null;
   }
 
-  return getBoundsFromCoordinates(points);
+  return [
+    [minLng, minLat],
+    [maxLng, maxLat]
+  ] as [[number, number], [number, number]];
 }

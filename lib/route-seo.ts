@@ -1,11 +1,11 @@
-import rutasGrouped from "@/data/rutas-grouped.json";
+import rutasProduccion from "@/data/rutas_produccion_final.json";
 import { getRouteDestination } from "@/lib/route-names";
 
-type SeoRouteSource = {
-  ruta: string;
-  color?: string;
-  ida?: unknown[];
-  vuelta?: unknown[];
+type ProductionRouteRaw = {
+  id: number;
+  name: string;
+  original_name: string;
+  color: string;
 };
 
 export type RouteSeoItem = {
@@ -21,27 +21,37 @@ export function slugify(value: string) {
   return value
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[̀-ͯ]/g, "")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 }
 
 export function getRouteSeoItems(): RouteSeoItem[] {
-  const routes = rutasGrouped as SeoRouteSource[];
+  const routes = rutasProduccion as ProductionRouteRaw[];
 
-  return routes.map((route) => {
-    const destination = getRouteDestination(route.ruta);
-    const destinationSlug = destination ? `-${slugify(destination)}` : "";
+  // Deduplicate by name, aggregating directions
+  const seen = new Map<string, RouteSeoItem>();
+  for (const r of routes) {
+    const isVuelta = r.original_name.includes("Vuelta");
+    const existing = seen.get(r.name);
+    if (existing) {
+      if (isVuelta) existing.hasVuelta = true;
+      else existing.hasIda = true;
+    } else {
+      const destination = getRouteDestination(r.name);
+      const destinationSlug = destination ? `-${slugify(destination)}` : "";
+      seen.set(r.name, {
+        name: r.name,
+        destination,
+        slug: `${slugify(r.name)}${destinationSlug}`,
+        color: r.color,
+        hasIda: !isVuelta,
+        hasVuelta: isVuelta,
+      });
+    }
+  }
 
-    return {
-      name: route.ruta,
-      destination,
-      slug: `${slugify(route.ruta)}${destinationSlug}`,
-      color: route.color ?? "#00D4AA",
-      hasIda: Array.isArray(route.ida) && route.ida.length > 1,
-      hasVuelta: Array.isArray(route.vuelta) && route.vuelta.length > 1
-    };
-  });
+  return Array.from(seen.values());
 }
 
 export function findRouteSeoItem(slug: string) {

@@ -26,12 +26,6 @@ export type RouteData = {
   coordenadas: Coordinates[];
 };
 
-export type GroupedRouteData = {
-  ruta: string;
-  color: string;
-  ida?: Coordinates[];
-  vuelta?: Coordinates[];
-};
 
 export type ResolvedRouteData = RouteData & {
   ruta: string;

@@ -11,7 +11,7 @@ import {
   toFeatureCollection,
   URUAPAN_CENTER
 } from "@/lib/map";
-import type { Coordinates, GroupedRouteData, RouteData } from "@/lib/types";
+import type { Coordinates, RouteData } from "@/lib/types";
 
 type ArrowSegment = { coords: Coordinates[]; color: string; showLine?: boolean };
 import type { TransferOption } from "@/lib/transfers";
@@ -111,7 +111,6 @@ function applyComfortLightMapPalette(map: mapboxgl.Map) {
 
 type MapProps = {
   routes: RouteData[];
-  groupedRoutes?: GroupedRouteData[];
   selectedRouteId: number | null;
   suggestedRouteIds: number[];
   allRoutesMode: RoutesMapMode;
@@ -167,6 +166,10 @@ function lineOpacityExpression(
     return 0.06 as any;
   }
 
+  if (selectedRouteId === null && selectedSegmentActive) {
+    return 0 as any;
+  }
+
   const suggestedExpression = ["in", ["get", "id"], ["literal", suggestedRouteIds.length > 0 ? suggestedRouteIds : [-1]]] as any;
   const isTeleferico = telefericoRouteExpression();
 
@@ -183,9 +186,9 @@ function lineOpacityExpression(
       baseExpression = ["case", suggestedExpression, 0.82, 0.14] as any;
     }
   } else if (selectedSegmentActive) {
-    baseExpression = ["case", ["==", ["get", "id"], selectedRouteId], 1, 0.12] as any;
+    baseExpression = ["case", ["==", ["get", "id"], selectedRouteId], 1, 0] as any;
   } else {
-    baseExpression = ["case", ["==", ["get", "id"], selectedRouteId], 1, suggestedExpression, 0.72, 0.14] as any;
+    baseExpression = ["case", ["==", ["get", "id"], selectedRouteId], 1, 0] as any;
   }
 
   if (hoveredRouteId !== null) {
@@ -208,6 +211,10 @@ function lineWidthExpression(
     return 1.5 as any;
   }
 
+  if (selectedRouteId === null && selectedSegmentActive) {
+    return 0 as any;
+  }
+
   const suggestedExpression = ["in", ["get", "id"], ["literal", suggestedRouteIds.length > 0 ? suggestedRouteIds : [-1]]] as any;
   const isTeleferico = telefericoRouteExpression();
 
@@ -224,9 +231,9 @@ function lineWidthExpression(
       baseExpression = ["case", suggestedExpression, 4.8, 2] as any;
     }
   } else if (selectedSegmentActive) {
-    baseExpression = ["case", ["==", ["get", "id"], selectedRouteId], 5.8, 1.8] as any;
+    baseExpression = ["case", ["==", ["get", "id"], selectedRouteId], 5.8, 0] as any;
   } else {
-    baseExpression = ["case", ["==", ["get", "id"], selectedRouteId], 5.8, suggestedExpression, 4.8, 2] as any;
+    baseExpression = ["case", ["==", ["get", "id"], selectedRouteId], 5.8, 0] as any;
   }
 
   if (hoveredRouteId !== null) {
@@ -250,6 +257,10 @@ function glowOpacityExpression(
     return 0.0 as any;
   }
 
+  if (selectedRouteId === null && selectedSegmentActive) {
+    return 0 as any;
+  }
+
   const suggestedExpression = ["in", ["get", "id"], ["literal", suggestedRouteIds.length > 0 ? suggestedRouteIds : [-1]]] as any;
   const isTeleferico = telefericoRouteExpression();
 
@@ -268,16 +279,14 @@ function glowOpacityExpression(
       "case",
       ["==", ["get", "id"], selectedRouteId],
       ["case", isTeleferico, 0.48, 0.3],
-      0.08
+      0
     ] as any;
   } else {
     baseExpression = [
       "case",
       ["==", ["get", "id"], selectedRouteId],
       ["case", isTeleferico, 0.48, 0.3],
-      suggestedExpression,
-      0.2,
-      0.1
+      0
     ] as any;
   }
 
@@ -301,6 +310,10 @@ function glowWidthExpression(
     return 0 as any;
   }
 
+  if (selectedRouteId === null && selectedSegmentActive) {
+    return 0 as any;
+  }
+
   const suggestedExpression = ["in", ["get", "id"], ["literal", suggestedRouteIds.length > 0 ? suggestedRouteIds : [-1]]] as any;
   const isTeleferico = telefericoRouteExpression();
 
@@ -319,16 +332,14 @@ function glowWidthExpression(
       "case",
       ["==", ["get", "id"], selectedRouteId],
       ["case", isTeleferico, 16, 13],
-      5.5
+      0
     ] as any;
   } else {
     baseExpression = [
       "case",
       ["==", ["get", "id"], selectedRouteId],
       ["case", isTeleferico, 16, 13],
-      suggestedExpression,
-      11,
-      6
+      0
     ] as any;
   }
 
@@ -353,6 +364,10 @@ function glowBlurExpression(
     return 0 as any;
   }
 
+  if (selectedRouteId === null && selectedSegmentActive) {
+    return 0 as any;
+  }
+
   const suggestedExpression = ["in", ["get", "id"], ["literal", suggestedRouteIds.length > 0 ? suggestedRouteIds : [-1]]] as any;
   const isTeleferico = telefericoRouteExpression();
 
@@ -371,16 +386,14 @@ function glowBlurExpression(
       "case",
       ["==", ["get", "id"], selectedRouteId],
       ["case", isTeleferico, 4.2, 3.2],
-      1.8
+      0
     ] as any;
   } else {
     baseExpression = [
       "case",
       ["==", ["get", "id"], selectedRouteId],
       ["case", isTeleferico, 4.2, 3.2],
-      suggestedExpression,
-      2.4,
-      2
+      0
     ] as any;
   }
 
@@ -651,7 +664,18 @@ function withSelectedSegment(
 }
 
 function isSegmentSelection(selectedRouteId: number | null, selectedRouteSegment: Coordinates[] | null) {
-  return selectedRouteId !== null && Array.isArray(selectedRouteSegment) && selectedRouteSegment.length > 1;
+  void selectedRouteId;
+  return Array.isArray(selectedRouteSegment) && selectedRouteSegment.length > 1;
+}
+
+function shouldAnimateRouteDraw() {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  return !coarsePointer && !reducedMotion;
 }
 
 function buildArrowsGeoJSON(segments: ArrowSegment[]): GeoJSON.FeatureCollection {
@@ -788,7 +812,6 @@ function clearAllDebugLayers(map: mapboxgl.Map) {
 
 function MapComponent({
   routes,
-  groupedRoutes = [],
   selectedRouteId,
   suggestedRouteIds,
   allRoutesMode = "all-visible",
@@ -813,7 +836,7 @@ function MapComponent({
   const selectedRouteSegmentRef = useRef(selectedRouteSegment);
   const allRoutesModeRef = useRef<RoutesMapMode>(allRoutesMode);
   const hoveredRouteIdRef = useRef<number | null>(null);
-  const routeFeaturesRef = useRef(toFeatureCollection(routes));
+  const routeFeaturesRef = useRef<GeoJSON.FeatureCollection<GeoJSON.LineString> | null>(null);
   const isMapReadyRef = useRef(false);
   const onSelectRouteRef = useRef(onSelectRoute);
   const onMapPickRef = useRef(onMapPick);
@@ -852,6 +875,9 @@ function MapComponent({
 
   const mapToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
   const routeFeatures = useMemo(() => toFeatureCollection(routes), [routes]);
+  if (routeFeaturesRef.current === null) {
+    routeFeaturesRef.current = routeFeatures;
+  }
 
   useEffect(() => {
     onSelectRouteRef.current = onSelectRoute;
@@ -1261,7 +1287,7 @@ function MapComponent({
     const ensureRouteLayers = () => {
       addRouteLayers(
         map,
-        routeFeaturesRef.current,
+        routeFeaturesRef.current ?? routeFeatures,
         selectedRouteIdRef.current,
         suggestedRouteIdsRef.current,
         bestSuggestedRouteIdRef.current,
@@ -1598,7 +1624,7 @@ function MapComponent({
         // Skip draw animation when arrow segments are providing the visual lines (ida+vuelta mode)
         const hasArrowLines = arrowSegmentsRef.current.some((s) => s.showLine);
 
-        if (!hasArrowLines && featureIndex !== -1 && selectedCoordinates.length > SHORT_ROUTE_THRESHOLD) {
+        if (!hasArrowLines && featureIndex !== -1 && selectedCoordinates.length > SHORT_ROUTE_THRESHOLD && shouldAnimateRouteDraw()) {
           const duration = getDrawDuration(selectedCoordinates.length);
           const token = animationTokenRef.current + 1;
           animationTokenRef.current = token;
@@ -1659,25 +1685,7 @@ function MapComponent({
     }
 
     source.setData(routeFeatures);
-
-    // No re-encuadrar a todas las rutas si el usuario ya marcó A o B,
-    // si no la cámara salta lejos de los pines y se ven fuera del viewport.
-    if (originPoint || destinationPoint) {
-      return;
-    }
-
-    const allBounds = getBoundsFromRoutes(routes);
-    if (allBounds) {
-      fitBoundsAnimated(map, allBounds, {
-        top: 88,
-        right: 28,
-        bottom: 146,
-        left: 28,
-        duration: 900,
-        maxZoom: 14.6
-      });
-    }
-  }, [debugActive, destinationPoint, originPoint, routeFeatures, routes, selectedRouteId, selectedRouteSegment, stopRouteAnimation]);
+  }, [debugActive, routeFeatures, routes, selectedRouteId, selectedRouteSegment, stopRouteAnimation]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -1735,12 +1743,7 @@ function MapComponent({
     const route = routes.find((r) => r.id === selectedRouteId);
     if (!route) return;
 
-    // Resolve coords: prefer the selected direction from groupedRoutes if available
-    const grouped = groupedRoutes.find((g) => g.ruta === route.nombre || g.ruta === (route as any).ruta);
-    const resolvedCoords: Coordinates[] =
-      grouped
-        ? ((debugDir === "ida" ? grouped.ida : grouped.vuelta) as Coordinates[] | undefined) ?? route.coordenadas
-        : route.coordenadas;
+    const resolvedCoords: Coordinates[] = route.coordenadas;
 
     const cacheKey = `${selectedRouteId}-${debugDir}`;
     const routeChanged = debugLoadedRouteIdRef.current !== cacheKey;
@@ -1762,7 +1765,7 @@ function MapComponent({
 
     setDebugTotalPoints(debugCoordsRef.current.length);
     renderDebugPointLayer(map, debugCoordsRef.current, debugStep);
-  }, [debugActive, debugDir, debugStep, groupedRoutes, isLoading, routes, selectedRouteId]);
+  }, [debugActive, debugDir, debugStep, isLoading, routes, selectedRouteId]);
 
   const handleLocateMe = () => {
     const map = mapRef.current;
@@ -2066,11 +2069,13 @@ function MapComponent({
                     const newCoords = replaceSegment(debugCoordsRef.current, s, e, debugDrawSegmentRef.current);
                     debugCoordsRef.current = newCoords;
                     setDebugTotalPoints(newCoords.length);
-                    const featureIndex = routeFeaturesRef.current.features.findIndex(
+                    const currentFeatures = routeFeaturesRef.current;
+                    if (!currentFeatures) return;
+                    const featureIndex = currentFeatures.features.findIndex(
                       (f) => Number((f.properties as { id?: number })?.id) === selectedRouteId
                     );
                     if (featureIndex !== -1) {
-                      const updatedFeatures = routeFeaturesRef.current.features.map((f, i) =>
+                      const updatedFeatures = currentFeatures.features.map((f, i) =>
                         i === featureIndex
                           ? { ...f, geometry: { type: "LineString" as const, coordinates: newCoords } }
                           : f

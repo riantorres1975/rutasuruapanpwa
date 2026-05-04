@@ -22,6 +22,392 @@ Ordenado del más reciente al más antiguo.
 
 ---
 
+## [2026-05-04] Perf: reducir trabajo de Mapbox y búsqueda de rutas
+
+**Rama:** `experimental`
+**Archivos modificados:**
+- `components/Map.tsx`
+- `app/mapa/page.tsx`
+- `lib/map.ts`
+
+### Problema
+
+Después de recuperar más puntos en el JSON, la app se sentía más trabada que el
+motor anterior. La causa no era solo el tamaño del JSON, sino trabajo repetido
+en cliente:
+
+- `components/Map.tsx` construía el GeoJSON con `toFeatureCollection(routes)`
+  dentro del inicializador de `useRef`, que se evalúa en cada render.
+- El efecto principal del source de Mapbox dependía de `originPoint` y
+  `destinationPoint`, provocando `source.setData(routeFeatures)` cuando solo
+  cambiaban pines.
+- En móvil, la animación de dibujo hacía `source.setData(...)` cada frame.
+- `app/mapa/page.tsx` reconstruía `routesForMatching` en cada búsqueda.
+- `getBoundsFromRoutes` usaba `flatMap`, creando un arreglo temporal con todos
+  los puntos.
+
+### Cambios
+
+- `routeFeaturesRef` ahora se inicializa de forma perezosa, sin reconstruir
+  GeoJSON en cada render.
+- El efecto de actualización del source ya no depende de origen/destino; los
+  pines se manejan en su propio efecto.
+- La animación de dibujo de ruta se desactiva en pantallas táctiles y cuando el
+  usuario prefiere reducir movimiento.
+- `routesForMatching` y `polylineRoutesById` se memoizan.
+- Búsquedas por ruta seleccionada usan `Map` en lugar de `.find(...)` repetido.
+- `getBoundsFromRoutes` calcula límites en un solo loop, sin `flatMap`.
+- Se eliminó el warning de lint por dependencia innecesaria `transfers.length`.
+
+### Verificación
+
+- `npm run lint`
+  - sin errores ni warnings
+- `npm run build`
+  - compilación correcta
+- `npx --no-install tsc --noEmit`
+  - sin errores
+- `node_modules\.bin\sucrase-node.cmd lib\__tests__\routeMatcher.test.ts`
+  - 40/40 tests pasando
+- `node_modules\.bin\sucrase-node.cmd lib\__tests__\transfers.test.ts`
+  - 4/4 tests pasando
+
+### Estado: completo
+
+---
+
+## [2026-05-04] Fix: selección de ruta pintaba rutas ajenas
+
+**Rama:** `experimental`
+**Archivos modificados:**
+- `components/Map.tsx`
+- `app/mapa/page.tsx`
+
+### Problema
+
+Al elegir una ruta desde la lista o al ver una sugerencia en el mapa, seguían
+apareciendo otras rutas resaltadas. La causa era que las capas de Mapbox todavía
+usaban `suggestedRouteIds` aunque existiera una ruta o segmento activo.
+
+### Cambios
+
+- En `components/Map.tsx`, cuando hay `selectedRouteId`, la ruta seleccionada
+  manda sobre las sugerencias y las demás líneas quedan con opacidad/ancho `0`.
+- Cuando hay un segmento activo sin `selectedRouteId` (caso "Ver ruta" desde el
+  resultado), las capas base se apagan para dejar visible solo el segmento.
+- `isSegmentSelection` ahora detecta cualquier segmento activo, no solo los que
+  tienen `selectedRouteId`.
+- En `app/mapa/page.tsx`, seleccionar una ruta limpia `selectedTransfer`,
+  `sharedRouteSegment`, `sharedSegmentColor` y `showTeleferico` para evitar
+  estados visuales mezclados.
+
+### Verificación
+
+- `node_modules\.bin\sucrase-node.cmd lib\__tests__\routeMatcher.test.ts`
+  - 40/40 tests pasando
+- `node_modules\.bin\sucrase-node.cmd lib\__tests__\transfers.test.ts`
+  - 4/4 tests pasando
+- `npx --no-install tsc --noEmit`
+  - sin errores
+- `npm run build`
+  - compilación correcta
+- `npm run lint`
+  - 0 errores, 1 warning existente en `app/mapa/page.tsx`
+
+### Estado: completo
+
+---
+
+## [2026-05-04] Fix: matcher seguía sin rutas por umbral/caché/transbordos
+
+**Rama:** `experimental`
+**Archivos modificados:**
+- `data/rutas_produccion_final.json`
+- `lib/transfers.ts`
+- `lib/__tests__/transfers.test.ts`
+- `app/api/rutas-polyline/route.ts`
+- `public/sw.template.js`
+- `public/sw.js`
+
+### Problema
+
+Aunque el JSON ya tenía más puntos, la app seguía mostrando "Sin ruta" en
+casos donde sí había rutas cercanas. Se encontraron tres causas adicionales:
+
+1. El motor viejo usaba `PROXIMITY_METERS = 550`, pero el dataset nuevo tenía
+   `corridor_width_m = 150` en todas las rutas. Eso descartaba pines a más de
+   150 m de la línea, aunque el flujo anterior sí aceptaba caminar más.
+2. El motor de transbordos tenía `MAX_DETOUR_RATIO = 2.0`. En Uruapan algunos
+   transbordos reales rodean el aeropuerto o pasan por avenidas largas y quedan
+   entre `2.3x` y `3.0x` la distancia recta.
+3. El service worker servía `/api/rutas-polyline` con `staleWhileRevalidate`,
+   entregando primero el JSON viejo cacheado.
+
+### Cambios
+
+- `corridor_width_m` actualizado a `550` en las 80 rutas para igualar el radio
+  práctico del motor anterior.
+- `MAX_DETOUR_RATIO` subido de `2.0` a `3.5`.
+- `lib/transfers.ts` usa imports relativos para permitir tests aislados.
+- Nuevo test `lib/__tests__/transfers.test.ts` valida que un transbordo urbano
+  con desvío legítimo menor a `3.5x` sea aceptado.
+- `/api/rutas-polyline` ahora responde con `Cache-Control: no-cache, must-revalidate`.
+- El service worker ahora usa `networkFirstData` para `/api/rutas-polyline`,
+  con caché solo como fallback offline.
+
+### Verificación
+
+- API local:
+  - status `200`
+  - `80` rutas
+  - `4,888` puntos
+  - `corridor_width_m = 550`
+  - `Cache-Control: no-cache, must-revalidate`
+- `node_modules\.bin\sucrase-node.cmd lib\__tests__\routeMatcher.test.ts`
+  - 40/40 tests pasando
+- `node_modules\.bin\sucrase-node.cmd lib\__tests__\transfers.test.ts`
+  - 4/4 tests pasando
+- `npx --no-install tsc --noEmit`
+  - sin errores
+- `npm run build`
+  - compilación correcta
+- `npm run lint`
+  - 0 errores, 1 warning existente en `app/mapa/page.tsx`
+
+### Estado: completo
+
+---
+
+## [2026-05-04] Data: regenerar rutas_produccion_final con más puntos
+
+**Rama:** `experimental`
+**Archivos modificados:**
+- `data/rutas_produccion_final.json`
+
+### Problema
+
+El JSON optimizado anterior redujo demasiado la geometría: de 5,953 puntos del
+archivo original pasó a 1,725 puntos (~29%). Además faltaba la dirección `id: 4`
+(`Ruta 1 (Vuelta)`). En campo seguían apareciendo casos sin ruta directa aunque
+las líneas sí pasaban por la zona.
+
+### Cambios
+
+- Fuente usada: `C:\Users\Full Party\Downloads\rutas.json`.
+- Se mantuvo el formato nuevo:
+  - `id`
+  - `name`
+  - `original_name`
+  - `color`
+  - `corridor_width_m`
+  - `verified`
+  - `path`
+  - `landmarks`
+- Se convirtió `nombre` → `original_name`.
+- Se derivó `name` quitando el sufijo `(Ida)` / `(Vuelta)` cuando no existía
+  metadata previa.
+- Se conservó metadata existente por `id` cuando estaba disponible.
+- Simplificación Douglas-Peucker con tolerancia baja de `3 m`.
+
+### Resultado
+
+- Rutas/direcciones: `80`
+- Nombres únicos de ruta: `40`
+- Puntos: `5,953` → `4,888` (`82.1%` conservado)
+- `id: 4` recuperado con `52` puntos
+
+### Verificación
+
+- Validación de contrato JSON: sin campos faltantes ni paths inválidos
+- `node_modules\.bin\sucrase-node.cmd lib\__tests__\routeMatcher.test.ts`
+  - 40/40 tests pasando
+- `npx --no-install tsc --noEmit`
+  - sin errores
+- `npm run build`
+  - compilación correcta
+- `npm run lint`
+  - 0 errores, 1 warning existente en `app/mapa/page.tsx`
+
+### Estado: completo
+
+---
+
+## [2026-05-04] Fix: rutas directas rechazadas tras optimizar JSON
+
+**Rama:** `experimental`
+**Archivos modificados:**
+- `lib/routeMatcher.ts`
+- `lib/__tests__/routeMatcher.test.ts`
+
+### Problema
+
+Después de unificar el motor en `rutas_produccion_final.json` y optimizar los
+paths, algunas rutas directas dejaban de aparecer aunque visualmente sí pasaran
+por origen y destino.
+
+La causa estaba en el motor nuevo: `isRouteValid` comparaba solo
+`destSeg.segmentIndex > originSeg.segmentIndex`. Con el JSON optimizado hay
+segmentos más largos, así que origen y destino pueden proyectarse sobre el
+mismo segmento. En ese caso ambos tenían el mismo `segmentIndex` y el motor
+rechazaba la ruta como si fuera dirección incorrecta.
+
+### Cambios
+
+#### `lib/routeMatcher.ts`
+
+- `ClosestOnPath` ahora incluye:
+  - `segmentT`: posición proyectada dentro del segmento (`0..1`)
+  - `projectedPoint`: punto exacto proyectado sobre la polyline
+  - `progressM`: avance acumulado en metros desde el inicio de la ruta
+- `getClosestPointOnPath` calcula la proyección y el avance acumulado.
+- `isRouteValid` valida dirección con `destSeg.progressM > originSeg.progressM`
+  en lugar de comparar solo índices.
+- El segmento sugerido ahora se construye desde los puntos proyectados reales,
+  no desde el segmento completo crudo. Esto mejora score y pintura en mapa.
+
+### Verificación
+
+- `node_modules\.bin\sucrase-node.cmd lib\__tests__\routeMatcher.test.ts`
+  - 40/40 tests pasando
+- `npx --no-install tsc --noEmit`
+  - sin errores
+
+### Estado: completo
+
+---
+
+## [2026-05-04] Limpieza: residuos del motor de rutas viejo
+
+**Rama:** `experimental`
+**Archivos modificados/eliminados:**
+- `package.json` — eliminados scripts rotos `convert:rutas`, `group:rutas`, `pipeline:rutas`
+- `.github/workflows/build.yml` — CI ajustado para validar `data/rutas_produccion_final.json`
+- `README.md` — documentación actualizada de `/api/rutas-polyline` y fuente maestra actual
+- `lib/routeIntersections.ts` — eliminado archivo sin imports reales
+
+### Qué se verificó
+
+- No quedan referencias activas al motor viejo en `app/`, `components/` o `lib/`.
+- La documentación pública ya no menciona `/api/rutas`, `data/rutas.json`, `data/rutas-grouped.json` ni los scripts eliminados.
+- El workflow ya no intenta subir artefactos eliminados.
+- `data/gtfs/` se conserva porque no pertenece claramente al motor viejo y puede servir como dataset auxiliar/futuro.
+
+### Estado: completo
+
+---
+
+## [2026-05-04] UX: Modo manual de pines — flujo simplificado
+
+**Rama:** `experimental`
+**Archivos modificados:** `app/mapa/page.tsx`
+
+### Problema
+
+Al probar rutas manualmente era confuso:
+1. Con GPS activo el primer tap en el mapa ponía el destino (B) porque `activePoint` ya era `"destination"`.
+2. Al cambiar origen (A), se borraba el destino y el usuario tenía que re-poner B desde cero.
+3. No había botón explícito de "Cambiar origen" en la tarjeta de resultados.
+
+### Cambios
+
+#### `handleMapPick` — ya no borra destino al cambiar origen
+- `active === "origin"` + destino ya existe → actualiza solo `manualOrigin`, `activePoint = null`.
+- `active === "origin"` + sin destino → comportamiento anterior (avanza a destino).
+- Sin modo activo + ambos pines ya fijados → mueve el **destino** (acción más común).
+
+#### Tarjeta de resultados — dos botones separados
+Reemplaza el botón genérico "Ajustar" por dos botones explícitos:
+- **Origen** (ícono pin) → activa modo origin sin cerrar resultado.
+- **Destino** (ícono target) → activa modo destino.
+En mobile ambos cierran el result sheet para dejar el mapa visible.
+
+#### Chip de contexto (barra verde animada)
+Muestra mensajes diferenciados al re-editar desde paso 3:
+- `activePoint === "origin"` con destino existente → "Toca el mapa para mover tu **origen**. El destino se mantiene."
+- `activePoint === "destination"` en paso 3 → "Toca el mapa para mover tu **destino**."
+
+#### `hintMessage` — nuevo caso de re-edición de origen
+Agrega: "Toca el mapa para mover tu origen. El destino se mantiene."
+
+#### Botón reset (×)
+Al resetear con GPS disponible, `activePoint` vuelve a `"destination"` (GPS ya cubre origen).
+Sin GPS, vuelve a `"origin"`.
+
+### Estado: completo
+
+---
+
+## [2026-05-04] Refactor: eliminar motor de rutas viejo — solo queda el nuevo
+
+**Rama:** `experimental`
+**Archivos modificados/eliminados:**
+- `app/mapa/page.tsx` — refactor principal
+- `lib/transfers.ts` — eliminada `computeTransferOptions` (legado)
+- `lib/types.ts` — eliminado tipo `GroupedRouteData`
+- `components/Map.tsx` — eliminado prop `groupedRoutes`
+- `app/api/rutas/route.ts` — **eliminado** (endpoint viejo)
+- `data/rutas-grouped.json` — **eliminado** (datos viejos)
+- `data/rutas.json` — **eliminado** (no usado)
+- `scripts/group-rutas.js`, `scripts/convert-rutas.js` — **eliminados**
+
+### Qué cambió
+
+#### Motor unificado en `rutas_produccion_final.json`
+
+El feature flag `useNewRouting` (localStorage) y toda la rama `if/else` fueron eliminados.
+La app siempre usa `/api/rutas-polyline` como única fuente de datos.
+
+#### `app/mapa/page.tsx`
+
+**Eliminados:**
+- `getCoordinatesByDirection`, `getEffectiveDirection` (helpers de rutas agrupadas)
+- `getClosestIndex` (helper del matcher viejo)
+- `computeRouteOption`, `computeRouteSuggestions` (motor viejo)
+- `buildTransferFromIndexes` (reconstrucción de transbordos desde URL con IDs viejos)
+- Estado: `groupedRoutes`, `useNewRouting`
+- Fetch de `/api/rutas`
+- Memos: `fullRoutes`, `fullRoutesById`, `backgroundRoutes`
+- Constantes: `PROXIMITY_METERS`, `DESTINATION_DISTANCE_WEIGHT`, `SEGMENT_LENGTH_FACTOR`
+
+**Reemplazados:**
+- `fullRoutes` → `listRoutes`: derivado de `polylineRoutes`, deduplicado por nombre, con `tieneIda`/`tieneVuelta` calculado.
+- `backgroundRoutes` → `simplifiedMapRoutes`: aplica `simplifyBackgroundCoordinates` a `polylineRoutes`.
+- `mapRoutes`: usa `simplifiedMapRoutes` + override de coordenadas del segmento seleccionado.
+- `selectedRoute`: lookup en `polylineRoutes` por ID.
+- `arrowSegments` Case 3: filtra `polylineRoutes` por nombre para mostrar ambas direcciones.
+- `selectedRoutePinSegment` eliminado — el segmento viene siempre de `suggestions`.
+
+#### Impacto en UI
+
+- Lista de rutas (sidebar + bottom sheet): sin cambios visuales.
+- Mapa: rutas simplificadas para el fondo, igual que antes.
+- URLs compartidas con transbordos (`?tra=...&trb=...`): ya no se restauran automáticamente (IDs cambiaron). URLs de ruta por nombre (`?r=...`) siguen funcionando.
+
+### Estado: completo
+
+---
+
+## [2026-05-04] Fix: OnboardingOverlay — eliminar "Paso X de 3"
+
+**Rama:** `experimental`
+**Archivos modificados:** `components/OnboardingOverlay.tsx`
+
+### Qué cambió
+
+El overlay de bienvenida mostraba "PASO 1 DE 3", "PASO 2 DE 3", "PASO 3 DE 3"
+en lugar de etiquetas contextuales que reflejen el flujo GPS-first.
+
+- Añadido campo `label` al tipo `Step`.
+- Reescritos los tres pasos con nuevo contenido:
+  - Paso 1: label `"ORIGEN"`, título "Tu ubicación, automática", ícono GPS crosshair.
+  - Paso 2: label `"DESTINO"`, título "Selecciona tu destino".
+  - Paso 3: label `"RESULTADO"`, título "Resultado inmediato".
+- JSX actualizado: `{current.label}` reemplaza `Paso {step + 1} de {steps.length}`.
+
+### Estado: completo
+
+---
+
 ## [2026-05-04] UX: Origen automático por GPS — asistente inteligente
 
 **Rama:** `experimental`
@@ -434,15 +820,186 @@ puntos de transbordo sugeridos en el mapa.
 
 ---
 
+## [2026-05-04] Fix: transbordos sin sentido eliminados
+
+**Rama:** `experimental`
+**Archivos modificados:** `lib/transfers.ts`
+
+### Problema
+
+El motor sugería transbordos absurdos como "Ruta 26 → Ruta 25" con solo 4 m
+de caminata y una ruta combinada que daba una vuelta innecesaria por la ciudad.
+Tres causas raíz:
+
+1. **Sin mínimo en segmento B** — `MIN_SEG_A_METERS = 200` existía pero no
+   había un filtro equivalente para la segunda ruta. Segmento B podía ser trivial.
+2. **Sin ratio de desvío máximo** — `lenA + lenB` podía ser el doble o más de
+   la distancia directa A→B, produciendo rutas de "transbordo" más largas que
+   la alternativa directa.
+3. **Sin umbral mínimo de viaje** — para distancias A→B < 400 m, sugerir un
+   transbordo nunca tiene sentido (caminar es siempre mejor).
+
+### Constantes nuevas
+
+```ts
+const MIN_SEG_B_METERS = 200;   // segmento B debe ser ≥ 200 m (simétrico a MIN_SEG_A)
+const MAX_DETOUR_RATIO  = 2.0;  // lenA + lenB ≤ 2× distancia directa A→B
+const MIN_TRIP_METERS   = 400;  // viajes < 400 m en línea recta → no sugerir transbordo
+```
+
+### Guardas agregadas (ambas funciones)
+
+```ts
+// Al inicio de la función:
+if (originToDestDist < MIN_TRIP_METERS) return [];
+
+// En el loop, después de calcular lenA y lenB:
+if (lenB < MIN_SEG_B_METERS) continue;
+if (lenA + lenB > originToDestDist * MAX_DETOUR_RATIO) continue;
+```
+
+Aplicado en `computeTransferOptions` y `computeTransferOptionsFromPolylines`.
+
+### Resultado esperado
+
+- Viajes cortos (<400 m): sin transbordos sugeridos
+- Transbordos con segmento B trivial: descartados
+- Rutas que dan vuelta innecesaria: descartadas por exceder 2× la distancia directa
+
+### Estado
+- [x] TypeScript compila sin errores
+- [ ] Verificar en campo con el caso "Ruta 26 → Ruta 25" que ya no aparece
+- [ ] Ajustar `MAX_DETOUR_RATIO` si casos legítimos quedan descartados
+
+---
+
+## [2026-05-04] Fix: botones A/B — layout y truncado
+
+**Rama:** `experimental`
+**Archivos modificados:** `app/mapa/page.tsx`
+
+### Problema
+
+Los botones de origen y destino en la pill bar usaban `justify-center` pero
+sin `min-w-0` en el botón ni en el `<span>` interior. Esto causaba que:
+
+1. `truncate` no tenía efecto porque el flex item no tenía ancho acotado.
+2. El icono de check (✓) quedaba pegado al texto en vez de al borde derecho,
+   rompiendo la simetría entre los dos botones.
+3. Con texto largo ("Destino marcado") el contenido se apretaba visualmente.
+
+### Cambios
+
+- `justify-center` eliminado de ambos botones — el contenido ahora fluye
+  alineado a la izquierda (icono · texto · check).
+- `min-w-0` agregado al `<button>` para que `flex-1` permita truncado real.
+- `<span>` del texto cambiado a `flex-1 min-w-0 truncate` para ocupar el
+  espacio disponible y truncar cuando el botón es angosto.
+- `ml-auto` en el SVG de check (✓) y en el dot de GPS impreciso — los ancla
+  al borde derecho del botón en ambos estados.
+
+### Resultado visual
+
+```
+[ 📍 Mi ubicación          ✓ ] → [ ⊙ Destino marcado        ✓ ]
+```
+
+Icono a la izquierda · texto que se estira · checkmark anclado a la derecha.
+
+---
+
+## [2026-05-04] UX: Flujo tipo asistente inteligente
+
+**Rama:** `experimental`
+**Archivos modificados:** `app/mapa/page.tsx`
+
+### Objetivo
+Convertir la app a un flujo sin pasos explícitos: origen automático por GPS,
+destino como acción principal, resultado inmediato sin botón intermedio.
+
+### Cambios
+
+#### 1. Eliminación de "Paso X de 3" (aria-labels)
+
+Los textos `"Paso X de 3 para encontrar tu ruta"` y `"Paso X de 3"` estaban
+en dos `aria-label` (desktop sidebar y mobile header). Reemplazados por
+`"Progreso del viaje"`. Los indicadores visuales (barra de progreso, dots)
+se mantienen sin cambio.
+
+#### 2. Auto-apertura del result sheet (mobile) — CORE UX
+
+Nuevo `useEffect`:
+```ts
+useEffect(() => {
+  if (flowStep === 3 && !isCalculatingSuggestions) {
+    setIsResultSheetOpen(true);
+  }
+}, [flowStep, isCalculatingSuggestions]);
+```
+Cuando el usuario marca el destino y el cálculo termina, el bottom sheet de
+resultados se abre automáticamente en mobile — sin necesidad de tocar el FAB.
+Si el usuario lo cierra manualmente, no vuelve a abrirse hasta la próxima
+búsqueda (el efecto solo re-dispara si `isCalculatingSuggestions` cambia).
+
+#### 3. `hintMessage` actualizado (flowStep 2 y 3)
+
+| Antes | Después |
+|---|---|
+| `"Ahora toca el mapa para marcar tu destino."` | `"Selecciona tu destino en el mapa."` |
+| `"Ahora toca la zona de X como destino."` | `"Toca la zona de X como destino."` |
+| `"Ruta encontrada. Revisa las opciones y toca Ver ruta."` | `"[Ruta X] es la mejor opción."` |
+| `"Buscando la mejor ruta para tu viaje..."` | `"Buscando la mejor ruta..."` |
+| `"No encontramos ruta directa. Ajusta origen o destino e intenta de nuevo."` | `"No encontramos ruta directa. Ajusta origen o destino."` |
+| (no existía) | `"No hay ruta directa. Hay opciones con transbordo."` |
+
+#### 4. Context action panel (paso 2)
+
+```
+Antes:  "Ahora toca para marcar tu destino"
+Después: "Selecciona tu destino en el mapa"
+```
+
+#### 5. `routeTextSummary` — texto de indicaciones
+
+```
+Antes:
+  "Toma Ruta X."
+  "Tiempo estimado: N minutos."
+  "Camina ~A m al punto de abordaje y ~B m al destino final."
+
+Después:
+  "Sube a Ruta X cerca de tu ubicación (~A m a pie)."
+  "Baja cerca de tu destino (~B m a pie)."
+  "Tiempo estimado en ruta: N min."
+```
+
+### Estado
+- [x] TypeScript compila sin errores
+- [x] Result sheet auto-abre en mobile al llegar resultados
+- [x] Textos "Paso X de 3" eliminados de aria-labels
+- [x] Indicaciones en modo "sube / baja" en vez de "toma"
+- [ ] Verificar en mobile que el sheet se abre automáticamente al marcar destino
+- [ ] Verificar que el hint muestra el nombre de la ruta en paso 3
+
+---
+
 ## Historial de commits relevantes (rama experimental)
 
 | Hash | Descripción |
 |---|---|
+| `946b799` | chore: add skills, api endpoint, route data, and updated components |
+| `c8a8580` | fix: restore GPS origin after reset + smart auto-advance UX |
 | `ae91aaa` | fix: intersection-based transfer engine + README update |
 | `d4285ca` | fix: improve transfer suggestions coherence |
 | `67c5de2` | docs: update README with Next.js 16, React 19, and current stack versions |
 | `fa39f02` | fix: switch OG route from edge to nodejs runtime to bypass 1MB limit |
 | `dc9d3ab` | fix: add missing ImageResponse import to OG route |
+
+**Cambios sin commit (rama experimental — pendientes de staging):**
+- Motor de transbordos migrado a `ProductionRoute` (`computeTransferOptionsFromPolylines`)
+- Guardas anti-transbordo absurdo: `MIN_SEG_B`, `MAX_DETOUR_RATIO`, `MIN_TRIP_METERS`
+- Fix botones A/B: `min-w-0`, `flex-1`, `ml-auto` en checkmark
+- UX flujo asistente: auto-open result sheet, hints actualizados, aria-labels sin "Paso X de 3"
 
 ---
 
@@ -460,7 +1017,9 @@ app/
 lib/
   routeMatcher.ts        — Motor de matching por polylines (findBestRoutes, getRankedRoutes).
   routeIntersections.ts  — NUEVO. Base para detección de puntos de transbordo.
-  transfers.ts           — Lógica de transbordos (computeTransferOptions).
+  transfers.ts           — Motor de transbordos. Funciones: computeTransferOptions (legacy),
+                           computeTransferOptionsFromPolylines (nuevo motor).
+                           Guardas activas: MIN_SEG_A/B=200m, MAX_DETOUR=2×, MIN_TRIP=400m.
   geo.ts                 — haversineMeters.
   types.ts               — Coordinates, RouteData, GroupedRouteData, ResolvedRouteData,
                            ProductionRoute, ProductionRouteLandmark.

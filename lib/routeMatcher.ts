@@ -14,6 +14,9 @@ export type PolylineRoute = {
 export type ClosestOnPath = {
   distM: number;
   segmentIndex: number;              // index of the segment's first point
+  segmentT: number;                  // 0..1 projected position within the segment
+  projectedPoint: Coordinates;
+  progressM: number;                 // meters from path start to projectedPoint
 };
 
 export type PolylineRouteMatch = {
@@ -48,6 +51,24 @@ function toMetricXY(coord: Coordinates, refLat: number): [number, number] {
   ];
 }
 
+function haversineDistanceM(a: Coordinates, b: Coordinates): number {
+  const [lng1, lat1] = a;
+  const [lng2, lat2] = b;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const h =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return 2 * EARTH_R * Math.asin(Math.sqrt(h));
+}
+
+function interpolateCoord(a: Coordinates, b: Coordinates, t: number): Coordinates {
+  return [
+    a[0] + (b[0] - a[0]) * t,
+    a[1] + (b[1] - a[1]) * t,
+  ];
+}
+
 // ─── Core functions ───────────────────────────────────────────────────────────
 
 /**
@@ -56,14 +77,7 @@ function toMetricXY(coord: Coordinates, refLat: number): [number, number] {
 export function getRouteLength(path: Coordinates[]): number {
   let total = 0;
   for (let i = 1; i < path.length; i++) {
-    const [lng1, lat1] = path[i - 1];
-    const [lng2, lat2] = path[i];
-    const dLat = toRad(lat2 - lat1);
-    const dLng = toRad(lng2 - lng1);
-    const a =
-      Math.sin(dLat / 2) ** 2 +
-      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
-    total += 2 * EARTH_R * Math.asin(Math.sqrt(a));
+    total += haversineDistanceM(path[i - 1], path[i]);
   }
   return total;
 }
@@ -103,16 +117,46 @@ export function getClosestPointOnPath(
 ): ClosestOnPath {
   let bestDist = Infinity;
   let bestIndex = 0;
+  let bestT = 0;
+  let bestProjectedPoint: Coordinates = path[0] ?? point;
+  let bestProgressM = 0;
+  let cumulativeM = 0;
 
   for (let i = 0; i < path.length - 1; i++) {
-    const d = getDistancePointToSegmentM(point, path[i], path[i + 1]);
+    const a = path[i];
+    const b = path[i + 1];
+    const refLat = (point[1] + a[1] + b[1]) / 3;
+    const [px, py] = toMetricXY(point, refLat);
+    const [ax, ay] = toMetricXY(a, refLat);
+    const [bx, by] = toMetricXY(b, refLat);
+    const dx = bx - ax;
+    const dy = by - ay;
+    const lenSq = dx * dx + dy * dy;
+    const t = lenSq === 0
+      ? 0
+      : Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / lenSq));
+    const projectedPoint = interpolateCoord(a, b, t);
+    const d = Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
+    const segmentLengthM = haversineDistanceM(a, b);
+
     if (d < bestDist) {
       bestDist = d;
       bestIndex = i;
+      bestT = t;
+      bestProjectedPoint = projectedPoint;
+      bestProgressM = cumulativeM + segmentLengthM * t;
     }
+
+    cumulativeM += segmentLengthM;
   }
 
-  return { distM: bestDist, segmentIndex: bestIndex };
+  return {
+    distM: bestDist,
+    segmentIndex: bestIndex,
+    segmentT: bestT,
+    projectedPoint: bestProjectedPoint,
+    progressM: bestProgressM,
+  };
 }
 
 /**
@@ -122,7 +166,7 @@ export function getClosestPointOnPath(
  * Rules enforced:
  *   1. origin must be within corridor_width_m of the path.
  *   2. destination must be within corridor_width_m of the path.
- *   3. destination's segment must come AFTER origin's segment (forward direction).
+ *   3. destination must be farther along the route than origin (forward direction).
  */
 export function isRouteValid(
   origin: Coordinates,
@@ -139,9 +183,20 @@ export function isRouteValid(
   const destSeg = getClosestPointOnPath(destination, route.path);
   if (destSeg.distM > threshold) return false;
 
-  if (destSeg.segmentIndex <= originSeg.segmentIndex) return false;
+  if (destSeg.progressM <= originSeg.progressM) return false;
 
   return { originSeg, destSeg };
+}
+
+function buildSegmentBetween(route: PolylineRoute, originSeg: ClosestOnPath, destSeg: ClosestOnPath): Coordinates[] {
+  const segment: Coordinates[] = [originSeg.projectedPoint];
+
+  for (let i = originSeg.segmentIndex + 1; i <= destSeg.segmentIndex; i++) {
+    segment.push(route.path[i]);
+  }
+
+  segment.push(destSeg.projectedPoint);
+  return segment;
 }
 
 /**
@@ -163,7 +218,7 @@ export function findBestRoutes(
     if (!result) continue;
 
     const { originSeg, destSeg } = result;
-    const segment = route.path.slice(originSeg.segmentIndex, destSeg.segmentIndex + 2);
+    const segment = buildSegmentBetween(route, originSeg, destSeg);
     const routeLengthM = getRouteLength(segment);
     const score = originSeg.distM + destSeg.distM + routeLengthM * 0.01;
 

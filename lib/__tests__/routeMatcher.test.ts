@@ -344,5 +344,25 @@ console.log("\ncorridor dinámico:");
 
 // ─── Summary ──────────────────────────────────────────────────────────────────
 
+console.log("\nsame-segment forward progress:");
+
+{
+  const origin: [number, number] = [-102.078, 19.4001];
+  const dest:   [number, number] = [-102.072, 19.3999];
+  const result = isRouteValid(origin, dest, ROUTE_A);
+  assert(result !== false, "same-segment forward trip accepted");
+  if (result !== false) {
+    assert(result.originSeg.segmentIndex === result.destSeg.segmentIndex, "same segment accepted");
+    assert(result.destSeg.progressM > result.originSeg.progressM, "destination progress is ahead");
+  }
+}
+
+{
+  const origin: [number, number] = [-102.072, 19.3999];
+  const dest:   [number, number] = [-102.078, 19.4001];
+  const result = isRouteValid(origin, dest, ROUTE_A);
+  assert(result === false, "same-segment backward trip rejected");
+}
+
 console.log(`\n${passed + failed} tests — ${passed} passed, ${failed} failed\n`);
 if (failed > 0) process.exit(1);

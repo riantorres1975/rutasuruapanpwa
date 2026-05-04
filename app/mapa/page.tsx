@@ -16,14 +16,11 @@ import RouteList from "@/components/RouteList";
 import RouteSchedule from "@/components/RouteSchedule";
 import { useShareRoute } from "@/hooks/useShareRoute";
 import { formatRouteLabel, getRouteDestination } from "@/lib/route-names";
-import type { Coordinates, GroupedRouteData, ProductionRoute, ResolvedRouteData, RouteDirection } from "@/lib/types";
-import { computeTransferOptions, computeTransferOptionsFromPolylines } from "@/lib/transfers";
+import type { Coordinates, ProductionRoute, ResolvedRouteData, RouteDirection } from "@/lib/types";
+import { computeTransferOptionsFromPolylines } from "@/lib/transfers";
 import type { TransferOption } from "@/lib/transfers";
 import { haversineMeters } from "@/lib/geo";
 import { findBestRoutes, getRankedRoutes, type PolylineRoute } from "@/lib/routeMatcher";
-const PROXIMITY_METERS = 400;
-const DESTINATION_DISTANCE_WEIGHT = 1.8;
-const SEGMENT_LENGTH_FACTOR = 0.01;
 const AVG_TRIP_SPEED_KMH = 18;
 const BACKGROUND_SIMPLIFY_TOLERANCE = 0.00008;
 const BACKGROUND_MAX_POINTS = 180;
@@ -33,18 +30,6 @@ const MapView = dynamic(() => import("@/components/Map"), {
   ssr: false,
   loading: () => <div className="h-full w-full animate-pulse bg-ink-900" />
 });
-
-function getCoordinatesByDirection(route: GroupedRouteData, direction: RouteDirection) {
-  return direction === "ida" ? route.ida ?? route.vuelta ?? [] : route.vuelta ?? route.ida ?? [];
-}
-
-function getEffectiveDirection(route: GroupedRouteData, direction: RouteDirection): RouteDirection {
-  if (direction === "ida") {
-    return route.ida ? "ida" : "vuelta";
-  }
-
-  return route.vuelta ? "vuelta" : "ida";
-}
 
 type RouteOption = {
   routeId: number;
@@ -166,21 +151,6 @@ function getFlowStep(originPoint: Coordinates | null, destinationPoint: Coordina
 }
 
 
-function getClosestIndex(point: Coordinates, path: Coordinates[]) {
-  let bestIndex = 0;
-  let bestDistance = Number.POSITIVE_INFINITY;
-
-  for (let index = 0; index < path.length; index += 1) {
-    const distance = haversineMeters(point, path[index]);
-    if (distance < bestDistance) {
-      bestDistance = distance;
-      bestIndex = index;
-    }
-  }
-
-  return { index: bestIndex, distance: bestDistance };
-}
-
 function getSegmentLengthMeters(segment: Coordinates[]) {
   let total = 0;
   for (let index = 1; index < segment.length; index += 1) {
@@ -277,151 +247,10 @@ function simplifyBackgroundCoordinates(points: Coordinates[]) {
   return decimateCoordinates(simplified, BACKGROUND_MAX_POINTS);
 }
 
-function computeRouteOption(route: ResolvedRouteData, originPoint: Coordinates, destinationPoint: Coordinates) {
-  const closestA = getClosestIndex(originPoint, route.coordenadas);
-  const closestB = getClosestIndex(destinationPoint, route.coordenadas);
-
-  if (closestA.distance > PROXIMITY_METERS || closestB.distance > PROXIMITY_METERS) {
-    return null;
-  }
-
-  if (closestA.index >= closestB.index) {
-    return null;
-  }
-
-  const segment = route.coordenadas.slice(closestA.index, closestB.index + 1);
-  if (segment.length < 2) {
-    return null;
-  }
-
-  const segmentMeters = getSegmentLengthMeters(segment);
-  const score = closestA.distance + closestB.distance * DESTINATION_DISTANCE_WEIGHT + segmentMeters * SEGMENT_LENGTH_FACTOR;
-
-  return {
-    routeId: route.id,
-    ruta: route.nombre,
-    direccion: route.direccion,
-    distanciaA: closestA.distance,
-    distanciaB: closestB.distance,
-    indexA: closestA.index,
-    indexB: closestB.index,
-    segment,
-    score
-  } satisfies RouteOption;
-}
-
-function computeRouteSuggestions(
-  routes: ResolvedRouteData[],
-  groupedRoutes: GroupedRouteData[],
-  originPoint: Coordinates,
-  destinationPoint: Coordinates
-) {
-  // For each route in fullRoutes, also evaluate the opposite direction coords.
-  // We build a flat list of (route-with-possibly-alternate-coords, routeId).
-  type Candidate = { route: ResolvedRouteData; routeId: number };
-  const candidates: Candidate[] = [];
-
-  for (const route of routes) {
-    // The route already has coords for the active direction
-    candidates.push({ route, routeId: route.id });
-
-    // Find the grouped source to get the opposite direction coords
-    // routes[i].id === i+1 based on the groupedRoutes.map((r,i) => ({id: i+1,...})) logic,
-    // but filtered — so we match by ruta name (unique per grouped entry)
-    const grouped = groupedRoutes.find((g) => g.ruta === route.ruta);
-    if (!grouped) continue;
-
-    const oppositeDir: RouteDirection = route.direccion === "ida" ? "vuelta" : "ida";
-    const oppositeCoords = oppositeDir === "ida" ? grouped.ida ?? [] : grouped.vuelta ?? [];
-    if (oppositeCoords.length <= 1) continue;
-
-    candidates.push({
-      route: { ...route, coordenadas: oppositeCoords, direccion: oppositeDir },
-      routeId: route.id
-    });
-  }
-
-  type OptionWithId = RouteOption & { _routeId: number };
-
-  const allOptions = candidates
-    .map(({ route, routeId }) => {
-      const option = computeRouteOption(route, originPoint, destinationPoint);
-      if (!option) return null;
-      return { ...option, _routeId: routeId } as OptionWithId;
-    })
-    .filter((item): item is OptionWithId => item !== null);
-
-  // Deduplicate: keep best score per routeId
-  const bestByRouteId = new Map<number, OptionWithId>();
-  for (const option of allOptions) {
-    const existing = bestByRouteId.get(option._routeId);
-    if (!existing || option.score < existing.score) {
-      bestByRouteId.set(option._routeId, option);
-    }
-  }
-
-  return Array.from(bestByRouteId.values())
-    .sort((a, b) => a.score - b.score)
-    .slice(0, 3)
-    .map(({ _routeId, ...rest }) => ({ ...rest, routeId: _routeId }));
-}
-
 function getEstimatedMinutes(segment: Coordinates[]) {
   const kilometers = getSegmentLengthMeters(segment) / 1000;
   const minutes = (kilometers / AVG_TRIP_SPEED_KMH) * 60;
   return Math.max(4, Math.round(minutes));
-}
-
-function buildTransferFromIndexes(sharedState: SharedMapState, fullRoutesById: Map<number, ResolvedRouteData>): TransferOption | null {
-  if (
-    sharedState.transferRouteAId === null ||
-    sharedState.transferRouteBId === null ||
-    sharedState.transferRouteAStartIndex === null ||
-    sharedState.transferRouteATransferIndex === null ||
-    sharedState.transferRouteBTransferIndex === null ||
-    sharedState.transferRouteBEndIndex === null
-  ) {
-    return null;
-  }
-
-  const routeA = fullRoutesById.get(sharedState.transferRouteAId);
-  const routeB = fullRoutesById.get(sharedState.transferRouteBId);
-  if (!routeA || !routeB) {
-    return null;
-  }
-
-  const { transferRouteAStartIndex, transferRouteATransferIndex, transferRouteBTransferIndex, transferRouteBEndIndex } = sharedState;
-  const indexesAreValid =
-    transferRouteAStartIndex < transferRouteATransferIndex &&
-    transferRouteATransferIndex < routeA.coordenadas.length &&
-    transferRouteBTransferIndex < transferRouteBEndIndex &&
-    transferRouteBEndIndex < routeB.coordenadas.length;
-
-  if (!indexesAreValid) {
-    return null;
-  }
-
-  const segmentA = routeA.coordenadas.slice(transferRouteAStartIndex, transferRouteATransferIndex + 1);
-  const segmentB = routeB.coordenadas.slice(transferRouteBTransferIndex, transferRouteBEndIndex + 1);
-  const transferPoint = routeA.coordenadas[transferRouteATransferIndex];
-  const routeBTransferPoint = routeB.coordenadas[transferRouteBTransferIndex];
-  const walkMeters = haversineMeters(transferPoint, routeBTransferPoint);
-
-  return {
-    routeAId: routeA.id,
-    routeBId: routeB.id,
-    routeAName: routeA.nombre,
-    routeBName: routeB.nombre,
-    routeAStartIndex: transferRouteAStartIndex,
-    routeATransferIndex: transferRouteATransferIndex,
-    routeBTransferIndex: transferRouteBTransferIndex,
-    routeBEndIndex: transferRouteBEndIndex,
-    transferPoint,
-    segmentA,
-    segmentB,
-    walkMeters,
-    score: getSegmentLengthMeters(segmentA) + walkMeters * 2 + getSegmentLengthMeters(segmentB)
-  };
 }
 
 export default function HomePage() {
@@ -465,7 +294,6 @@ export default function HomePage() {
     };
   }, []);
 
-  const [groupedRoutes, setGroupedRoutes] = useState<GroupedRouteData[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [shouldLoadMap, setShouldLoadMap] = useState(false);
   const [fetchError, setFetchError] = useState(false);
@@ -491,7 +319,6 @@ export default function HomePage() {
   const [nearbyToast, setNearbyToast] = useState<number | null>(null);
   const [nearbyRouteIds, setNearbyRouteIds] = useState<number[]>([]);
   const [showTeleferico, setShowTeleferico] = useState(false);
-  const [useNewRouting, setUseNewRouting] = useState(false);
   const [polylineRoutes, setPolylineRoutes] = useState<ProductionRoute[]>([]);
   const [sharedRouteSegment, setSharedRouteSegment] = useState<Coordinates[] | null>(null);
   const [sharedSegmentColor, setSharedSegmentColor] = useState<string | null>(null);
@@ -504,10 +331,6 @@ export default function HomePage() {
   const destinationPointRef = useRef(destinationPoint);
   const hasHydratedMapModeRef = useRef(false);
   const pendingSharedStateRef = useRef<SharedMapState | null>(null);
-
-  useEffect(() => {
-    try { setUseNewRouting(localStorage.getItem("useNewRouting") === "true"); } catch {}
-  }, []);
 
   // Geolocation: watch position on mount.
   // First fix → set userLocation and mark "ok".
@@ -570,19 +393,33 @@ export default function HomePage() {
   }, [userLocation, manualOrigin, destinationPoint]);
 
   useEffect(() => {
-    if (!useNewRouting || polylineRoutes.length > 0) return;
+    if (polylineRoutes.length > 0) return;
+    let cancelled = false;
     fetch("/api/rutas-polyline")
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
       })
       .then((data: ProductionRoute[]) => {
-        if (Array.isArray(data) && data.length > 0) setPolylineRoutes(data);
+        if (!cancelled) {
+          if (Array.isArray(data) && data.length > 0) {
+            setPolylineRoutes(data);
+          } else {
+            console.error("[rutas-polyline] returned empty or invalid data");
+            setFetchError(true);
+          }
+          setIsLoadingData(false);
+        }
       })
       .catch((err: unknown) => {
-        console.error("[rutas-polyline] Failed to load:", err instanceof Error ? err.message : err);
+        if (!cancelled) {
+          console.error("[rutas-polyline] Failed to load:", err instanceof Error ? err.message : err);
+          setFetchError(true);
+          setIsLoadingData(false);
+        }
       });
-  }, [useNewRouting, polylineRoutes.length]);
+    return () => { cancelled = true; };
+  }, [polylineRoutes.length]);
 
   const buildShareUrl = useCallback((options: {
     routeId?: number | null;
@@ -718,34 +555,6 @@ export default function HomePage() {
     }
   }, [routesMapMode]);
 
-  useEffect(() => {
-    let cancelled = false;
-    setShouldLoadMap(false);
-    fetch("/api/rutas")
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
-      })
-      .then((data: GroupedRouteData[]) => {
-        if (!cancelled) {
-          if (!Array.isArray(data) || data.length === 0) {
-            console.error("[rutas] /api/rutas returned empty or invalid data");
-            setFetchError(true);
-          } else {
-            setGroupedRoutes(data);
-          }
-          setIsLoadingData(false);
-        }
-      })
-      .catch((err: unknown) => {
-        if (!cancelled) {
-          console.error("[rutas] Failed to load route data:", err instanceof Error ? err.message : err);
-          setFetchError(true);
-          setIsLoadingData(false);
-        }
-      });
-    return () => { cancelled = true; };
-  }, [fetchAttempt]);
 
   useEffect(() => {
     if (isLoadingData || fetchError || shouldLoadMap) {
@@ -793,40 +602,68 @@ export default function HomePage() {
     }
   }, [activePoint, flowStep]);
 
-  const fullRoutes = useMemo<ResolvedRouteData[]>(
-    () =>
-      groupedRoutes
-        .map((route, index) => {
-          const coordenadas = getCoordinatesByDirection(route, selectedDirection);
+  // Deduplicated list for the route sidebar — one entry per named route, aggregating ida/vuelta
+  const listRoutes = useMemo<ResolvedRouteData[]>(() => {
+    const seen = new Map<string, ResolvedRouteData>();
+    for (const r of polylineRoutes) {
+      const isVuelta = r.original_name.includes("Vuelta");
+      const existing = seen.get(r.name);
+      if (existing) {
+        if (isVuelta) existing.tieneVuelta = true;
+        else existing.tieneIda = true;
+      } else {
+        seen.set(r.name, {
+          id: r.id,
+          ruta: r.name,
+          nombre: r.name,
+          color: r.color,
+          coordenadas: r.path,
+          direccion: isVuelta ? "vuelta" : "ida",
+          tieneIda: !isVuelta,
+          tieneVuelta: isVuelta,
+        });
+      }
+    }
+    return Array.from(seen.values());
+  }, [polylineRoutes]);
 
-          return {
-            id: index + 1,
-            ruta: route.ruta,
-            nombre: route.ruta,
-            color: route.color,
-            coordenadas,
-            direccion: getEffectiveDirection(route, selectedDirection),
-            tieneIda: Array.isArray(route.ida) && route.ida.length > 1,
-            tieneVuelta: Array.isArray(route.vuelta) && route.vuelta.length > 1
-          };
-        })
-        .filter((route) => route.coordenadas.length > 1),
-    [groupedRoutes, selectedDirection]
+  // Simplified routes for map background rendering
+  const simplifiedMapRoutes = useMemo<ResolvedRouteData[]>(
+    () => polylineRoutes.map((r) => ({
+      id: r.id,
+      ruta: r.name,
+      nombre: r.name,
+      color: r.color,
+      coordenadas: simplifyBackgroundCoordinates(r.path),
+      direccion: r.original_name.includes("Vuelta") ? "vuelta" as const : "ida" as const,
+      tieneIda: true,
+      tieneVuelta: false,
+    })),
+    [polylineRoutes]
   );
 
-  const fullRoutesById = useMemo(() => new Map(fullRoutes.map((route) => [route.id, route])), [fullRoutes]);
+  const routesForMatching = useMemo<PolylineRoute[]>(
+    () => polylineRoutes.map((r) => ({
+      id: r.id,
+      name: r.name,
+      color: r.color,
+      corridor_width_m: r.corridor_width_m,
+      path: r.path,
+      direccion: r.original_name.includes("Vuelta") ? "vuelta" : "ida",
+    })),
+    [polylineRoutes]
+  );
 
-  const backgroundRoutes = useMemo<ResolvedRouteData[]>(
-    () =>
-      fullRoutes.map((route) => ({
-        ...route,
-        coordenadas: simplifyBackgroundCoordinates(route.coordenadas)
-      })),
-    [fullRoutes]
+  const polylineRoutesById = useMemo(
+    () => new Map(polylineRoutes.map((route) => [route.id, route])),
+    [polylineRoutes]
   );
 
   const handleSelectRoute = useCallback((routeId: number) => {
     setSharedRouteSegment(null);
+    setSharedSegmentColor(null);
+    setSelectedTransfer(null);
+    setShowTeleferico(false);
     setSelectedRouteId((current) => (current === routeId ? null : routeId));
   }, []);
 
@@ -851,9 +688,13 @@ export default function HomePage() {
     const active = activePointRef.current;
 
     if (active === "origin") {
-      // Manual tap on map overrides automatic geolocation for origin
       setManualOrigin(point);
-      setActivePoint("destination");
+      // If destination already exists, keep it and show results immediately
+      if (destinationPointRef.current) {
+        setActivePoint(null);
+      } else {
+        setActivePoint("destination");
+      }
       return;
     }
 
@@ -875,56 +716,25 @@ export default function HomePage() {
       return;
     }
 
-    // Reset: new trip from a manual origin tap
-    setManualOrigin(point);
-    setDestinationPoint(null);
-    setActivePoint("destination");
+    // Both pins set, no active mode → move destination (most common action)
+    setDestinationPoint(point);
+    setActivePoint(null);
   }, []);
 
   const selectedRoute = useMemo(
-    () => (selectedRouteId !== null ? fullRoutesById.get(selectedRouteId) ?? null : null),
-    [fullRoutesById, selectedRouteId]
+    () => selectedRouteId !== null ? (polylineRoutesById.get(selectedRouteId) ?? null) : null,
+    [polylineRoutesById, selectedRouteId]
   );
 
   useEffect(() => {
     const sharedState = pendingSharedStateRef.current;
-    if (!sharedState || fullRoutes.length === 0) {
-      return;
-    }
-
-    const sharedTransfer = buildTransferFromIndexes(sharedState, fullRoutesById);
-    if (sharedTransfer) {
-      setSelectedRouteId(null);
-      setSelectedTransfer(sharedTransfer);
-      setTransfers([]);
-      setIsResultSheetOpen(true);
-      pendingSharedStateRef.current = null;
-      return;
-    }
-
-    if (sharedState.routeId) {
-      const route = fullRoutesById.get(sharedState.routeId);
-      if (route) {
-        setSelectedRouteId(route.id);
-        if (
-          sharedState.segmentStartIndex !== null &&
-          sharedState.segmentEndIndex !== null &&
-          sharedState.segmentStartIndex < sharedState.segmentEndIndex &&
-          sharedState.segmentEndIndex < route.coordenadas.length
-        ) {
-          setSharedRouteSegment(route.coordenadas.slice(sharedState.segmentStartIndex, sharedState.segmentEndIndex + 1));
-        }
-        pendingSharedStateRef.current = null;
-        return;
-      }
-    }
+    if (!sharedState || polylineRoutes.length === 0) return;
 
     if (sharedState.routeName) {
-      const normalizedRouteName = sharedState.routeName.toLowerCase();
-      const route = fullRoutes.find((item) => {
-        const ruta = item.ruta.toLowerCase();
-        const nombre = item.nombre.toLowerCase();
-        return ruta === normalizedRouteName || nombre === normalizedRouteName || ruta.includes(normalizedRouteName) || nombre.includes(normalizedRouteName);
+      const normalized = sharedState.routeName.toLowerCase();
+      const route = polylineRoutes.find((r) => {
+        const n = r.name.toLowerCase();
+        return n === normalized || n.includes(normalized);
       });
       if (route) {
         setSelectedRouteId(route.id);
@@ -932,9 +742,9 @@ export default function HomePage() {
           sharedState.segmentStartIndex !== null &&
           sharedState.segmentEndIndex !== null &&
           sharedState.segmentStartIndex < sharedState.segmentEndIndex &&
-          sharedState.segmentEndIndex < route.coordenadas.length
+          sharedState.segmentEndIndex < route.path.length
         ) {
-          setSharedRouteSegment(route.coordenadas.slice(sharedState.segmentStartIndex, sharedState.segmentEndIndex + 1));
+          setSharedRouteSegment(route.path.slice(sharedState.segmentStartIndex, sharedState.segmentEndIndex + 1));
         }
         pendingSharedStateRef.current = null;
         return;
@@ -942,10 +752,8 @@ export default function HomePage() {
     }
 
     if (sharedState.showTeleferico) {
-      const telefericoRoute = fullRoutes.find((item) => item.nombre === "Teleférico Uruapan" || item.ruta === "Teleférico Uruapan");
-      if (telefericoRoute) {
-        setSelectedRouteId(telefericoRoute.id);
-      }
+      const telefericoRoute = polylineRoutes.find((r) => r.name === "Teleférico Uruapan");
+      if (telefericoRoute) setSelectedRouteId(telefericoRoute.id);
       pendingSharedStateRef.current = null;
       return;
     }
@@ -953,7 +761,7 @@ export default function HomePage() {
     if (sharedState.origin || sharedState.destination) {
       pendingSharedStateRef.current = null;
     }
-  }, [fullRoutes, fullRoutesById]);
+  }, [polylineRoutes]);
 
   useEffect(() => {
     if (!originPoint || !destinationPoint) {
@@ -967,81 +775,38 @@ export default function HomePage() {
     setIsCalculatingSuggestions(true);
 
     const timer = window.setTimeout(() => {
-      let nextSuggestions: RouteOption[];
       let nextAlternativeIds: number[] = [];
 
-      if (useNewRouting) {
-        // Use rutas_produccion_final.json (fuente maestra) via /api/rutas-polyline.
-        // Provides real corridor_width_m per route and landmarks for future precision.
-        // Falls back to empty — suggestions stay empty until the fetch completes.
-        const routesForMatching: PolylineRoute[] = polylineRoutes.map((r) => ({
-          id: r.id,
-          name: r.name,
-          color: r.color,
-          corridor_width_m: r.corridor_width_m,
-          path: r.path,
-          // original_name encodes direction: entries ending in "(Vuelta)" go backwards
-          direccion: r.original_name.includes("Vuelta") ? "vuelta" : "ida",
-        }));
-        const matches = findBestRoutes(originPoint, destinationPoint, routesForMatching);
-        const ranked = getRankedRoutes(matches);
+      const matches = findBestRoutes(originPoint, destinationPoint, routesForMatching);
+      const ranked = getRankedRoutes(matches);
 
-        const toOption = (m: (typeof matches)[number]): RouteOption => ({
-          routeId: m.routeId,
-          ruta: m.routeName,
-          direccion: m.direccion,
-          distanciaA: m.originDistM,
-          distanciaB: m.destDistM,
-          indexA: m.originSegIndex,
-          indexB: m.destSegIndex,
-          segment: m.segment,
-          score: m.score,
-          routeColor: m.routeColor,
-        });
+      const toOption = (m: (typeof matches)[number]): RouteOption => ({
+        routeId: m.routeId,
+        ruta: m.routeName,
+        direccion: m.direccion,
+        distanciaA: m.originDistM,
+        distanciaB: m.destDistM,
+        indexA: m.originSegIndex,
+        indexB: m.destSegIndex,
+        segment: m.segment,
+        score: m.score,
+        routeColor: m.routeColor,
+      });
 
-        if (ranked) {
-          nextAlternativeIds = ranked.alternatives.map((m) => m.routeId);
-          nextSuggestions = [ranked.best, ...ranked.alternatives].map(toOption);
-        } else {
-          nextSuggestions = [];
-        }
+      let nextSuggestions: RouteOption[];
+      if (ranked) {
+        nextAlternativeIds = ranked.alternatives.map((m) => m.routeId);
+        nextSuggestions = [ranked.best, ...ranked.alternatives].map(toOption);
       } else {
-        nextSuggestions = computeRouteSuggestions(fullRoutes, groupedRoutes, originPoint, destinationPoint);
+        nextSuggestions = [];
       }
 
       setSuggestions(nextSuggestions);
       setAlternativeSuggestedRouteIds(nextAlternativeIds);
+
       let nextTransfers: TransferOption[] = [];
-      if (nextSuggestions.length === 0) {
-        if (useNewRouting && polylineRoutes.length > 0) {
-          // rutas_produccion_final.json already includes both directions as separate entries
-          nextTransfers = computeTransferOptionsFromPolylines(
-            polylineRoutes.map((r) => ({
-              id: r.id,
-              name: r.name,
-              color: r.color,
-              corridor_width_m: r.corridor_width_m,
-              path: r.path,
-              direccion: r.original_name.includes("Vuelta") ? "vuelta" : "ida",
-            })),
-            originPoint,
-            destinationPoint
-          );
-        } else {
-          // Expand routes with both directions so transfers can use either direction
-          const bothDirs: ResolvedRouteData[] = [];
-          for (const route of fullRoutes) {
-            bothDirs.push(route);
-            const grouped = groupedRoutes.find((g) => g.ruta === route.ruta);
-            if (!grouped) continue;
-            const oppositeDir: RouteDirection = route.direccion === "ida" ? "vuelta" : "ida";
-            const oppositeCoords = oppositeDir === "ida" ? grouped.ida ?? [] : grouped.vuelta ?? [];
-            if (oppositeCoords.length > 1) {
-              bothDirs.push({ ...route, coordenadas: oppositeCoords, direccion: oppositeDir });
-            }
-          }
-          nextTransfers = computeTransferOptions(bothDirs, originPoint, destinationPoint);
-        }
+      if (nextSuggestions.length === 0 && polylineRoutes.length > 0) {
+        nextTransfers = computeTransferOptionsFromPolylines(routesForMatching, originPoint, destinationPoint);
       }
       setTransfers(nextTransfers);
       setIsCalculatingSuggestions(false);
@@ -1050,7 +815,7 @@ export default function HomePage() {
     return () => {
       window.clearTimeout(timer);
     };
-  }, [destinationPoint, fullRoutes, groupedRoutes, originPoint, polylineRoutes, useNewRouting]);
+  }, [destinationPoint, originPoint, polylineRoutes.length, routesForMatching]);
 
   const suggestedRouteIds = useMemo(() => suggestions.map((item) => item.routeId), [suggestions]);
   const suggestedRouteDirections = useMemo(
@@ -1062,14 +827,7 @@ export default function HomePage() {
     () => suggestions.find((item) => item.routeId === selectedRouteId) ?? null,
     [selectedRouteId, suggestions]
   );
-  const selectedRoutePinSegment = useMemo(() => {
-    if (!selectedRoute || !originPoint || !destinationPoint) {
-      return null;
-    }
-
-    return computeRouteOption(selectedRoute, originPoint, destinationPoint);
-  }, [destinationPoint, originPoint, selectedRoute]);
-  const selectedMapSegment = selectedSuggestion?.segment ?? sharedRouteSegment ?? selectedRoutePinSegment?.segment ?? null;
+  const selectedMapSegment = selectedSuggestion?.segment ?? sharedRouteSegment ?? null;
 
   // Arrow segments: show direction arrows on suggested segment, transfer segments, or both directions of selected route
   const arrowSegments = useMemo<{ coords: Coordinates[]; color: string; showLine?: boolean }[]>(() => {
@@ -1088,36 +846,24 @@ export default function HomePage() {
     if (selectedMapSegment && selectedRoute) {
       return [{ coords: selectedMapSegment, color: selectedRoute.color, showLine: false }];
     }
-    // Case 3: route selected without pins — draw both ida+vuelta lines with their arrows
-    if (selectedRouteId !== null && !originPoint && !destinationPoint) {
-      const grouped = groupedRoutes.find((g) => {
-        const match = fullRoutes.find((r) => r.id === selectedRouteId);
-        return match ? g.ruta === match.ruta : false;
-      });
-      const color = selectedRoute?.color ?? "#ffffff";
-      const segments: { coords: Coordinates[]; color: string; showLine: boolean }[] = [];
-      if (grouped?.ida && grouped.ida.length > 1) segments.push({ coords: grouped.ida, color, showLine: true });
-      if (grouped?.vuelta && grouped.vuelta.length > 1) segments.push({ coords: grouped.vuelta, color, showLine: true });
-      return segments;
+    // Case 3: route selected without pins — draw all directions of that named route
+    if (selectedRoute && !originPoint && !destinationPoint) {
+      const color = selectedRoute.color;
+      return polylineRoutes
+        .filter((r) => r.name === selectedRoute.name)
+        .map((r) => ({ coords: r.path, color, showLine: true }));
     }
     return [];
-  }, [selectedTransfer, selectedMapSegment, selectedRoute, selectedRouteId, originPoint, destinationPoint, groupedRoutes, fullRoutes, sharedRouteSegment, sharedSegmentColor]);
+  }, [selectedTransfer, selectedMapSegment, selectedRoute, originPoint, destinationPoint, polylineRoutes, sharedRouteSegment, sharedSegmentColor]);
   const mapRoutes = useMemo(() => {
-    if (selectedRouteId === null) {
-      return backgroundRoutes;
-    }
-
-    const selectedFullRoute = fullRoutesById.get(selectedRouteId);
-    if (!selectedFullRoute) {
-      return backgroundRoutes;
-    }
-
-    const selectedDisplayRoute = selectedMapSegment
-      ? { ...selectedFullRoute, coordenadas: selectedMapSegment }
-      : selectedFullRoute;
-
-    return backgroundRoutes.map((route) => (route.id === selectedRouteId ? selectedDisplayRoute : route));
-  }, [backgroundRoutes, fullRoutesById, selectedMapSegment, selectedRouteId]);
+    if (selectedRouteId === null) return simplifiedMapRoutes;
+    const fullPath = selectedRoute?.path ?? null;
+    if (!fullPath) return simplifiedMapRoutes;
+    const displayCoords = selectedMapSegment ?? fullPath;
+    return simplifiedMapRoutes.map((r) =>
+      r.id === selectedRouteId ? { ...r, coordenadas: displayCoords } : r
+    );
+  }, [simplifiedMapRoutes, selectedRoute, selectedRouteId, selectedMapSegment]);
   const bestSuggestionEta = useMemo(
     () => (bestSuggestion ? getEstimatedMinutes(bestSuggestion.segment) : null),
     [bestSuggestion]
@@ -1129,11 +875,11 @@ export default function HomePage() {
 
     if (bestSuggestion) {
       return {
-        title: "Indicaciones en texto",
+        title: "Indicaciones",
         items: [
-          `Toma ${formatRouteLabel(bestSuggestion.ruta)}.`,
-          `Tiempo estimado: ${bestSuggestionEta ?? getEstimatedMinutes(bestSuggestion.segment)} minutos.`,
-          `Camina aproximadamente ${Math.round(bestSuggestion.distanciaA)} m al punto de abordaje y ${Math.round(bestSuggestion.distanciaB)} m al destino final.`
+          `Sube a ${formatRouteLabel(bestSuggestion.ruta)} cerca de tu ubicación (~${Math.round(bestSuggestion.distanciaA)} m a pie).`,
+          `Baja cerca de tu destino (~${Math.round(bestSuggestion.distanciaB)} m a pie).`,
+          `Tiempo estimado en ruta: ${bestSuggestionEta ?? getEstimatedMinutes(bestSuggestion.segment)} min.`
         ]
       };
     }
@@ -1162,6 +908,11 @@ export default function HomePage() {
     };
   }, [bestSuggestion, bestSuggestionEta, flowStep, isCalculatingSuggestions, selectedTransfer, transfers]);
   const hintMessage = useMemo(() => {
+    // Editing origin while destination already exists (step 3 re-edit)
+    if (activePoint === "origin" && destinationPoint) {
+      return "Toca el mapa para mover tu origen. El destino se mantiene.";
+    }
+
     if (flowStep === 1) {
       if (geoStatus === "locating") return "Obteniendo tu ubicación...";
       if (geoStatus === "error") {
@@ -1180,21 +931,25 @@ export default function HomePage() {
         return "Tu GPS varía mucho. Toca el mapa para fijar tu origen manualmente.";
       }
       if (requestedDestination) {
-        return `Ahora toca la zona de ${requestedDestination} como destino.`;
+        return `Toca la zona de ${requestedDestination} como destino.`;
       }
-      return "Ahora toca el mapa para marcar tu destino.";
+      return "Selecciona tu destino en el mapa.";
     }
 
     if (isCalculatingSuggestions) {
-      return "Buscando la mejor ruta para tu viaje...";
+      return "Buscando la mejor ruta...";
     }
 
     if (bestSuggestion) {
-      return "Ruta encontrada. Revisa las opciones y toca Ver ruta.";
+      return `${formatRouteLabel(bestSuggestion.ruta)} es la mejor opción.`;
     }
 
-    return "No encontramos ruta directa. Ajusta origen o destino e intenta de nuevo.";
-  }, [bestSuggestion, flowStep, geoAccuracyWarn, geoStatus, isCalculatingSuggestions, manualOrigin, requestedDestination]);
+    if (transfers.length > 0) {
+      return "No hay ruta directa. Hay opciones con transbordo.";
+    }
+
+    return "No encontramos ruta directa. Ajusta origen o destino.";
+  }, [activePoint, bestSuggestion, destinationPoint, flowStep, geoAccuracyWarn, geoStatus, isCalculatingSuggestions, manualOrigin, requestedDestination, transfers]);
 
   useEffect(() => {
     setShowHint(true);
@@ -1204,6 +959,13 @@ export default function HomePage() {
   useEffect(() => {
     if (flowStep !== 3) setIsResultSheetOpen(false);
   }, [flowStep]);
+
+  // Auto-abrir result sheet en mobile cuando los resultados llegan (flujo tipo asistente)
+  useEffect(() => {
+    if (flowStep === 3 && !isCalculatingSuggestions) {
+      setIsResultSheetOpen(true);
+    }
+  }, [flowStep, isCalculatingSuggestions]);
 
   useEffect(() => {
     if (!showHint) {
@@ -1220,10 +982,10 @@ export default function HomePage() {
   }, [flowStep, showHint]);
 
   useEffect(() => {
-    if (selectedRouteId !== null && !fullRoutesById.has(selectedRouteId)) {
+    if (selectedRouteId !== null && !polylineRoutes.some((r) => r.id === selectedRouteId)) {
       setSelectedRouteId(null);
     }
-  }, [fullRoutesById, selectedRouteId]);
+  }, [polylineRoutes, selectedRouteId]);
 
   if (fetchError) {
     const offline = !isOnline;
@@ -1345,7 +1107,7 @@ export default function HomePage() {
                   setSharedRouteSegment(null);
                   setManualOrigin(null);
                   setDestinationPoint(null);
-                  setActivePoint("destination");
+                  setActivePoint(userLocation ? "destination" : "origin");
                   setShowHint(true);
                 }}
                 className="inline-flex h-10 items-center rounded-xl border border-red-500/30 bg-red-500/10 px-2.5 text-[12px] font-semibold text-red-500 transition active:scale-[0.97]"
@@ -1360,8 +1122,8 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Context action — pasos 1 y 2 */}
-        {(flowStep === 1 || flowStep === 2) && (
+        {/* Context action — pasos 1, 2, y re-edición de origen desde paso 3 */}
+        {(flowStep === 1 || flowStep === 2 || (flowStep === 3 && activePoint !== null)) && (
           <div className="w-full">
             <div className="ov-panel flex items-center gap-1.5 rounded-2xl border px-3.5 py-2.5 shadow-[0_2px_12px_rgba(0,0,0,0.15)] backdrop-blur-xl">
               <span className="relative flex h-3 w-3 shrink-0" aria-hidden="true">
@@ -1369,13 +1131,17 @@ export default function HomePage() {
                 <span className="relative inline-flex h-3 w-3 rounded-full bg-lima" />
               </span>
               <p className="ov-text flex-1 text-[13px] font-medium">
-                {flowStep === 1
-                  ? (geoStatus === "locating"
-                      ? "Obteniendo tu ubicación..."
-                      : geoStatus === "error"
-                        ? <><span>No pudimos obtener tu ubicación. Toca el mapa para marcar tu </span><span className="font-bold text-lima">origen</span></>
-                        : <><span>Usando tu </span><span className="font-bold text-lima">ubicación actual</span><span>. Toca el mapa para ajustar.</span></>)
-                  : <><span>Ahora toca para marcar tu </span><span className="font-bold text-lima">destino</span></>}
+                {activePoint === "origin" && destinationPoint
+                  ? <><span>Toca el mapa para mover tu </span><span className="font-bold text-lima">origen</span><span>. El destino se mantiene.</span></>
+                  : activePoint === "destination" && flowStep === 3
+                    ? <><span>Toca el mapa para mover tu </span><span className="font-bold text-lima">destino</span></>
+                    : flowStep === 1
+                      ? (geoStatus === "locating"
+                          ? "Obteniendo tu ubicación..."
+                          : geoStatus === "error"
+                            ? <><span>No pudimos obtener tu ubicación. Toca el mapa para marcar tu </span><span className="font-bold text-lima">origen</span></>
+                            : <><span>Usando tu </span><span className="font-bold text-lima">ubicación actual</span><span>. Toca el mapa para ajustar.</span></>)
+                      : <><span>Selecciona tu </span><span className="font-bold text-lima">destino</span><span> en el mapa</span></>}
               </p>
             </div>
           </div>
@@ -1446,11 +1212,27 @@ export default function HomePage() {
                 <div className="mt-3 flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => { setActivePoint("destination"); setShowHint(true); }}
-                    className="ov-pill ov-border ov-text-muted inline-flex h-10 flex-1 items-center justify-center rounded-xl border text-[12px] font-semibold transition active:scale-[0.97]"
-                    aria-label="Ajustar destino"
+                    onClick={() => { setActivePoint("origin"); setShowHint(true); if (isMobile) setIsResultSheetOpen(false); }}
+                    className="ov-pill ov-border ov-text-muted inline-flex h-10 flex-1 items-center justify-center gap-1 rounded-xl border text-[12px] font-semibold transition active:scale-[0.97]"
+                    aria-label="Cambiar punto de origen"
                   >
-                    Ajustar
+                    <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 shrink-0" aria-hidden="true">
+                      <path d="M12 21s6-5.7 6-11a6 6 0 1 0-12 0c0 5.3 6 11 6 11Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                      <circle cx="12" cy="10" r="2" fill="currentColor" />
+                    </svg>
+                    Origen
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setActivePoint("destination"); setShowHint(true); if (isMobile) setIsResultSheetOpen(false); }}
+                    className="ov-pill ov-border ov-text-muted inline-flex h-10 flex-1 items-center justify-center gap-1 rounded-xl border text-[12px] font-semibold transition active:scale-[0.97]"
+                    aria-label="Cambiar destino"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 shrink-0" aria-hidden="true">
+                      <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.8" />
+                      <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.5" />
+                    </svg>
+                    Destino
                   </button>
                   <button
                     type="button"
@@ -1473,15 +1255,9 @@ export default function HomePage() {
                     type="button"
                     onClick={() => {
                       setShowHint(false);
-                      if (useNewRouting) {
-                        // IDs from rutas_produccion_final don't map to fullRoutes IDs.
-                        // Paint the matched segment directly instead of looking up by routeId.
-                        setSharedRouteSegment(bestSuggestion.segment);
-                        setSharedSegmentColor(bestSuggestion.routeColor ?? null);
-                        setSelectedRouteId(null);
-                      } else {
-                        setSelectedRouteId(bestSuggestion.routeId);
-                      }
+                      setSharedRouteSegment(bestSuggestion.segment);
+                      setSharedSegmentColor(bestSuggestion.routeColor ?? null);
+                      setSelectedRouteId(null);
                       if (isMobile) setIsResultSheetOpen(false);
                     }}
                     className="inline-flex h-10 flex-[2] items-center justify-center gap-1.5 rounded-xl bg-verde text-[12px] font-bold text-white shadow-[0_2px_12px_rgba(232,93,47,0.35)] transition active:scale-[0.97]"
@@ -1633,24 +1409,24 @@ export default function HomePage() {
                   <>
                     <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: selectedRoute?.color ?? "#14b8a6" }} aria-hidden="true" />
                     <span className="ov-text-muted min-w-0 flex-1 truncate text-[12px] font-medium">
-                      {selectedRoute ? formatRouteLabel(selectedRoute.nombre, selectedRoute.ruta) : "Teleférico Uruapan"}
+                      {selectedRoute ? formatRouteLabel(selectedRoute.name, selectedRoute.name) : "Teleférico Uruapan"}
                     </span>
                     <button
                       type="button"
                       onClick={() => shareRoute(
-                        selectedRoute ? formatRouteLabel(selectedRoute.nombre, selectedRoute.ruta) : "Teleférico",
+                        selectedRoute ? formatRouteLabel(selectedRoute.name, selectedRoute.name) : "Teleférico",
                         buildShareUrl({
                           routeId: selectedRoute?.id ?? null,
-                          routeName: selectedRoute?.ruta ?? "Teleférico Uruapan",
+                          routeName: selectedRoute?.name ?? "Teleférico Uruapan",
                           origin: originPoint,
                           destination: destinationPoint,
-                          segmentStartIndex: selectedSuggestion?.indexA ?? selectedRoutePinSegment?.indexA,
-                          segmentEndIndex: selectedSuggestion?.indexB ?? selectedRoutePinSegment?.indexB,
+                          segmentStartIndex: selectedSuggestion?.indexA,
+                          segmentEndIndex: selectedSuggestion?.indexB,
                           showTeleferico: !selectedRoute
                         })
                       )}
                       className="ov-pill ov-text-muted grid h-9 w-9 shrink-0 place-items-center rounded-lg transition hover:opacity-80 active:scale-95"
-                      aria-label={`Compartir ${selectedRoute ? formatRouteLabel(selectedRoute.nombre, selectedRoute.ruta) : "Teleférico"}`}
+                      aria-label={`Compartir ${selectedRoute ? formatRouteLabel(selectedRoute.name, selectedRoute.name) : "Teleférico"}`}
                     >
                       <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
                         <path d="M8.59 13.51l6.83 3.98m-.01-10.98-6.82 3.98M21 5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm0 14a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM3 12a3 3 0 1 1 6 0 3 3 0 0 1-6 0Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
@@ -1669,7 +1445,7 @@ export default function HomePage() {
             )}
 
             {selectedRoute && (
-              <RouteSchedule routeName={selectedRoute.ruta} />
+              <RouteSchedule routeName={selectedRoute.name} />
             )}
 
             {routeTextSummary && (
@@ -1717,7 +1493,7 @@ export default function HomePage() {
             </span>
             <p className="font-serif-display text-[16px] font-black tracking-tight text-white">UruGo</p>
             <span className="rounded-full border border-lima/25 bg-lima/10 px-2 py-0.5 text-[11px] font-semibold text-lima">
-              {fullRoutes.length} rutas
+              {listRoutes.length} rutas
             </span>
           </div>
 
@@ -1743,7 +1519,7 @@ export default function HomePage() {
         {/* ── Flow step indicator + hint ──────────────────────────────────── */}
         <div className="shrink-0 border-b border-foreground/5 px-5 py-3">
           {/* Step pills */}
-          <div className="mb-2.5 flex items-center gap-2" role="group" aria-label={`Paso ${flowStep} de 3 para encontrar tu ruta`}>
+          <div className="mb-2.5 flex items-center gap-2" role="group" aria-label="Progreso del viaje">
             {[
               { n: 1, label: "Origen" },
               { n: 2, label: "Destino" },
@@ -1789,7 +1565,7 @@ export default function HomePage() {
         {/* ── Lista de rutas (scrollable) ─────────────────────────────────── */}
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4">
           <RouteList
-            routes={fullRoutes}
+            routes={listRoutes}
             isLoading={isLoadingData}
             suggestedRouteIds={suggestedRouteIds}
             suggestedRouteDirections={suggestedRouteDirections}
@@ -1893,7 +1669,6 @@ export default function HomePage() {
         ) : (
           <MapView
             routes={mapRoutes}
-            groupedRoutes={groupedRoutes}
             selectedRouteId={selectedRouteId}
             suggestedRouteIds={suggestedRouteIds}
             allRoutesMode={routesMapMode}
@@ -1919,9 +1694,9 @@ export default function HomePage() {
               <span className="h-2 w-2 rounded-full bg-lima" aria-hidden="true" />
               <p className="ov-text font-serif-display text-[15px] font-black leading-none tracking-tight">UruGo</p>
               <span className="ov-pill ov-text-muted rounded-full px-1.5 py-0.5 text-[11px] font-medium">
-                {fullRoutes.length}
+                {listRoutes.length}
               </span>
-              <span className="ml-0.5 inline-flex items-center gap-1" role="img" aria-label={`Paso ${flowStep} de 3`}>
+              <span className="ml-0.5 inline-flex items-center gap-1" role="img" aria-label="Progreso del viaje">
                 {[1, 2, 3].map((step) => {
                   const isActive = step === flowStep;
                   const isDone = step < flowStep;
@@ -2053,15 +1828,15 @@ export default function HomePage() {
               type="button"
               onClick={() => setIsSheetOpen(true)}
               className="ov-panel pointer-events-auto inline-flex h-12 items-center gap-2 rounded-2xl border pl-3.5 pr-4 text-[14px] font-semibold shadow-[0_8px_32px_rgba(0,0,0,0.3)] backdrop-blur-xl transition hover:border-lima/40 hover:shadow-[0_8px_32px_rgba(232,93,47,0.15)] active:scale-[0.97]"
-              aria-label={selectedRoute ? `Ruta activa: ${formatRouteLabel(selectedRoute.nombre, selectedRoute.ruta)}` : `Rutas ${fullRoutes.length}, ver rutas disponibles`}
+              aria-label={selectedRoute ? `Ruta activa: ${formatRouteLabel(selectedRoute.name, selectedRoute.name)}` : `Rutas ${listRoutes.length}, ver rutas disponibles`}
             >
               {selectedRoute ? (
                 <>
                   <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: selectedRoute.color }} aria-hidden="true" />
                   <span className="flex min-w-0 flex-col">
-                    <span className="ov-text-muted text-[10px] font-semibold leading-none">{selectedRoute.ruta}</span>
+                    <span className="ov-text-muted text-[10px] font-semibold leading-none">{selectedRoute.name}</span>
                     <span className="ov-text max-w-[120px] truncate text-[13px] leading-snug">
-                      {getRouteDestination(selectedRoute.ruta) ?? selectedRoute.nombre}
+                      {getRouteDestination(selectedRoute.name) ?? selectedRoute.name}
                     </span>
                   </span>
                 </>
@@ -2072,7 +1847,7 @@ export default function HomePage() {
                   </svg>
                   <span className="ov-text">Rutas</span>
                   <span className="ml-0.5 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-lima/20 px-1.5 text-[11px] font-bold text-lima">
-                    {fullRoutes.length}
+                    {listRoutes.length}
                   </span>
                 </>
               )}
@@ -2084,7 +1859,7 @@ export default function HomePage() {
       {/* ── MOBILE ONLY: BottomSheet con lista de rutas ── */}
       <BottomSheet open={isSheetOpen} onOpenChange={setIsSheetOpen} title="Selecciona una ruta">
         <RouteList
-          routes={fullRoutes}
+          routes={listRoutes}
           isLoading={isLoadingData}
           suggestedRouteIds={suggestedRouteIds}
           suggestedRouteDirections={suggestedRouteDirections}

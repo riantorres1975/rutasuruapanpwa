@@ -3,31 +3,16 @@ import { join } from "path";
 
 export const dynamic = "force-dynamic";
 
-type RutaEntry = { id: number; nombre: string; color: string; coordenadas: number[][] };
-type GroupedEntry = { ruta: string; color: string; ida?: number[][]; vuelta?: number[][] };
-type RouteDirection = "ida" | "vuelta";
-
-function normalize(s: string) {
-  return s
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(new RegExp("[\\u0300-\\u036f]", "g"), "")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function getBaseName(nombre: string) {
-  return nombre.replace(/\s*\((ida|vuelta)\)\s*$/i, "").trim();
-}
-
-function getDirection(nombre: string): "ida" | "vuelta" | null {
-  const m = nombre.match(/\((ida|vuelta)\)\s*$/i);
-  return m ? (m[1].toLowerCase() as "ida" | "vuelta") : null;
-}
-
-function isRouteDirection(value: unknown): value is RouteDirection {
-  return value === "ida" || value === "vuelta";
-}
+type ProductionRoute = {
+  id: number;
+  name: string;
+  original_name: string;
+  color: string;
+  corridor_width_m: number;
+  verified: boolean;
+  path: number[][];
+  landmarks: unknown[];
+};
 
 function isAuthorized(request: Request) {
   const expectedToken = process.env.DEBUG_ROUTE_SAVE_TOKEN;
@@ -37,6 +22,16 @@ function isAuthorized(request: Request) {
 
   const auth = request.headers.get("authorization");
   return auth === `Bearer ${expectedToken}`;
+}
+
+function isValidCoord(c: unknown): c is [number, number] {
+  return (
+    Array.isArray(c) && c.length === 2 &&
+    typeof c[0] === "number" && Number.isFinite(c[0]) &&
+    typeof c[1] === "number" && Number.isFinite(c[1]) &&
+    c[0] >= -180 && c[0] <= 180 &&
+    c[1] >= -90 && c[1] <= 90
+  );
 }
 
 export async function POST(request: Request) {
@@ -57,7 +52,7 @@ export async function POST(request: Request) {
     return Response.json({ error: "Datos inválidos: se requiere ruta, direccion y coordenadas" }, { status: 400 });
   }
 
-  if (!isRouteDirection(direccion)) {
+  if (direccion !== "ida" && direccion !== "vuelta") {
     return Response.json({ error: "Dirección inválida: usa ida o vuelta" }, { status: 400 });
   }
 
@@ -65,38 +60,31 @@ export async function POST(request: Request) {
     return Response.json({ error: "Demasiadas coordenadas (máximo 5000)" }, { status: 400 });
   }
 
-  const isValidCoord = (c: unknown): c is [number, number] =>
-    Array.isArray(c) && c.length === 2 &&
-    typeof c[0] === "number" && Number.isFinite(c[0]) &&
-    typeof c[1] === "number" && Number.isFinite(c[1]) &&
-    c[0] >= -180 && c[0] <= 180 &&
-    c[1] >= -90 && c[1] <= 90;
-
   if (!coordenadas.every(isValidCoord)) {
     return Response.json({ error: "Coordenadas inválidas: cada elemento debe ser [lng, lat] con valores finitos dentro del rango" }, { status: 400 });
   }
 
-  console.log(`[save-route] ruta="${ruta}" direccion="${direccion}" pts=${coordenadas.length}`);
+  const produccionPath = join(process.cwd(), "data/rutas_produccion_final.json");
 
-  const rutasPath = join(process.cwd(), "data/rutas.json");
-  const groupedPath = join(process.cwd(), "data/rutas-grouped.json");
-
-  // Buscar en rutas.json por nombre base + dirección
-  let rutas: RutaEntry[];
+  let routes: ProductionRoute[];
   try {
-    rutas = JSON.parse(readFileSync(rutasPath, "utf8"));
+    routes = JSON.parse(readFileSync(produccionPath, "utf8"));
   } catch (err) {
-    console.error("[save-route] failed to read/parse rutas.json:", err);
+    console.error("[save-route] failed to read rutas_produccion_final.json:", err);
     return Response.json({ error: "Error leyendo datos de rutas" }, { status: 500 });
   }
 
-  const idx = rutas.findIndex(
-    (r) => normalize(getBaseName(r.nombre)) === normalize(ruta) && getDirection(r.nombre) === direccion
-  );
+  // Match by name and direction (original_name contains "Vuelta" for reverse direction)
+  const isVuelta = direccion === "vuelta";
+  const idx = routes.findIndex((r) => {
+    const nameMatch = r.name.toLowerCase() === ruta.toLowerCase();
+    const dirMatch = isVuelta ? r.original_name.includes("Vuelta") : !r.original_name.includes("Vuelta");
+    return nameMatch && dirMatch;
+  });
 
   if (idx === -1) {
-    const available = rutas.slice(0, 8).map((r) => `"${r.nombre}"`).join(", ");
-    console.error(`[save-route] NOT FOUND: ruta="${ruta}" dir="${direccion}". norm="${normalize(ruta)}". Available: ${available}`);
+    const available = routes.slice(0, 8).map((r) => `"${r.name}"`).join(", ");
+    console.error(`[save-route] NOT FOUND: ruta="${ruta}" dir="${direccion}". Available: ${available}`);
     return Response.json(
       { error: `Ruta no encontrada: "${ruta}" (${direccion}). Primeros nombres: ${available}` },
       { status: 404 }
@@ -104,27 +92,12 @@ export async function POST(request: Request) {
   }
 
   try {
-    rutas[idx].coordenadas = coordenadas as number[][];
-    writeFileSync(rutasPath, JSON.stringify(rutas, null, 2), { encoding: "utf8" });
+    routes[idx].path = coordenadas as number[][];
+    writeFileSync(produccionPath, JSON.stringify(routes, null, 2), { encoding: "utf8" });
+    console.log(`[save-route] OK ruta="${ruta}" dir="${direccion}" idx=${idx} pts=${coordenadas.length}`);
   } catch (err) {
-    console.error("[save-route] writeFileSync rutas.json failed:", err);
+    console.error("[save-route] writeFileSync failed:", err);
     return Response.json({ error: "Error guardando datos de ruta" }, { status: 500 });
-  }
-
-  // Actualizar rutas-grouped.json
-  try {
-    const grouped: GroupedEntry[] = JSON.parse(readFileSync(groupedPath, "utf8"));
-    const gIdx = grouped.findIndex((g) => normalize(g.ruta) === normalize(ruta));
-    if (gIdx !== -1) {
-      grouped[gIdx][direccion] = coordenadas as number[][];
-      writeFileSync(groupedPath, JSON.stringify(grouped, null, 2), { encoding: "utf8" });
-      console.log(`[save-route] OK ruta="${ruta}" dir="${direccion}" gIdx=${gIdx} pts=${coordenadas.length}`);
-    } else {
-      console.warn(`[save-route] grouped entry not found for "${ruta}" — rutas.json updated but grouped.json not`);
-    }
-  } catch (err) {
-    console.error("[save-route] grouped.json update failed:", err);
-    return Response.json({ error: "Error actualizando datos agrupados de ruta" }, { status: 500 });
   }
 
   return Response.json({ ok: true, ruta, direccion, puntos: coordenadas.length });

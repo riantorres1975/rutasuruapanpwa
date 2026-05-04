@@ -26,7 +26,7 @@ export async function GET() {
   return Response.json(routes, {
     headers: {
       "Content-Type": "application/json",
-      "Cache-Control": "public, max-age=3600, s-maxage=86400, stale-while-revalidate=3600",
+      "Cache-Control": "no-cache, must-revalidate",
     },
   });
 }
