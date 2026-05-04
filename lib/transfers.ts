@@ -1,4 +1,5 @@
 import type { Coordinates, ResolvedRouteData } from "@/lib/types";
+import type { PolylineRoute } from "@/lib/routeMatcher";
 import { haversineMeters } from "@/lib/geo";
 
 // Max walking distance to board/alight a route (meters)
@@ -167,6 +168,119 @@ export function computeTransferOptions(
   const deduped: TransferOption[] = [];
   for (const r of results) {
     const key = `${r.routeAId}-${r.routeBId}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      deduped.push(r);
+    }
+    if (deduped.length === 5) break;
+  }
+
+  return deduped;
+}
+
+/**
+ * Transfer engine variant for the new ProductionRoute data structure.
+ *
+ * Identical algorithm to computeTransferOptions but operates on PolylineRoute[]
+ * (rutas_produccion_final.json), where coordinates live in `path` instead of
+ * `coordenadas` and per-route proximity is driven by `corridor_width_m`.
+ *
+ * Deduplication uses routeAName+routeBName so that ida/vuelta variants of the
+ * same named route don't produce duplicate suggestions in the UI.
+ */
+export function computeTransferOptionsFromPolylines(
+  routes: PolylineRoute[],
+  origin: Coordinates,
+  destination: Coordinates
+): TransferOption[] {
+  const fromOrigin: Array<{ route: PolylineRoute; indexA: number }> = [];
+  const toDestination: Array<{ route: PolylineRoute; indexB: number }> = [];
+
+  for (const route of routes) {
+    const threshold = route.corridor_width_m;
+    const cA = closestOnPath(origin, route.path);
+    if (cA.distance <= threshold) {
+      fromOrigin.push({ route, indexA: cA.index });
+    }
+    const cB = closestOnPath(destination, route.path);
+    if (cB.distance <= threshold) {
+      toDestination.push({ route, indexB: cB.index });
+    }
+  }
+
+  const results: TransferOption[] = [];
+  const originToDestDist = haversineMeters(origin, destination);
+
+  for (const { route: rA, indexA } of fromOrigin) {
+    for (let xi = indexA; xi < rA.path.length; xi++) {
+      const xPoint = rA.path[xi];
+
+      if (haversineMeters(xPoint, destination) > originToDestDist * MAX_PROGRESS_RATIO) continue;
+
+      for (const { route: rB, indexB } of toDestination) {
+        if (rA.id === rB.id) continue;
+
+        let bestJ = -1;
+        let bestDist = TRANSFER_WALK_METERS + 1;
+        const xLng = xPoint[0];
+        const xLat = xPoint[1];
+
+        for (let j = 0; j < indexB; j++) {
+          const bCoord = rB.path[j];
+          if (Math.abs(bCoord[1] - xLat) > LAT_TOL) continue;
+          if (Math.abs(bCoord[0] - xLng) > LNG_TOL) continue;
+          const d = haversineMeters(xPoint, bCoord);
+          if (d < bestDist) {
+            bestDist = d;
+            bestJ = j;
+          }
+        }
+
+        if (bestJ === -1) continue;
+
+        const segA = rA.path.slice(indexA, xi + 1);
+        const segB = rB.path.slice(bestJ, indexB + 1);
+
+        if (segA.length < 2 || segB.length < 2) continue;
+
+        const lenA = segmentLength(segA);
+        if (lenA < MIN_SEG_A_METERS) continue;
+
+        const lenB = segmentLength(segB);
+
+        const walkPenalty =
+          bestDist <= INTERSECTION_METERS
+            ? bestDist * 0.5
+            : INTERSECTION_METERS * 0.5 + (bestDist - INTERSECTION_METERS) * 3;
+
+        const score = lenA + walkPenalty + lenB;
+
+        results.push({
+          routeAId: rA.id,
+          routeBId: rB.id,
+          routeAName: rA.name,
+          routeBName: rB.name,
+          routeAStartIndex: indexA,
+          routeATransferIndex: xi,
+          routeBTransferIndex: bestJ,
+          routeBEndIndex: indexB,
+          transferPoint: xPoint,
+          segmentA: segA,
+          segmentB: segB,
+          walkMeters: bestDist,
+          score
+        });
+      }
+    }
+  }
+
+  results.sort((a, b) => a.score - b.score);
+
+  // Deduplicate by name pair — multiple directions share the same name
+  const seen = new Set<string>();
+  const deduped: TransferOption[] = [];
+  for (const r of results) {
+    const key = `${r.routeAName}|${r.routeBName}`;
     if (!seen.has(key)) {
       seen.add(key);
       deduped.push(r);

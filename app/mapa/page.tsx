@@ -17,7 +17,7 @@ import RouteSchedule from "@/components/RouteSchedule";
 import { useShareRoute } from "@/hooks/useShareRoute";
 import { formatRouteLabel, getRouteDestination } from "@/lib/route-names";
 import type { Coordinates, GroupedRouteData, ProductionRoute, ResolvedRouteData, RouteDirection } from "@/lib/types";
-import { computeTransferOptions } from "@/lib/transfers";
+import { computeTransferOptions, computeTransferOptionsFromPolylines } from "@/lib/transfers";
 import type { TransferOption } from "@/lib/transfers";
 import { haversineMeters } from "@/lib/geo";
 import { findBestRoutes, getRankedRoutes, type PolylineRoute } from "@/lib/routeMatcher";
@@ -1013,19 +1013,35 @@ export default function HomePage() {
       setAlternativeSuggestedRouteIds(nextAlternativeIds);
       let nextTransfers: TransferOption[] = [];
       if (nextSuggestions.length === 0) {
-        // Expand routes with both directions so transfers can use either direction
-        const bothDirs: ResolvedRouteData[] = [];
-        for (const route of fullRoutes) {
-          bothDirs.push(route);
-          const grouped = groupedRoutes.find((g) => g.ruta === route.ruta);
-          if (!grouped) continue;
-          const oppositeDir: RouteDirection = route.direccion === "ida" ? "vuelta" : "ida";
-          const oppositeCoords = oppositeDir === "ida" ? grouped.ida ?? [] : grouped.vuelta ?? [];
-          if (oppositeCoords.length > 1) {
-            bothDirs.push({ ...route, coordenadas: oppositeCoords, direccion: oppositeDir });
+        if (useNewRouting && polylineRoutes.length > 0) {
+          // rutas_produccion_final.json already includes both directions as separate entries
+          nextTransfers = computeTransferOptionsFromPolylines(
+            polylineRoutes.map((r) => ({
+              id: r.id,
+              name: r.name,
+              color: r.color,
+              corridor_width_m: r.corridor_width_m,
+              path: r.path,
+              direccion: r.original_name.includes("Vuelta") ? "vuelta" : "ida",
+            })),
+            originPoint,
+            destinationPoint
+          );
+        } else {
+          // Expand routes with both directions so transfers can use either direction
+          const bothDirs: ResolvedRouteData[] = [];
+          for (const route of fullRoutes) {
+            bothDirs.push(route);
+            const grouped = groupedRoutes.find((g) => g.ruta === route.ruta);
+            if (!grouped) continue;
+            const oppositeDir: RouteDirection = route.direccion === "ida" ? "vuelta" : "ida";
+            const oppositeCoords = oppositeDir === "ida" ? grouped.ida ?? [] : grouped.vuelta ?? [];
+            if (oppositeCoords.length > 1) {
+              bothDirs.push({ ...route, coordenadas: oppositeCoords, direccion: oppositeDir });
+            }
           }
+          nextTransfers = computeTransferOptions(bothDirs, originPoint, destinationPoint);
         }
-        nextTransfers = computeTransferOptions(bothDirs, originPoint, destinationPoint);
       }
       setTransfers(nextTransfers);
       setIsCalculatingSuggestions(false);
@@ -1247,7 +1263,7 @@ export default function HomePage() {
                 setActivePoint("origin");
                 setShowHint(true);
               }}
-              className={`inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl border px-3 text-[13px] font-semibold transition active:scale-[0.97] ${
+              className={`inline-flex h-10 min-w-0 flex-1 items-center gap-1.5 rounded-xl border px-3 text-[13px] font-semibold transition active:scale-[0.97] ${
                 originPoint
                   ? "border-lima/50 bg-lima/15 text-lima"
                   : activePoint === "origin"
@@ -1268,7 +1284,7 @@ export default function HomePage() {
                 <path d="M12 21s6-5.7 6-11a6 6 0 1 0-12 0c0 5.3 6 11 6 11Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                 <circle cx="12" cy="10" r="2" fill="currentColor" />
               </svg>
-              <span className="truncate">
+              <span className="min-w-0 flex-1 truncate">
                 {manualOrigin
                   ? "Origen ajustado"
                   : geoAccuracyWarn
@@ -1278,12 +1294,12 @@ export default function HomePage() {
                       : "Origen"}
               </span>
               {originPoint && !geoAccuracyWarn && (
-                <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 shrink-0 text-lima" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" className="ml-auto h-3.5 w-3.5 shrink-0 text-lima" aria-hidden="true">
                   <path d="M5 12l5 5L20 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               )}
               {geoAccuracyWarn && !manualOrigin && (
-                <span className="h-2 w-2 shrink-0 rounded-full bg-amber-400" aria-hidden="true" />
+                <span className="ml-auto h-2 w-2 shrink-0 rounded-full bg-amber-400" aria-hidden="true" />
               )}
             </button>
 
@@ -1300,7 +1316,7 @@ export default function HomePage() {
                 setShowHint(true);
               }}
               disabled={!originPoint}
-              className={`inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl border px-3 text-[13px] font-semibold transition active:scale-[0.97] disabled:opacity-40 ${
+              className={`inline-flex h-10 min-w-0 flex-1 items-center gap-1.5 rounded-xl border px-3 text-[13px] font-semibold transition active:scale-[0.97] disabled:opacity-40 ${
                 destinationPoint
                   ? "border-lima/50 bg-lima/15 text-lima"
                   : activePoint === "destination"
@@ -1313,9 +1329,9 @@ export default function HomePage() {
                 <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.8" />
                 <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.5" />
               </svg>
-              <span className="truncate">{destinationPoint ? "Destino marcado" : "Destino"}</span>
+              <span className="min-w-0 flex-1 truncate">{destinationPoint ? "Destino marcado" : "Destino"}</span>
               {destinationPoint && (
-                <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 shrink-0 text-lima" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" className="ml-auto h-3.5 w-3.5 shrink-0 text-lima" aria-hidden="true">
                   <path d="M5 12l5 5L20 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               )}

@@ -426,9 +426,7 @@ El campo existe pero está vacío. Agregar puntos de referencia (colonias,
 cruces, paradas conocidas) permitirá mejorar la precisión del matching
 y dar retroalimentación textual al usuario.
 
-**3. Transfers con el nuevo sistema**
-`computeTransferOptions` sigue usando el motor antiguo. Si el nuevo sistema
-se activa por defecto, evaluar migración.
+**3. ~~Transfers con el nuevo sistema~~** — RESUELTO (ver entrada 2026-05-04 abajo)
 
 **4. `getRouteIntersections` en UI**
 Base lista en `lib/routeIntersections.ts`. El siguiente paso sería mostrar
@@ -486,4 +484,99 @@ components/
 
 **Feature flags disponibles en localStorage:**
 - `debug` = `"true"` → modo debug del mapa
-- `useNewRouting` = `"true"` → nuevo motor de matching por polylines
+- `useNewRouting` = `"true"` → nuevo motor de matching + motor de transbordos por polylines
+
+---
+
+## [2026-05-04] Motor de transbordos migrado a nueva estructura de datos
+
+**Rama:** `experimental`
+**Archivos modificados:** `lib/transfers.ts`, `app/mapa/page.tsx`
+
+### Problema
+
+Cuando `useNewRouting = true`, el motor de rutas directas ya usaba
+`rutas_produccion_final.json` vía `findBestRoutes`. Sin embargo, cuando no
+se encontraba ruta directa y se activaba el motor de transbordos, este
+seguía usando la estructura antigua (`ResolvedRouteData` / `rutas-grouped.json`),
+creando una inconsistencia entre fuentes de datos.
+
+### Cambios
+
+#### `lib/transfers.ts`
+
+**Nueva función exportada: `computeTransferOptionsFromPolylines`**
+
+```ts
+export function computeTransferOptionsFromPolylines(
+  routes: PolylineRoute[],
+  origin: Coordinates,
+  destination: Coordinates
+): TransferOption[]
+```
+
+Mismo algoritmo que `computeTransferOptions` (pre-filtro, progreso geográfico,
+pre-rechazo lat/lng, penalidad no lineal, top-5) pero adaptado a la nueva
+estructura:
+
+| Campo | Antes (`ResolvedRouteData`) | Ahora (`PolylineRoute`) |
+|---|---|---|
+| Coordenadas | `route.coordenadas` | `route.path` |
+| Nombre | `route.nombre` | `route.name` |
+| Threshold de proximidad | `PROXIMITY_METERS = 550` (fijo) | `route.corridor_width_m` (por ruta) |
+| Clave de deduplicación | `routeAId-routeBId` | `routeAName\|routeBName` |
+
+La deduplicación cambia a nombre porque en `rutas_produccion_final.json` ida y
+vuelta del mismo recorrido comparten el mismo `name` pero tienen IDs distintos.
+Deduplicar por ID hubiera permitido mostrar `"Ruta 1 → Ruta 2"` dos veces
+(una por dirección).
+
+**Import agregado:** `PolylineRoute` desde `@/lib/routeMatcher`.
+
+`computeTransferOptions` original: **sin cambios** — sigue siendo el path por defecto.
+
+---
+
+#### `app/mapa/page.tsx`
+
+**Import actualizado:**
+```ts
+import { computeTransferOptions, computeTransferOptionsFromPolylines } from "@/lib/transfers";
+```
+
+**Bloque de transbordos bifurcado:**
+
+```ts
+if (nextSuggestions.length === 0) {
+  if (useNewRouting && polylineRoutes.length > 0) {
+    // rutas_produccion_final.json ya incluye ambas direcciones como entradas separadas
+    nextTransfers = computeTransferOptionsFromPolylines(
+      polylineRoutes.map((r) => ({
+        id: r.id, name: r.name, color: r.color,
+        corridor_width_m: r.corridor_width_m, path: r.path,
+        direccion: r.original_name.includes("Vuelta") ? "vuelta" : "ida",
+      })),
+      originPoint, destinationPoint
+    );
+  } else {
+    // Path original: expande ambas direcciones desde groupedRoutes
+    const bothDirs: ResolvedRouteData[] = [...];
+    nextTransfers = computeTransferOptions(bothDirs, originPoint, destinationPoint);
+  }
+}
+```
+
+No hay expansión manual de direcciones opuestas en el nuevo path porque
+`rutas_produccion_final.json` ya incluye entradas distintas para ida y vuelta.
+
+### Estado
+
+- [x] TypeScript compila sin errores (`tsc --noEmit`)
+- [x] `computeTransferOptionsFromPolylines` implementada y exportada
+- [x] Bifurcación en `page.tsx` según `useNewRouting`
+- [ ] Prueba manual comparando resultados de transbordos entre sistemas
+
+### Pendiente actualizado
+
+- **`corridor_width_m`**: Todas las rutas tienen `150` actualmente. Ajustar
+  por ruta para afinar el pre-filtro de transbordos además del matching directo.
