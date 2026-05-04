@@ -13,6 +13,7 @@ type RouteListProps = {
   suggestedRouteIds: number[];
   suggestedRouteDirections?: Map<number, RouteDirection>;
   bestSuggestedRouteId: number | null;
+  alternativeSuggestedRouteIds?: number[];
   nearbyRouteIds: number[];
   selectedRouteId: number | null;
   onSelectRoute: (routeId: number) => void;
@@ -26,6 +27,7 @@ export default function RouteList({
   suggestedRouteIds,
   suggestedRouteDirections,
   bestSuggestedRouteId,
+  alternativeSuggestedRouteIds = [],
   nearbyRouteIds,
   selectedRouteId,
   onSelectRoute,
@@ -91,6 +93,10 @@ export default function RouteList({
   const suggestedRankMap = useMemo(
     () => new Map(suggestedRouteIds.map((id, i) => [id, i])),
     [suggestedRouteIds]
+  );
+  const alternativeSuggestedSet = useMemo(
+    () => new Set(alternativeSuggestedRouteIds),
+    [alternativeSuggestedRouteIds]
   );
   const hasSuggested = suggestedRouteIds.length > 0;
 
@@ -281,6 +287,7 @@ export default function RouteList({
             const isSelected = selectedRouteId === route.id;
             const isSuggested = suggestedRouteIds.includes(route.id);
             const isBestSuggestion = bestSuggestedRouteId === route.id;
+            const isAlternativeSuggestion = !isBestSuggestion && alternativeSuggestedSet.has(route.id);
             const nearbyRank = nearbyRankMap.get(route.id);
             const isNearby = nearbyRank !== undefined;
             const suggestionDir = suggestedRouteDirections?.get(route.id);
@@ -365,6 +372,11 @@ export default function RouteList({
                     {isBestSuggestion && (
                       <span className="rounded-full bg-lima/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-lima">
                         MEJOR
+                      </span>
+                    )}
+                    {isAlternativeSuggestion && (
+                      <span className="rounded-full bg-amber-500/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-amber-400">
+                        ALTERNATIVA
                       </span>
                     )}
                     {isSuggested && suggestionDir !== undefined && (

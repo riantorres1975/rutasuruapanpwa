@@ -4,7 +4,14 @@
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
       "Bash(git checkout *)",
-      "Bash(git cherry-pick *)"
+      "Bash(git cherry-pick *)",
+      "Bash(npx hyperframes *)",
+      "Bash(Get-ChildItem -Recurse -Depth 3 -Directory)",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(Sort-Object)",
+      "PowerShell(cd \"C:\\\\Users\\\\river\\\\OneDrive\\\\Escritorio\\\\rutasuruapanpwa\"; Get-ChildItem -Recurse -Depth 3 | Where-Object {$_.PSIsContainer} | Select-Object -ExpandProperty FullName | Sort-Object)",
+      "Bash(awk '/^  \\\\{$/{flag=1; start=NR} flag && /^  \\\\},?$/{flag=0; if\\(NR-start<30\\){print start\"-\"NR; print \"\"} next} flag' data/rutas-grouped.json)",
+      "Bash(npx tsx *)"
     ]
   }
 }

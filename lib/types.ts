@@ -2,6 +2,23 @@ export type Coordinates = [number, number];
 
 export type RouteDirection = "ida" | "vuelta";
 
+export type ProductionRouteLandmark = {
+  name: string;
+  point: Coordinates;
+};
+
+/** Shape of each entry in data/rutas_produccion_final.json */
+export type ProductionRoute = {
+  id: number;
+  name: string;
+  original_name: string;
+  color: string;
+  corridor_width_m: number;
+  verified: boolean;
+  path: Coordinates[];
+  landmarks: ProductionRouteLandmark[];
+};
+
 export type RouteData = {
   id: number;
   nombre: string;
