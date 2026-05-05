@@ -1,4 +1,4 @@
-import type { Coordinates } from "@/lib/types";
+import type { Coordinates, ProductionRouteLandmark } from "@/lib/types";
 
 // ─── Public types ─────────────────────────────────────────────────────────────
 
@@ -9,6 +9,7 @@ export type PolylineRoute = {
   corridor_width_m: number;
   path: Coordinates[];               // [lng, lat][]
   direccion?: "ida" | "vuelta";
+  landmarks?: ProductionRouteLandmark[];
 };
 
 export type ClosestOnPath = {

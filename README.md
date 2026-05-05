@@ -38,6 +38,7 @@ Los sistemas de transporte público en ciudades intermedias de México carecen d
 | 🚀 Onboarding | Overlay de bienvenida explicativo usando `localStorage` |
 | 📲 Compartir Ruta | Integración con `navigator.share()` nativo y fallback al portapapeles |
 | 🏷️ Nombres descriptivos | Cada ruta se identifica por su destino (ej. "Jucutacato · Ruta 24") en lista, mapa y link compartido |
+| 🏛️ Landmarks y búsqueda por referencia | Indicaciones muestran puntos de referencia cercanos ("Sube cerca de Central de Autobuses"); el buscador sugiere rutas que pasan por un landmark conocido |
 | 🔎 Contexto desde landing | Los CTAs y chips envían `?destino=...`; el mapa muestra una guía contextual para marcar origen y destino |
 | 🔄 Ida / Vuelta | Cambio dinámico de dirección con re-render reactivo; botón de sugerencia rápida al no encontrar ruta directa |
 | 🎯 Motor de sugerencias A→B | Algoritmo Haversine para matching local sin APIs externas |
@@ -393,6 +394,7 @@ Public transit in mid-size Mexican cities lacks accessible digital information. 
 | 🚀 Onboarding Flow | Step-by-step explanatory overlay using `localStorage` |
 | 📲 Share Routing | Native integration via `navigator.share()` with clipboard fallback |
 | 🏷️ Descriptive names | Each route is identified by its destination (e.g. "Jucutacato · Ruta 24") in list, map, and shared link; search works by number or destination |
+| 🏛️ Landmarks & reference search | Directions show nearby landmarks ("Board near Central de Autobuses"); search suggests routes passing through a known landmark |
 | 🔎 Landing context | Landing CTAs and chips send `?destino=...`; the map shows contextual guidance for placing origin and destination |
 | 🔄 Outbound / Return | Dynamic direction toggle with reactive re-render; quick-flip button when no direct route found |
 | 🎯 A→B Suggestion Engine | Haversine-based local matching, no external APIs |

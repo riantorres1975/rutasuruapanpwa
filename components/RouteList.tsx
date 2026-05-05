@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useDeferredValue, useMemo, useState } from "react";
 import TelefericoSection from "@/components/TelefericoSection";
 import { getRouteDestination, getRouteSearchTerms } from "@/lib/route-names";
-import type { ResolvedRouteData, RouteDirection } from "@/lib/types";
+import type { ResolvedRouteData, RouteDirection, ProductionRouteLandmark } from "@/lib/types";
 
 type RouteListProps = {
   routes: ResolvedRouteData[];
@@ -16,6 +16,7 @@ type RouteListProps = {
   alternativeSuggestedRouteIds?: number[];
   nearbyRouteIds: number[];
   selectedRouteId: number | null;
+  landmarksByRouteName?: Map<string, ProductionRouteLandmark[]>;
   onSelectRoute: (routeId: number) => void;
   onClearSelection?: () => void;
   onShowTeleferico?: () => void;
@@ -30,6 +31,7 @@ export default function RouteList({
   alternativeSuggestedRouteIds = [],
   nearbyRouteIds,
   selectedRouteId,
+  landmarksByRouteName,
   onSelectRoute,
   onClearSelection,
   onShowTeleferico
@@ -41,13 +43,47 @@ export default function RouteList({
 
   const searchableRoutes = useMemo(
     () =>
-      routes.map((route) => ({
-        ...route,
-        _destino: getRouteDestination(route.ruta) ?? "",
-        _terminos: getRouteSearchTerms(route.ruta).join(" ")
-      })),
-    [routes]
+      routes.map((route) => {
+        const landmarks = landmarksByRouteName?.get(route.ruta) ?? [];
+        return {
+          ...route,
+          _destino: getRouteDestination(route.ruta) ?? "",
+          _terminos: getRouteSearchTerms(route.ruta).join(" "),
+          _landmarks: landmarks.map((lm) => lm.name).join(" ")
+        };
+      }),
+    [routes, landmarksByRouteName]
   );
+
+  // Inverted index: landmark name → set of route names that have it
+  const landmarkRouteMap = useMemo(() => {
+    const map = new Map<string, Set<string>>();
+    if (!landmarksByRouteName) return map;
+    for (const [routeName, landmarks] of landmarksByRouteName) {
+      for (const lm of landmarks) {
+        const key = lm.name.toLowerCase();
+        let set = map.get(key);
+        if (!set) {
+          set = new Set();
+          map.set(key, set);
+        }
+        set.add(routeName);
+      }
+    }
+    return map;
+  }, [landmarksByRouteName]);
+
+  // Find which landmark the query matched (for badge display)
+  const matchedLandmark = useMemo(() => {
+    if (!normalizedQuery) return null;
+    const q = normalizedQuery.toLowerCase();
+    for (const [landmarkName] of landmarkRouteMap) {
+      if (landmarkName.includes(q) || q.includes(landmarkName)) {
+        return landmarkName;
+      }
+    }
+    return null;
+  }, [normalizedQuery, landmarkRouteMap]);
 
   const fuse = useMemo(
     () =>
@@ -55,7 +91,8 @@ export default function RouteList({
         keys: [
           { name: "nombre", weight: 0.4 },
           { name: "_destino", weight: 0.4 },
-          { name: "_terminos", weight: 0.2 }
+          { name: "_terminos", weight: 0.2 },
+          { name: "_landmarks", weight: 0.3 }
         ],
         threshold: 0.35,
         minMatchCharLength: 1,
@@ -100,10 +137,38 @@ export default function RouteList({
   );
   const hasSuggested = suggestedRouteIds.length > 0;
 
+  // Set of route names that pass through the matched landmark
+  const landmarkMatchingRouteNames = useMemo(() => {
+    if (!matchedLandmark || !landmarksByRouteName) return new Set<string>();
+    const names = new Set<string>();
+    for (const [routeName, landmarks] of landmarksByRouteName) {
+      if (landmarks.some((lm) => lm.name.toLowerCase() === matchedLandmark)) {
+        names.add(routeName);
+      }
+    }
+    return names;
+  }, [matchedLandmark, landmarksByRouteName]);
+
   const filteredRoutes = useMemo(() => {
     const base = normalizedQuery
       ? fuse.search(normalizedQuery).map((result) => result.item)
       : searchableRoutes;
+
+    // Pin landmark-matching routes to top when searching by landmark
+    if (normalizedQuery && landmarkMatchingRouteNames.size > 0) {
+      const landmark: ResolvedRouteData[] = [];
+      const rest: ResolvedRouteData[] = [];
+
+      for (const route of base) {
+        if (landmarkMatchingRouteNames.has(route.ruta)) {
+          landmark.push(route);
+        } else {
+          rest.push(route);
+        }
+      }
+
+      return [...landmark, ...rest];
+    }
 
     // When there are suggestions, pin them to top (best first), then nearby, then rest
     if (hasSuggested && !normalizedQuery) {
@@ -144,7 +209,7 @@ export default function RouteList({
     nearby.sort((a, b) => (nearbyRankMap.get(a.id) ?? 0) - (nearbyRankMap.get(b.id) ?? 0));
 
     return [...nearby, ...rest];
-  }, [normalizedQuery, searchableRoutes, hasNearby, hasSuggested, suggestedRankMap, nearbyRankMap, fuse]);
+  }, [normalizedQuery, searchableRoutes, hasNearby, hasSuggested, suggestedRankMap, nearbyRankMap, landmarkMatchingRouteNames, fuse]);
 
   return (
     <div className="space-y-5">
@@ -191,7 +256,7 @@ export default function RouteList({
               type="text"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Colonia, destino o número de ruta…"
+              placeholder="Colonia, destino, punto de referencia o número de ruta…"
               style={{ background: "var(--ov-pill-bg)", color: "var(--ov-text)", borderColor: "var(--ov-border)" }}
               className="h-12 w-full rounded-2xl border pl-10 pr-11 text-sm outline-none transition focus:border-lima/40 focus:ring-1 focus:ring-lima/10 [&::placeholder]:opacity-40"
             />
@@ -290,6 +355,7 @@ export default function RouteList({
             const isAlternativeSuggestion = !isBestSuggestion && alternativeSuggestedSet.has(route.id);
             const nearbyRank = nearbyRankMap.get(route.id);
             const isNearby = nearbyRank !== undefined;
+            const isLandmarkMatch = normalizedQuery && landmarkMatchingRouteNames.has(route.ruta);
             const suggestionDir = suggestedRouteDirections?.get(route.id);
 
             // Divider between nearby block and rest (only first non-nearby item)
@@ -312,20 +378,22 @@ export default function RouteList({
                   type="button"
                   onClick={() => onSelectRoute(route.id)}
                   style={
-                    !isSelected && !isNearby && !isBestSuggestion && !isSuggested
+                    !isSelected && !isLandmarkMatch && !isNearby && !isBestSuggestion && !isSuggested
                       ? { borderColor: "var(--ov-border)", background: "var(--surface)" }
                       : undefined
                   }
                   className={`flex min-h-16 w-full items-stretch justify-between rounded-2xl border px-2 py-3 text-left transition active:scale-[0.995] ${
                     isSelected
                       ? "border-lima/70 bg-lima/10 shadow-[0_4px_24px_rgba(184,232,64,0.08)]"
-                      : isNearby
-                        ? "border-lima/50 bg-lima/8"
-                        : isBestSuggestion
-                          ? "border-emerald-400/70 bg-emerald-500/10"
-                          : isSuggested
-                            ? "border-lima/30 bg-lima/5"
-                            : "hover:border-lima/20"
+                      : isLandmarkMatch
+                        ? "border-teal-400/60 bg-teal-500/8"
+                        : isNearby
+                          ? "border-lima/50 bg-lima/8"
+                          : isBestSuggestion
+                            ? "border-emerald-400/70 bg-emerald-500/10"
+                            : isSuggested
+                              ? "border-lima/30 bg-lima/5"
+                              : "hover:border-lima/20"
                   }`}
                 >
                   <span className="w-1 self-stretch rounded-full" style={{ backgroundColor: route.color }} />
@@ -350,13 +418,19 @@ export default function RouteList({
                             <span className="ov-text-muted block text-[11px]">
                               <span className="font-semibold">{route.ruta}</span>
                               <span className="mx-1.5 opacity-40">·</span>
-                              {availability}
+                              {isLandmarkMatch && matchedLandmark
+                                ? <span className="text-teal-400">Pasa por: {matchedLandmark.charAt(0).toUpperCase() + matchedLandmark.slice(1)}</span>
+                                : availability}
                             </span>
                           </>
                         ) : (
                           <>
                             <span className="ov-text block font-display text-sm font-bold">{route.nombre}</span>
-                            <span className="ov-text-muted block text-xs">{availability}</span>
+                            <span className="ov-text-muted block text-[11px]">
+                              {isLandmarkMatch && matchedLandmark
+                                ? <span className="text-teal-400">Pasa por: {matchedLandmark.charAt(0).toUpperCase() + matchedLandmark.slice(1)}</span>
+                                : availability}
+                            </span>
                           </>
                         );
                       })()}
@@ -364,6 +438,11 @@ export default function RouteList({
                   </span>
 
                   <span className="ml-2 flex items-center gap-1.5">
+                    {isLandmarkMatch && (
+                      <span className="rounded-full bg-teal-500/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-teal-400">
+                        POR AQUÍ
+                      </span>
+                    )}
                     {isNearby && !isSelected && (
                       <span className="rounded-full bg-lima/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-lima">
                         CERCANA

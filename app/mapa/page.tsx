@@ -16,7 +16,7 @@ import RouteList from "@/components/RouteList";
 import RouteSchedule from "@/components/RouteSchedule";
 import { useShareRoute } from "@/hooks/useShareRoute";
 import { formatRouteLabel, getRouteDestination } from "@/lib/route-names";
-import type { Coordinates, ProductionRoute, ResolvedRouteData, RouteDirection } from "@/lib/types";
+import type { Coordinates, ProductionRoute, ProductionRouteLandmark, ResolvedRouteData, RouteDirection } from "@/lib/types";
 import { computeTransferOptionsFromPolylines } from "@/lib/transfers";
 import type { TransferOption } from "@/lib/transfers";
 import { haversineMeters } from "@/lib/geo";
@@ -251,6 +251,24 @@ function getEstimatedMinutes(segment: Coordinates[]) {
   const kilometers = getSegmentLengthMeters(segment) / 1000;
   const minutes = (kilometers / AVG_TRIP_SPEED_KMH) * 60;
   return Math.max(4, Math.round(minutes));
+}
+
+function findNearestLandmark(
+  point: Coordinates,
+  landmarks: ProductionRouteLandmark[] | undefined,
+  maxDistM: number
+): string | null {
+  if (!landmarks?.length) return null;
+  let best: string | null = null;
+  let bestDist = maxDistM;
+  for (const lm of landmarks) {
+    const d = haversineMeters(point, lm.point);
+    if (d < bestDist) {
+      bestDist = d;
+      best = lm.name;
+    }
+  }
+  return best;
 }
 
 export default function HomePage() {
@@ -650,6 +668,7 @@ export default function HomePage() {
       corridor_width_m: r.corridor_width_m,
       path: r.path,
       direccion: r.original_name.includes("Vuelta") ? "vuelta" : "ida",
+      landmarks: r.landmarks,
     })),
     [polylineRoutes]
   );
@@ -658,6 +677,16 @@ export default function HomePage() {
     () => new Map(polylineRoutes.map((route) => [route.id, route])),
     [polylineRoutes]
   );
+
+  const landmarksByRouteName = useMemo(() => {
+    const map = new Map<string, ProductionRouteLandmark[]>();
+    for (const r of polylineRoutes) {
+      if (r.landmarks?.length && !map.has(r.name)) {
+        map.set(r.name, r.landmarks);
+      }
+    }
+    return map;
+  }, [polylineRoutes]);
 
   const handleSelectRoute = useCallback((routeId: number) => {
     setSharedRouteSegment(null);
@@ -874,11 +903,19 @@ export default function HomePage() {
     }
 
     if (bestSuggestion) {
+      const bestRoute = polylineRoutesById.get(bestSuggestion.routeId);
+      const originLandmark = originPoint
+        ? findNearestLandmark(originPoint, bestRoute?.landmarks, 150)
+        : null;
+      const destLandmark = destinationPoint
+        ? findNearestLandmark(destinationPoint, bestRoute?.landmarks, 150)
+        : null;
+
       return {
         title: "Indicaciones",
         items: [
-          `Sube a ${formatRouteLabel(bestSuggestion.ruta)} cerca de tu ubicación (~${Math.round(bestSuggestion.distanciaA)} m a pie).`,
-          `Baja cerca de tu destino (~${Math.round(bestSuggestion.distanciaB)} m a pie).`,
+          `Sube a ${formatRouteLabel(bestSuggestion.ruta)} cerca de ${originLandmark ?? "tu ubicación"} (~${Math.round(bestSuggestion.distanciaA)} m a pie).`,
+          `Baja cerca de ${destLandmark ?? "tu destino"} (~${Math.round(bestSuggestion.distanciaB)} m a pie).`,
           `Tiempo estimado en ruta: ${bestSuggestionEta ?? getEstimatedMinutes(bestSuggestion.segment)} min.`
         ]
       };
@@ -906,7 +943,7 @@ export default function HomePage() {
       title: "Sin ruta directa",
       items: ["Mueve el origen o destino a una avenida, colonia o punto conocido cercano para intentar de nuevo."]
     };
-  }, [bestSuggestion, bestSuggestionEta, flowStep, isCalculatingSuggestions, selectedTransfer, transfers]);
+  }, [bestSuggestion, bestSuggestionEta, destinationPoint, flowStep, isCalculatingSuggestions, originPoint, polylineRoutesById, selectedTransfer, transfers]);
   const hintMessage = useMemo(() => {
     // Editing origin while destination already exists (step 3 re-edit)
     if (activePoint === "origin" && destinationPoint) {
@@ -1573,6 +1610,7 @@ export default function HomePage() {
             alternativeSuggestedRouteIds={alternativeSuggestedRouteIds}
             nearbyRouteIds={nearbyRouteIds}
             selectedRouteId={selectedRouteId}
+            landmarksByRouteName={landmarksByRouteName}
             onClearSelection={handleClearSelection}
             onShowTeleferico={() => { setShowTeleferico(true); }}
             onSelectRoute={handleSelectRoute}
@@ -1867,6 +1905,7 @@ export default function HomePage() {
           alternativeSuggestedRouteIds={alternativeSuggestedRouteIds}
           nearbyRouteIds={nearbyRouteIds}
           selectedRouteId={selectedRouteId}
+          landmarksByRouteName={landmarksByRouteName}
           onClearSelection={() => {
             handleClearSelection();
             setIsSheetOpen(false);

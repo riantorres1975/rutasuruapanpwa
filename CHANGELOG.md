@@ -22,6 +22,79 @@ Ordenado del más reciente al más antiguo.
 
 ---
 
+## [2026-05-04] Feature: integrar landmarks en UI — indicaciones y búsqueda
+
+**Rama:** `experimental`
+**Archivos modificados:**
+- `lib/routeMatcher.ts`
+- `app/mapa/page.tsx`
+- `components/RouteList.tsx`
+
+### Qué se hizo
+
+Se integraron los landmarks (puntos de referencia) de `rutas_produccion_final.json`
+en la interfaz de usuario, tanto en las indicaciones de ruta como en el buscador
+de rutas. Las rutas sin landmarks no se ven afectadas (graceful degradation).
+
+### Cambios por archivo
+
+#### `lib/routeMatcher.ts`
+
+- `PolylineRoute` ahora incluye campo opcional `landmarks?: ProductionRouteLandmark[]`.
+- Los landmarks fluyen desde el JSON hasta el motor de matching sin alterar el scoring.
+
+#### `app/mapa/page.tsx`
+
+- **`routesForMatching`**: incluye `landmarks` de cada `ProductionRoute`.
+- **`findNearestLandmark(point, landmarks, maxDistM)`**: helper que busca el
+  landmark más cercano a un punto dentro de un radio dado (usa `haversineMeters`).
+- **`routeTextSummary`**: las indicaciones muestran landmarks cuando existen:
+  - Antes: `"Sube a Ruta 1 cerca de tu ubicación (~120 m a pie)."`
+  - Ahora: `"Sube a Ruta 1 cerca de Central de Autobuses (~120 m a pie)."`
+  - Fallback: si no hay landmark a ≤150 m, usa texto original ("tu ubicación" / "tu destino").
+- **`landmarksByRouteName`**: nuevo memo que agrupa landmarks por nombre de ruta
+  (deduplicado por `name` para no repetir ida/vuelta).
+- Ambos `<RouteList>` (desktop sidebar + mobile BottomSheet) reciben prop
+  `landmarksByRouteName`.
+
+#### `components/RouteList.tsx`
+
+- **Props**: nueva prop `landmarksByRouteName?: Map<string, ProductionRouteLandmark[]>`.
+- **`searchableRoutes`**: incluye campo `_landmarks` (nombres de landmarks unidos
+  por espacio) para búsqueda fuzzy.
+- **`landmarkRouteMap`**: índice invertido `landmarkName → Set<routeName>` para
+  lookup O(1).
+- **`matchedLandmark`**: detecta qué landmark coincide con el query del usuario.
+- **`landmarkMatchingRouteNames`**: set de nombres de rutas que pasan por el
+  landmark detectado.
+- **`filteredRoutes`**: cuando el query matchea un landmark, las rutas que pasan
+  por ahí se pinnean al inicio de la lista.
+- **Badge "POR AQUÍ"**: badge teal en las rutas que matchean el landmark buscado.
+- **Subtítulo**: muestra `"Pasa por: Central de Autobuses"` en color teal cuando
+  la ruta matchea un landmark.
+- **Estilo**: borde teal (`border-teal-400/60 bg-teal-500/8`) en cards de rutas
+  que matchean landmarks.
+- **Placeholder**: actualizado a `"Colonia, destino, punto de referencia o número de ruta…"`.
+
+### Comportamiento
+
+| Escenario | Resultado |
+|---|---|
+| Ruta sin landmarks | Texto actual intacto, sin cambios visuales |
+| Ruta con landmarks, origen cerca de uno | "Sube cerca de **Central de Autobuses** (~45 m a pie)" |
+| Busca "IMSS" en el buscador | Muestra rutas con "IMSS" como landmark, ordenadas arriba con badge POR AQUÍ |
+| Busca "Central" (chip existente) | Sigue funcionando + ahora también matchea landmarks |
+
+### Verificación
+
+- `npm run lint` — sin errores ni warnings
+- `npx --no-install tsc --noEmit` — sin errores
+- `npm run build` — compilación correcta
+
+### Estado: completo
+
+---
+
 ## [2026-05-04] Perf: perfilar y acelerar transbordos al mover pines
 
 **Rama:** `experimental`
