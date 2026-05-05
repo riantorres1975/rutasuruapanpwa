@@ -6,6 +6,7 @@ import NotGovernmentNotice from "@/components/NotGovernmentNotice";
 import Logo from "@/components/Logo";
 import ForceDark from "@/components/ForceDark";
 import { FARES_2026, TELEFERICO_URUAPAN } from "@/lib/mobility-config";
+import { SITE_URL } from "@/lib/site-url";
 
 export const metadata: Metadata = {
   title: {
@@ -53,15 +54,14 @@ const stationDescriptions = [
 ] as const;
 
 export default function TelefericoHorarioPage() {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.urugo.app";
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [
       {
         "@type": "BreadcrumbList",
         itemListElement: [
-          { "@type": "ListItem", position: 1, name: "Inicio", item: baseUrl },
-          { "@type": "ListItem", position: 2, name: "Teleférico Uruapan", item: `${baseUrl}/teleferico-uruapan-horario` }
+          { "@type": "ListItem", position: 1, name: "Inicio", item: SITE_URL },
+          { "@type": "ListItem", position: 2, name: "Teleférico Uruapan", item: `${SITE_URL}/teleferico-uruapan-horario` }
         ]
       },
       {

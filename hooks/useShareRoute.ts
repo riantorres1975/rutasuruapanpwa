@@ -1,19 +1,15 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { SITE_URL } from "@/lib/site-url";
 
 export type ShareStatus = "idle" | "shared" | "copied" | "error";
-
-const APP_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ??
-  process.env.NEXT_PUBLIC_APP_URL ??
-  "https://www.urugo.app";
 
 export function useShareRoute() {
   const [status, setStatus] = useState<ShareStatus>("idle");
 
   const share = useCallback(async (routeName: string, url?: string) => {
-    const shareUrl = url ?? (typeof window !== "undefined" ? `${window.location.origin}/mapa` : `${APP_URL}/mapa`);
+    const shareUrl = url ?? (typeof window !== "undefined" ? `${window.location.origin}/mapa` : `${SITE_URL}/mapa`);
     const text = `Toma la ${routeName} en Uruapan. Abre el mapa: ${shareUrl}`;
     // Capture navigator reference to avoid TypeScript's "in" narrowing to never.
     // This hook is always client-side ("use client"), so navigator is always defined.

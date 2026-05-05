@@ -34,7 +34,7 @@ export async function generateMetadata({ params }: RoutePageProps): Promise<Meta
     openGraph: {
       title: `${label} en Uruapan`,
       description: `Información de la ${route.name}, tarifa y mapa de transporte público en Uruapan.`,
-      url: `/ruta/${route.slug}`,
+      url: `https://www.urugo.app/ruta/${route.slug}`,
       type: "article"
     }
   };

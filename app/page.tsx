@@ -15,6 +15,7 @@ import {
   LANDING_SEARCH_SUGGESTIONS,
   TELEFERICO_URUAPAN
 } from "@/lib/mobility-config";
+import { SITE_URL } from "@/lib/site-url";
 
 const HOW_IT_WORKS_STEPS = [
   { n: "01", title: "Abre el mapa", desc: "Todas las rutas ya cargadas, sin instalación ni cuenta." },
@@ -29,13 +30,13 @@ export const metadata: Metadata = {
   },
   description:
     "Consulta rutas de camiones Uruapan, horario del Teleférico Uruapan, tarifas 2026 y opciones para moverte en transporte público.",
-  alternates: { canonical: "/" },
+  alternates: { canonical: SITE_URL },
   openGraph: {
     title: "UruGo | Encuentra tu ruta en Uruapan",
     description: "Rutas de camiones urbanos y Teleférico en un solo mapa para Uruapan, Michoacán.",
-  url: process.env.NEXT_PUBLIC_SITE_URL || "https://www.urugo.app",
-  siteName: "UruGo",
-  images: [{ url: "https://www.urugo.app/api/og", width: 1200, height: 630, alt: "UruGo — rutas de camiones y Teleférico en Uruapan" }],
+    url: SITE_URL,
+    siteName: "UruGo",
+    images: [{ url: `${SITE_URL}/api/og`, width: 1200, height: 630, alt: "UruGo — rutas de camiones y Teleférico en Uruapan" }],
     locale: "es_MX",
     type: "website"
   }
@@ -55,7 +56,7 @@ const webAppJsonLd = {
   "@context": "https://schema.org",
   "@type": "WebApplication",
   name: APP_BRAND.name,
-  url: process.env.NEXT_PUBLIC_SITE_URL || "https://www.urugo.app",
+  url: SITE_URL,
   applicationCategory: "TravelApplication",
   operatingSystem: "Web, Android, iOS",
   description: APP_BRAND.description,
@@ -67,8 +68,8 @@ const organizationJsonLd = {
   "@context": "https://schema.org",
   "@type": "Organization",
   name: APP_BRAND.name,
-  url: process.env.NEXT_PUBLIC_SITE_URL || "https://www.urugo.app",
-  logo: `${process.env.NEXT_PUBLIC_SITE_URL || "https://www.urugo.app"}/icons/icon-512.png`,
+  url: SITE_URL,
+  logo: `${SITE_URL}/icons/icon-512.png`,
   areaServed: { "@type": "City", name: "Uruapan, Michoacán" }
 };
 

@@ -1,9 +1,9 @@
 ﻿import type { MetadataRoute } from "next";
 import { BLOG_ARTICLES } from "@/lib/blog-content";
 import { getRouteSeoItems } from "@/lib/route-seo";
+import { SITE_URL } from "@/lib/site-url";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.urugo.app";
   const now = new Date();
 
   const ROUTES_LAST_MODIFIED = new Date("2026-04-01");
@@ -11,43 +11,43 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   const staticUrls: MetadataRoute.Sitemap = [
     {
-      url: baseUrl,
+      url: SITE_URL,
       lastModified: now,
       changeFrequency: "weekly",
       priority: 1
     },
     {
-      url: `${baseUrl}/mapa`,
+      url: `${SITE_URL}/mapa`,
       lastModified: now,
       changeFrequency: "daily",
       priority: 0.9
     },
     {
-      url: `${baseUrl}/privacidad`,
+      url: `${SITE_URL}/privacidad`,
       lastModified: STATIC_LAST_MODIFIED,
       changeFrequency: "yearly",
       priority: 0.3
     },
     {
-      url: `${baseUrl}/teleferico-uruapan-horario`,
+      url: `${SITE_URL}/teleferico-uruapan-horario`,
       lastModified: now,
       changeFrequency: "weekly",
       priority: 0.95
     },
     {
-      url: `${baseUrl}/rutas`,
+      url: `${SITE_URL}/rutas`,
       lastModified: now,
       changeFrequency: "monthly",
       priority: 0.85
     },
     {
-      url: `${baseUrl}/blog`,
+      url: `${SITE_URL}/blog`,
       lastModified: now,
       changeFrequency: "weekly",
       priority: 0.8
     },
     {
-      url: `${baseUrl}/reportar-error`,
+      url: `${SITE_URL}/reportar-error`,
       lastModified: now,
       changeFrequency: "monthly",
       priority: 0.5
@@ -55,14 +55,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
   ];
 
   const routeUrls: MetadataRoute.Sitemap = getRouteSeoItems().map((route) => ({
-    url: `${baseUrl}/ruta/${route.slug}`,
+    url: `${SITE_URL}/ruta/${route.slug}`,
     lastModified: ROUTES_LAST_MODIFIED,
     changeFrequency: "monthly",
     priority: 0.7
   }));
 
   const blogUrls: MetadataRoute.Sitemap = BLOG_ARTICLES.map((article) => ({
-    url: `${baseUrl}/blog/${article.slug}`,
+    url: `${SITE_URL}/blog/${article.slug}`,
     lastModified: new Date(article.updatedAt),
     changeFrequency: "monthly",
     priority: 0.75

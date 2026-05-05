@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { DM_Sans, Playfair_Display } from "next/font/google";
 import PWARegistrar from "@/components/PWARegistrar";
 import AdaptiveTheme from "@/components/AdaptiveTheme";
+import { SITE_URL } from "@/lib/site-url";
 import "./globals.css";
 
 const dmSans = DM_Sans({
@@ -20,7 +21,7 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://www.urugo.app"),
+  metadataBase: new URL(SITE_URL),
   title: {
     default: "UruGo | Rutas de camiones y Teleférico en Uruapan",
     template: "%s | UruGo"
@@ -44,7 +45,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "UruGo — Rutas de camiones y Teleférico en Uruapan",
     description: "Encuentra tu ruta en Uruapan. Camiones urbanos y Teleférico en un solo mapa interactivo.",
-    url: process.env.NEXT_PUBLIC_SITE_URL || "https://rutasuruapanpwa.vercel.app",
+    url: SITE_URL,
     siteName: "UruGo",
     images: [
       {

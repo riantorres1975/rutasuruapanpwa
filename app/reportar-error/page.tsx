@@ -10,12 +10,12 @@ export const metadata: Metadata = {
   title: "Reportar error | UruGo",
   description: "Reporta errores de rutas, mapa, ubicación o funcionamiento de UruGo.",
   alternates: {
-    canonical: "/reportar-error"
+    canonical: "https://www.urugo.app/reportar-error"
   },
   openGraph: {
     title: "Reportar error | UruGo",
     description: "Reporta errores de rutas, mapa, ubicación o funcionamiento de UruGo.",
-    url: "/reportar-error",
+    url: "https://www.urugo.app/reportar-error",
     type: "website"
   }
 };
