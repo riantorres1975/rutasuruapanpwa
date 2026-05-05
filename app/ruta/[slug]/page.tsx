@@ -55,8 +55,8 @@ export default async function RoutePage({ params }: RoutePageProps) {
       {
         "@type": "BreadcrumbList",
         itemListElement: [
-          { "@type": "ListItem", position: 1, name: "Inicio", item: "/" },
-          { "@type": "ListItem", position: 2, name: "Rutas", item: "/rutas" },
+          { "@type": "ListItem", position: 1, name: "Inicio", item: "https://www.urugo.app/" },
+          { "@type": "ListItem", position: 2, name: "Rutas", item: "https://www.urugo.app/rutas" },
           { "@type": "ListItem", position: 3, name: route.name, item: `https://www.urugo.app/ruta/${route.slug}` }
         ]
       },

@@ -5,14 +5,14 @@ import NotGovernmentNotice from "@/components/NotGovernmentNotice";
 import ForceDark from "@/components/ForceDark";
 
 export const metadata: Metadata = {
-  title: "Las rutas de camiÃ³n mÃ¡s usadas en Uruapan",
-  description: "Estamos preparando un ranking detallado de las rutas mÃ¡s consultadas, sus destinos principales y cÃ³mo conectan con el TelefÃ©rico.",
+  title: "Las rutas de camión más usadas en Uruapan",
+  description: "Estamos preparando un ranking detallado de las rutas más consultadas, sus destinos principales y cómo conectan con el Teleférico.",
   alternates: {
     canonical: "https://www.urugo.app/blog/rutas-camion-mas-usadas-uruapan"
   },
   openGraph: {
-    title: "Las rutas de camiÃ³n mÃ¡s usadas en Uruapan",
-    description: "Rutas de camiÃ³n mÃ¡s consultadas en Uruapan: destinos, conexiones con TelefÃ©rico y mapa interactivo.",
+    title: "Las rutas de camión más usadas en Uruapan",
+    description: "Rutas de camión más consultadas en Uruapan: destinos, conexiones con Teleférico y mapa interactivo.",
     url: "https://www.urugo.app/blog/rutas-camion-mas-usadas-uruapan",
     type: "article",
     publishedTime: "2026-01-15T00:00:00-06:00",
@@ -23,15 +23,15 @@ export const metadata: Metadata = {
 const blogPostingJsonLd = {
   "@context": "https://schema.org",
   "@type": "BlogPosting",
-  headline: "Las rutas de camiÃ³n mÃ¡s usadas en Uruapan y para quÃ© sirven",
-  description: "Resumen de las rutas de camiÃ³n mÃ¡s consultadas en Uruapan, sus destinos principales y cÃ³mo conectan con el TelefÃ©rico.",
+  headline: "Las rutas de camión más usadas en Uruapan y para qué sirven",
+  description: "Resumen de las rutas de camión más consultadas en Uruapan, sus destinos principales y cómo conectan con el Teleférico.",
   datePublished: "2026-01-15",
   dateModified: "2026-04-27",
   author: { "@type": "Organization", name: "UruGo" },
   publisher: { "@type": "Organization", name: "UruGo" },
   mainEntityOfPage: { "@type": "WebPage", "@id": "/blog/rutas-camion-mas-usadas-uruapan" },
   inLanguage: "es-MX",
-  keywords: "rutas de camiÃ³n Uruapan, ruta 11 Uruapan, transporte pÃºblico Uruapan, camiones urbanos Uruapan"
+  keywords: "rutas de camión Uruapan, ruta 11 Uruapan, transporte público Uruapan, camiones urbanos Uruapan"
 };
 
 export default function RutasCamionMasUsadasPage() {
@@ -43,13 +43,13 @@ export default function RutasCamionMasUsadasPage() {
         <PageHeader
           backHref="/blog"
           backLabel="Blog"
-          eyebrow="En preparaciÃ³n"
+          eyebrow="En preparación"
           title={
             <>
-              Las rutas de <span className="italic text-lima">camiÃ³n</span> mÃ¡s usadas en Uruapan.
+              Las rutas de <span className="italic text-lima">camión</span> más usadas en Uruapan.
             </>
           }
-          intro="Estamos preparando un ranking detallado de las rutas mÃ¡s consultadas, sus destinos principales y cÃ³mo conectan con el TelefÃ©rico."
+          intro="Estamos preparando un ranking detallado de las rutas más consultadas, sus destinos principales y cómo conectan con el Teleférico."
         />
 
         {/* Rutas destacadas */}
@@ -57,15 +57,15 @@ export default function RutasCamionMasUsadasPage() {
           {[
             {
               id: "Ruta 11 Uruapan",
-              nombre: "Ramal Tamayo â€“ Fovissste",
-              detalle: "70 paradas Â· ~48 min Â· lunâ€“dom 06:00â€“22:00",
-              desc: "Una de las mÃ¡s extensas. Transita por 5 Sur y HÃ©roes de la Independencia."
+              nombre: "Ramal Tamayo – Fovissste",
+              detalle: "70 paradas · ~48 min · lun–dom 06:00–22:00",
+              desc: "Una de las más extensas. Transita por 5 Sur y Héroes de la Independencia."
             },
             {
               id: "Ruta 1",
-              nombre: "Unidad â€“ Palito Verde",
-              detalle: "Ramales a JucutÃ¡cato, Manantiales y San JosÃ© Mina",
-              desc: "LÃ­nea troncal con alta cobertura de colonias populares al oriente."
+              nombre: "Unidad – Palito Verde",
+              detalle: "Ramales a Jucutácato, Manantiales y San José Mina",
+              desc: "Línea troncal con alta cobertura de colonias populares al oriente."
             },
             {
               id: "Ruta 5",
@@ -75,9 +75,9 @@ export default function RutasCamionMasUsadasPage() {
             },
             {
               id: "Ruta 7",
-              nombre: "Pemex â€“ Centro",
-              detalle: "LÃ­nea directa al primer cuadro",
-              desc: "Conecta la colonia Pemex con el Centro HistÃ³rico sin transbordo."
+              nombre: "Pemex – Centro",
+              detalle: "Línea directa al primer cuadro",
+              desc: "Conecta la colonia Pemex con el Centro Histórico sin transbordo."
             }
           ].map((r) => (
             <Link
@@ -90,7 +90,7 @@ export default function RutasCamionMasUsadasPage() {
               <p className="mt-1 text-[11px] font-semibold text-avocado-400">{r.detalle}</p>
               <p className="mt-3 text-sm leading-6 text-foreground/70">{r.desc}</p>
               <span className="mt-4 inline-flex items-center gap-1 text-xs font-bold text-lima transition group-hover:gap-2">
-                Ver en el mapa â†’
+                Ver en el mapa →
               </span>
             </Link>
           ))}
@@ -98,16 +98,16 @@ export default function RutasCamionMasUsadasPage() {
 
         <section className="mt-6 rounded-[1.75rem] border border-foreground/12 bg-ink-900/65 p-8 backdrop-blur">
           <h2 className="font-serif-display text-2xl font-black text-white">
-            PrÃ³ximamente
+            Próximamente
           </h2>
           <p className="mt-3 text-sm leading-7 text-foreground/75">
-            Mientras terminamos esta guÃ­a, puedes explorar todas las rutas en el mapa interactivo. Son 40 rutas de camiÃ³n urbano y el TelefÃ©rico que cubren toda la ciudad.
+            Mientras terminamos esta guía, puedes explorar todas las rutas en el mapa interactivo. Son 40 rutas de camión urbano y el Teleférico que cubren toda la ciudad.
           </p>
           <Link
             href="/mapa"
             className="cta-shine mt-6 inline-flex h-11 items-center rounded-full bg-verde px-6 py-2 text-sm font-black text-white hover:opacity-90"
           >
-            Explorar el mapa â†’
+            Explorar el mapa →
           </Link>
         </section>
 

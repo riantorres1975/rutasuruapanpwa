@@ -9,16 +9,16 @@ import { FARES_2026, TELEFERICO_URUAPAN } from "@/lib/mobility-config";
 
 export const metadata: Metadata = {
   title: {
-    absolute: "TelefÃ©rico Uruapan horario, estaciones y tarifa 2026"
+    absolute: "Teleférico Uruapan horario, estaciones y tarifa 2026"
   },
   description:
-    "Consulta el horario del TelefÃ©rico Uruapan, estaciones, tarifa, forma de pago y conexiones con rutas de camiones urbanos.",
+    "Consulta el horario del Teleférico Uruapan, estaciones, tarifa, forma de pago y conexiones con rutas de camiones urbanos.",
   alternates: {
     canonical: "https://www.urugo.app/teleferico-uruapan-horario"
   },
   openGraph: {
-    title: "TelefÃ©rico Uruapan: horario, estaciones y tarifa",
-    description: "GuÃ­a rÃ¡pida del TelefÃ©rico de Uruapan con estaciones, costo, pago y mapa de conexiÃ³n.",
+    title: "Teleférico Uruapan: horario, estaciones y tarifa",
+    description: "Guía rápida del Teleférico de Uruapan con estaciones, costo, pago y mapa de conexión.",
     url: "https://www.urugo.app/teleferico-uruapan-horario",
     type: "article"
   }
@@ -26,30 +26,30 @@ export const metadata: Metadata = {
 
 const telefericoFaqs = [
   {
-    question: "Â¿CuÃ¡l es el horario del TelefÃ©rico de Uruapan?",
-    answer: `El TelefÃ©rico de Uruapan opera todos los dÃ­as de ${TELEFERICO_URUAPAN.hours}. Revisa avisos oficiales antes de viajar porque los horarios pueden cambiar por operaciÃ³n o mantenimiento.`
+    question: "¿Cuál es el horario del Teleférico de Uruapan?",
+    answer: `El Teleférico de Uruapan opera todos los días de ${TELEFERICO_URUAPAN.hours}. Revisa avisos oficiales antes de viajar porque los horarios pueden cambiar por operación o mantenimiento.`
   },
   {
-    question: "Â¿CuÃ¡nto cuesta el TelefÃ©rico de Uruapan?",
+    question: "¿Cuánto cuesta el Teleférico de Uruapan?",
     answer: `El viaje cuesta ${TELEFERICO_URUAPAN.fare}. El proyecto muestra esta tarifa como referencia para planear traslados multimodales dentro de Uruapan.`
   },
   {
-    question: "Â¿CÃ³mo se paga el TelefÃ©rico de Uruapan?",
-    answer: `El acceso se valida con tarjeta electrÃ³nica de movilidad. La tarjeta configurada en UruGo tiene costo de ${FARES_2026.mobilityCard.price}.`
+    question: "¿Cómo se paga el Teleférico de Uruapan?",
+    answer: `El acceso se valida con tarjeta electrónica de movilidad. La tarjeta configurada en UruGo tiene costo de ${FARES_2026.mobilityCard.price}.`
   },
   {
-    question: "Â¿QuÃ© estaciones tiene el TelefÃ©rico de Uruapan?",
+    question: "¿Qué estaciones tiene el Teleférico de Uruapan?",
     answer: `Las estaciones son ${TELEFERICO_URUAPAN.stations.join(", ")}.`
   }
 ];
 
 const stationDescriptions = [
-  "Principal acceso al Hospital General IMSS y Hospital Regional. Zona de alta demanda en horarios de maÃ±ana.",
-  "Acceso noreste de la ciudad. ConexiÃ³n hacia el Libramiento de Uruapan y zonas industriales.",
-  "Centro cultural y comercial. Cerca del Centro Cultural Ãgora de Uruapan y zona de servicios.",
-  "CorazÃ³n administrativo de la ciudad. Frente a la Presidencia Municipal de Uruapan.",
-  "Acceso al Parque Nacional Eduardo Ruiz y zona comercial del centro. La estaciÃ³n mÃ¡s transitada.",
-  "Terminal poniente. ConexiÃ³n con el mercado y colonias del lado oeste de la ciudad."
+  "Principal acceso al Hospital General IMSS y Hospital Regional. Zona de alta demanda en horarios de mañana.",
+  "Acceso noreste de la ciudad. Conexión hacia el Libramiento de Uruapan y zonas industriales.",
+  "Centro cultural y comercial. Cerca del Centro Cultural Ágora de Uruapan y zona de servicios.",
+  "Corazón administrativo de la ciudad. Frente a la Presidencia Municipal de Uruapan.",
+  "Acceso al Parque Nacional Eduardo Ruiz y zona comercial del centro. La estación más transitada.",
+  "Terminal poniente. Conexión con el mercado y colonias del lado oeste de la ciudad."
 ] as const;
 
 export default function TelefericoHorarioPage() {
@@ -61,7 +61,7 @@ export default function TelefericoHorarioPage() {
         "@type": "BreadcrumbList",
         itemListElement: [
           { "@type": "ListItem", position: 1, name: "Inicio", item: baseUrl },
-          { "@type": "ListItem", position: 2, name: "TelefÃ©rico Uruapan", item: `${baseUrl}/teleferico-uruapan-horario` }
+          { "@type": "ListItem", position: 2, name: "Teleférico Uruapan", item: `${baseUrl}/teleferico-uruapan-horario` }
         ]
       },
       {
@@ -78,10 +78,10 @@ export default function TelefericoHorarioPage() {
       {
         "@type": "TouristAttraction",
         name: TELEFERICO_URUAPAN.schemaName,
-        description: "Sistema de transporte aÃ©reo urbano en Uruapan, MichoacÃ¡n.",
+        description: "Sistema de transporte aéreo urbano en Uruapan, Michoacán.",
         areaServed: {
           "@type": "City",
-          name: "Uruapan, MichoacÃ¡n"
+          name: "Uruapan, Michoacán"
         },
         offers: {
           "@type": "Offer",
@@ -117,14 +117,14 @@ export default function TelefericoHorarioPage() {
 
       <div className="relative z-10 mx-auto max-w-5xl">
         <PageHeader
-          kicker="Ãšnico en MichoacÃ¡n"
-          eyebrow="TelefÃ©rico Uruapan Â· horario 2026"
+          kicker="Único en Michoacán"
+          eyebrow="Teleférico Uruapan · horario 2026"
           title={
             <>
-              <span className="italic" style={{ color: "#b8e840" }}>TelefÃ©rico</span>: horario, estaciones y tarifa.
+              <span className="italic" style={{ color: "#b8e840" }}>Teleférico</span>: horario, estaciones y tarifa.
             </>
           }
-          intro="GuÃ­a rÃ¡pida para moverte en el TelefÃ©rico de Uruapan y combinarlo con rutas de camiÃ³n urbano desde el mapa de UruGo."
+          intro="Guía rápida para moverte en el Teleférico de Uruapan y combinarlo con rutas de camión urbano desde el mapa de UruGo."
         />
 
         <div className="mt-7 flex flex-col gap-3 sm:flex-row">
@@ -133,7 +133,7 @@ export default function TelefericoHorarioPage() {
             className="cta-shine inline-flex h-12 items-center justify-center rounded-full px-6 text-sm font-black transition hover:opacity-90"
             style={{ background: "#6aab48", color: "#e8f2d8" }}
           >
-            Abrir en el mapa â†’
+            Abrir en el mapa →
           </Link>
           <Link
             href="/#tarifas"
@@ -144,7 +144,7 @@ export default function TelefericoHorarioPage() {
           </Link>
         </div>
 
-        {/* Datos rÃ¡pidos en grid de 4 */}
+        {/* Datos rápidos en grid de 4 */}
         <section className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-2xl border p-4 backdrop-blur" style={{ borderColor: "rgba(184,232,64,0.2)", background: "rgba(184,232,64,0.06)" }}>
             <dt className="text-[10px] font-bold uppercase tracking-[0.22em]" style={{ color: "#b8e840" }}>Horario</dt>
@@ -166,7 +166,7 @@ export default function TelefericoHorarioPage() {
 
         {/* Estaciones */}
         <section className="mt-12">
-          <p className="text-purepecha text-sm">YÃ¡uiri Â· estaciones</p>
+          <p className="text-purepecha text-sm">Yáuiri · estaciones</p>
           <h2 className="mt-2 font-serif text-3xl font-black md:text-4xl" style={{ color: "#e8f2d8" }}>
             Las <span className="italic" style={{ color: "#b8e840" }}>6 estaciones</span> de oriente a poniente.
           </h2>
@@ -216,7 +216,7 @@ export default function TelefericoHorarioPage() {
           style={{ borderColor: "rgba(184,232,64,0.2)", background: "rgba(184,232,64,0.04)" }}
         >
           <p className="text-sm leading-7" style={{ color: "rgba(232,242,216,0.75)" }}>
-            <span className="font-bold" style={{ color: "#e8f2d8" }}>Aviso.</span> La informaciÃ³n de horarios y tarifas puede cambiar por operaciÃ³n. Usa esta pÃ¡gina como guÃ­a de planeaciÃ³n y confirma avisos oficiales antes de abordar.
+            <span className="font-bold" style={{ color: "#e8f2d8" }}>Aviso.</span> La información de horarios y tarifas puede cambiar por operación. Usa esta página como guía de planeación y confirma avisos oficiales antes de abordar.
           </p>
         </aside>
 

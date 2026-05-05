@@ -6,12 +6,12 @@ import { getRouteSeoItems } from "@/lib/route-seo";
 import { FARES_2026 } from "@/lib/mobility-config";
 
 export const metadata: Metadata = {
-  title: "Rutas de camiÃ³n en Uruapan â€” Las 40 rutas urbanas",
-  description: "Consulta las 40 rutas de camiÃ³n urbano en Uruapan, MichoacÃ¡n. Destinos, tarifa y mapa interactivo para cada ruta.",
+  title: "Rutas de camión en Uruapan — Las 40 rutas urbanas",
+  description: "Consulta las 40 rutas de camión urbano en Uruapan, Michoacán. Destinos, tarifa y mapa interactivo para cada ruta.",
   alternates: { canonical: "https://www.urugo.app/rutas" },
   openGraph: {
-    title: "Rutas de camiÃ³n en Uruapan â€” Las 40 rutas urbanas",
-    description: "Directorio completo de rutas de camiÃ³n urbano en Uruapan, MichoacÃ¡n.",
+    title: "Rutas de camión en Uruapan — Las 40 rutas urbanas",
+    description: "Directorio completo de rutas de camión urbano en Uruapan, Michoacán.",
     url: "https://www.urugo.app/rutas",
     type: "website"
   }
@@ -19,18 +19,18 @@ export const metadata: Metadata = {
 
 export default function RutasPage() {
   const routes = getRouteSeoItems();
-  const busRoutes = routes.filter((r) => !r.name.toLowerCase().includes("telefÃ©rico"));
+  const busRoutes = routes.filter((r) => !r.name.toLowerCase().includes("teleférico"));
 
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "ItemList",
-    name: "Rutas de camiÃ³n urbano en Uruapan",
-    description: "Directorio de las 40 rutas de transporte pÃºblico urbano en Uruapan, MichoacÃ¡n.",
+    name: "Rutas de camión urbano en Uruapan",
+    description: "Directorio de las 40 rutas de transporte público urbano en Uruapan, Michoacán.",
     numberOfItems: busRoutes.length,
     itemListElement: busRoutes.map((route, i) => ({
       "@type": "ListItem",
       position: i + 1,
-      name: route.destination ? `${route.name} â€” ${route.destination}` : route.name,
+      name: route.destination ? `${route.name} — ${route.destination}` : route.name,
       url: `https://www.urugo.app/ruta/${route.slug}`
     }))
   };
@@ -68,20 +68,20 @@ export default function RutasPage() {
               className="text-xs font-semibold uppercase tracking-widest transition hover:opacity-80"
               style={{ color: "#6aab48" }}
             >
-              â† Inicio
+              ← Inicio
             </Link>
           </div>
           <p className="text-xs font-bold uppercase tracking-[0.22em]" style={{ color: "#b8e840" }}>
-            Uruapan, MichoacÃ¡n
+            Uruapan, Michoacán
           </p>
           <h1
             className="mt-2 font-serif text-4xl font-black tracking-tight md:text-5xl"
             style={{ color: "#e8f2d8", letterSpacing: "-0.025em" }}
           >
-            Las <em style={{ fontStyle: "italic", color: "#b8e840" }}>40 rutas</em> de camiÃ³n en Uruapan
+            Las <em style={{ fontStyle: "italic", color: "#b8e840" }}>40 rutas</em> de camión en Uruapan
           </h1>
           <p className="mt-4 max-w-xl text-sm leading-7" style={{ color: "#a8c888" }}>
-            Directorio completo de rutas de camiÃ³n urbano. Toca cualquier ruta para ver destino, tarifa y abrirla en el mapa interactivo.
+            Directorio completo de rutas de camión urbano. Toca cualquier ruta para ver destino, tarifa y abrirla en el mapa interactivo.
           </p>
 
           {/* Stats bar */}
@@ -123,26 +123,26 @@ export default function RutasPage() {
                 </div>
                 {route.destination && (
                   <p className="mt-2 text-xs leading-snug" style={{ color: "#6aab48" }}>
-                    â†’ {route.destination}
+                    → {route.destination}
                   </p>
                 )}
                 <p className="mt-3 text-[11px] font-semibold uppercase tracking-widest" style={{ color: "rgba(232,242,216,0.3)" }}>
-                  Ver ruta â†’
+                  Ver ruta →
                 </p>
               </Link>
             ))}
           </div>
 
-          {/* CTA telefÃ©rico */}
+          {/* CTA teleférico */}
           <div
             className="mt-10 rounded-2xl border p-6"
             style={{ borderColor: "rgba(0,212,170,0.2)", background: "rgba(0,212,170,0.04)" }}
           >
             <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "#00D4AA" }}>
-              TambiÃ©n en Uruapan
+              También en Uruapan
             </p>
             <h2 className="mt-2 font-serif text-2xl font-black" style={{ color: "#e8f2d8" }}>
-              TelefÃ©rico Uruapan
+              Teleférico Uruapan
             </h2>
             <p className="mt-2 text-sm leading-7" style={{ color: "#a8c888" }}>
               6 estaciones de oriente a poniente. Opera de 05:00 a 23:00. Tarifa {FARES_2026.teleferico.price} con tarjeta de movilidad.
@@ -152,7 +152,7 @@ export default function RutasPage() {
               className="mt-4 inline-flex h-10 items-center rounded-full px-5 text-sm font-black transition hover:opacity-90"
               style={{ background: "#00D4AA", color: "#0c110a" }}
             >
-              Ver guÃ­a del TelefÃ©rico â†’
+              Ver guía del Teleférico →
             </Link>
           </div>
 
