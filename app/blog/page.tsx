@@ -7,15 +7,15 @@ import ForceDark from "@/components/ForceDark";
 import { BLOG_ARTICLES } from "@/lib/blog-content";
 
 export const metadata: Metadata = {
-  title: "Blog de transporte público en Uruapan",
-  description: "Guías locales sobre rutas de camiones, Teleférico, tarifas y movilidad en Uruapan.",
+  title: "Blog de transporte pÃºblico en Uruapan",
+  description: "GuÃ­as locales sobre rutas de camiones, TelefÃ©rico, tarifas y movilidad en Uruapan.",
   alternates: {
-    canonical: "/blog"
+    canonical: "https://www.urugo.app/blog"
   },
   openGraph: {
-    title: "Blog de transporte público en Uruapan",
-    description: "Guías locales para moverte en camión, Teleférico y rutas urbanas de Uruapan.",
-    url: "/blog"
+    title: "Blog de transporte pÃºblico en Uruapan",
+    description: "GuÃ­as locales para moverte en camiÃ³n, TelefÃ©rico y rutas urbanas de Uruapan.",
+    url: "https://www.urugo.app/blog"
   }
 };
 
@@ -45,14 +45,14 @@ export default function BlogIndexPage() {
       <div className="greca-bg greca-bg-animated px-5 pt-28 pb-8 sm:px-8 lg:px-10">
       <div className="relative z-10 mx-auto max-w-5xl">
         <PageHeader
-          kicker="Uandakuecha · palabras"
-          eyebrow="Guías locales"
+          kicker="Uandakuecha Â· palabras"
+          eyebrow="GuÃ­as locales"
           title={
             <>
-              Cómo se mueve <span className="italic" style={{ color: "#b8e840" }}>Uruapan</span>.
+              CÃ³mo se mueve <span className="italic" style={{ color: "#b8e840" }}>Uruapan</span>.
             </>
           }
-          intro="Artículos prácticos para saber cómo llegar, cuánto cuesta y cómo combinar camión urbano con Teleférico. Escritos desde aquí, para aquí."
+          intro="ArtÃ­culos prÃ¡cticos para saber cÃ³mo llegar, cuÃ¡nto cuesta y cÃ³mo combinar camiÃ³n urbano con TelefÃ©rico. Escritos desde aquÃ­, para aquÃ­."
         />
 
         <section className="mt-12 grid gap-5 md:grid-cols-2">
@@ -66,7 +66,7 @@ export default function BlogIndexPage() {
                 background: "rgba(20,28,16,0.65)",
               }}
             >
-              {/* Número grande decorativo */}
+              {/* NÃºmero grande decorativo */}
               <span
                 aria-hidden="true"
                 className="pointer-events-none absolute -right-4 -top-6 font-serif text-[8rem] font-black leading-none"
@@ -90,8 +90,8 @@ export default function BlogIndexPage() {
                 </p>
 
                 <span className="mt-6 inline-flex items-center gap-1.5 text-sm font-black" style={{ color: "#b8e840" }}>
-                  Leer guía
-                  <span aria-hidden="true" className="transition group-hover:translate-x-1">→</span>
+                  Leer guÃ­a
+                  <span aria-hidden="true" className="transition group-hover:translate-x-1">â†’</span>
                 </span>
               </div>
             </Link>

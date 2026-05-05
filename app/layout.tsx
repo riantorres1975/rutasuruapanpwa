@@ -1,4 +1,4 @@
-import type { Metadata, Viewport } from "next";
+﻿import type { Metadata, Viewport } from "next";
 import { DM_Sans, Playfair_Display } from "next/font/google";
 import PWARegistrar from "@/components/PWARegistrar";
 import AdaptiveTheme from "@/components/AdaptiveTheme";
@@ -20,12 +20,12 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://rutasuruapanpwa.vercel.app"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://www.urugo.app"),
   title: {
-    default: "UruGo | Rutas de camiones y Teleférico en Uruapan",
+    default: "UruGo | Rutas de camiones y TelefÃ©rico en Uruapan",
     template: "%s | UruGo"
   },
-  description: "Consulta rutas de camiones Uruapan, horario y tarifa del Teleférico 2026. Mapa interactivo multimodal, sin registro ni instalación.",
+  description: "Consulta rutas de camiones Uruapan, horario y tarifa del TelefÃ©rico 2026. Mapa interactivo multimodal, sin registro ni instalaciÃ³n.",
   applicationName: "UruGo",
   manifest: "/manifest.json",
   icons: {
@@ -42,16 +42,16 @@ export const metadata: Metadata = {
     title: "UruGo"
   },
   openGraph: {
-    title: "UruGo — Rutas de camiones y Teleférico en Uruapan",
-    description: "Encuentra tu ruta en Uruapan. Camiones urbanos y Teleférico en un solo mapa interactivo.",
-    url: process.env.NEXT_PUBLIC_SITE_URL || "https://rutasuruapanpwa.vercel.app",
+    title: "UruGo â€” Rutas de camiones y TelefÃ©rico en Uruapan",
+    description: "Encuentra tu ruta en Uruapan. Camiones urbanos y TelefÃ©rico en un solo mapa interactivo.",
+    url: process.env.NEXT_PUBLIC_SITE_URL || "https://www.urugo.app",
     siteName: "UruGo",
     images: [
       {
-        url: "/api/og",
+        url: "https://www.urugo.app/api/og",
         width: 1200,
         height: 630,
-        alt: "UruGo — Mapa de rutas de transporte en Uruapan"
+        alt: "UruGo â€” Mapa de rutas de transporte en Uruapan"
       }
     ],
     locale: "es_MX",
@@ -59,9 +59,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "UruGo — Rutas Uruapan",
-    description: "Camiones urbanos y Teleférico en Uruapan en un mapa interactivo.",
-    images: ["/api/og"]
+    title: "UruGo â€” Rutas Uruapan",
+    description: "Camiones urbanos y TelefÃ©rico en Uruapan en un mapa interactivo.",
+    images: ["https://www.urugo.app/api/og"]
   }
 };
 

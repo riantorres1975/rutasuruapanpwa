@@ -7,7 +7,7 @@ export type ShareStatus = "idle" | "shared" | "copied" | "error";
 const APP_URL =
   process.env.NEXT_PUBLIC_SITE_URL ??
   process.env.NEXT_PUBLIC_APP_URL ??
-  "https://rutasuruapanpwa.vercel.app";
+  "https://www.urugo.app";
 
 export function useShareRoute() {
   const [status, setStatus] = useState<ShareStatus>("idle");

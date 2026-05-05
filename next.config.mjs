@@ -1,4 +1,4 @@
-import { randomBytes } from "crypto";
+﻿import { randomBytes } from "crypto";
 import { readFileSync, writeFileSync } from "fs";
 import { join } from "path";
 
@@ -38,6 +38,17 @@ const securityHeaders = [
 
 const nextConfig = {
   productionBrowserSourceMaps: false,
+
+  async redirects() {
+    return [
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "urugo.app" }],
+        destination: "https://www.urugo.app/:path*",
+        permanent: true
+      }
+    ];
+  },
 
   async headers() {
     return [

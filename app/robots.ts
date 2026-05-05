@@ -1,7 +1,7 @@
-import type { MetadataRoute } from "next";
+﻿import type { MetadataRoute } from "next";
 
 export default function robots(): MetadataRoute.Robots {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://rutasuruapanpwa.vercel.app";
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.urugo.app";
 
   return {
     rules: [

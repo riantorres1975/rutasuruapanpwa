@@ -1,9 +1,9 @@
-import type { MetadataRoute } from "next";
+﻿import type { MetadataRoute } from "next";
 import { BLOG_ARTICLES } from "@/lib/blog-content";
 import { getRouteSeoItems } from "@/lib/route-seo";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://rutasuruapanpwa.vercel.app";
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.urugo.app";
   const now = new Date();
 
   const ROUTES_LAST_MODIFIED = new Date("2026-04-01");

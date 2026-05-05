@@ -29,7 +29,7 @@ export async function generateMetadata({ params }: RoutePageProps): Promise<Meta
     title: `${label} en Uruapan`,
     description: `Consulta la ${route.name} de camión urbano en Uruapan, destino ${route.destination ?? "local"}, tarifa base y acceso al mapa interactivo.`,
     alternates: {
-      canonical: `/ruta/${route.slug}`
+      canonical: `https://www.urugo.app/ruta/${route.slug}`
     },
     openGraph: {
       title: `${label} en Uruapan`,
@@ -57,7 +57,7 @@ export default async function RoutePage({ params }: RoutePageProps) {
         itemListElement: [
           { "@type": "ListItem", position: 1, name: "Inicio", item: "/" },
           { "@type": "ListItem", position: 2, name: "Rutas", item: "/rutas" },
-          { "@type": "ListItem", position: 3, name: route.name, item: `/ruta/${route.slug}` }
+          { "@type": "ListItem", position: 3, name: route.name, item: `https://www.urugo.app/ruta/${route.slug}` }
         ]
       },
       {

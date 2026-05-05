@@ -8,34 +8,34 @@ import { APP_BRAND } from "@/lib/mobility-config";
 
 export const metadata: Metadata = {
   title: "Privacidad | UruGo",
-  description: "Aviso de privacidad de UruGo sobre uso de ubicación, datos locales y soporte PWA.",
+  description: "Aviso de privacidad de UruGo sobre uso de ubicaciÃ³n, datos locales y soporte PWA.",
   alternates: {
-    canonical: "/privacidad"
+    canonical: "https://www.urugo.app/privacidad"
   },
   openGraph: {
     title: "Privacidad | UruGo",
     description: "UruGo es una PWA de consulta de rutas para Uruapan. No requiere cuenta, no solicita datos personales.",
-    url: "/privacidad",
+    url: "https://www.urugo.app/privacidad",
     type: "website"
   }
 };
 
 const SECTIONS = [
   {
-    title: "Uso de ubicación",
-    body: `Si usas el botón de ubicación, el navegador solicita permiso para estimar tu posición. Esa ubicación se usa en tu dispositivo para encontrar rutas cercanas y no se almacena en una base de datos de ${APP_BRAND.name}.`
+    title: "Uso de ubicaciÃ³n",
+    body: `Si usas el botÃ³n de ubicaciÃ³n, el navegador solicita permiso para estimar tu posiciÃ³n. Esa ubicaciÃ³n se usa en tu dispositivo para encontrar rutas cercanas y no se almacena en una base de datos de ${APP_BRAND.name}.`
   },
   {
     title: "Datos offline",
-    body: "Como PWA, la app puede guardar archivos de la aplicación y datos de rutas en el caché del navegador para mejorar velocidad y permitir uso parcial sin conexión."
+    body: "Como PWA, la app puede guardar archivos de la aplicaciÃ³n y datos de rutas en el cachÃ© del navegador para mejorar velocidad y permitir uso parcial sin conexiÃ³n."
   },
   {
     title: "Servicios de terceros",
-    body: "El mapa usa Mapbox para mostrar cartografía. Los tiles del mapa pueden requerir conexión y están sujetos a las políticas del proveedor."
+    body: "El mapa usa Mapbox para mostrar cartografÃ­a. Los tiles del mapa pueden requerir conexiÃ³n y estÃ¡n sujetos a las polÃ­ticas del proveedor."
   },
   {
-    title: "Información referencial",
-    body: "Las rutas, tarifas y horarios se muestran como guía para usuarios. Pueden existir cambios operativos que todavía no estén reflejados en la app."
+    title: "InformaciÃ³n referencial",
+    body: "Las rutas, tarifas y horarios se muestran como guÃ­a para usuarios. Pueden existir cambios operativos que todavÃ­a no estÃ©n reflejados en la app."
   }
 ] as const;
 
@@ -70,7 +70,7 @@ export default function PrivacyPage() {
               Aviso de <span className="italic" style={{ color: "#b8e840" }}>privacidad</span>.
             </>
           }
-          intro={`${APP_BRAND.name} es una PWA de consulta de rutas para Uruapan. No requiere cuenta, no solicita datos personales y no guarda tu ubicación en servidores propios.`}
+          intro={`${APP_BRAND.name} es una PWA de consulta de rutas para Uruapan. No requiere cuenta, no solicita datos personales y no guarda tu ubicaciÃ³n en servidores propios.`}
         />
 
         <div className="mt-10">
@@ -103,7 +103,7 @@ export default function PrivacyPage() {
             className="cta-shine inline-flex h-11 items-center rounded-full px-5 text-sm font-black transition hover:opacity-90"
             style={{ background: "#6aab48", color: "#e8f2d8" }}
           >
-            Volver al mapa →
+            Volver al mapa â†’
           </Link>
           <Link
             href="/"
