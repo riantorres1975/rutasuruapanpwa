@@ -1,5 +1,6 @@
-import type { Coordinates, ResolvedRouteData } from "@/lib/types";
-import { haversineMeters } from "@/lib/geo";
+import { haversineMeters } from "./geo";
+import type { PolylineRoute } from "./routeMatcher";
+import type { Coordinates } from "./types";
 
 // Max walking distance to board/alight a route (meters)
 const PROXIMITY_METERS = 550;
@@ -7,8 +8,16 @@ const PROXIMITY_METERS = 550;
 const TRANSFER_WALK_METERS = 200;
 // Minimum distance traveled on route A before transferring (avoid trivial transfers near origin)
 const MIN_SEG_A_METERS = 200;
+// Minimum distance on route B after the transfer (symmetrical guard to MIN_SEG_A_METERS)
+const MIN_SEG_B_METERS = 200;
 // Maximum ratio of (transfer-point→destination) / (origin→destination) — rejects backwards detours
 const MAX_PROGRESS_RATIO = 1.15;
+// Combined (lenA + lenB) must not exceed this multiple of the straight-line A→B distance.
+// Prevents roundabout transfers that are longer than walking or taking a direct bus.
+const MAX_DETOUR_RATIO = 3.5;
+// Minimum straight-line origin→destination distance to even attempt a transfer suggestion.
+// Below this threshold the user is better off walking; a bus transfer never makes sense.
+const MIN_TRIP_METERS = 400;
 // "Same corner" threshold: transfers within this distance get a near-zero walk penalty
 const INTERSECTION_METERS = 35;
 
@@ -17,6 +26,12 @@ const INTERSECTION_METERS = 35;
 // Using TRANSFER_WALK_METERS + 10% margin for safety.
 const LAT_TOL = (TRANSFER_WALK_METERS * 1.1) / 111_000; // ≈ 0.00198°
 const LNG_TOL = (TRANSFER_WALK_METERS * 1.1) / 104_000; // ≈ 0.00212°
+
+type RouteMetrics = {
+  cumulativeLengthsM: number[];
+};
+
+const routeMetricsCache = new WeakMap<Coordinates[], RouteMetrics>();
 
 export type TransferOption = {
   routeAId: number;
@@ -47,70 +62,79 @@ function closestOnPath(point: Coordinates, path: Coordinates[]) {
   return { index: bestIndex, distance: bestDist };
 }
 
-function segmentLength(seg: Coordinates[]): number {
-  let total = 0;
-  for (let i = 1; i < seg.length; i++) {
-    total += haversineMeters(seg[i - 1], seg[i]);
+function getRouteMetrics(path: Coordinates[]): RouteMetrics {
+  const cached = routeMetricsCache.get(path);
+  if (cached) return cached;
+
+  const cumulativeLengthsM = new Array<number>(path.length);
+  cumulativeLengthsM[0] = 0;
+
+  for (let i = 1; i < path.length; i++) {
+    cumulativeLengthsM[i] = cumulativeLengthsM[i - 1] + haversineMeters(path[i - 1], path[i]);
   }
-  return total;
+
+  const metrics = { cumulativeLengthsM };
+  routeMetricsCache.set(path, metrics);
+  return metrics;
+}
+
+function segmentLengthFromMetrics(metrics: RouteMetrics, startIndex: number, endIndex: number) {
+  return metrics.cumulativeLengthsM[endIndex] - metrics.cumulativeLengthsM[startIndex];
 }
 
 /**
- * Find transfer options when no direct route covers origin→destination.
+ * Transfer engine for rutas_produccion_final.json (PolylineRoute[]).
  *
- * Strategy: for each point on route A (starting from where it covers origin),
- * scan route B coordinates up to its destination index looking for the closest
- * intersection — where both routes share the same corner (≤35m) or are within
- * walking distance (≤200m). Checks every coordinate on route A (no coarse
- * sampling) using fast lat/lng pre-rejection before haversine to stay performant.
+ * Identical algorithm to computeTransferOptions but operates on PolylineRoute[]
+ * (rutas_produccion_final.json), where coordinates live in `path` instead of
+ * `coordenadas` and per-route proximity is driven by `corridor_width_m`.
  *
- * Scoring rewards intersection-quality transfers (near-zero walk) over longer
- * walks with a non-linear penalty.
- *
- * Returns top-5 results sorted by total travel score, deduplicated by route pair.
+ * Deduplication uses routeAName+routeBName so that ida/vuelta variants of the
+ * same named route don't produce duplicate suggestions in the UI.
  */
-export function computeTransferOptions(
-  routes: ResolvedRouteData[],
+export function computeTransferOptionsFromPolylines(
+  routes: PolylineRoute[],
   origin: Coordinates,
   destination: Coordinates
 ): TransferOption[] {
-  // Pre-filter: routes close enough to origin or destination
-  const fromOrigin: Array<{ route: ResolvedRouteData; indexA: number }> = [];
-  const toDestination: Array<{ route: ResolvedRouteData; indexB: number }> = [];
+  const originToDestDist = haversineMeters(origin, destination);
+
+  if (originToDestDist < MIN_TRIP_METERS) return [];
+
+  const fromOrigin: Array<{ route: PolylineRoute; indexA: number; metrics: RouteMetrics }> = [];
+  const toDestination: Array<{ route: PolylineRoute; indexB: number; metrics: RouteMetrics }> = [];
 
   for (const route of routes) {
-    const cA = closestOnPath(origin, route.coordenadas);
-    if (cA.distance <= PROXIMITY_METERS) {
-      fromOrigin.push({ route, indexA: cA.index });
+    const threshold = route.corridor_width_m;
+    const metrics = getRouteMetrics(route.path);
+    const cA = closestOnPath(origin, route.path);
+    if (cA.distance <= threshold) {
+      fromOrigin.push({ route, indexA: cA.index, metrics });
     }
-    const cB = closestOnPath(destination, route.coordenadas);
-    if (cB.distance <= PROXIMITY_METERS) {
-      toDestination.push({ route, indexB: cB.index });
+    const cB = closestOnPath(destination, route.path);
+    if (cB.distance <= threshold) {
+      toDestination.push({ route, indexB: cB.index, metrics });
     }
   }
 
   const results: TransferOption[] = [];
-  const originToDestDist = haversineMeters(origin, destination);
 
-  for (const { route: rA, indexA } of fromOrigin) {
-    for (let xi = indexA; xi < rA.coordenadas.length; xi++) {
-      const xPoint = rA.coordenadas[xi];
+  for (const { route: rA, indexA, metrics: metricsA } of fromOrigin) {
+    for (let xi = indexA; xi < rA.path.length; xi++) {
+      const xPoint = rA.path[xi];
 
-      // Reject if route A is heading away from destination (>15% detour allowed)
       if (haversineMeters(xPoint, destination) > originToDestDist * MAX_PROGRESS_RATIO) continue;
 
-      for (const { route: rB, indexB } of toDestination) {
+      for (const { route: rB, indexB, metrics: metricsB } of toDestination) {
         if (rA.id === rB.id) continue;
 
-        // Find the closest route B coordinate strictly before the destination index.
-        // Fast lat/lng pre-rejection avoids calling haversine for distant points.
         let bestJ = -1;
         let bestDist = TRANSFER_WALK_METERS + 1;
         const xLng = xPoint[0];
         const xLat = xPoint[1];
 
         for (let j = 0; j < indexB; j++) {
-          const bCoord = rB.coordenadas[j];
+          const bCoord = rB.path[j];
           if (Math.abs(bCoord[1] - xLat) > LAT_TOL) continue;
           if (Math.abs(bCoord[0] - xLng) > LNG_TOL) continue;
           const d = haversineMeters(xPoint, bCoord);
@@ -122,18 +146,19 @@ export function computeTransferOptions(
 
         if (bestJ === -1) continue;
 
-        const segA = rA.coordenadas.slice(indexA, xi + 1);
-        const segB = rB.coordenadas.slice(bestJ, indexB + 1);
+        if (xi <= indexA || indexB <= bestJ) continue;
 
-        if (segA.length < 2 || segB.length < 2) continue;
-
-        const lenA = segmentLength(segA);
+        const lenA = segmentLengthFromMetrics(metricsA, indexA, xi);
         if (lenA < MIN_SEG_A_METERS) continue;
 
-        const lenB = segmentLength(segB);
+        const lenB = segmentLengthFromMetrics(metricsB, bestJ, indexB);
+        if (lenB < MIN_SEG_B_METERS) continue;
 
-        // Non-linear walk penalty: intersection-quality transfers (≤35m) are nearly
-        // free; anything beyond that is penalized 3× to strongly prefer shared corners.
+        if (lenA + lenB > originToDestDist * MAX_DETOUR_RATIO) continue;
+
+        const segA = rA.path.slice(indexA, xi + 1);
+        const segB = rB.path.slice(bestJ, indexB + 1);
+
         const walkPenalty =
           bestDist <= INTERSECTION_METERS
             ? bestDist * 0.5
@@ -144,8 +169,8 @@ export function computeTransferOptions(
         results.push({
           routeAId: rA.id,
           routeBId: rB.id,
-          routeAName: rA.nombre,
-          routeBName: rB.nombre,
+          routeAName: rA.name,
+          routeBName: rB.name,
           routeAStartIndex: indexA,
           routeATransferIndex: xi,
           routeBTransferIndex: bestJ,
@@ -160,13 +185,13 @@ export function computeTransferOptions(
     }
   }
 
-  // Sort ascending (lower score = better), deduplicate by route pair, return top 5
   results.sort((a, b) => a.score - b.score);
 
+  // Deduplicate by name pair — multiple directions share the same name
   const seen = new Set<string>();
   const deduped: TransferOption[] = [];
   for (const r of results) {
-    const key = `${r.routeAId}-${r.routeBId}`;
+    const key = `${r.routeAName}|${r.routeBName}`;
     if (!seen.has(key)) {
       seen.add(key);
       deduped.push(r);

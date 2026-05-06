@@ -38,6 +38,7 @@ Los sistemas de transporte público en ciudades intermedias de México carecen d
 | 🚀 Onboarding | Overlay de bienvenida explicativo usando `localStorage` |
 | 📲 Compartir Ruta | Integración con `navigator.share()` nativo y fallback al portapapeles |
 | 🏷️ Nombres descriptivos | Cada ruta se identifica por su destino (ej. "Jucutacato · Ruta 24") en lista, mapa y link compartido |
+| 🏛️ Landmarks y búsqueda por referencia | Indicaciones muestran puntos de referencia cercanos ("Sube cerca de Central de Autobuses"); el buscador sugiere rutas que pasan por un landmark conocido |
 | 🔎 Contexto desde landing | Los CTAs y chips envían `?destino=...`; el mapa muestra una guía contextual para marcar origen y destino |
 | 🔄 Ida / Vuelta | Cambio dinámico de dirección con re-render reactivo; botón de sugerencia rápida al no encontrar ruta directa |
 | 🎯 Motor de sugerencias A→B | Algoritmo Haversine para matching local sin APIs externas |
@@ -47,7 +48,7 @@ Los sistemas de transporte público en ciudades intermedias de México carecen d
 | 📍 Segmento relevante | Al seleccionar una sugerencia, se renderiza solo el segmento A→B |
 | 🎯 Auto-encuadre de pines | La cámara ajusta el viewport automáticamente al marcar A o B |
 | 🖱️ Cursor crosshair | El canvas del mapa muestra cursor de mira mientras se espera marcar A o B |
-| ⚡ Lazy load de datos | El JSON de 314 KB se carga vía `fetch("/api/rutas")` fuera del bundle JS |
+| ⚡ Lazy load de datos | El JSON maestro se carga vía `fetch("/api/rutas-polyline")` fuera del bundle JS |
 | 📴 PWA completa | Service Worker con caché offline, manifest, instalable en Android/iOS |
 | 🎨 UX fluida | Sin recrear layers de Mapbox: solo se actualiza el GeoJSON source |
 | ✨ HeroMap animado | Card de sugerencias rotatoria con fade suave y dots indicator; bearing rotatorio del mapa |
@@ -137,7 +138,7 @@ localStorage.setItem('debug', 'true')
 3. **Haz clic en el punto final** → el segmento completo queda marcado en rojo.
 4. Pulsa **"Editar segmento"** y luego haz clic en el mapa para dibujar el nuevo trayecto (verde).
 5. Pulsa **"Finalizar"** → **"Aplicar"** para reemplazar el segmento.
-6. Pulsa **"Guardar"** para escribir los cambios en `data/rutas.json` y `data/rutas-grouped.json`.
+6. Pulsa **"Guardar"** para escribir los cambios en `data/rutas_produccion_final.json`.
 
 > El botón Guardar solo está disponible en `NODE_ENV=development`. Los cambios persisten en disco y se reflejan en el siguiente reload de la página.
 
@@ -252,8 +253,6 @@ npm run dev                      # Dev server con webpack
 npm run lint                     # Validación ESLint 9
 npx tsc --noEmit                 # Validación TypeScript estricta
 npm audit --audit-level=moderate # Auditoría de dependencias
-npm run convert:rutas            # Convierte insumos raw → data/rutas.json
-node scripts/group-rutas.js      # Genera data/rutas-grouped.json
 ```
 
 ---
@@ -263,7 +262,7 @@ node scripts/group-rutas.js      # Genera data/rutas-grouped.json
 ```
 rutasuruapanpwa/
 ├── app/
-│   ├── api/rutas/route.ts              # Endpoint GET /api/rutas (lazy load)
+│   ├── api/rutas-polyline/route.ts     # Endpoint GET /api/rutas-polyline (datos de rutas)
 │   ├── api/chat/route.ts              # Endpoint POST /api/chat — asistente IA con rate limiting
 │   ├── api/debug/save-route/route.ts  # Endpoint POST para guardar ediciones (solo dev)
 │   ├── robots.ts                       # Robots.txt generado por App Router
@@ -278,8 +277,8 @@ rutasuruapanpwa/
 │   ├── ReportBugForm.tsx     # Formulario de reporte de errores (correo / GitHub)
 │   └── RouteList.tsx         # Lista filtrable de rutas
 ├── data/
-│   ├── rutas.json            # Rutas normalizadas (formato plano)
-│   └── rutas-grouped.json    # Rutas agrupadas ida/vuelta (314 KB)
+│   ├── rutas_produccion_final.json # Fuente maestra del motor de rutas
+│   └── gtfs/                  # Datos GTFS auxiliares / experimentales
 ├── lib/
 │   ├── geo.ts                # Haversine y utilidades geométricas
 │   ├── map.ts                # Utilidades de Mapbox (layers, sources)
@@ -291,8 +290,6 @@ rutasuruapanpwa/
 │   ├── sw.js                 # Service Worker
 │   └── icons/                # Íconos PWA (192, 512, svg)
 └── scripts/
-    ├── convert-rutas.js      # Transformador de datos raw
-    ├── group-rutas.js        # Agrupador ida/vuelta
     └── test-chatbot.mjs      # Suite de tests del asistente IA
 ```
 
@@ -304,11 +301,11 @@ rutasuruapanpwa/
 
 El proyecto usa metadata de Next.js App Router, `app/sitemap.ts` y `app/robots.ts` para evitar duplicidad con archivos estáticos. El manifest vive en `public/manifest.json` y el Service Worker en `public/sw.js`, generado desde `public/sw.template.js` durante el build para estampar un identificador de versión.
 
-El Service Worker precarga el shell principal y cachea `/api/rutas` con estrategia stale-while-revalidate para que el mapa pueda seguir funcionando después de una primera carga exitosa.
+El Service Worker precarga el shell principal y cachea `/api/rutas-polyline` con estrategia stale-while-revalidate para que el mapa pueda seguir funcionando después de una primera carga exitosa.
 
 ### ¿Por qué Next.js 16 con App Router?
 
-El App Router permite colocar el endpoint `/api/rutas` en el mismo proyecto sin backend separado. Además, los **React Server Components** reducen el JS del cliente y `revalidate = 86400` en el API route garantiza que Vercel sirva el JSON desde su CDN edge — cero latencia para los usuarios. El build con webpack (`next dev --webpack`) proporciona compatibilidad completa con plugins y optimización de bundle.
+El App Router permite colocar el endpoint `/api/rutas-polyline` en el mismo proyecto sin backend separado. Además, los **React Server Components** reducen el JS del cliente y `revalidate = 86400` en el API route garantiza que Vercel sirva el JSON desde su CDN edge — cero latencia para los usuarios. El build con webpack (`next dev --webpack`) proporciona compatibilidad completa con plugins y optimización de bundle.
 
 ### ¿Por qué Mapbox GL JS y no Leaflet o Google Maps?
 
@@ -324,7 +321,7 @@ Mostrar todas las rutas con su resolución completa (miles de puntos) degrada el
 
 ### ¿Por qué lazy load del JSON?
 
-`rutas-grouped.json` pesa 314 KB. Importarlo directamente (`import ... from "@/data/..."`) lo incluye en el bundle JS inicial, bloqueando el **First Contentful Paint**. Cargarlo con `fetch("/api/rutas")` en un `useEffect` permite que el mapa vacío se muestre primero y los datos lleguen en background, mejorando el LCP y el puntaje de Lighthouse.
+`rutas_produccion_final.json` es la fuente maestra del motor A→B. Cargarlo con `fetch("/api/rutas-polyline")` en un `useEffect` evita meter los datos de rutas en el bundle JS inicial, permite mostrar el mapa primero y deja que los datos lleguen en background.
 
 ---
 
@@ -397,6 +394,7 @@ Public transit in mid-size Mexican cities lacks accessible digital information. 
 | 🚀 Onboarding Flow | Step-by-step explanatory overlay using `localStorage` |
 | 📲 Share Routing | Native integration via `navigator.share()` with clipboard fallback |
 | 🏷️ Descriptive names | Each route is identified by its destination (e.g. "Jucutacato · Ruta 24") in list, map, and shared link; search works by number or destination |
+| 🏛️ Landmarks & reference search | Directions show nearby landmarks ("Board near Central de Autobuses"); search suggests routes passing through a known landmark |
 | 🔎 Landing context | Landing CTAs and chips send `?destino=...`; the map shows contextual guidance for placing origin and destination |
 | 🔄 Outbound / Return | Dynamic direction toggle with reactive re-render; quick-flip button when no direct route found |
 | 🎯 A→B Suggestion Engine | Haversine-based local matching, no external APIs |
@@ -406,7 +404,7 @@ Public transit in mid-size Mexican cities lacks accessible digital information. 
 | 📍 Relevant segment | When a suggestion is selected, only the A→B segment is rendered |
 | 🎯 Pin auto-framing | Camera adjusts viewport automatically when A or B is placed |
 | 🖱️ Crosshair cursor | Map canvas shows crosshair cursor while waiting for A or B placement |
-| ⚡ Lazy data load | 314 KB JSON fetched via `fetch("/api/rutas")` outside the JS bundle |
+| ⚡ Lazy data load | Master route JSON fetched via `fetch("/api/rutas-polyline")` outside the JS bundle |
 | 📴 Full PWA | Service Worker with offline cache, manifest, installable on Android/iOS |
 | 🎨 Smooth UX | No Mapbox layer recreation: only the GeoJSON source is updated |
 | ✨ Animated HeroMap | Rotating suggestion card with smooth fade and dots indicator; slow bearing rotation |
@@ -449,7 +447,7 @@ localStorage.setItem('debug', 'true')
 3. **Click the end point** → the full segment is marked in red.
 4. Press **"Editar segmento"** then click on the map to draw the new path (green).
 5. Press **"Finalizar"** → **"Aplicar"** to replace the segment.
-6. Press **"Guardar"** to write the changes to `data/rutas.json` and `data/rutas-grouped.json`.
+6. Press **"Guardar"** to write the changes to `data/rutas_produccion_final.json`.
 
 > The Save button is only available in `NODE_ENV=development`. Changes persist to disk and are reflected on the next page reload.
 
@@ -564,8 +562,6 @@ npm run dev                # Dev server with webpack
 npm run lint               # ESLint 9 validation
 npx tsc --noEmit           # Strict TypeScript validation
 npm audit --audit-level=moderate # Dependency audit
-npm run convert:rutas      # Convert raw inputs → data/rutas.json
-node scripts/group-rutas.js  # Generate data/rutas-grouped.json
 ```
 
 ---
@@ -575,7 +571,7 @@ node scripts/group-rutas.js  # Generate data/rutas-grouped.json
 ```
 rutasuruapanpwa/
 ├── app/
-│   ├── api/rutas/route.ts              # GET /api/rutas endpoint (lazy load)
+│   ├── api/rutas-polyline/route.ts     # GET /api/rutas-polyline endpoint
 │   ├── api/chat/route.ts               # POST /api/chat endpoint with rate limiting
 │   ├── api/debug/save-route/route.ts  # POST endpoint for saving edits (dev only)
 │   ├── robots.ts                       # robots.txt generated by App Router
@@ -590,8 +586,8 @@ rutasuruapanpwa/
 │   ├── ReportBugForm.tsx     # Error report form
 │   └── RouteList.tsx         # Filterable route list
 ├── data/
-│   ├── rutas.json            # Normalized routes (flat format)
-│   └── rutas-grouped.json    # Routes grouped by direction (314 KB)
+│   ├── rutas_produccion_final.json # Master route engine data
+│   └── gtfs/                  # Auxiliary / experimental GTFS data
 ├── lib/
 │   ├── geo.ts                # Haversine and geometric utilities
 │   ├── map.ts                # Mapbox utilities (layers, sources)
@@ -603,8 +599,7 @@ rutasuruapanpwa/
 │   ├── sw.js                 # Service Worker
 │   └── icons/                # PWA icons (192, 512, svg)
 └── scripts/
-    ├── convert-rutas.js      # Raw data transformer
-    └── group-rutas.js        # Outbound/return grouper
+    └── test-chatbot.mjs      # AI assistant test suite
 ```
 
 ---
@@ -615,11 +610,11 @@ rutasuruapanpwa/
 
 The project uses Next.js App Router metadata, `app/sitemap.ts`, and `app/robots.ts` to avoid duplicate static SEO files. The manifest lives in `public/manifest.json`; the Service Worker lives in `public/sw.js` and is generated from `public/sw.template.js` during build to stamp a version identifier.
 
-The Service Worker precaches the main shell and caches `/api/rutas` with stale-while-revalidate so the map can keep working after one successful online load.
+The Service Worker precaches the main shell and caches `/api/rutas-polyline` with stale-while-revalidate so the map can keep working after one successful online load.
 
 ### Why Next.js 16 with App Router?
 
-The App Router lets us place the `/api/rutas` endpoint within the same project — no separate backend. Additionally, **React Server Components** reduce client-side JS, and `revalidate = 86400` on the API route ensures Vercel serves the JSON from its edge CDN, delivering zero-latency responses to users. The webpack-based build (`next dev --webpack`) provides full plugin compatibility and bundle optimization.
+The App Router lets us place the `/api/rutas-polyline` endpoint within the same project — no separate backend. Additionally, **React Server Components** reduce client-side JS, and `revalidate = 86400` on the API route ensures Vercel serves the JSON from its edge CDN, delivering zero-latency responses to users. The webpack-based build (`next dev --webpack`) provides full plugin compatibility and bundle optimization.
 
 ### Why Mapbox GL JS instead of Leaflet or Google Maps?
 
@@ -635,7 +630,7 @@ Rendering all routes at full resolution (thousands of points) degrades FPS when 
 
 ### Why lazy-load the JSON?
 
-`rutas-grouped.json` is 314 KB. Importing it directly (`import ... from "@/data/..."`) includes it in the initial JS bundle, blocking the **First Contentful Paint**. Loading it with `fetch("/api/rutas")` inside a `useEffect` lets the empty map render first while data arrives in the background, improving LCP and the Lighthouse score.
+`rutas_produccion_final.json` is the master source for the A→B engine. Loading it with `fetch("/api/rutas-polyline")` inside a `useEffect` keeps route data out of the initial JS bundle, lets the map render first, and loads data in the background.
 
 ---
 

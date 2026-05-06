@@ -2,9 +2,9 @@ const STATIC_CACHE_NAME = "rutas-static-__BUILD_ID__";
 const DATA_CACHE_NAME = "rutas-data-__BUILD_ID__";
 
 // Only shell assets are pre-cached during install.
-// /api/rutas is NOT included here: if the server is cold on first install,
+// /api/rutas-polyline is NOT included here: if the server is cold on first install,
 // addAll() would throw and block the entire SW installation.
-// The data endpoint is handled lazily via staleWhileRevalidate on first fetch.
+// The data endpoint is handled lazily via network-first on first fetch.
 const APP_SHELL_ASSETS = [
   "/",
   "/mapa",
@@ -82,6 +82,19 @@ async function staleWhileRevalidate(request, cacheName) {
   return cached || networkPromise || new Response("Offline", { status: 503 });
 }
 
+async function networkFirstData(request, cacheName) {
+  const cache = await caches.open(cacheName);
+
+  try {
+    const response = await fetch(request, { cache: "no-store" });
+    cache.put(request, response.clone());
+    return response;
+  } catch {
+    const cached = await cache.match(request);
+    return cached || new Response("Offline", { status: 503 });
+  }
+}
+
 async function networkFirstNavigation(request) {
   try {
     const response = await fetch(request);
@@ -131,8 +144,8 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  if (requestUrl.pathname === "/api/rutas") {
-    event.respondWith(staleWhileRevalidate(request, DATA_CACHE_NAME));
+  if (requestUrl.pathname === "/api/rutas-polyline") {
+    event.respondWith(networkFirstData(request, DATA_CACHE_NAME));
     return;
   }
 

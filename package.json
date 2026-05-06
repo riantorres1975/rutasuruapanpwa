@@ -6,10 +6,7 @@
     "dev": "next dev --webpack",
     "build": "next build --webpack",
     "start": "next start",
-    "lint": "eslint .",
-    "convert:rutas": "node scripts/convert-rutas.js",
-    "group:rutas": "node scripts/group-rutas.js",
-    "pipeline:rutas": "node scripts/convert-rutas.js && node scripts/group-rutas.js"
+    "lint": "eslint ."
   },
   "dependencies": {
     "fuse.js": "^7.3.0",

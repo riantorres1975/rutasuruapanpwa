@@ -1,4 +1,4 @@
-name: Build & Data Pipeline
+name: Build
 
 on:
   push:
@@ -21,23 +21,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build (pipeline + next build)
+      - name: Build
         run: npm run build
 
-      - name: Verify pipeline output
+      - name: Verify route data
         run: |
-          ROUTES=$(node -e "const d=require('./data/rutas-grouped.json'); console.log(d.length)")
-          echo "Routes generated: $ROUTES"
+          ROUTES=$(node -e "const d=require('./data/rutas_produccion_final.json'); console.log(d.length)")
+          echo "Routes available: $ROUTES"
           if [ "$ROUTES" -lt 1 ]; then
-            echo "Pipeline produced 0 routes"
+            echo "Route data is empty"
             exit 1
           fi
-
-      - name: Upload data artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: rutas-data
-          path: |
-            data/rutas.json
-            data/rutas-grouped.json
-          retention-days: 7

@@ -8,44 +8,36 @@ const STORAGE_KEY = "rutas-uru-onboarded";
 
 type Step = {
   icon: React.ReactNode;
+  label: string;   // etiqueta contextual (reemplaza "Paso X de 3")
   title: string;
   description: string;
-  accentColor: string; // Tailwind arbitrary color for the icon glow ring
+  accentColor: string;
 };
 
 const steps: Step[] = [
   {
     accentColor: "rgba(106,171,72,0.18)",
-    title: "Marca tu origen",
-    description: "Toca cualquier punto del mapa para marcar desde dónde sales (punto A).",
+    label: "ORIGEN",
+    title: "Tu ubicación, automática",
+    description: "Usamos tu GPS para saber desde dónde sales. Si quieres ajustarlo, toca el mapa.",
     icon: (
-      // Map-pin icon
+      // GPS / location icon
       <svg viewBox="0 0 24 24" fill="none" className="h-10 w-10" aria-hidden="true">
-        <path
-          d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7Z"
-          fill="currentColor"
-          fillOpacity={0.15}
-          stroke="currentColor"
-          strokeWidth="1.8"
-          strokeLinejoin="round"
-        />
-        <circle cx="12" cy="9" r="2.5" fill="currentColor" />
+        <circle cx="12" cy="12" r="4" fill="currentColor" fillOpacity={0.2} stroke="currentColor" strokeWidth="1.8" />
+        <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.4" strokeOpacity={0.5} />
+        <path d="M12 2v3M12 19v3M2 12h3M19 12h3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
       </svg>
     ),
   },
   {
-    accentColor: "rgba(123,160,91,0.20)", // avocado-400
-    title: "Marca tu destino",
-    description: "Toca el mapa de nuevo para fijar a dónde quieres llegar (punto B).",
+    accentColor: "rgba(123,160,91,0.20)",
+    label: "DESTINO",
+    title: "Selecciona tu destino",
+    description: "Toca el mapa donde quieres llegar. El resultado aparece de inmediato, sin pasos extra.",
     icon: (
       // Flag icon
       <svg viewBox="0 0 24 24" fill="none" className="h-10 w-10" aria-hidden="true">
-        <path
-          d="M5 21V4"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          strokeLinecap="round"
-        />
+        <path d="M5 21V4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
         <path
           d="M5 4h10l-2.5 4L15 12H5"
           fill="currentColor"
@@ -59,19 +51,14 @@ const steps: Step[] = [
     ),
   },
   {
-    accentColor: "rgba(244,235,217,0.16)", // cream
-    title: "Te sugerimos la mejor ruta",
-    description: "Nuestro motor compara las 40 rutas reales y te muestra la opción más rápida automáticamente.",
+    accentColor: "rgba(244,235,217,0.16)",
+    label: "RESULTADO",
+    title: "Resultado inmediato",
+    description: "Nuestro motor compara las 40 rutas reales y te muestra la mejor opción al instante.",
     icon: (
       // Bus icon
       <svg viewBox="0 0 24 24" fill="none" className="h-10 w-10" aria-hidden="true">
-        <rect
-          x="3" y="4" width="18" height="14" rx="2"
-          fill="currentColor"
-          fillOpacity={0.12}
-          stroke="currentColor"
-          strokeWidth="1.8"
-        />
+        <rect x="3" y="4" width="18" height="14" rx="2" fill="currentColor" fillOpacity={0.12} stroke="currentColor" strokeWidth="1.8" />
         <path d="M3 9h18" stroke="currentColor" strokeWidth="1.5" />
         <path d="M8 18v2M16 18v2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
         <circle cx="7.5" cy="14" r="1" fill="currentColor" />
@@ -316,7 +303,7 @@ export default function OnboardingOverlay() {
 
               {/* Step number */}
               <p className="ov-text-muted text-[11px] font-bold uppercase tracking-widest">
-                Paso {step + 1} de {steps.length}
+                {current.label}
               </p>
 
               {/* Title */}
