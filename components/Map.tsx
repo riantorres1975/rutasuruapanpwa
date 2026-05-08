@@ -705,16 +705,17 @@ function createChevronImage(): { width: number; height: number; data: Uint8Array
     return { width: size, height: size, data: new Uint8Array(size * size * 4) };
   }
 
-  // Chevron pointing UP. Mapbox rotates symbols on a line so the icon's top
-  // points along the line's direction of travel — so "up" = "forward".
+  // Chevron pointing RIGHT (+x). With symbol-placement: "line" and
+  // icon-rotation-alignment: "map", Mapbox rotates the icon so its right
+  // edge faces the line's direction of travel — so "right" = "forward".
   ctx.strokeStyle = "#ffffff";
   ctx.lineWidth = size * 0.18;
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
   ctx.beginPath();
-  ctx.moveTo(size * 0.20, size * 0.62);
-  ctx.lineTo(size * 0.50, size * 0.28);
-  ctx.lineTo(size * 0.80, size * 0.62);
+  ctx.moveTo(size * 0.38, size * 0.20);
+  ctx.lineTo(size * 0.72, size * 0.50);
+  ctx.lineTo(size * 0.38, size * 0.80);
   ctx.stroke();
 
   const imageData = ctx.getImageData(0, 0, size, size);
