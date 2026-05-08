@@ -22,6 +22,20 @@ Ordenado del más reciente al más antiguo.
 
 ---
 
+## [2026-05-08] Refactor: base de conocimiento del chat extraída a módulo independiente
+
+**Archivos modificados:**
+- `lib/chat-knowledge.ts` *(nuevo)*
+- `app/api/chat/route.ts`
+
+### Qué se hizo
+- Las ~135 líneas de datos inline en el handler del chat (`DESTINATIONS`, `SCHEDULES`, `ALIASES`, `ROUTE_DETAILS` y los tipos `Stop`/`RouteDetail`) se movieron a `lib/chat-knowledge.ts`.
+- El módulo exporta cada constante con prefijo `CHAT_` (`CHAT_DESTINATIONS`, etc.) para evitar colisiones de nombres en el árbol de imports.
+- `app/api/chat/route.ts` ahora importa desde `@/lib/chat-knowledge` y ya no contiene datos hardcodeados.
+- Sin cambios de comportamiento. `tsc --noEmit` pasa sin errores.
+
+---
+
 ## [2026-05-08] Fix: a11y, UX, PWA, theme y tooling (ronda 2)
 
 **Archivos modificados:**

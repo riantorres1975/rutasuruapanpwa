@@ -88,6 +88,10 @@ Botón de chat flotante integrado en el mapa que responde preguntas en lenguaje 
 - Badge **BETA** visible + aviso de que la información puede no ser exacta
 - Botón 🚩 para reportar errores directamente desde el chat (abre correo o GitHub Issue prellenado)
 
+### Base de conocimiento
+
+Todos los datos que el chatbot conoce (rutas, horarios, alias de destinos, paradas con coordenadas) se centralizan en `lib/chat-knowledge.ts`. Editar ese archivo es suficiente para actualizar las respuestas del asistente sin tocar la lógica del endpoint.
+
 ### Variables de entorno necesarias
 
 ```bash
