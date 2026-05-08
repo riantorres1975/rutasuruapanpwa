@@ -63,8 +63,10 @@ async function cacheFirst(request) {
   }
 
   const response = await fetch(request);
-  const cache = await caches.open(STATIC_CACHE_NAME);
-  cache.put(request, response.clone());
+  if (response.ok) {
+    const cache = await caches.open(STATIC_CACHE_NAME);
+    cache.put(request, response.clone());
+  }
   return response;
 }
 
@@ -74,7 +76,9 @@ async function staleWhileRevalidate(request, cacheName) {
 
   const networkPromise = fetch(request)
     .then((response) => {
-      cache.put(request, response.clone());
+      if (response.ok) {
+        cache.put(request, response.clone());
+      }
       return response;
     })
     .catch(() => null);

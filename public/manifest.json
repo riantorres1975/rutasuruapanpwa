@@ -11,6 +11,15 @@
   "theme_color": "#0c110a",
   "background_color": "#0c110a",
   "orientation": "portrait",
+  "screenshots": [
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Mapa interactivo de rutas en Uruapan"
+    }
+  ],
   "shortcuts": [
     {
       "name": "Abrir mapa",

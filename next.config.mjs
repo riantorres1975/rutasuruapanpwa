@@ -2,8 +2,11 @@
 import { readFileSync, writeFileSync } from "fs";
 import { join } from "path";
 
-// Generate a stable build ID once per build invocation
-const BUILD_ID = randomBytes(4).toString("hex");
+// In dev, use a fixed ID so the SW cache isn't busted on every hot reload.
+// In production, generate a fresh ID per build to force SW update.
+const BUILD_ID = process.env.NODE_ENV === "development"
+  ? "dev"
+  : randomBytes(4).toString("hex");
 
 /** @type {import('next').NextConfig} */
 const securityHeaders = [

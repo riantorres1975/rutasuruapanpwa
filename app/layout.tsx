@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { DM_Sans, Playfair_Display } from "next/font/google";
 import PWARegistrar from "@/components/PWARegistrar";
+import PWAInstallBanner from "@/components/PWAInstallBanner";
 import AdaptiveTheme from "@/components/AdaptiveTheme";
 import { SITE_URL } from "@/lib/site-url";
 import "./globals.css";
@@ -49,7 +50,7 @@ export const metadata: Metadata = {
     siteName: "UruGo",
     images: [
       {
-        url: "https://www.urugo.app/api/og",
+        url: `${SITE_URL}/api/og`,
         width: 1200,
         height: 630,
         alt: "UruGo — Mapa de rutas de transporte en Uruapan"
@@ -88,6 +89,7 @@ export default function RootLayout({
         />
         <AdaptiveTheme />
         <PWARegistrar />
+        <PWAInstallBanner />
         {children}
       </body>
     </html>

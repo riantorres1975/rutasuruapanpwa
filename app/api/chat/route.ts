@@ -226,10 +226,13 @@ function cleanExpiredEntries(map: Map<string, { count: number; resetAt: number }
   }
 }
 
-// Limpia entradas caducadas cada 5 minutos para evitar crecimiento ilimitado.
-setInterval(() => {
-  cleanExpiredEntries(rateLimitMap, Date.now());
-}, 300_000);
+// In long-lived Node.js processes (local dev), clean expired entries periodically.
+// In serverless environments the map resets per cold-start, so this is a no-op there.
+if (typeof setInterval !== "undefined" && typeof process !== "undefined" && process.env.NODE_ENV !== "production") {
+  setInterval(() => {
+    cleanExpiredEntries(rateLimitMap, Date.now());
+  }, 300_000);
+}
 
 function getClientIp(req: NextRequest) {
   const candidates = [

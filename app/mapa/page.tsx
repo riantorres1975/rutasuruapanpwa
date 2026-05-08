@@ -384,8 +384,12 @@ export default function HomePage() {
         if (driftM > GEO_DRIFT_THRESHOLD_M) {
           // GPS is jumping — warn instead of moving the origin silently
           setGeoAccuracyWarn(true);
+        } else {
+          // Normal GPS refinement — accept the improved reading
+          firstFix = coords;
+          setUserLocation(coords);
+          setGeoAccuracyWarn(false);
         }
-        // If drift is within threshold, silently update (normal GPS refinement)
       },
       () => {
         setGeoStatus("error");
@@ -413,7 +417,7 @@ export default function HomePage() {
   useEffect(() => {
     if (polylineRoutes.length > 0) return;
     let cancelled = false;
-    fetch("/api/rutas-polyline")
+    fetch("/api/rutas-polyline", { cache: "no-store" })
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
@@ -437,7 +441,8 @@ export default function HomePage() {
         }
       });
     return () => { cancelled = true; };
-  }, [polylineRoutes.length]);
+  // fetchAttempt triggers retry when user clicks "Reintentar"
+  }, [polylineRoutes.length, fetchAttempt]);
 
   const buildShareUrl = useCallback((options: {
     routeId?: number | null;

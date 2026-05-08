@@ -2,7 +2,7 @@ import { readFileSync } from "fs";
 import { join } from "path";
 import type { ProductionRoute } from "@/lib/types";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 
 export async function GET() {
   let routes: ProductionRoute[];

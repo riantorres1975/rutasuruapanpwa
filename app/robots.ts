@@ -7,7 +7,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/api/", "/mapa?*"]
+        disallow: ["/api/"]
       },
       {
         userAgent: "facebookexternalhit",
