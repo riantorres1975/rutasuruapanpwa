@@ -22,6 +22,21 @@ Ordenado del más reciente al más antiguo.
 
 ---
 
+## [2026-05-08] Fix: rediseño de flechas direccionales como iconos SDF chevron
+
+**Archivos modificados:**
+- `components/Map.tsx`
+
+### Qué se hizo
+- Las flechas direccionales en rutas (transbordos y rutas seleccionadas) usaban caracteres Unicode (`›`, `▶`) o, en una iteración intermedia, polígonos GeoJSON de tamaño geográfico fijo (~27 m). Ambos enfoques fallaban: el primero no rotaba limpiamente con la línea y el segundo era invisible al alejar el zoom.
+- Nuevo enfoque: una imagen chevron (V) trazada en `<canvas>`, registrada en el mapa vía `map.addImage(..., { sdf: true })`. Esto permite tintarla dinámicamente con el color de cada ruta usando `icon-color`.
+- El symbol layer usa `symbol-placement: "line"` con `icon-size` y `symbol-spacing` interpolados por zoom (`0.35x → 0.85x` y `55px → 130px` entre arrows). Resultado: las flechas son visibles tanto a zoom de ciudad (11) como acercado (17).
+- Halo oscuro (`icon-halo-color: rgba(0,0,0,0.55)`) para mantener contraste sobre fondos claros y oscuros.
+- El chevron se dibuja apuntando hacia la **derecha** (+x) en la imagen fuente, porque con `symbol-placement: "line"` Mapbox rota el icono de modo que su lado derecho mire el sentido de la línea. Apuntarlo hacia arriba causaba que las flechas quedaran 90° rotadas respecto al sentido de marcha (corregido en commit posterior).
+- La imagen se re-registra en el handler de `style.load` (cambio de tema light/dark) porque Mapbox descarta los iconos asociados al estilo anterior.
+
+---
+
 ## [2026-05-08] Fix: mapa se re-centraba al refrescar GPS y CSP roto en dev
 
 **Archivos modificados:**

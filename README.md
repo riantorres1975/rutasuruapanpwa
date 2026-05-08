@@ -41,6 +41,7 @@ Los sistemas de transporte público en ciudades intermedias de México carecen d
 | 🏛️ Landmarks y búsqueda por referencia | Indicaciones muestran puntos de referencia cercanos ("Sube cerca de Central de Autobuses"); el buscador sugiere rutas que pasan por un landmark conocido |
 | 🔎 Contexto desde landing | Los CTAs y chips envían `?destino=...`; el mapa muestra una guía contextual para marcar origen y destino |
 | 🔄 Ida / Vuelta | Cambio dinámico de dirección con re-render reactivo; botón de sugerencia rápida al no encontrar ruta directa |
+| ➤ Flechas direccionales | Chevrons SDF dibujados en canvas y tintados con el color de cada ruta; tamaño y separación interpolados por zoom (visibles tanto a vista de ciudad como acercado) |
 | 🎯 Motor de sugerencias A→B | Algoritmo Haversine para matching local sin APIs externas |
 | 🔀 Rutas con trasbordo | Sugerencias A→B con 1 cambio de camión; detección de intersecciones reales entre rutas (misma esquina ≤35 m); línea de caminata punteada entre puntos de bajada y abordaje; rutas secundarias atenuadas visualmente |
 | 📐 Simplificación de trayectorias | Algoritmo Ramer-Douglas-Peucker (RDP) para reducir puntos en rutas de fondo |
