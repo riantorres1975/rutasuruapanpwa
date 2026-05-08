@@ -22,6 +22,81 @@ Ordenado del más reciente al más antiguo.
 
 ---
 
+## [2026-05-08] Fix: a11y, UX, PWA, theme y tooling (ronda 2)
+
+**Archivos modificados:**
+- `components/AdaptiveTheme.tsx`
+- `components/BottomSheet.tsx`
+- `components/NearbyToast.tsx`
+- `components/Map.tsx`
+- `components/PWARegistrar.tsx`
+- `app/api/chat/route.ts`
+- `app/layout.tsx`
+- `app/sitemap.ts`
+- `tsconfig.json`
+- `eslint.config.mjs`
+- `public/sw.template.js`
+
+### Qué se hizo
+
+#### `components/AdaptiveTheme.tsx` + `app/layout.tsx`
+- El tema ahora respeta `prefers-color-scheme` del sistema operativo como señal primaria. Si el OS tiene preferencia explícita (dark/light), se usa esa. Si no, se aplica el fallback basado en hora del día.
+- Se añade listener de `MediaQueryList.change` para reaccionar a cambios del OS en tiempo real (ej. modo oscuro automático del teléfono).
+- El inline script de `layout.tsx` se actualizó para que la detección inicial (antes de React) use la misma lógica, evitando flash de tema incorrecto.
+
+#### `components/BottomSheet.tsx`
+- `aria-modal` ahora solo se aplica cuando `open === true`. Antes estaba siempre en `"true"`, lo que hacía que lectores de pantalla anunciaran un diálogo invisible cuando el sheet estaba cerrado.
+
+#### `components/NearbyToast.tsx` + `components/Map.tsx`
+- Corrección de typo: "ubicacion" → "ubicación" (con tilde). Afectaba texto visible y `aria-label`.
+
+#### `components/PWARegistrar.tsx` + `public/sw.template.js`
+- Se elimina `skipWaiting()` automático del evento `install` del SW. Antes, cada nueva versión del SW tomaba control inmediatamente sin avisar al usuario, pudiendo interrumpir el flujo activo.
+- `PWARegistrar` ahora muestra un toast "Nueva versión disponible" con botones **Actualizar** (envía `SKIP_WAITING` y recarga) y **Cerrar** (pospone). El diseño usa los mismos tokens que `PWAInstallBanner`.
+
+#### `app/api/chat/route.ts`
+- `history.slice(-4)` → `slice(-8)`. El límite de 4 era inconsistente con la validación de hasta 20 entradas documentada. 8 da mejor contexto al modelo sin exceder el budget de tokens.
+
+#### `app/sitemap.ts`
+- `ROUTES_LAST_MODIFIED` ahora usa `now` en lugar de `new Date("2026-04-01")` hardcodeado. Las fechas estáticas en el sitemap no reflejan cambios reales y confunden a los crawlers.
+
+#### `tsconfig.json`
+- `target` actualizado de `ES2017` a `ES2022`. Next.js 16 ya transpila para el target del navegador; el target del tsconfig solo afecta la emisión de TypeScript y los features disponibles en type-checking. ES2022 habilita `at()`, `Object.hasOwn`, `Error.cause`, etc.
+
+#### `eslint.config.mjs`
+- `react-hooks/set-state-in-effect` cambiado de `"off"` a `"warn"`. La regla detecta llamadas a setState dentro de efectos sin condiciones adecuadas; activarla como warning (no error) permite identificar patrones problemáticos sin romper el build.
+
+### Estado actual
+- Pendiente (intencionalmente pospuesto): unificación de `DESTINATIONS`/`ALIASES`/`SCHEDULES` duplicados entre `app/api/chat/route.ts` y `lib/route-names.ts`. Los datos del chat están ajustados para el prompt de IA y unificarlos sin verificar cada valor podría degradar las respuestas del chatbot.
+
+---
+
+## [2026-05-08] Fix: 10 mejoras de bugs, PWA, rendimiento y SEO (ronda 1)
+
+**Archivos modificados:**
+- `app/mapa/page.tsx`
+- `public/sw.template.js`
+- `next.config.mjs`
+- `app/api/chat/route.ts`
+- `app/layout.tsx`
+- `app/robots.ts`
+- `app/api/rutas-polyline/route.ts`
+- `public/manifest.json`
+
+### Qué se hizo
+- **GPS**: acepta refinamientos GPS válidos y limpia el aviso de drift; `geoAccuracyWarn` se resetea cuando la lectura mejora.
+- **Fetch retry**: `fetchAttempt` ahora es dependencia del efecto de carga — el botón "Reintentar" dispara un nuevo fetch correctamente.
+- **SW**: valida `response.ok` en `cacheFirst` y `staleWhileRevalidate` antes de cachear — evita guardar permanentemente respuestas 404/500.
+- **BUILD_ID dev**: `"dev"` fijo en desarrollo para no invalidar la caché del SW en cada hot reload.
+- **Chat API**: `setInterval` de limpieza solo se registra en desarrollo (no en serverless/Lambda).
+- **PWAInstallBanner**: montado en `layout.tsx` — el install prompt ahora aparece correctamente.
+- **OG image**: usa `SITE_URL` env var en lugar de URL hardcodeada, funciona en preview/staging.
+- **robots.ts**: elimina `/mapa?*` (sintaxis no estándar); `/mapa` queda indexable.
+- **rutas-polyline**: `force-dynamic` → `revalidate=3600` — Vercel CDN cachea la respuesta.
+- **manifest.json**: campo `screenshots` agregado (requerido por Chrome para install prompt enriquecido).
+
+---
+
 ## [2026-05-08] Security: hardening de endpoints y CSP
 
 **Archivos modificados:**

@@ -57,6 +57,8 @@ Los sistemas de transporte público en ciudades intermedias de México carecen d
 | 🔒 Rate limiting anti-spam | Máx. 10 mensajes por IP cada 60 s en el endpoint del chat; responde 429 con mensaje legible |
 | 🚩 Reporte de errores integrado | Botón en el chat para reportar información incorrecta vía correo o GitHub Issue, con campos prellenados |
 | ♿ Accesibilidad base | Estados `:focus-visible` globales para navegación por teclado y controles con labels accesibles |
+| 🌗 Tema adaptativo | Respeta `prefers-color-scheme` del OS como señal primaria; fallback basado en hora del día para navegadores sin soporte |
+| 🔔 Actualización de PWA | Toast "Nueva versión disponible" al detectar un SW actualizado — el usuario decide cuándo recargar |
 
 ---
 
@@ -427,6 +429,8 @@ Public transit in mid-size Mexican cities lacks accessible digital information. 
 | 🔒 Anti-spam rate limiting | Max 10 messages per IP per 60 s on the chat endpoint; returns HTTP 429 with a readable message |
 | 🚩 Integrated error reporting | Flag button in the chat that opens a pre-filled email or GitHub Issue to report incorrect information |
 | ♿ Baseline accessibility | Global `:focus-visible` states for keyboard navigation and accessible labels on core controls |
+| 🌗 Adaptive theme | Respects OS `prefers-color-scheme` as primary signal; time-of-day fallback for browsers without support |
+| 🔔 PWA update toast | "New version available" toast on SW update — user decides when to reload |
 
 ---
 
