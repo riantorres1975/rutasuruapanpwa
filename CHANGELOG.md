@@ -22,6 +22,18 @@ Ordenado del más reciente al más antiguo.
 
 ---
 
+## [2026-05-08] Fix: flechas residuales tras deseleccionar ruta
+
+**Archivos modificados:**
+- `components/Map.tsx`
+
+### Qué se hizo
+- Al deseleccionar una ruta o destino, ocasionalmente las flechas direccionales del render anterior permanecían visibles en el mapa hasta el siguiente cambio de estado.
+- El effect de `arrowSegments` ya hacía `source.setData(empty)`, pero Mapbox podía conservar el render previo en pantalla en ciertos edge cases.
+- Ahora, además de vaciar el source, se alterna `visibility: "none"` en `ARROWS_LAYER` y `ARROWS_LINE_LAYER` cuando `arrowSegments.length === 0`, y se restaura a `"visible"` cuando hay segmentos. Defensa redundante para garantizar que no quede ningún render residual.
+
+---
+
 ## [2026-05-08] Fix: rediseño de flechas direccionales como iconos SDF chevron
 
 **Archivos modificados:**
