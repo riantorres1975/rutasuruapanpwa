@@ -974,10 +974,10 @@ function MapComponent({
         source: ARROWS_SOURCE,
         layout: {
           "symbol-placement": "line",
-          "symbol-spacing": 60,
+          "symbol-spacing": 80,
           "symbol-avoid-edges": false,
           "text-field": "▶",
-          "text-size": 16,
+          "text-size": 22,
           "text-keep-upright": false,
           "text-rotation-alignment": "map",
           "text-pitch-alignment": "map",
@@ -986,10 +986,10 @@ function MapComponent({
           "text-offset": [0, 0]
         },
         paint: {
-          "text-color": ["get", "color"],
+          "text-color": "#ffffff",
           "text-opacity": 1,
-          "text-halo-color": "rgba(0,0,0,0.7)",
-          "text-halo-width": 1.5
+          "text-halo-color": ["get", "color"],
+          "text-halo-width": 2.5
         }
       });
     }
@@ -1457,10 +1457,10 @@ function MapComponent({
             source: ARROWS_SOURCE,
             layout: {
               "symbol-placement": "line",
-              "symbol-spacing": 60,
+              "symbol-spacing": 80,
               "symbol-avoid-edges": false,
               "text-field": "▶",
-              "text-size": 16,
+              "text-size": 22,
               "text-keep-upright": false,
               "text-rotation-alignment": "map",
               "text-pitch-alignment": "map",
@@ -1469,10 +1469,10 @@ function MapComponent({
               "text-offset": [0, 0]
             },
             paint: {
-              "text-color": ["get", "color"],
+              "text-color": "#ffffff",
               "text-opacity": 1,
-              "text-halo-color": "rgba(0,0,0,0.7)",
-              "text-halo-width": 1.5
+              "text-halo-color": ["get", "color"],
+              "text-halo-width": 2.5
             }
           });
         }
