@@ -316,7 +316,7 @@ export async function POST(req: NextRequest) {
 
     const messages = [
       { role: "system", content: systemPrompt },
-      ...history.slice(-4).filter((m) =>
+      ...history.slice(-8).filter((m) =>
         typeof m.role === "string" &&
         (m.role === "user" || m.role === "assistant" || m.role === "bot") &&
         typeof m.text === "string"

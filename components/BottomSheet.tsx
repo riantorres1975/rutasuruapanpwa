@@ -118,7 +118,7 @@ export default function BottomSheet({
       {/* ── MOBILE: Bottom Sheet ── */}
       <section
         role="dialog"
-        aria-modal="true"
+        aria-modal={open ? "true" : undefined}
         aria-label={title}
         style={{ transform: baseTransform, height: "80dvh", background: "var(--ov-bg)", borderTop: "1px solid var(--ov-border)" }}
         className={`fixed inset-x-0 bottom-0 z-40 rounded-t-[28px] shadow-soft backdrop-blur-2xl will-change-transform md:hidden ${

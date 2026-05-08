@@ -31,7 +31,8 @@ self.addEventListener("install", (event) => {
           }
         })
       );
-      await self.skipWaiting();
+      // Do NOT call skipWaiting() here — let the app notify the user
+      // of a pending update via the SKIP_WAITING message instead.
     })()
   );
 });

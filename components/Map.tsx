@@ -1921,7 +1921,7 @@ function MapComponent({
           onClick={handleLocateMe}
           disabled={locationLoading}
           className="ov-panel ov-border grid h-10 w-10 place-items-center rounded-xl border text-lima shadow-[0_4px_16px_rgba(0,0,0,0.22)] backdrop-blur-xl transition hover:opacity-90 active:scale-95 disabled:opacity-60"
-          aria-label="Ir a mi ubicacion"
+          aria-label="Ir a mi ubicación"
         >
           {locationLoading ? (
             <span className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />

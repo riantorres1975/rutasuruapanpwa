@@ -6,7 +6,7 @@ import { SITE_URL } from "@/lib/site-url";
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
 
-  const ROUTES_LAST_MODIFIED = new Date("2026-04-01");
+  const ROUTES_LAST_MODIFIED = now;
   const STATIC_LAST_MODIFIED = new Date("2026-01-01");
 
   const staticUrls: MetadataRoute.Sitemap = [

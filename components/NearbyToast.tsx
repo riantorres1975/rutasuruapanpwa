@@ -73,7 +73,7 @@ export default function NearbyToast({ count, onView, onDismiss }: NearbyToastPro
               <span className="font-bold text-cyan-400">{count}</span> ruta{count === 1 ? "" : "s"} cercana{count === 1 ? "" : "s"} a ti
             </>
           ) : (
-            "No hay rutas cercanas a tu ubicacion"
+            "No hay rutas cercanas a tu ubicación"
           )}
         </span>
 
