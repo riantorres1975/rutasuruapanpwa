@@ -23,6 +23,7 @@ const LAYER_HIT_ID = "routes-hit";
 const ARROWS_SOURCE = "arrows-source";
 const ARROWS_LINE_LAYER = "arrows-line";
 const ARROWS_LAYER = "arrows-layer";
+const ARROW_ICON_ID = "uru-chevron";
 const USER_LOC_SOURCE = "user-location-source";
 const USER_LOC_ACCURACY_LAYER = "user-location-accuracy";
 const USER_LOC_DOT_LAYER = "user-location-dot";
@@ -689,6 +690,47 @@ function buildArrowsGeoJSON(segments: ArrowSegment[]): GeoJSON.FeatureCollection
   };
 }
 
+// Render a clean stroked chevron (V) pointing up, returned as raw RGBA for map.addImage.
+// Used as an SDF icon so we can tint it per-route via icon-color.
+function createChevronImage(): { width: number; height: number; data: Uint8Array } {
+  const size = 48;
+  if (typeof document === "undefined") {
+    return { width: size, height: size, data: new Uint8Array(size * size * 4) };
+  }
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) {
+    return { width: size, height: size, data: new Uint8Array(size * size * 4) };
+  }
+
+  // Chevron pointing UP. Mapbox rotates symbols on a line so the icon's top
+  // points along the line's direction of travel — so "up" = "forward".
+  ctx.strokeStyle = "#ffffff";
+  ctx.lineWidth = size * 0.18;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  ctx.beginPath();
+  ctx.moveTo(size * 0.20, size * 0.62);
+  ctx.lineTo(size * 0.50, size * 0.28);
+  ctx.lineTo(size * 0.80, size * 0.62);
+  ctx.stroke();
+
+  const imageData = ctx.getImageData(0, 0, size, size);
+  return {
+    width: size,
+    height: size,
+    data: new Uint8Array(imageData.data.buffer.slice(0))
+  };
+}
+
+function ensureChevronImage(map: mapboxgl.Map) {
+  if (map.hasImage(ARROW_ICON_ID)) return;
+  const img = createChevronImage();
+  map.addImage(ARROW_ICON_ID, img, { sdf: true });
+}
+
 function renderDebugPointLayer(map: mapboxgl.Map, coordinates: Coordinates[], step: number) {
   const geojson = buildDebugPointsGeoJSON(coordinates, step);
   const source = map.getSource(DEBUG_POINTS_SOURCE) as mapboxgl.GeoJSONSource | undefined;
@@ -940,14 +982,12 @@ function MapComponent({
   // Update direction arrows whenever arrowSegments changes
   useEffect(() => {
     const map = mapRef.current;
-    if (!map) return;
-    // Wait for map to be ready; if not yet, the onLoad callback will call ensureRouteLayers
-    // which sets up the source — but arrows are added separately so we just queue via setTimeout
-    if (!isMapReadyRef.current) return;
+    if (!map || !isMapReadyRef.current) return;
+
+    ensureChevronImage(map);
 
     const geojson = buildArrowsGeoJSON(arrowSegments);
     const source = map.getSource(ARROWS_SOURCE) as mapboxgl.GeoJSONSource | undefined;
-
     if (source) {
       source.setData(geojson);
     } else {
@@ -961,14 +1001,13 @@ function MapComponent({
         source: ARROWS_SOURCE,
         filter: ["==", ["get", "showLine"], 1],
         layout: { "line-cap": "round", "line-join": "round" },
-        paint: {
-          "line-color": ["get", "color"],
-          "line-width": 5,
-          "line-opacity": 0.92
-        }
+        paint: { "line-color": ["get", "color"], "line-width": 5, "line-opacity": 0.92 }
       });
     }
 
+    // Direction chevrons placed along each LineString — zoom-dependent size
+    // and spacing so they remain visible at city zooms (11-13) and not too
+    // dense when zoomed in (15+).
     if (!map.getLayer(ARROWS_LAYER)) {
       map.addLayer({
         id: ARROWS_LAYER,
@@ -976,22 +1015,30 @@ function MapComponent({
         source: ARROWS_SOURCE,
         layout: {
           "symbol-placement": "line",
-          "symbol-spacing": 100,
-          "symbol-avoid-edges": false,
-          "text-field": "›",
-          "text-size": 26,
-          "text-keep-upright": false,
-          "text-rotation-alignment": "map",
-          "text-pitch-alignment": "map",
-          "text-allow-overlap": true,
-          "text-ignore-placement": true,
-          "text-offset": [0, 0.05]
+          "symbol-spacing": [
+            "interpolate", ["linear"], ["zoom"],
+            11, 55,
+            14, 90,
+            17, 130
+          ],
+          "icon-image": ARROW_ICON_ID,
+          "icon-rotation-alignment": "map",
+          "icon-pitch-alignment": "map",
+          "icon-allow-overlap": true,
+          "icon-ignore-placement": true,
+          "icon-keep-upright": false,
+          "icon-size": [
+            "interpolate", ["linear"], ["zoom"],
+            11, 0.35,
+            14, 0.55,
+            17, 0.85
+          ]
         },
         paint: {
-          "text-color": "#ffffff",
-          "text-opacity": 0.9,
-          "text-halo-color": ["get", "color"],
-          "text-halo-width": 1.5
+          "icon-color": ["get", "color"],
+          "icon-halo-color": "rgba(0, 0, 0, 0.55)",
+          "icon-halo-width": 1.2,
+          "icon-opacity": 0.95
         }
       });
     }
@@ -1437,7 +1484,8 @@ function MapComponent({
           selectedTransferRef.current = null;
           setTimeout(() => { selectedTransferRef.current = t; }, 0);
         }
-        // Restore arrow layer after style reload
+        // Restore arrow layers after style reload (image is tied to style, re-add it)
+        ensureChevronImage(map);
         const arrowGeojson = buildArrowsGeoJSON(arrowSegmentsRef.current);
         if (!map.getSource(ARROWS_SOURCE)) {
           map.addSource(ARROWS_SOURCE, { type: "geojson", data: arrowGeojson });
@@ -1459,22 +1507,26 @@ function MapComponent({
             source: ARROWS_SOURCE,
             layout: {
               "symbol-placement": "line",
-              "symbol-spacing": 80,
-              "symbol-avoid-edges": false,
-              "text-field": "▶",
-              "text-size": 22,
-              "text-keep-upright": false,
-              "text-rotation-alignment": "map",
-              "text-pitch-alignment": "map",
-              "text-allow-overlap": true,
-              "text-ignore-placement": true,
-              "text-offset": [0, 0]
+              "symbol-spacing": [
+                "interpolate", ["linear"], ["zoom"],
+                11, 55, 14, 90, 17, 130
+              ],
+              "icon-image": ARROW_ICON_ID,
+              "icon-rotation-alignment": "map",
+              "icon-pitch-alignment": "map",
+              "icon-allow-overlap": true,
+              "icon-ignore-placement": true,
+              "icon-keep-upright": false,
+              "icon-size": [
+                "interpolate", ["linear"], ["zoom"],
+                11, 0.35, 14, 0.55, 17, 0.85
+              ]
             },
             paint: {
-              "text-color": "#ffffff",
-              "text-opacity": 1,
-              "text-halo-color": ["get", "color"],
-              "text-halo-width": 2.5
+              "icon-color": ["get", "color"],
+              "icon-halo-color": "rgba(0, 0, 0, 0.55)",
+              "icon-halo-width": 1.2,
+              "icon-opacity": 0.95
             }
           });
         }
