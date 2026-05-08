@@ -106,7 +106,7 @@ El editor interno de rutas permanece desactivado por defecto. Si necesitas usarl
 
 | Medida | Detalle |
 |---|---|
-| **CSP** | `script-src` sin `unsafe-eval`; solo `unsafe-inline` requerido por Tailwind |
+| **CSP** | `script-src` sin `unsafe-eval` en producción; en desarrollo se permite para React Fast Refresh |
 | **Rate limiting** | Máx. 10 mensajes por IP cada 60 s en `/api/chat` (in-memory) |
 | **Validación de entrada** | `message` limitado a 1000 caracteres; historial limitado a 20 entradas de 2000 chars c/u |
 | **IP detection** | Solo headers confiables: `x-forwarded-for`, `x-real-ip`, `cf-connecting-ip` |
@@ -592,7 +592,7 @@ npm audit --audit-level=moderate # Dependency audit
 
 | Measure | Detail |
 |---|---|
-| **CSP** | `script-src` without `unsafe-eval`; only `unsafe-inline` required by Tailwind |
+| **CSP** | `script-src` without `unsafe-eval` in production; allowed in development for React Fast Refresh |
 | **Rate limiting** | Max 10 messages per IP per 60 s on `/api/chat` (in-memory) |
 | **Input validation** | `message` capped at 1000 chars; history limited to 20 entries of 2000 chars each |
 | **IP detection** | Only trusted headers: `x-forwarded-for`, `x-real-ip`, `cf-connecting-ip` |

@@ -22,6 +22,24 @@ Ordenado del más reciente al más antiguo.
 
 ---
 
+## [2026-05-08] Fix: mapa se re-centraba al refrescar GPS y CSP roto en dev
+
+**Archivos modificados:**
+- `components/Map.tsx`
+- `next.config.mjs`
+
+### Qué se hizo
+
+#### `components/Map.tsx`
+- El effect que auto-encuadra los pines A/B se disparaba en cada actualización pasiva del GPS, devolviendo la cámara a la ubicación del usuario mientras intentaba explorar el mapa para elegir su destino.
+- Se añadieron `prevOriginRef` y `prevDestinationRef` para rastrear las coordenadas anteriores. La animación de cámara ahora solo ocurre si las coordenadas del pin **cambiaron efectivamente** — es decir, cuando el usuario coloca un pin manualmente. Los refrescos del GPS que devuelven prácticamente el mismo punto ya no interrumpen la exploración del mapa.
+
+#### `next.config.mjs`
+- Al eliminar `unsafe-eval` del CSP en un fix anterior, el React Fast Refresh quedó bloqueado en desarrollo (error `EvalError` en consola).
+- El CSP ahora incluye `unsafe-eval` solo cuando `NODE_ENV === "development"`. En producción/Vercel sigue siendo estricto sin `unsafe-eval`.
+
+---
+
 ## [2026-05-08] Refactor: base de conocimiento del chat extraída a módulo independiente
 
 **Archivos modificados:**
