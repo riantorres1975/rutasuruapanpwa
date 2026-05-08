@@ -974,22 +974,22 @@ function MapComponent({
         source: ARROWS_SOURCE,
         layout: {
           "symbol-placement": "line",
-          "symbol-spacing": 80,
+          "symbol-spacing": 100,
           "symbol-avoid-edges": false,
-          "text-field": "▶",
-          "text-size": 22,
+          "text-field": "›",
+          "text-size": 26,
           "text-keep-upright": false,
           "text-rotation-alignment": "map",
           "text-pitch-alignment": "map",
           "text-allow-overlap": true,
           "text-ignore-placement": true,
-          "text-offset": [0, 0]
+          "text-offset": [0, 0.05]
         },
         paint: {
           "text-color": "#ffffff",
-          "text-opacity": 1,
+          "text-opacity": 0.9,
           "text-halo-color": ["get", "color"],
-          "text-halo-width": 2.5
+          "text-halo-width": 1.5
         }
       });
     }
