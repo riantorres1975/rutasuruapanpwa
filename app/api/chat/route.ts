@@ -236,7 +236,6 @@ function getClientIp(req: NextRequest) {
     req.headers.get("x-forwarded-for")?.split(",")[0],
     req.headers.get("x-real-ip"),
     req.headers.get("cf-connecting-ip"),
-    req.headers.get("x-client-ip")
   ];
 
   for (const raw of candidates) {
@@ -291,6 +290,10 @@ export async function POST(req: NextRequest) {
 
     if (!message || typeof message !== "string") {
       return NextResponse.json({ error: "Mensaje inválido" }, { status: 400 });
+    }
+
+    if (message.length > 1000) {
+      return NextResponse.json({ error: "Mensaje demasiado largo (máx. 1000 caracteres)" }, { status: 400 });
     }
 
     if (location != null && !isValidLocation(location)) {

@@ -22,6 +22,36 @@ Ordenado del más reciente al más antiguo.
 
 ---
 
+## [2026-05-08] Security: hardening de endpoints y CSP
+
+**Archivos modificados:**
+- `next.config.mjs`
+- `app/api/chat/route.ts`
+- `app/api/debug/save-route/route.ts`
+- `app/api/rutas-polyline/route.ts`
+
+### Qué se hizo
+
+Auditoría de seguridad completa del código base. Se corrigieron 5 vulnerabilidades identificadas.
+
+#### `next.config.mjs`
+- Eliminado `'unsafe-eval'` de `script-src` en el CSP. Esta directiva permitía `eval()` y `new Function()`, anulando la protección CSP ante cualquier XSS. Mapbox GL JS y Next.js no lo requieren en producción.
+
+#### `app/api/chat/route.ts`
+- Añadida validación de longitud máxima en el campo `message` (límite: 1000 caracteres). Sin este límite, un atacante podía enviar payloads arbitrariamente grandes que se embebían directamente en el request a DeepSeek.
+- Eliminado `x-client-ip` de la lista de candidatos en `getClientIp()`. Este header no estándar podía ser enviado libremente por cualquier cliente para suplantar su IP y evadir el rate limiter.
+
+#### `app/api/debug/save-route/route.ts`
+- Añadido guard que retorna 404 cuando `NODE_ENV === "production"`. El endpoint de escritura de archivos era accesible en producción en una ruta públicamente adivinable. Ahora es completamente invisible fuera del entorno de desarrollo.
+
+#### `app/api/rutas-polyline/route.ts`
+- Cambiado `Cache-Control` de `no-cache, must-revalidate` a `public, max-age=3600, stale-while-revalidate=86400`. El header anterior forzaba una lectura de disco y respuesta completa en cada request. Con el nuevo header, Vercel CDN cachea la respuesta en edge, reduciendo carga del servidor.
+
+### Estado actual
+- El rate limiter de `/api/chat` sigue siendo in-memory (efectivo en local/servidor long-lived, limitado en Vercel serverless). Para producción en Vercel se recomienda migrar a Upstash Redis como mejora futura.
+
+---
+
 ## [2026-05-04] Feature: integrar landmarks en UI — indicaciones y búsqueda
 
 **Rama:** `experimental`

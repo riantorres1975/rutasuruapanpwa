@@ -35,6 +35,10 @@ function isValidCoord(c: unknown): c is [number, number] {
 }
 
 export async function POST(request: Request) {
+  if (process.env.NODE_ENV === "production") {
+    return Response.json({ error: "Recurso no disponible" }, { status: 404 });
+  }
+
   if (!isAuthorized(request)) {
     return Response.json({ error: "Recurso no disponible" }, { status: 403 });
   }

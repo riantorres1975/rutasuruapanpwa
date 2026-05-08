@@ -96,6 +96,20 @@ DEEPSEEK_API_KEY=sk-...   # Obtener en platform.deepseek.com
 
 El editor interno de rutas permanece desactivado por defecto. Si necesitas usarlo en local o en un entorno privado, configura `DEBUG_ROUTE_SAVE_ENABLED=true` y protege el endpoint con `DEBUG_ROUTE_SAVE_TOKEN`.
 
+### Seguridad
+
+| Medida | Detalle |
+|---|---|
+| **CSP** | `script-src` sin `unsafe-eval`; solo `unsafe-inline` requerido por Tailwind |
+| **Rate limiting** | Máx. 10 mensajes por IP cada 60 s en `/api/chat` (in-memory) |
+| **Validación de entrada** | `message` limitado a 1000 caracteres; historial limitado a 20 entradas de 2000 chars c/u |
+| **IP detection** | Solo headers confiables: `x-forwarded-for`, `x-real-ip`, `cf-connecting-ip` |
+| **Debug endpoint** | `/api/debug/save-route` retorna 404 automáticamente en `NODE_ENV=production` |
+| **Caché CDN** | `/api/rutas-polyline` usa `Cache-Control: public, max-age=3600` para servir desde edge |
+| **Secrets** | Las claves API viven solo en variables de entorno (`.env` local + Vercel env vars). Nunca en el código fuente |
+
+> **Nota:** El rate limiter usa memoria del proceso. En Vercel serverless cada instancia tiene su propio contador — para protección robusta ante abuso a escala, migrar a [Upstash Redis](https://upstash.com/) como store compartido.
+
 ### Rate limiting
 
 El endpoint `/api/chat` limita a **10 mensajes por IP cada 60 segundos**. Si se supera, responde HTTP 429. Para ajustar el límite:
@@ -563,6 +577,22 @@ npm run lint               # ESLint 9 validation
 npx tsc --noEmit           # Strict TypeScript validation
 npm audit --audit-level=moderate # Dependency audit
 ```
+
+---
+
+## 🔒 Security
+
+| Measure | Detail |
+|---|---|
+| **CSP** | `script-src` without `unsafe-eval`; only `unsafe-inline` required by Tailwind |
+| **Rate limiting** | Max 10 messages per IP per 60 s on `/api/chat` (in-memory) |
+| **Input validation** | `message` capped at 1000 chars; history limited to 20 entries of 2000 chars each |
+| **IP detection** | Only trusted headers: `x-forwarded-for`, `x-real-ip`, `cf-connecting-ip` |
+| **Debug endpoint** | `/api/debug/save-route` automatically returns 404 in `NODE_ENV=production` |
+| **CDN cache** | `/api/rutas-polyline` uses `Cache-Control: public, max-age=3600` to serve from edge |
+| **Secrets** | API keys live only in environment variables (local `.env` + Vercel env vars). Never in source code |
+
+> **Note:** The rate limiter uses process memory. On Vercel serverless, each instance maintains its own counter — for robust abuse protection at scale, migrate to [Upstash Redis](https://upstash.com/) as a shared store.
 
 ---
 
