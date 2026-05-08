@@ -987,12 +987,23 @@ function MapComponent({
 
     ensureChevronImage(map);
 
+    const hasArrows = arrowSegments.length > 0;
     const geojson = buildArrowsGeoJSON(arrowSegments);
     const source = map.getSource(ARROWS_SOURCE) as mapboxgl.GeoJSONSource | undefined;
     if (source) {
       source.setData(geojson);
     } else {
       map.addSource(ARROWS_SOURCE, { type: "geojson", data: geojson });
+    }
+
+    // Defensive: hide arrow layers when there are no segments. Belt-and-suspenders
+    // alongside setData(empty) — guards against any stale render state on Mapbox.
+    const visibility = hasArrows ? "visible" : "none";
+    if (map.getLayer(ARROWS_LINE_LAYER)) {
+      map.setLayoutProperty(ARROWS_LINE_LAYER, "visibility", visibility);
+    }
+    if (map.getLayer(ARROWS_LAYER)) {
+      map.setLayoutProperty(ARROWS_LAYER, "visibility", visibility);
     }
 
     if (!map.getLayer(ARROWS_LINE_LAYER)) {
