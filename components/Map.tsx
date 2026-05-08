@@ -844,6 +844,8 @@ function MapComponent({
   const animationTokenRef = useRef(0);
   const originMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const destinationMarkerRef = useRef<mapboxgl.Marker | null>(null);
+  const prevOriginRef = useRef<[number, number] | null>(null);
+  const prevDestinationRef = useRef<[number, number] | null>(null);
   const onNearbyRoutesFoundRef = useRef(onNearbyRoutesFound);
   const showTelefericoRef = useRef(showTeleferico);
   const telefericoGeoJSONRef = useRef<any>(null);
@@ -1547,8 +1549,19 @@ function MapComponent({
     updateMarker(destinationMarkerRef, effectiveDestination, "#dc2626", "B");
 
     // Asegurar que los pines marcados queden visibles en el viewport.
-    // No interrumpir si hay una ruta seleccionada (ese effect maneja su propia cámara).
-    if (selectedRouteIdRef.current === null) {
+    // Solo animar si el pin cambió — evita que refrescos del GPS re-centren el mapa
+    // mientras el usuario está explorando para elegir su destino.
+    const originChanged =
+      effectiveOrigin?.[0] !== prevOriginRef.current?.[0] ||
+      effectiveOrigin?.[1] !== prevOriginRef.current?.[1];
+    const destinationChanged =
+      effectiveDestination?.[0] !== prevDestinationRef.current?.[0] ||
+      effectiveDestination?.[1] !== prevDestinationRef.current?.[1];
+
+    prevOriginRef.current = effectiveOrigin ?? null;
+    prevDestinationRef.current = effectiveDestination ?? null;
+
+    if (selectedRouteIdRef.current === null && (originChanged || destinationChanged)) {
       if (effectiveOrigin && effectiveDestination) {
         const bounds = getBoundsFromCoordinates([effectiveOrigin, effectiveDestination]);
         if (bounds) {
