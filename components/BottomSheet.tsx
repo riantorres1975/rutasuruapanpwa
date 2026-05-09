@@ -108,7 +108,7 @@ export default function BottomSheet({
       {/* Backdrop — solo en full, no en mini */}
       <div
         onClick={() => (snapPoints && snap === "full" ? setSnap("mini") : onOpenChange(false))}
-        className={`fixed inset-0 z-30 bg-slate-950/52 backdrop-blur-[10px] transition-opacity duration-300 md:hidden ${
+        className={`fixed inset-0 z-30 bg-slate-950/60 transition-opacity duration-300 md:hidden ${
           open && (!snapPoints || snap === "full")
             ? "pointer-events-auto opacity-100"
             : "pointer-events-none opacity-0"
@@ -121,7 +121,7 @@ export default function BottomSheet({
         aria-modal={open ? "true" : undefined}
         aria-label={title}
         style={{ transform: baseTransform, height: "80dvh", background: "var(--ov-bg)", borderTop: "1px solid var(--ov-border)" }}
-        className={`fixed inset-x-0 bottom-0 z-40 rounded-t-[28px] shadow-soft backdrop-blur-2xl will-change-transform md:hidden ${
+        className={`fixed inset-x-0 bottom-0 z-40 rounded-t-[28px] shadow-soft will-change-transform md:hidden ${
           isDragging ? "transition-none" : "transition-[transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
         }`}
       >

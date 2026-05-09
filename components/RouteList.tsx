@@ -2,7 +2,7 @@
 
 import Fuse from "fuse.js";
 import Link from "next/link";
-import { useDeferredValue, useMemo, useState } from "react";
+import { memo, useDeferredValue, useMemo, useState } from "react";
 import TelefericoSection from "@/components/TelefericoSection";
 import { getRouteDestination, getRouteSearchTerms } from "@/lib/route-names";
 import type { ResolvedRouteData, RouteDirection, ProductionRouteLandmark } from "@/lib/types";
@@ -21,6 +21,141 @@ type RouteListProps = {
   onClearSelection?: () => void;
   onShowTeleferico?: () => void;
 };
+
+type RouteItemProps = {
+  route: ResolvedRouteData;
+  isSelected: boolean;
+  isSuggested: boolean;
+  isBestSuggestion: boolean;
+  isAlternativeSuggestion: boolean;
+  nearbyRank: number | undefined;
+  isNearby: boolean;
+  isLandmarkMatch: boolean;
+  matchedLandmark: string | null;
+  suggestionDir: RouteDirection | undefined;
+  showDivider: boolean;
+  onSelectRoute: (id: number) => void;
+};
+
+const RouteItem = memo(function RouteItem({
+  route,
+  isSelected,
+  isSuggested,
+  isBestSuggestion,
+  isAlternativeSuggestion,
+  nearbyRank,
+  isNearby,
+  isLandmarkMatch,
+  matchedLandmark,
+  suggestionDir,
+  showDivider,
+  onSelectRoute,
+}: RouteItemProps) {
+  return (
+    <li style={{ contentVisibility: "auto", containIntrinsicSize: "0 72px" }}>
+      {showDivider && (
+        <div className="flex items-center gap-2 pb-2 pt-1" aria-hidden="true">
+          <span className="flex-1 border-t border-slate-200/70 dark:border-slate-700/70" />
+          <span className="ov-text-muted text-[10px] font-medium uppercase tracking-widest" style={{ color: "var(--ov-text-muted)" }}>
+            Otras rutas
+          </span>
+          <span className="flex-1 border-t border-slate-200/70 dark:border-slate-700/70" />
+        </div>
+      )}
+      <button
+        type="button"
+        onClick={() => onSelectRoute(route.id)}
+        style={
+          !isSelected && !isLandmarkMatch && !isNearby && !isBestSuggestion && !isSuggested
+            ? { borderColor: "var(--ov-border)", background: "var(--surface)" }
+            : undefined
+        }
+        className={`flex min-h-16 w-full items-stretch justify-between rounded-2xl border px-2 py-3 text-left transition active:scale-[0.995] ${
+          isSelected
+            ? "border-lima/70 bg-lima/10 shadow-[0_4px_24px_rgba(184,232,64,0.08)]"
+            : isLandmarkMatch
+              ? "border-teal-400/60 bg-teal-500/8"
+              : isNearby
+                ? "border-lima/50 bg-lima/8"
+                : isBestSuggestion
+                  ? "border-emerald-400/70 bg-emerald-500/10"
+                  : isSuggested
+                    ? "border-lima/30 bg-lima/5"
+                    : "hover:border-lima/20"
+        }`}
+      >
+        <span className="w-1 self-stretch rounded-full" style={{ backgroundColor: route.color }} />
+        <span className="ml-3 flex flex-1 items-center gap-3">
+          {isNearby ? (
+            <span className="flex h-7 w-7 shrink-0 flex-col items-center justify-center rounded-full bg-lima/15 text-[10px] font-bold leading-none text-lima">
+              #{(nearbyRank ?? 0) + 1}
+            </span>
+          ) : null}
+          <span className="min-w-0">
+            {(() => {
+              const destino = getRouteDestination(route.ruta);
+              const availability = route.tieneIda && route.tieneVuelta
+                ? "Ida y vuelta disponibles"
+                : route.tieneIda
+                  ? "Solo ida disponible"
+                  : "Solo vuelta disponible";
+              return destino ? (
+                <>
+                  <span className="ov-text block truncate font-display text-sm font-bold">{destino}</span>
+                  <span className="ov-text-muted block text-[11px]">
+                    <span className="font-semibold">{route.ruta}</span>
+                    <span className="mx-1.5 opacity-40">·</span>
+                    {isLandmarkMatch && matchedLandmark
+                      ? <span className="text-teal-400">Pasa por: {matchedLandmark.charAt(0).toUpperCase() + matchedLandmark.slice(1)}</span>
+                      : availability}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span className="ov-text block font-display text-sm font-bold">{route.nombre}</span>
+                  <span className="ov-text-muted block text-[11px]">
+                    {isLandmarkMatch && matchedLandmark
+                      ? <span className="text-teal-400">Pasa por: {matchedLandmark.charAt(0).toUpperCase() + matchedLandmark.slice(1)}</span>
+                      : availability}
+                  </span>
+                </>
+              );
+            })()}
+          </span>
+        </span>
+
+        <span className="ml-2 flex items-center gap-1.5">
+          {isLandmarkMatch && (
+            <span className="rounded-full bg-teal-500/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-teal-400">
+              POR AQUÍ
+            </span>
+          )}
+          {isNearby && !isSelected && (
+            <span className="rounded-full bg-lima/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-lima">
+              CERCANA
+            </span>
+          )}
+          {isBestSuggestion && (
+            <span className="rounded-full bg-lima/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-lima">
+              MEJOR
+            </span>
+          )}
+          {isAlternativeSuggestion && (
+            <span className="rounded-full bg-amber-500/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-amber-400">
+              ALTERNATIVA
+            </span>
+          )}
+          {isSuggested && suggestionDir !== undefined && (
+            <span className="rounded-full bg-sky-500/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-sky-400">
+              {suggestionDir === "ida" ? "IDA" : "VUELTA"}
+            </span>
+          )}
+          {isSelected && <span className="rounded-full bg-lima/15 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-lima">ACTIVA</span>}
+        </span>
+      </button>
+    </li>
+  );
+});
 
 export default function RouteList({
   routes,
@@ -355,118 +490,28 @@ export default function RouteList({
             const isAlternativeSuggestion = !isBestSuggestion && alternativeSuggestedSet.has(route.id);
             const nearbyRank = nearbyRankMap.get(route.id);
             const isNearby = nearbyRank !== undefined;
-            const isLandmarkMatch = normalizedQuery && landmarkMatchingRouteNames.has(route.ruta);
+            const isLandmarkMatch = !!(normalizedQuery && landmarkMatchingRouteNames.has(route.ruta));
             const suggestionDir = suggestedRouteDirections?.get(route.id);
-
-            // Divider between nearby block and rest (only first non-nearby item)
             const prevRoute = filteredRoutes[listIndex - 1];
             const prevIsNearby = prevRoute !== undefined && nearbyRankMap.has(prevRoute.id);
             const showDivider = hasNearby && !normalizedQuery && !isNearby && prevIsNearby;
 
             return (
-              <li key={route.id}>
-                {showDivider && (
-                  <div className="flex items-center gap-2 pb-2 pt-1" aria-hidden="true">
-                    <span className="flex-1 border-t border-slate-200/70 dark:border-slate-700/70" />
-                    <span className="ov-text-muted text-[10px] font-medium uppercase tracking-widest" style={{ color: "var(--ov-text-muted)" }}>
-                      Otras rutas
-                    </span>
-                    <span className="flex-1 border-t border-slate-200/70 dark:border-slate-700/70" />
-                  </div>
-                )}
-                <button
-                  type="button"
-                  onClick={() => onSelectRoute(route.id)}
-                  style={
-                    !isSelected && !isLandmarkMatch && !isNearby && !isBestSuggestion && !isSuggested
-                      ? { borderColor: "var(--ov-border)", background: "var(--surface)" }
-                      : undefined
-                  }
-                  className={`flex min-h-16 w-full items-stretch justify-between rounded-2xl border px-2 py-3 text-left transition active:scale-[0.995] ${
-                    isSelected
-                      ? "border-lima/70 bg-lima/10 shadow-[0_4px_24px_rgba(184,232,64,0.08)]"
-                      : isLandmarkMatch
-                        ? "border-teal-400/60 bg-teal-500/8"
-                        : isNearby
-                          ? "border-lima/50 bg-lima/8"
-                          : isBestSuggestion
-                            ? "border-emerald-400/70 bg-emerald-500/10"
-                            : isSuggested
-                              ? "border-lima/30 bg-lima/5"
-                              : "hover:border-lima/20"
-                  }`}
-                >
-                  <span className="w-1 self-stretch rounded-full" style={{ backgroundColor: route.color }} />
-                  <span className="ml-3 flex flex-1 items-center gap-3">
-                    {/* Rank number for nearby routes */}
-                    {isNearby ? (
-                      <span className="flex h-7 w-7 shrink-0 flex-col items-center justify-center rounded-full bg-lima/15 text-[10px] font-bold leading-none text-lima">
-                        #{(nearbyRank ?? 0) + 1}
-                      </span>
-                    ) : null}
-                    <span className="min-w-0">
-                      {(() => {
-                        const destino = getRouteDestination(route.ruta);
-                        const availability = route.tieneIda && route.tieneVuelta
-                          ? "Ida y vuelta disponibles"
-                          : route.tieneIda
-                            ? "Solo ida disponible"
-                            : "Solo vuelta disponible";
-                        return destino ? (
-                          <>
-                            <span className="ov-text block truncate font-display text-sm font-bold">{destino}</span>
-                            <span className="ov-text-muted block text-[11px]">
-                              <span className="font-semibold">{route.ruta}</span>
-                              <span className="mx-1.5 opacity-40">·</span>
-                              {isLandmarkMatch && matchedLandmark
-                                ? <span className="text-teal-400">Pasa por: {matchedLandmark.charAt(0).toUpperCase() + matchedLandmark.slice(1)}</span>
-                                : availability}
-                            </span>
-                          </>
-                        ) : (
-                          <>
-                            <span className="ov-text block font-display text-sm font-bold">{route.nombre}</span>
-                            <span className="ov-text-muted block text-[11px]">
-                              {isLandmarkMatch && matchedLandmark
-                                ? <span className="text-teal-400">Pasa por: {matchedLandmark.charAt(0).toUpperCase() + matchedLandmark.slice(1)}</span>
-                                : availability}
-                            </span>
-                          </>
-                        );
-                      })()}
-                    </span>
-                  </span>
-
-                  <span className="ml-2 flex items-center gap-1.5">
-                    {isLandmarkMatch && (
-                      <span className="rounded-full bg-teal-500/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-teal-400">
-                        POR AQUÍ
-                      </span>
-                    )}
-                    {isNearby && !isSelected && (
-                      <span className="rounded-full bg-lima/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-lima">
-                        CERCANA
-                      </span>
-                    )}
-                    {isBestSuggestion && (
-                      <span className="rounded-full bg-lima/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-lima">
-                        MEJOR
-                      </span>
-                    )}
-                    {isAlternativeSuggestion && (
-                      <span className="rounded-full bg-amber-500/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-amber-400">
-                        ALTERNATIVA
-                      </span>
-                    )}
-                    {isSuggested && suggestionDir !== undefined && (
-                      <span className="rounded-full bg-sky-500/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-sky-400">
-                        {suggestionDir === "ida" ? "IDA" : "VUELTA"}
-                      </span>
-                    )}
-                    {isSelected && <span className="rounded-full bg-lima/15 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-lima">ACTIVA</span>}
-                  </span>
-                </button>
-              </li>
+              <RouteItem
+                key={route.id}
+                route={route}
+                isSelected={isSelected}
+                isSuggested={isSuggested}
+                isBestSuggestion={isBestSuggestion}
+                isAlternativeSuggestion={isAlternativeSuggestion}
+                nearbyRank={nearbyRank}
+                isNearby={isNearby}
+                isLandmarkMatch={isLandmarkMatch}
+                matchedLandmark={matchedLandmark}
+                suggestionDir={suggestionDir}
+                showDivider={showDivider}
+                onSelectRoute={onSelectRoute}
+              />
             );
           })}
         </ul>
