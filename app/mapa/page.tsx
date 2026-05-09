@@ -401,10 +401,17 @@ export default function HomePage() {
   }, []);
 
   // Keep originPoint in sync: manualOrigin overrides userLocation.
+  // Una vez que el usuario pone el pin B (destinationPoint), congelamos el origen
+  // para que los refrescados del GPS no recalculen las sugerencias continuamente.
   useEffect(() => {
-    const effective = manualOrigin ?? userLocation;
-    setOriginPoint(effective);
-  }, [manualOrigin, userLocation]);
+    if (manualOrigin) {
+      setOriginPoint(manualOrigin);
+    } else if (!destinationPoint) {
+      // Sin destino: el origen sigue al GPS normalmente
+      setOriginPoint(userLocation);
+    }
+    // Con destino ya fijado y sin manualOrigin: no mover el origen por GPS
+  }, [manualOrigin, userLocation, destinationPoint]);
 
   // Auto-advance to destination step when GPS provides location and user hasn't set a destination yet.
   useEffect(() => {
