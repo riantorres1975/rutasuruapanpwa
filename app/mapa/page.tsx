@@ -1002,12 +1002,17 @@ export default function HomePage() {
     if (flowStep !== 3) setIsResultSheetOpen(false);
   }, [flowStep]);
 
-  // Auto-abrir result sheet en mobile cuando los resultados llegan (flujo tipo asistente)
+  // Abrir el result sheet una sola vez cuando el usuario coloca el pin B y termina el cálculo.
+  // La ref evita re-aperturas causadas por refrescados del GPS.
+  const resultSheetOpenedForDestRef = useRef<string | null>(null);
   useEffect(() => {
-    if (flowStep === 3 && !isCalculatingSuggestions) {
+    if (flowStep !== 3 || isCalculatingSuggestions) return;
+    const destKey = destinationPoint ? destinationPoint.join(",") : null;
+    if (destKey && destKey !== resultSheetOpenedForDestRef.current) {
+      resultSheetOpenedForDestRef.current = destKey;
       setIsResultSheetOpen(true);
     }
-  }, [flowStep, isCalculatingSuggestions]);
+  }, [flowStep, isCalculatingSuggestions, destinationPoint]);
 
   useEffect(() => {
     if (!showHint) {

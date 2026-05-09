@@ -1627,6 +1627,7 @@ function MapComponent({
 
     if (selectedRouteIdRef.current === null && (originChanged || destinationChanged)) {
       if (effectiveOrigin && effectiveDestination) {
+        // Ambos pines presentes: ajustar para ver los dos
         const bounds = getBoundsFromCoordinates([effectiveOrigin, effectiveDestination]);
         if (bounds) {
           fitBoundsAnimated(map, bounds, {
@@ -1638,17 +1639,18 @@ function MapComponent({
             maxZoom: 15
           });
         }
-      } else if (effectiveOrigin || effectiveDestination) {
-        const target = (effectiveOrigin ?? effectiveDestination) as [number, number];
+      } else if (effectiveDestination && destinationChanged) {
+        // Solo pin B recién colocado: centrar en destino
         const currentZoom = map.getZoom();
         map.easeTo({
-          center: target,
+          center: effectiveDestination,
           zoom: Math.max(currentZoom, 14),
           duration: 600,
           padding: { top: 220, right: 32, bottom: 200, left: 32 },
           essential: true
         });
       }
+      // Si solo hay origin (usuario eligiendo destino), no mover el mapa
     }
   }, [destinationPoint, isLoading, originPoint, selectedRouteSegment]);
 
