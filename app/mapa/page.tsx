@@ -25,6 +25,7 @@ const AVG_TRIP_SPEED_KMH = 18;
 const BACKGROUND_SIMPLIFY_TOLERANCE = 0.00008;
 const BACKGROUND_MAX_POINTS = 180;
 const MOBILE_MAP_BOOT_DELAY_MS = 3200;
+const TELEFERICO_ROUTE_NAME = "Teleférico Uruapan";
 
 const MapView = dynamic(() => import("@/components/Map"), {
   ssr: false,
@@ -150,6 +151,9 @@ function getFlowStep(originPoint: Coordinates | null, destinationPoint: Coordina
   return 3;
 }
 
+function isTelefericoRouteName(name: string) {
+  return name === TELEFERICO_ROUTE_NAME;
+}
 
 function getSegmentLengthMeters(segment: Coordinates[]) {
   let total = 0;
@@ -657,6 +661,11 @@ export default function HomePage() {
     return Array.from(seen.values());
   }, [polylineRoutes]);
 
+  const visibleRouteCount = useMemo(
+    () => listRoutes.filter((route) => !isTelefericoRouteName(route.ruta)).length,
+    [listRoutes]
+  );
+
   // Simplified routes for map background rendering
   const simplifiedMapRoutes = useMemo<ResolvedRouteData[]>(
     () => polylineRoutes.map((r) => ({
@@ -793,8 +802,11 @@ export default function HomePage() {
     }
 
     if (sharedState.showTeleferico) {
-      const telefericoRoute = polylineRoutes.find((r) => r.name === "Teleférico Uruapan");
-      if (telefericoRoute) setSelectedRouteId(telefericoRoute.id);
+      const telefericoRoute = polylineRoutes.find((r) => isTelefericoRouteName(r.name));
+      if (telefericoRoute) {
+        setSelectedRouteId(telefericoRoute.id);
+        setShowTeleferico(false);
+      }
       pendingSharedStateRef.current = null;
       return;
     }
@@ -1547,7 +1559,7 @@ export default function HomePage() {
             </span>
             <p className="font-serif-display text-[16px] font-black tracking-tight text-white">UruGo</p>
             <span className="rounded-full border border-lima/25 bg-lima/10 px-2 py-0.5 text-[11px] font-semibold text-lima">
-              {listRoutes.length} rutas
+              {visibleRouteCount} rutas
             </span>
           </div>
 
@@ -1749,7 +1761,7 @@ export default function HomePage() {
               <span className="h-2 w-2 rounded-full bg-lima" aria-hidden="true" />
               <p className="ov-text font-serif-display text-[15px] font-black leading-none tracking-tight">UruGo</p>
               <span className="ov-pill ov-text-muted rounded-full px-1.5 py-0.5 text-[11px] font-medium">
-                {listRoutes.length}
+                {visibleRouteCount}
               </span>
               <span className="ml-0.5 inline-flex items-center gap-1" role="img" aria-label="Progreso del viaje">
                 {[1, 2, 3].map((step) => {
@@ -1883,7 +1895,7 @@ export default function HomePage() {
               type="button"
               onClick={() => setIsSheetOpen(true)}
               className="ov-panel pointer-events-auto inline-flex h-12 items-center gap-2 rounded-2xl border pl-3.5 pr-4 text-[14px] font-semibold shadow-[0_8px_32px_rgba(0,0,0,0.3)] backdrop-blur-xl transition hover:border-lima/40 hover:shadow-[0_8px_32px_rgba(232,93,47,0.15)] active:scale-[0.97]"
-              aria-label={selectedRoute ? `Ruta activa: ${formatRouteLabel(selectedRoute.name, selectedRoute.name)}` : `Rutas ${listRoutes.length}, ver rutas disponibles`}
+              aria-label={selectedRoute ? `Ruta activa: ${formatRouteLabel(selectedRoute.name, selectedRoute.name)}` : `Rutas ${visibleRouteCount}, ver rutas disponibles`}
             >
               {selectedRoute ? (
                 <>
@@ -1902,7 +1914,7 @@ export default function HomePage() {
                   </svg>
                   <span className="ov-text">Rutas</span>
                   <span className="ml-0.5 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-lima/20 px-1.5 text-[11px] font-bold text-lima">
-                    {listRoutes.length}
+                    {visibleRouteCount}
                   </span>
                 </>
               )}

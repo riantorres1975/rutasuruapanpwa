@@ -20454,5 +20454,83 @@
       ]
     ],
     "landmarks": []
+  },
+  {
+    "id": 81,
+    "name": "Teleférico Uruapan",
+    "original_name": "Teleférico Uruapan (Servicio continuo)",
+    "color": "#00D4AA",
+    "corridor_width_m": 500,
+    "verified": true,
+    "path": [
+      [
+        -102.02093,
+        19.396299
+      ],
+      [
+        -102.025606,
+        19.4146744
+      ],
+      [
+        -102.0375379,
+        19.4216787
+      ],
+      [
+        -102.0477917,
+        19.4211717
+      ],
+      [
+        -102.0585911,
+        19.419822
+      ],
+      [
+        -102.0769769,
+        19.4306165
+      ]
+    ],
+    "landmarks": [
+      {
+        "name": "Hospital Regional",
+        "point": [
+          -102.02093,
+          19.396299
+        ]
+      },
+      {
+        "name": "Libramiento Aeropuerto",
+        "point": [
+          -102.025606,
+          19.4146744
+        ]
+      },
+      {
+        "name": "Boulevard Industrial / Plaza Ágora",
+        "point": [
+          -102.0375379,
+          19.4216787
+        ]
+      },
+      {
+        "name": "Presidencia",
+        "point": [
+          -102.0477917,
+          19.4211717
+        ]
+      },
+      {
+        "name": "Centro Histórico",
+        "point": [
+          -102.0585911,
+          19.419822
+        ]
+      },
+      {
+        "name": "Mercado Poniente",
+        "point": [
+          -102.0769769,
+          19.4306165
+        ]
+      }
+    ]
   }
 ]

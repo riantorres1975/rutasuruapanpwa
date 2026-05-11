@@ -7,6 +7,8 @@ import TelefericoSection from "@/components/TelefericoSection";
 import { getRouteDestination, getRouteSearchTerms } from "@/lib/route-names";
 import type { ResolvedRouteData, RouteDirection, ProductionRouteLandmark } from "@/lib/types";
 
+const TELEFERICO_ROUTE_NAME = "Teleférico Uruapan";
+
 type RouteListProps = {
   routes: ResolvedRouteData[];
   isLoading?: boolean;
@@ -21,6 +23,10 @@ type RouteListProps = {
   onClearSelection?: () => void;
   onShowTeleferico?: () => void;
 };
+
+function isTelefericoRoute(route: Pick<ResolvedRouteData, "ruta" | "nombre">) {
+  return route.ruta === TELEFERICO_ROUTE_NAME || route.nombre === TELEFERICO_ROUTE_NAME;
+}
 
 type RouteItemProps = {
   route: ResolvedRouteData;
@@ -238,7 +244,7 @@ export default function RouteList({
 
   const hasNearby = nearbyRouteIds.length > 0;
   const telefericoRouteId = useMemo(() => {
-    const telefericoRoute = routes.find((route) => route.nombre === "Teleférico Uruapan");
+    const telefericoRoute = routes.find(isTelefericoRoute);
     return telefericoRoute ? telefericoRoute.id : null;
   }, [routes]);
 
@@ -346,6 +352,11 @@ export default function RouteList({
     return [...nearby, ...rest];
   }, [normalizedQuery, searchableRoutes, hasNearby, hasSuggested, suggestedRankMap, nearbyRankMap, landmarkMatchingRouteNames, fuse]);
 
+  const visibleFilteredRoutes = useMemo(
+    () => normalizedQuery ? filteredRoutes : filteredRoutes.filter((route) => !isTelefericoRoute(route)),
+    [filteredRoutes, normalizedQuery]
+  );
+
   return (
     <div className="space-y-5">
       {/* Header section */}
@@ -370,7 +381,7 @@ export default function RouteList({
 
         {/* Route count */}
         <span className="ov-text-muted text-[12px] font-medium">
-          {filteredRoutes.length} ruta{filteredRoutes.length !== 1 ? "s" : ""}
+          {visibleFilteredRoutes.length} ruta{visibleFilteredRoutes.length !== 1 ? "s" : ""}
         </span>
       </div>
 
@@ -465,7 +476,7 @@ export default function RouteList({
             </li>
           ))}
         </ul>
-      ) : filteredRoutes.length > 0 ? (
+      ) : visibleFilteredRoutes.length > 0 ? (
         <ul className="space-y-2 pb-10">
           {/* Section header when nearby routes are active */}
           {hasNearby && !normalizedQuery && (
@@ -483,7 +494,7 @@ export default function RouteList({
             </li>
           )}
 
-          {filteredRoutes.map((route, listIndex) => {
+          {visibleFilteredRoutes.map((route, listIndex) => {
             const isSelected = selectedRouteId === route.id;
             const isSuggested = suggestedRouteIds.includes(route.id);
             const isBestSuggestion = bestSuggestedRouteId === route.id;
@@ -492,7 +503,7 @@ export default function RouteList({
             const isNearby = nearbyRank !== undefined;
             const isLandmarkMatch = !!(normalizedQuery && landmarkMatchingRouteNames.has(route.ruta));
             const suggestionDir = suggestedRouteDirections?.get(route.id);
-            const prevRoute = filteredRoutes[listIndex - 1];
+            const prevRoute = visibleFilteredRoutes[listIndex - 1];
             const prevIsNearby = prevRoute !== undefined && nearbyRankMap.has(prevRoute.id);
             const showDivider = hasNearby && !normalizedQuery && !isNearby && prevIsNearby;
 
