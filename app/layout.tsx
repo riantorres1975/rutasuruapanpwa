@@ -84,7 +84,7 @@ export default function RootLayout({
         {/* Inline script runs before paint to set the correct theme and avoid flash */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){var dark=window.matchMedia('(prefers-color-scheme: dark)').matches||((!window.matchMedia('(prefers-color-scheme: light)').matches)&&(function(){var h=new Date().getHours();return h<6||h>=19;})());document.documentElement.setAttribute('data-theme',dark?'dark':'light');if(dark)document.documentElement.classList.add('dark');})();`
+            __html: `(function(){var h=new Date().getHours();var dark=h<6||h>=19;document.documentElement.setAttribute('data-theme',dark?'dark':'light');document.documentElement.classList.toggle('dark',dark);})();`
           }}
         />
         <AdaptiveTheme />
