@@ -15,16 +15,52 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Blog de transporte público en Uruapan",
     description: "Guías locales para moverte en camión, Teleférico y rutas urbanas de Uruapan.",
-    url: "https://www.urugo.app/blog"
+    url: "https://www.urugo.app/blog",
+    images: [{
+      url: "https://www.urugo.app/api/og?title=Blog+de+transporte+en+Uruapan&subtitle=Gu%C3%ADas+locales",
+      width: 1200,
+      height: 630,
+      alt: "Blog de transporte público en Uruapan"
+    }]
   }
 };
 
 const READING_TIME = ["6 min", "5 min", "7 min"] as const;
 
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Inicio", item: "https://www.urugo.app/" },
+        { "@type": "ListItem", position: 2, name: "Blog", item: "https://www.urugo.app/blog" }
+      ]
+    },
+    {
+      "@type": "Blog",
+      name: "Blog de transporte público en Uruapan",
+      description: "Guías locales sobre rutas de camiones, Teleférico, tarifas y movilidad en Uruapan.",
+      url: "https://www.urugo.app/blog",
+      inLanguage: "es-MX",
+      publisher: { "@type": "Organization", name: "UruGo", url: "https://www.urugo.app" },
+      blogPost: BLOG_ARTICLES.map((article) => ({
+        "@type": "BlogPosting",
+        headline: article.title,
+        description: article.description,
+        url: `https://www.urugo.app/blog/${article.slug}`,
+        datePublished: article.date,
+        dateModified: article.updatedAt
+      }))
+    }
+  ]
+};
+
 export default function BlogIndexPage() {
   return (
     <main style={{ background: "#0c110a", color: "#e8f2d8", minHeight: "100dvh" }}>
       <ForceDark />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <nav
         className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-5 py-4"
         style={{

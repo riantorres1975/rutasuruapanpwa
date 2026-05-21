@@ -16,22 +16,41 @@ export const metadata: Metadata = {
     url: "https://www.urugo.app/blog/guia-transporte-publico-estudiantes-uruapan",
     type: "article",
     publishedTime: "2026-01-20T00:00:00-06:00",
-    modifiedTime: "2026-04-27T00:00:00-06:00"
+    modifiedTime: "2026-04-27T00:00:00-06:00",
+    images: [{
+      url: "https://www.urugo.app/api/og?title=Gu%C3%ADa+de+transporte+para+estudiantes+en+Uruapan&subtitle=Uruapan%2C+Michoac%C3%A1n",
+      width: 1200,
+      height: 630,
+      alt: "Guía de transporte público para estudiantes en Uruapan"
+    }]
   }
 };
 
-const blogPostingJsonLd = {
+const jsonLd = {
   "@context": "https://schema.org",
-  "@type": "BlogPosting",
-  headline: "Guía de transporte público para estudiantes en Uruapan",
-  description: "Guía para estudiantes que se mueven en camión urbano, Teleférico y rutas cercanas a escuelas en Uruapan.",
-  datePublished: "2026-01-20",
-  dateModified: "2026-04-27",
-  author: { "@type": "Organization", name: "UruGo" },
-  publisher: { "@type": "Organization", name: "UruGo" },
-  mainEntityOfPage: { "@type": "WebPage", "@id": "/blog/guia-transporte-publico-estudiantes-uruapan" },
-  inLanguage: "es-MX",
-  keywords: "transporte escolar Uruapan, camión estudiantes Uruapan, teleférico estudiantes, rutas camión escuelas Uruapan"
+  "@graph": [
+    {
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Inicio", item: "https://www.urugo.app/" },
+        { "@type": "ListItem", position: 2, name: "Blog", item: "https://www.urugo.app/blog" },
+        { "@type": "ListItem", position: 3, name: "Guía de transporte para estudiantes en Uruapan", item: "https://www.urugo.app/blog/guia-transporte-publico-estudiantes-uruapan" }
+      ]
+    },
+    {
+      "@type": "BlogPosting",
+      headline: "Guía de transporte público para estudiantes en Uruapan",
+      description: "Guía para estudiantes que se mueven en camión urbano, Teleférico y rutas cercanas a escuelas en Uruapan.",
+      datePublished: "2026-01-20",
+      dateModified: "2026-04-27",
+      author: { "@type": "Organization", name: "UruGo" },
+      publisher: { "@type": "Organization", name: "UruGo" },
+      mainEntityOfPage: { "@type": "WebPage", "@id": "https://www.urugo.app/blog/guia-transporte-publico-estudiantes-uruapan" },
+      inLanguage: "es-MX",
+      image: "https://www.urugo.app/api/og?title=Gu%C3%ADa+de+transporte+para+estudiantes+en+Uruapan&subtitle=Uruapan%2C+Michoac%C3%A1n",
+      keywords: "transporte escolar Uruapan, camión estudiantes Uruapan, teleférico estudiantes, rutas camión escuelas Uruapan"
+    }
+  ]
 };
 
 const CARDS = [
@@ -65,7 +84,7 @@ const CARDS = [
 export default function GuiaEstudiantesPage() {
   return (
     <main className="greca-bg greca-bg-animated min-h-dvh px-5 py-8 sm:px-8 lg:px-10" style={{ background: "#0c110a", color: "#e8f2d8" }}>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(blogPostingJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <ForceDark />
       <article className="relative z-10 mx-auto max-w-3xl">
         <PageHeader

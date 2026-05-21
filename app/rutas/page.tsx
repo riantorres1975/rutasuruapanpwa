@@ -23,16 +23,27 @@ export default function RutasPage() {
 
   const jsonLd = {
     "@context": "https://schema.org",
-    "@type": "ItemList",
-    name: "Rutas de camión urbano en Uruapan",
-    description: "Directorio de las 40 rutas de transporte público urbano en Uruapan, Michoacán.",
-    numberOfItems: busRoutes.length,
-    itemListElement: busRoutes.map((route, i) => ({
-      "@type": "ListItem",
-      position: i + 1,
-      name: route.destination ? `${route.name} — ${route.destination}` : route.name,
-      url: `https://www.urugo.app/ruta/${route.slug}`
-    }))
+    "@graph": [
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Inicio", item: "https://www.urugo.app/" },
+          { "@type": "ListItem", position: 2, name: "Rutas", item: "https://www.urugo.app/rutas" }
+        ]
+      },
+      {
+        "@type": "ItemList",
+        name: "Rutas de camión urbano en Uruapan",
+        description: "Directorio de las 40 rutas de transporte público urbano en Uruapan, Michoacán.",
+        numberOfItems: busRoutes.length,
+        itemListElement: busRoutes.map((route, i) => ({
+          "@type": "ListItem",
+          position: i + 1,
+          name: route.destination ? `${route.name} — ${route.destination}` : route.name,
+          url: `https://www.urugo.app/ruta/${route.slug}`
+        }))
+      }
+    ]
   };
 
   return (

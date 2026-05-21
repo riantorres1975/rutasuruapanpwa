@@ -16,29 +16,48 @@ export const metadata: Metadata = {
     url: "https://www.urugo.app/blog/rutas-camion-mas-usadas-uruapan",
     type: "article",
     publishedTime: "2026-01-15T00:00:00-06:00",
-    modifiedTime: "2026-04-27T00:00:00-06:00"
+    modifiedTime: "2026-04-27T00:00:00-06:00",
+    images: [{
+      url: "https://www.urugo.app/api/og?title=Las+rutas+de+cami%C3%B3n+m%C3%A1s+usadas+en+Uruapan&subtitle=Uruapan%2C+Michoac%C3%A1n",
+      width: 1200,
+      height: 630,
+      alt: "Las rutas de camión más usadas en Uruapan"
+    }]
   }
 };
 
-const blogPostingJsonLd = {
+const jsonLd = {
   "@context": "https://schema.org",
-  "@type": "BlogPosting",
-  headline: "Las rutas de camión más usadas en Uruapan y para qué sirven",
-  description: "Resumen de las rutas de camión más consultadas en Uruapan, sus destinos principales y cómo conectan con el Teleférico.",
-  datePublished: "2026-01-15",
-  dateModified: "2026-04-27",
-  author: { "@type": "Organization", name: "UruGo" },
-  publisher: { "@type": "Organization", name: "UruGo" },
-  mainEntityOfPage: { "@type": "WebPage", "@id": "/blog/rutas-camion-mas-usadas-uruapan" },
-  inLanguage: "es-MX",
-  keywords: "rutas de camión Uruapan, ruta 11 Uruapan, transporte público Uruapan, camiones urbanos Uruapan"
+  "@graph": [
+    {
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Inicio", item: "https://www.urugo.app/" },
+        { "@type": "ListItem", position: 2, name: "Blog", item: "https://www.urugo.app/blog" },
+        { "@type": "ListItem", position: 3, name: "Las rutas de camión más usadas en Uruapan", item: "https://www.urugo.app/blog/rutas-camion-mas-usadas-uruapan" }
+      ]
+    },
+    {
+      "@type": "BlogPosting",
+      headline: "Las rutas de camión más usadas en Uruapan y para qué sirven",
+      description: "Resumen de las rutas de camión más consultadas en Uruapan, sus destinos principales y cómo conectan con el Teleférico.",
+      datePublished: "2026-01-15",
+      dateModified: "2026-04-27",
+      author: { "@type": "Organization", name: "UruGo" },
+      publisher: { "@type": "Organization", name: "UruGo" },
+      mainEntityOfPage: { "@type": "WebPage", "@id": "https://www.urugo.app/blog/rutas-camion-mas-usadas-uruapan" },
+      inLanguage: "es-MX",
+      image: "https://www.urugo.app/api/og?title=Las+rutas+de+cami%C3%B3n+m%C3%A1s+usadas+en+Uruapan&subtitle=Uruapan%2C+Michoac%C3%A1n",
+      keywords: "rutas de camión Uruapan, ruta 11 Uruapan, transporte público Uruapan, camiones urbanos Uruapan"
+    }
+  ]
 };
 
 export default function RutasCamionMasUsadasPage() {
   return (
     <main className="greca-bg greca-bg-animated min-h-dvh px-5 py-8 sm:px-8 lg:px-10" style={{ background: "#0c110a", color: "#e8f2d8" }}>
       <ForceDark />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(blogPostingJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <article className="relative z-10 mx-auto max-w-3xl">
         <PageHeader
           backHref="/blog"
