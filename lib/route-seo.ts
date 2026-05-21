@@ -6,6 +6,8 @@ type ProductionRouteRaw = {
   name: string;
   original_name: string;
   color: string;
+  path: number[][];
+  landmarks: { name: string; coordinates: number[] }[];
 };
 
 export type RouteSeoItem = {
@@ -15,7 +17,25 @@ export type RouteSeoItem = {
   color: string;
   hasIda: boolean;
   hasVuelta: boolean;
+  distanceKm: number;
+  landmarks: string[];
 };
+
+function haversineKm(p1: number[], p2: number[]): number {
+  const R = 6371;
+  const dLat = ((p2[1] - p1[1]) * Math.PI) / 180;
+  const dLon = ((p2[0] - p1[0]) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((p1[1] * Math.PI) / 180) * Math.cos((p2[1] * Math.PI) / 180) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function pathKm(path: number[][]): number {
+  let km = 0;
+  for (let i = 1; i < path.length; i++) km += haversineKm(path[i - 1], path[i]);
+  return km;
+}
 
 export function slugify(value: string) {
   return value
@@ -27,16 +47,21 @@ export function slugify(value: string) {
 }
 
 export function getRouteSeoItems(): RouteSeoItem[] {
-  const routes = rutasProduccion as ProductionRouteRaw[];
+  const routes = rutasProduccion as unknown as ProductionRouteRaw[];
 
-  // Deduplicate by name, aggregating directions
-  const seen = new Map<string, RouteSeoItem>();
+  const seen = new Map<string, RouteSeoItem & { totalKm: number }>();
   for (const r of routes) {
     const isVuelta = r.original_name.includes("Vuelta");
     const existing = seen.get(r.name);
+    const km = pathKm(r.path);
+    const lms = r.landmarks.map((l) => l.name);
     if (existing) {
       if (isVuelta) existing.hasVuelta = true;
       else existing.hasIda = true;
+      existing.totalKm += km;
+      for (const lm of lms) {
+        if (!existing.landmarks.includes(lm)) existing.landmarks.push(lm);
+      }
     } else {
       const destination = getRouteDestination(r.name);
       const destinationSlug = destination ? `-${slugify(destination)}` : "";
@@ -47,11 +72,17 @@ export function getRouteSeoItems(): RouteSeoItem[] {
         color: r.color,
         hasIda: !isVuelta,
         hasVuelta: isVuelta,
+        distanceKm: 0,
+        totalKm: km,
+        landmarks: [...lms],
       });
     }
   }
 
-  return Array.from(seen.values());
+  return Array.from(seen.values()).map(({ totalKm, ...item }) => ({
+    ...item,
+    distanceKm: Math.round(totalKm * 10) / 10,
+  }));
 }
 
 export function findRouteSeoItem(slug: string) {

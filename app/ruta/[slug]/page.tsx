@@ -24,16 +24,18 @@ export async function generateMetadata({ params }: RoutePageProps): Promise<Meta
   }
 
   const label = route.destination ? `${route.name} a ${route.destination}` : route.name;
+  const kmText = route.distanceKm > 0 ? `, recorrido de ${route.distanceKm} km` : "";
+  const lmText = route.landmarks.length > 0 ? `, pasa por ${route.landmarks.slice(0, 2).join(" y ")}` : "";
 
   return {
-    title: `${label} en Uruapan`,
-    description: `Consulta la ${route.name} de camión urbano en Uruapan, destino ${route.destination ?? "local"}, tarifa base y acceso al mapa interactivo.`,
+    title: `${label} en Uruapan — horario y mapa`,
+    description: `${route.name} de camión urbano en Uruapan${kmText}${lmText}. Tarifa ${FARES_2026.urbanBus.price}. Consulta el mapa interactivo, paradas y transbordos.`,
     alternates: {
       canonical: `https://www.urugo.app/ruta/${route.slug}`
     },
     openGraph: {
       title: `${label} en Uruapan`,
-      description: `Información de la ${route.name}, tarifa y mapa de transporte público en Uruapan.`,
+      description: `Información de la ${route.name}${kmText}. Tarifa y mapa de transporte público en Uruapan.`,
       url: `https://www.urugo.app/ruta/${route.slug}`,
       type: "article"
     }
@@ -49,6 +51,32 @@ export default async function RoutePage({ params }: RoutePageProps) {
   }
 
   const title = route.destination ? `${route.name}: ${route.destination}` : route.name;
+  const directions = route.hasIda && route.hasVuelta ? "Ida y vuelta" : route.hasIda ? "Solo ida" : "Solo vuelta";
+  const estimatedMinutes = route.distanceKm > 0 ? Math.round((route.distanceKm / 18) * 60) : null;
+
+  const faqs = [
+    {
+      question: `¿Cuánto cuesta la ${route.name}?`,
+      answer: `La tarifa base de la ${route.name} es de ${FARES_2026.urbanBus.price} por viaje, pagadera al abordar.`
+    },
+    {
+      question: `¿A dónde va la ${route.name}?`,
+      answer: route.destination
+        ? `La ${route.name} conecta distintos puntos de Uruapan con ${route.destination}${route.landmarks.length > 0 ? `, pasando por ${route.landmarks.slice(0, 3).join(", ")}` : ""}.`
+        : `La ${route.name} recorre colonias y zonas de Uruapan${route.landmarks.length > 0 ? `, pasando por ${route.landmarks.slice(0, 3).join(", ")}` : ""}.`
+    },
+    {
+      question: `¿Cuánto tiempo tarda la ${route.name}?`,
+      answer: estimatedMinutes
+        ? `El recorrido completo de la ${route.name} es de aproximadamente ${route.distanceKm} km, lo que equivale a unos ${estimatedMinutes} minutos de viaje en condiciones normales de tráfico.`
+        : `El tiempo varía según el tráfico y la hora del día. Usa el mapa interactivo de UruGo para estimar el tiempo desde tu punto de origen.`
+    },
+    {
+      question: `¿Cómo saber si la ${route.name} pasa cerca de mi destino?`,
+      answer: `Abre el mapa de UruGo, marca tu origen y destino, y el sistema calculará si la ${route.name} u otra ruta es la mejor opción, incluyendo caminatas y transbordos.`
+    }
+  ];
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [
@@ -63,7 +91,7 @@ export default async function RoutePage({ params }: RoutePageProps) {
       {
         "@type": "BusTrip",
         name: `${route.name} Uruapan`,
-        description: `Ruta de camión urbano en Uruapan${route.destination ? ` hacia ${route.destination}` : ""}.`,
+        description: `Ruta de camión urbano en Uruapan${route.destination ? ` hacia ${route.destination}` : ""}${route.distanceKm > 0 ? `. Recorrido de ${route.distanceKm} km` : ""}.`,
         provider: {
           "@type": "Organization",
           name: APP_BRAND.name
@@ -73,6 +101,17 @@ export default async function RoutePage({ params }: RoutePageProps) {
           price: FARES_2026.urbanBus.price.replace(/[^0-9.]/g, ""),
           priceCurrency: "MXN"
         }
+      },
+      {
+        "@type": "FAQPage",
+        mainEntity: faqs.map((faq) => ({
+          "@type": "Question",
+          name: faq.question,
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: faq.answer
+          }
+        }))
       }
     ]
   };
@@ -117,7 +156,7 @@ export default async function RoutePage({ params }: RoutePageProps) {
             <div className="h-2" style={{ backgroundColor: route.color }} />
             <div className="p-6 md:p-8">
               <p className="text-xs font-bold uppercase tracking-[0.24em]" style={{ color: "#b8e840" }}>
-                Ruta de camión Uruapan
+                Ruta de camión · Uruapan
               </p>
               <h1
                 className="mt-3 font-serif text-4xl font-black tracking-tight md:text-5xl"
@@ -126,10 +165,13 @@ export default async function RoutePage({ params }: RoutePageProps) {
                 {title}
               </h1>
               <p className="mt-4 text-sm leading-7" style={{ color: "#a8c888" }}>
-                Consulta información básica de la {route.name} en Uruapan y abre el mapa interactivo para marcar origen, destino, paradas cercanas y posibles transbordos.
+                {route.destination
+                  ? `La ${route.name} conecta distintas zonas de Uruapan con ${route.destination}${route.distanceKm > 0 ? `, con un recorrido total de ${route.distanceKm} km` : ""}. Consulta el mapa para ver paradas y transbordos disponibles.`
+                  : `La ${route.name} recorre colonias de Uruapan${route.distanceKm > 0 ? ` en un trayecto de ${route.distanceKm} km` : ""}. Usa el mapa para encontrar la parada más cercana a tu origen y destino.`
+                }
               </p>
 
-              <dl className="mt-8 grid gap-3 sm:grid-cols-3">
+              <dl className="mt-8 grid gap-3 sm:grid-cols-4">
                 <div
                   className="rounded-2xl border p-4"
                   style={{ borderColor: "rgba(140,200,80,0.12)", background: "rgba(106,171,72,0.06)" }}
@@ -141,28 +183,73 @@ export default async function RoutePage({ params }: RoutePageProps) {
                   className="rounded-2xl border p-4"
                   style={{ borderColor: "rgba(140,200,80,0.12)", background: "rgba(106,171,72,0.06)" }}
                 >
-                  <dt className="text-xs font-bold uppercase tracking-widest" style={{ color: "#a8c888" }}>Tarifa base</dt>
+                  <dt className="text-xs font-bold uppercase tracking-widest" style={{ color: "#a8c888" }}>Tarifa</dt>
                   <dd className="mt-2 text-sm font-bold" style={{ color: "#e8f2d8" }}>{FARES_2026.urbanBus.price}</dd>
                 </div>
+                {route.distanceKm > 0 && (
+                  <div
+                    className="rounded-2xl border p-4"
+                    style={{ borderColor: "rgba(140,200,80,0.12)", background: "rgba(106,171,72,0.06)" }}
+                  >
+                    <dt className="text-xs font-bold uppercase tracking-widest" style={{ color: "#a8c888" }}>Recorrido</dt>
+                    <dd className="mt-2 text-sm font-bold" style={{ color: "#e8f2d8" }}>{route.distanceKm} km</dd>
+                  </div>
+                )}
                 <div
                   className="rounded-2xl border p-4"
                   style={{ borderColor: "rgba(140,200,80,0.12)", background: "rgba(106,171,72,0.06)" }}
                 >
-                  <dt className="text-xs font-bold uppercase tracking-widest" style={{ color: "#a8c888" }}>Sentidos</dt>
-                  <dd className="mt-2 text-sm font-bold" style={{ color: "#e8f2d8" }}>
-                    {route.hasIda && route.hasVuelta ? "Ida y vuelta" : route.hasIda ? "Ida" : "Vuelta"}
-                  </dd>
+                  <dt className="text-xs font-bold uppercase tracking-widest" style={{ color: "#a8c888" }}>Sentido</dt>
+                  <dd className="mt-2 text-sm font-bold" style={{ color: "#e8f2d8" }}>{directions}</dd>
                 </div>
               </dl>
+
+              {route.landmarks.length > 0 && (
+                <section className="mt-8">
+                  <h2 className="font-serif text-xl font-black mb-4" style={{ color: "#e8f2d8" }}>
+                    Puntos de referencia en la ruta
+                  </h2>
+                  <ul className="grid gap-2 sm:grid-cols-2">
+                    {route.landmarks.map((lm) => (
+                      <li
+                        key={lm}
+                        className="flex items-center gap-2 rounded-xl border px-4 py-3 text-sm"
+                        style={{ borderColor: "rgba(140,200,80,0.12)", background: "rgba(106,171,72,0.06)", color: "#e8f2d8" }}
+                      >
+                        <span style={{ color: "#6aab48" }}>▸</span> {lm}
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
 
               <section
                 className="mt-8 rounded-2xl border p-5"
                 style={{ borderColor: "rgba(184,232,64,0.2)", background: "rgba(184,232,64,0.06)" }}
               >
-                <h2 className="font-serif text-xl font-black" style={{ color: "#e8f2d8" }}>Cómo usar esta ruta</h2>
+                <h2 className="font-serif text-xl font-black" style={{ color: "#e8f2d8" }}>Cómo planear tu viaje</h2>
                 <p className="mt-3 text-sm leading-7" style={{ color: "#a8c888" }}>
-                  Abre el mapa, marca tu punto de origen y destino, y UruGo calculará si esta ruta es conveniente o si necesitas caminar o transbordar con otra ruta o el Teleférico.
+                  Abre el mapa de UruGo y marca tu punto de origen y tu destino. El sistema calcula si la {route.name} cubre tu trayecto, qué tan lejos están las paradas y si necesitas caminar o hacer transbordo con otra ruta o el Teleférico de Uruapan.
+                  {estimatedMinutes && ` El recorrido completo toma aproximadamente ${estimatedMinutes} minutos.`}
                 </p>
+              </section>
+
+              <section className="mt-8">
+                <h2 className="font-serif text-xl font-black mb-5" style={{ color: "#e8f2d8" }}>
+                  Preguntas frecuentes
+                </h2>
+                <div className="flex flex-col gap-4">
+                  {faqs.map((faq) => (
+                    <div
+                      key={faq.question}
+                      className="rounded-2xl border p-5"
+                      style={{ borderColor: "rgba(140,200,80,0.10)", background: "rgba(20,28,16,0.6)" }}
+                    >
+                      <h3 className="text-sm font-bold mb-2" style={{ color: "#b8e840" }}>{faq.question}</h3>
+                      <p className="text-sm leading-6" style={{ color: "#a8c888" }}>{faq.answer}</p>
+                    </div>
+                  ))}
+                </div>
               </section>
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -174,7 +261,7 @@ export default async function RoutePage({ params }: RoutePageProps) {
                   Ver en el mapa
                 </Link>
                 <Link
-                  href="/"
+                  href="/rutas"
                   className="inline-flex h-12 items-center justify-center rounded-full border px-6 text-sm font-bold transition"
                   style={{
                     borderColor: "rgba(140,200,80,0.15)",
@@ -182,7 +269,7 @@ export default async function RoutePage({ params }: RoutePageProps) {
                     color: "#e8f2d8",
                   }}
                 >
-                  Volver al inicio
+                  Ver todas las rutas
                 </Link>
               </div>
             </div>
