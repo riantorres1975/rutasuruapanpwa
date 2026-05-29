@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import Logo from "@/components/Logo";
+import RoutePreviewSVG from "@/components/RoutePreviewSVG";
 import { APP_BRAND, FARES_2026 } from "@/lib/mobility-config";
 import { findRouteSeoItem, getRouteSeoItems } from "@/lib/route-seo";
 
@@ -154,6 +155,22 @@ export default async function RoutePage({ params }: RoutePageProps) {
             style={{ borderColor: "rgba(140,200,80,0.12)", background: "rgba(20,28,16,0.8)" }}
           >
             <div className="h-2" style={{ backgroundColor: route.color }} />
+
+            {/* Route path preview */}
+            <div
+              className="w-full overflow-hidden"
+              style={{ background: "rgba(0,0,0,0.3)", borderBottom: "1px solid rgba(140,200,80,0.08)" }}
+            >
+              <RoutePreviewSVG
+                routeName={route.name}
+                color={route.color}
+                width={800}
+                height={180}
+                strokeWidth={3}
+                className="w-full h-auto"
+              />
+            </div>
+
             <div className="p-6 md:p-8">
               <p className="text-xs font-bold uppercase tracking-[0.24em]" style={{ color: "#b8e840" }}>
                 Ruta de camión · Uruapan

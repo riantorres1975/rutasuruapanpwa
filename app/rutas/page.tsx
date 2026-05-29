@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Logo from "@/components/Logo";
 import ForceDark from "@/components/ForceDark";
+import RoutePreviewSVG from "@/components/RoutePreviewSVG";
 import { getRouteSeoItems } from "@/lib/route-seo";
 import { FARES_2026 } from "@/lib/mobility-config";
 
@@ -123,23 +124,39 @@ export default function RutasPage() {
                 className="group rounded-2xl border p-4 transition-all hover:-translate-y-0.5 hover:shadow-[0_12px_40px_rgba(0,0,0,0.4)]"
                 style={{ borderColor: "rgba(140,200,80,0.1)", background: "rgba(20,28,16,0.6)" }}
               >
-                <div className="flex items-center gap-3">
-                  <span
-                    className="h-3 w-3 shrink-0 rounded-full"
-                    style={{ backgroundColor: route.color }}
-                  />
-                  <span className="font-serif text-base font-black" style={{ color: "#e8f2d8" }}>
-                    {route.name}
-                  </span>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-3">
+                      <span
+                        className="h-3 w-3 shrink-0 rounded-full"
+                        style={{ backgroundColor: route.color }}
+                      />
+                      <span className="font-serif text-base font-black" style={{ color: "#e8f2d8" }}>
+                        {route.name}
+                      </span>
+                    </div>
+                    {route.destination && (
+                      <p className="mt-2 text-xs leading-snug" style={{ color: "#6aab48" }}>
+                        → {route.destination}
+                      </p>
+                    )}
+                    <p className="mt-3 text-[11px] font-semibold uppercase tracking-widest" style={{ color: "rgba(232,242,216,0.3)" }}>
+                      Ver ruta →
+                    </p>
+                  </div>
+                  <div
+                    className="shrink-0 rounded-xl overflow-hidden"
+                    style={{ background: "rgba(0,0,0,0.25)" }}
+                  >
+                    <RoutePreviewSVG
+                      routeName={route.name}
+                      color={route.color}
+                      width={96}
+                      height={60}
+                      strokeWidth={2}
+                    />
+                  </div>
                 </div>
-                {route.destination && (
-                  <p className="mt-2 text-xs leading-snug" style={{ color: "#6aab48" }}>
-                    → {route.destination}
-                  </p>
-                )}
-                <p className="mt-3 text-[11px] font-semibold uppercase tracking-widest" style={{ color: "rgba(232,242,216,0.3)" }}>
-                  Ver ruta →
-                </p>
               </Link>
             ))}
           </div>
