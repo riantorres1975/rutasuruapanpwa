@@ -5,6 +5,7 @@ import Logo from "@/components/Logo";
 import RoutePreviewSVG from "@/components/RoutePreviewSVG";
 import { APP_BRAND, FARES_2026 } from "@/lib/mobility-config";
 import { findRouteSeoItem, getRouteSeoItems } from "@/lib/route-seo";
+import { buildRouteStaticMapUrl } from "@/lib/static-map";
 
 type RoutePageProps = {
   params: Promise<{
@@ -53,6 +54,7 @@ export default async function RoutePage({ params }: RoutePageProps) {
 
   const title = route.destination ? `${route.name}: ${route.destination}` : route.name;
   const directions = route.hasIda && route.hasVuelta ? "Ida y vuelta" : route.hasIda ? "Solo ida" : "Solo vuelta";
+  const staticMapUrl = buildRouteStaticMapUrl(route.name, route.color);
   const estimatedMinutes = route.distanceKm > 0 ? Math.round((route.distanceKm / 18) * 60) : null;
 
   const faqs = [
@@ -156,19 +158,33 @@ export default async function RoutePage({ params }: RoutePageProps) {
           >
             <div className="h-2" style={{ backgroundColor: route.color }} />
 
-            {/* Route path preview */}
+            {/* Route map preview */}
             <div
               className="w-full overflow-hidden"
-              style={{ background: "rgba(0,0,0,0.3)", borderBottom: "1px solid rgba(140,200,80,0.08)" }}
+              style={{ borderBottom: "1px solid rgba(140,200,80,0.08)", lineHeight: 0 }}
             >
-              <RoutePreviewSVG
-                routeName={route.name}
-                color={route.color}
-                width={800}
-                height={180}
-                strokeWidth={3}
-                className="w-full h-auto"
-              />
+              {staticMapUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={staticMapUrl}
+                  alt={`Mapa del recorrido de la ${route.name} en Uruapan`}
+                  width={800}
+                  height={220}
+                  loading="lazy"
+                  style={{ width: "100%", height: "auto", display: "block" }}
+                />
+              ) : (
+                <div style={{ background: "rgba(0,0,0,0.3)" }}>
+                  <RoutePreviewSVG
+                    routeName={route.name}
+                    color={route.color}
+                    width={800}
+                    height={180}
+                    strokeWidth={3}
+                    className="w-full h-auto"
+                  />
+                </div>
+              )}
             </div>
 
             <div className="p-6 md:p-8">
