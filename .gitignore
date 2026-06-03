@@ -24,6 +24,8 @@ pnpm-debug.log*
 
 # typescript
 *.tsbuildinfo
+# autogenerado por Next.js en cada build/dev — no debe versionarse
+next-env.d.ts
 
 # generated at build time from sw.template.js
 /public/sw.js

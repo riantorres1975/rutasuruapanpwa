@@ -1,9 +1,19 @@
 import { ImageResponse } from "next/og";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
 export async function GET(request: Request) {
+  // Endpoint de cómputo (renderiza imágenes): máx 30 por IP/min para evitar abuso.
+  const ip = getClientIp(request);
+  if (!(await rateLimit(`og:${ip}`, 30, 60_000))) {
+    return new Response("Demasiadas solicitudes", { status: 429 });
+  }
+
   const { searchParams } = new URL(request.url);
-  const title = searchParams.get("title");
-  const subtitle = searchParams.get("subtitle") ?? "Uruapan, Michoacán";
+  const rawTitle = searchParams.get("title");
+  const rawSubtitle = searchParams.get("subtitle");
+  // Acota la longitud del texto renderizado para que nadie genere imágenes gigantes.
+  const title = rawTitle?.slice(0, 120) ?? null;
+  const subtitle = (rawSubtitle ?? "Uruapan, Michoacán").slice(0, 80);
 
   if (title) {
     return new ImageResponse(

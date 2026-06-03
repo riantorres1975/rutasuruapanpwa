@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import {
   CHAT_DESTINATIONS as DESTINATIONS,
   CHAT_SCHEDULES as SCHEDULES,
@@ -89,41 +90,10 @@ ${aliasesList}
 - La Ruta 2 (destino Jicalán) pasa por Sol Naciente y va directo a Jicalán. La Ruta 2A es diferente: va a Zumpimito y Soriana La Pinera, NO llega a Jicalán. Siempre especifica "la Ruta 2 que va a Jicalán" para evitar confusión con la 2A.${locationSection}`;
 }
 
-// Rate limiting: máx 10 mensajes por IP cada 60 segundos
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+// Rate limiting: máx 10 mensajes por IP cada 60 segundos.
+// Durable y global entre instancias si hay Upstash configurado (ver lib/rate-limit.ts).
 const RATE_LIMIT = 10;
 const RATE_WINDOW_MS = 60_000;
-
-function cleanExpiredEntries(map: Map<string, { count: number; resetAt: number }>, now: number) {
-  for (const [key, value] of map.entries()) {
-    if (now > value.resetAt) map.delete(key);
-  }
-}
-
-// In long-lived Node.js processes (local dev), clean expired entries periodically.
-// In serverless environments the map resets per cold-start, so this is a no-op there.
-if (typeof setInterval !== "undefined" && typeof process !== "undefined" && process.env.NODE_ENV !== "production") {
-  setInterval(() => {
-    cleanExpiredEntries(rateLimitMap, Date.now());
-  }, 300_000);
-}
-
-function getClientIp(req: NextRequest) {
-  const candidates = [
-    req.headers.get("x-forwarded-for")?.split(",")[0],
-    req.headers.get("x-real-ip"),
-    req.headers.get("cf-connecting-ip"),
-  ];
-
-  for (const raw of candidates) {
-    const value = raw?.trim();
-    if (value && value.length <= 64 && /^[a-zA-Z0-9:.%-]+$/.test(value)) {
-      return value;
-    }
-  }
-
-  return "unknown";
-}
 
 function isValidLocation(location: unknown): location is { lat: number; lng: number } {
   if (!location || typeof location !== "object") return false;
@@ -138,23 +108,9 @@ function isValidLocation(location: unknown): location is { lat: number; lng: num
   );
 }
 
-function checkRateLimit(ip: string): boolean {
-  const now = Date.now();
-  const entry = rateLimitMap.get(ip);
-  if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_WINDOW_MS });
-    return true;
-  }
-  if (entry.count >= RATE_LIMIT) {
-    return false;
-  }
-  entry.count++;
-  return true;
-}
-
 export async function POST(req: NextRequest) {
   const ip = getClientIp(req);
-  if (!checkRateLimit(ip)) {
+  if (!(await rateLimit(`chat:${ip}`, RATE_LIMIT, RATE_WINDOW_MS))) {
     return NextResponse.json({ error: "Demasiadas solicitudes. Espera un momento." }, { status: 429 });
   }
 

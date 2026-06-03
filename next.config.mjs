@@ -10,6 +10,8 @@ const BUILD_ID = process.env.NODE_ENV === "development"
 
 /** @type {import('next').NextConfig} */
 const securityHeaders = [
+  // Force HTTPS for 2 years, incluyendo subdominios. Permite preload en navegadores.
+  { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
   // Prevent MIME-type sniffing
   { key: "X-Content-Type-Options", value: "nosniff" },
   // Disallow embedding in iframes (clickjacking protection)
@@ -21,8 +23,9 @@ const securityHeaders = [
     key: "Permissions-Policy",
     value: "geolocation=(self), camera=(), microphone=(), payment=()"
   },
-  // Basic XSS protection for older browsers
-  { key: "X-XSS-Protection", value: "1; mode=block" },
+  // El filtro XSS heredado está deprecado y puede introducir vulnerabilidades;
+  // la guía moderna (OWASP) es desactivarlo y confiar en el CSP.
+  { key: "X-XSS-Protection", value: "0" },
   // Content Security Policy — 'unsafe-inline' needed for Tailwind + theme detection script
   {
     key: "Content-Security-Policy",

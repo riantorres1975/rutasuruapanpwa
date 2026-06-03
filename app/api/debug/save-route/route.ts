@@ -1,5 +1,6 @@
 import { readFileSync, writeFileSync } from "fs";
 import { join } from "path";
+import { timingSafeEqual } from "crypto";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +15,14 @@ type ProductionRoute = {
   landmarks: unknown[];
 };
 
+function safeEqual(a: string, b: string): boolean {
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  // timingSafeEqual exige buffers del mismo largo; si difieren, no es válido.
+  if (bufA.length !== bufB.length) return false;
+  return timingSafeEqual(bufA, bufB);
+}
+
 function isAuthorized(request: Request) {
   const expectedToken = process.env.DEBUG_ROUTE_SAVE_TOKEN;
   if (process.env.DEBUG_ROUTE_SAVE_ENABLED !== "true" || !expectedToken) {
@@ -21,7 +30,7 @@ function isAuthorized(request: Request) {
   }
 
   const auth = request.headers.get("authorization");
-  return auth === `Bearer ${expectedToken}`;
+  return auth != null && safeEqual(auth, `Bearer ${expectedToken}`);
 }
 
 function isValidCoord(c: unknown): c is [number, number] {
