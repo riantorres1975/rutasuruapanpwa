@@ -12,8 +12,10 @@ import BottomSheet from "@/components/BottomSheet";
 import ChatBot from "@/components/ChatBot";
 import NearbyToast from "@/components/NearbyToast";
 import OnboardingOverlay from "@/components/OnboardingOverlay";
+import PlaceSearch from "@/components/PlaceSearch";
 import RouteList from "@/components/RouteList";
 import RouteSchedule from "@/components/RouteSchedule";
+import { geocodePlace, type PlaceResult } from "@/lib/geocode";
 import { useShareRoute } from "@/hooks/useShareRoute";
 import { formatRouteLabel, getRouteDestination } from "@/lib/route-names";
 import type { Coordinates, ProductionRoute, ProductionRouteLandmark, ResolvedRouteData, RouteDirection } from "@/lib/types";
@@ -26,6 +28,8 @@ const BACKGROUND_SIMPLIFY_TOLERANCE = 0.00008;
 const BACKGROUND_MAX_POINTS = 180;
 const MOBILE_MAP_BOOT_DELAY_MS = 3200;
 const TELEFERICO_ROUTE_NAME = "Teleférico Uruapan";
+// Destinos frecuentes para acceso rápido bajo el buscador (todos resuelven localmente)
+const DESTINO_CHIPS = ["Centro", "Hospital Regional", "Plaza Ágora", "Central"] as const;
 
 const MapView = dynamic(() => import("@/components/Map"), {
   ssr: false,
@@ -347,6 +351,10 @@ export default function HomePage() {
   const [requestedDestination, setRequestedDestination] = useState<string | null>(null);
   const [routesMapMode, setRoutesMapMode] = useState<RoutesMapMode>("all-visible");
   const [isOnline, setIsOnline] = useState(true);
+  // Pantallas de poca altura (p. ej. iPhone SE / teclado abierto): la barra A→B
+  // se colapsa tras un resumen para dejar más mapa visible.
+  const [isShortScreen, setIsShortScreen] = useState(false);
+  const [abExpanded, setAbExpanded] = useState(false);
   const { share: shareRoute, status: shareStatus } = useShareRoute();
   const activePointRef = useRef(activePoint);
   const originPointRef = useRef(originPoint);
@@ -428,7 +436,9 @@ export default function HomePage() {
   useEffect(() => {
     if (polylineRoutes.length > 0) return;
     let cancelled = false;
-    fetch("/api/rutas-polyline", { cache: "no-store" })
+    // Sin no-store: el navegador respeta el Cache-Control (max-age + SWR) de la
+    // API, evitando re-descargar el payload de rutas en cada visita al mapa.
+    fetch("/api/rutas-polyline")
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
@@ -514,6 +524,19 @@ export default function HomePage() {
       setRequestedDestination(destinationParam);
       setActivePoint("origin");
       setShowHint(true);
+
+      // Geocodificar el destino y colocar el pin B automáticamente,
+      // salvo que la URL ya traiga coordenadas explícitas (estado compartido).
+      if (!params.get("b")) {
+        const controller = new AbortController();
+        geocodePlace(destinationParam, { signal: controller.signal })
+          .then((result) => {
+            if (!result) return;
+            setDestinationPoint((current) => current ?? result.center);
+            setRequestedDestination(result.label);
+          })
+          .catch(() => {/* degradar: el usuario marca el destino a mano */});
+      }
     }
 
     const sharedState = parseSharedMapState(window.location.search);
@@ -547,6 +570,14 @@ export default function HomePage() {
     if (sharedState.showTeleferico) {
       setShowTeleferico(true);
     }
+  }, []);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-height: 740px)");
+    const update = () => setIsShortScreen(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
   }, []);
 
   useEffect(() => {
@@ -610,6 +641,22 @@ export default function HomePage() {
       window.removeEventListener("keydown", loadMap);
     };
   }, [fetchError, isLoadingData, shouldLoadMap]);
+
+  // Precargar el chunk del mapa (mapbox-gl) en tiempo ocioso para que, cuando
+  // se active, ya esté en caché y la transición sea instantánea.
+  useEffect(() => {
+    const ric: (cb: () => void) => number =
+      typeof window.requestIdleCallback === "function"
+        ? (cb) => window.requestIdleCallback(cb)
+        : (cb) => window.setTimeout(cb, 1500);
+    const cancel: (id: number) => void =
+      typeof window.cancelIdleCallback === "function"
+        ? (id) => window.cancelIdleCallback(id)
+        : (id) => window.clearTimeout(id);
+
+    const id = ric(() => { void import("@/components/Map"); });
+    return () => cancel(id);
+  }, []);
 
   const flowStep = useMemo(() => getFlowStep(originPoint, destinationPoint), [destinationPoint, originPoint]);
 
@@ -770,6 +817,27 @@ export default function HomePage() {
     setDestinationPoint(point);
     setActivePoint(null);
   }, []);
+
+  // Selección desde el buscador de lugares: coloca el destino en coordenadas reales.
+  const handleDestinationSearch = useCallback((result: PlaceResult) => {
+    setSharedRouteSegment(null);
+    setSharedSegmentColor(null);
+    setSelectedTransfer(null);
+    setShowTeleferico(false);
+    setShowHint(false);
+    setRequestedDestination(result.label);
+    setDestinationPoint(result.center);
+    // Si aún no hay origen, deja activo el origen para que el usuario lo fije
+    // (o lo complete el GPS). Si ya hay origen, calcula la ruta de inmediato.
+    setActivePoint(originPointRef.current ? null : "origin");
+  }, []);
+
+  // Chip de destino rápido: geocodifica (índice local) y coloca el destino.
+  const handleChipSearch = useCallback((text: string) => {
+    geocodePlace(text).then((result) => {
+      if (result) handleDestinationSearch(result);
+    }).catch(() => {/* noop */});
+  }, [handleDestinationSearch]);
 
   const selectedRoute = useMemo(
     () => selectedRouteId !== null ? (polylineRoutesById.get(selectedRouteId) ?? null) : null,
@@ -1081,7 +1149,70 @@ export default function HomePage() {
     const isMobile = context === "mobile";
     return (
       <>
-        {/* A→B pill bar */}
+        {/* Buscador de destino (acción principal) — coloca el pin B sin conocer el mapa */}
+        <div className="w-full">
+          <PlaceSearch
+            placeholder="¿A dónde vas? Colonia, hospital, plaza…"
+            onSelect={handleDestinationSearch}
+          />
+          {/* Chips de destinos frecuentes — una sola fila con scroll horizontal.
+              En pantallas muy bajas (≤740px, p. ej. iPhone SE) se ocultan en móvil
+              para no comerse el mapa; el buscador sigue cubriendo los mismos destinos. */}
+          {!destinationPoint && (
+            <div
+              className={`mt-2 flex gap-1.5 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${
+                isMobile ? "[@media(max-height:740px)]:hidden" : ""
+              }`}
+              aria-label="Destinos frecuentes"
+            >
+              {DESTINO_CHIPS.map((chip) => (
+                <button
+                  key={chip}
+                  type="button"
+                  onClick={() => handleChipSearch(chip)}
+                  style={{ background: "var(--ov-bg)", borderColor: "var(--ov-border)" }}
+                  className="ov-text inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border px-3 py-1.5 text-[12px] font-semibold shadow-soft backdrop-blur-xl transition hover:border-lima/50 hover:text-lima active:scale-[0.97]"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3 shrink-0 text-lima" aria-hidden="true">
+                    <path d="M12 21s6-5.7 6-11a6 6 0 1 0-12 0c0 5.3 6 11 6 11Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    <circle cx="12" cy="10" r="2" fill="currentColor" />
+                  </svg>
+                  {chip}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* A→B (control manual, secundario). En pantallas muy bajas se colapsa
+            tras un resumen tocable para liberar espacio de mapa. */}
+        {isMobile && isShortScreen && !abExpanded ? (
+          <button
+            type="button"
+            onClick={() => setAbExpanded(true)}
+            className="ov-panel flex w-full items-center gap-2 rounded-2xl border px-3 py-2.5 shadow-soft backdrop-blur-xl transition active:scale-[0.99]"
+            aria-expanded={false}
+            aria-label="Ajustar origen y destino manualmente"
+          >
+            <span className="flex items-center gap-1" aria-hidden="true">
+              <span className={`h-2.5 w-2.5 rounded-full ${originPoint ? "bg-lima" : "bg-foreground/25"}`} />
+              <svg viewBox="0 0 24 24" fill="none" className="ov-text-muted h-3 w-3" aria-hidden="true">
+                <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              <span className={`h-2.5 w-2.5 rounded-full ${destinationPoint ? "bg-lima" : "bg-foreground/25"}`} />
+            </span>
+            <span className="ov-text min-w-0 flex-1 truncate text-left text-[12px] font-semibold">
+              {originPoint && destinationPoint
+                ? "Origen y destino listos"
+                : originPoint
+                  ? "Ajustar destino manualmente"
+                  : "Ajustar origen y destino"}
+            </span>
+            <svg viewBox="0 0 24 24" fill="none" className="ov-text-muted h-4 w-4 shrink-0" aria-hidden="true">
+              <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        ) : (
         <div className="ov-panel w-full rounded-2xl border p-1.5 shadow-soft backdrop-blur-xl">
           <div className="flex items-center gap-1.5">
             {/* Origin button */}
@@ -1176,7 +1307,7 @@ export default function HomePage() {
                   setActivePoint(userLocation ? "destination" : "origin");
                   setShowHint(true);
                 }}
-                className="inline-flex h-10 items-center rounded-xl border border-red-500/30 bg-red-500/10 px-2.5 text-[12px] font-semibold text-red-500 transition active:scale-[0.97]"
+                className="ov-pill ov-border ov-text-muted inline-flex h-10 items-center rounded-xl border px-2.5 text-[12px] font-semibold transition hover:border-red-400/40 hover:text-red-400 active:scale-[0.97]"
                 aria-label="Reiniciar puntos A y B"
               >
                 <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
@@ -1185,29 +1316,44 @@ export default function HomePage() {
                 </svg>
               </button>
             )}
+
+            {/* Colapsar de nuevo (solo en pantallas bajas, cuando está expandido) */}
+            {isMobile && isShortScreen && abExpanded && (
+              <button
+                type="button"
+                onClick={() => setAbExpanded(false)}
+                className="ov-pill ov-border ov-text-muted inline-flex h-10 w-9 shrink-0 items-center justify-center rounded-xl border transition hover:text-lima active:scale-[0.97]"
+                aria-label="Colapsar origen y destino"
+              >
+                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
+                  <path d="M6 15l6-6 6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            )}
           </div>
         </div>
+        )}
 
         {/* Context action — pasos 1, 2, y re-edición de origen desde paso 3 */}
         {(flowStep === 1 || flowStep === 2 || (flowStep === 3 && activePoint !== null)) && (
           <div className="w-full">
-            <div className="ov-panel flex items-center gap-1.5 rounded-2xl border px-3.5 py-2.5 shadow-[0_2px_12px_rgba(0,0,0,0.15)] backdrop-blur-xl">
-              <span className="relative flex h-3 w-3 shrink-0" aria-hidden="true">
+            <div className="ov-panel flex items-center gap-1.5 rounded-2xl border px-3 py-2 shadow-[0_2px_12px_rgba(0,0,0,0.15)] backdrop-blur-xl">
+              <span className="relative flex h-2.5 w-2.5 shrink-0" aria-hidden="true">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-lima/60 opacity-75" />
-                <span className="relative inline-flex h-3 w-3 rounded-full bg-lima" />
+                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-lima" />
               </span>
-              <p className="ov-text flex-1 text-[13px] font-medium">
+              <p className="ov-text flex-1 text-[12px] font-medium leading-snug">
                 {activePoint === "origin" && destinationPoint
-                  ? <><span>Toca el mapa para mover tu </span><span className="font-bold text-lima">origen</span><span>. El destino se mantiene.</span></>
+                  ? <><span>Toca el mapa para mover tu </span><span className="font-bold text-lima">origen</span></>
                   : activePoint === "destination" && flowStep === 3
                     ? <><span>Toca el mapa para mover tu </span><span className="font-bold text-lima">destino</span></>
                     : flowStep === 1
                       ? (geoStatus === "locating"
                           ? "Obteniendo tu ubicación..."
                           : geoStatus === "error"
-                            ? <><span>No pudimos obtener tu ubicación. Toca el mapa para marcar tu </span><span className="font-bold text-lima">origen</span></>
-                            : <><span>Usando tu </span><span className="font-bold text-lima">ubicación actual</span><span>. Toca el mapa para ajustar.</span></>)
-                      : <><span>Selecciona tu </span><span className="font-bold text-lima">destino</span><span> en el mapa</span></>}
+                            ? <><span>Toca el mapa para marcar tu </span><span className="font-bold text-lima">origen</span></>
+                            : <><span>Usando tu </span><span className="font-bold text-lima">ubicación actual</span></>)
+                      : <><span>Busca arriba o </span><span className="font-bold text-lima">toca el mapa</span></>}
               </p>
             </div>
           </div>
@@ -1543,8 +1689,8 @@ export default function HomePage() {
           En mobile: oculto (los controles van en el overlay flotante y el BottomSheet).
       ══════════════════════════════════════════════════════════════════════ */}
       <aside
-        className={`relative z-30 hidden h-full shrink-0 flex-col border-r border-foreground/8 bg-ink-900/98 backdrop-blur-2xl md:flex ${
-          sidebarWidth == null ? "md:w-[380px] lg:w-[420px]" : ""
+        className={`relative z-30 hidden h-full shrink-0 flex-col border-r border-foreground/8 bg-ink-900/98 backdrop-blur-2xl lg:flex ${
+          sidebarWidth == null ? "lg:w-[420px]" : ""
         }`}
         style={sidebarWidth != null ? { width: `${sidebarWidth}px` } : undefined}
       >
@@ -1667,7 +1813,7 @@ export default function HomePage() {
         aria-valuemax={520}
         aria-valuenow={sidebarWidth ?? (typeof window !== "undefined" && window.innerWidth >= 1024 ? 420 : 380)}
         tabIndex={0}
-        className="group relative z-40 hidden w-1 shrink-0 cursor-col-resize md:flex md:flex-col md:items-center md:justify-center"
+        className="group relative z-40 hidden w-1 shrink-0 cursor-col-resize lg:flex lg:flex-col lg:items-center lg:justify-center"
         onMouseDown={handleDragStart}
         onKeyDown={(e) => {
           if (e.key === "ArrowLeft" || e.key === "ArrowDown") {
@@ -1754,7 +1900,9 @@ export default function HomePage() {
         )}
 
         {/* ── MOBILE: Top overlay (oculto en desktop) ── */}
-        <section className="pointer-events-none absolute inset-x-0 top-0 z-20 px-4 pt-safe-or-4 md:hidden">
+        <section className="pointer-events-none absolute inset-x-0 top-0 z-20 px-4 pt-safe-or-4 lg:hidden">
+          {/* Scrim: degradado que separa los controles del mapa para que se lean limpios */}
+          <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-72 bg-gradient-to-b from-black/45 via-black/20 to-transparent" aria-hidden="true" />
           {/* Row 1: logo pill + mode toggle */}
           <div className="flex items-center gap-2">
             <div className="ov-panel pointer-events-auto inline-flex items-center gap-2 rounded-2xl border px-3 py-2 shadow-[0_4px_24px_rgba(0,0,0,0.18)] backdrop-blur-xl">
@@ -1802,16 +1950,9 @@ export default function HomePage() {
             />
           </div>
 
-          {/* Row 3: Hint pill */}
-          <div className={`pointer-events-none mt-2 transition-all duration-300 ${showHint ? "translate-y-0 opacity-100" : "-translate-y-1 opacity-0"}`}>
-            <div className="ov-panel inline-flex max-w-[95%] items-center gap-2 rounded-full border px-3 py-1.5 text-[12px] font-semibold leading-snug backdrop-blur-md shadow-[0_2px_12px_rgba(0,0,0,0.2)]">
-              <span className="h-2 w-2 shrink-0 rounded-full bg-lima" aria-hidden="true" />
-              <span className="ov-text">{hintMessage}</span>
-            </div>
-          </div>
-
-          {/* Row 4: A/B controls (en paso 3, el panel de resultado va en el result sheet) */}
-          <div className="pointer-events-auto mt-2">
+          {/* Row 3: Buscador (héroe) + A/B controls. La guía paso a paso va dentro
+              de renderRouteControls, evitando un hint duplicado. */}
+          <div className="pointer-events-auto mt-2 space-y-2">
             {renderRouteControls("mobile", true)}
           </div>
         </section>
@@ -1853,7 +1994,7 @@ export default function HomePage() {
 
         {/* ── MOBILE ONLY: FAB row — Resultado (izq) + Rutas (der) ── */}
         <div
-          className="absolute inset-x-4 z-30 flex items-end gap-2 md:hidden"
+          className="absolute inset-x-4 z-30 flex items-end gap-2 lg:hidden"
           style={{ bottom: "calc(1.5rem + env(safe-area-inset-bottom, 0px))" }}
         >
 {/* Botón resultado — solo visible en paso 3 */}
@@ -1966,7 +2107,7 @@ export default function HomePage() {
                   : "Sin ruta directa"
         }
       >
-        <div aria-live="polite">
+        <div aria-live="polite" className="space-y-2.5">
           {renderRouteControls("mobile")}
         </div>
       </BottomSheet>

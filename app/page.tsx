@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import MadeByFooter from "@/components/MadeByFooter";
 import HeroMap from "@/components/HeroMap";
+import LandingSearch from "@/components/LandingSearch";
 import FareTicket from "@/components/FareTicket";
 import NotGovernmentNotice from "@/components/NotGovernmentNotice";
 import Logo from "@/components/Logo";
@@ -171,38 +172,8 @@ export default function LandingPage() {
             🌲 Cerca del Parque Nacional Eduardo Ruiz
           </div>
 
-          {/* Search form */}
-          <form action="/mapa" className="mt-6 max-w-xl rounded-3xl border p-2 shadow-[0_20px_80px_rgba(0,0,0,0.45)] backdrop-blur-xl"
-            style={{ borderColor: "var(--ov-border)", background: "rgba(12,17,10,0.85)" }}
-          >
-            <label className="sr-only" htmlFor="destino">¿A dónde vas?</label>
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <div className="relative flex-1">
-                <svg viewBox="0 0 24 24" fill="none" className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2" style={{ color: "var(--muted)" }} aria-hidden="true">
-                  <path d="M12 21s6-5.7 6-11a6 6 0 1 0-12 0c0 5.3 6 11 6 11Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                  <circle cx="12" cy="10" r="2" fill="currentColor" />
-                </svg>
-                <input
-                  id="destino"
-                  name="destino"
-                  placeholder="¿A dónde vas? Ej. Parque Nacional"
-                  className="h-12 w-full rounded-2xl border pl-12 pr-4 text-sm font-medium outline-none transition"
-                  style={{
-                    background: "rgba(106,171,72,0.06)",
-                    borderColor: "rgba(140,200,80,0.15)",
-                    color: "var(--ink)",
-                  }}
-                />
-              </div>
-              <button
-                className="cta-shine h-12 rounded-2xl px-6 text-sm font-black text-white transition hover:opacity-90"
-                type="submit"
-                style={{ background: "var(--verde)" }}
-              >
-                Buscar ruta
-              </button>
-            </div>
-          </form>
+          {/* Search form con autocompletado (mejora progresiva: funciona sin JS) */}
+          <LandingSearch />
 
           {/* Chips */}
           <div className="mt-4 flex flex-wrap gap-2">

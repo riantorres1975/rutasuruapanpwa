@@ -42,7 +42,7 @@ const CAMERA_DURATION = 1200;
 const MIN_DRAW_DURATION = 1200;
 const MAX_DRAW_DURATION = 1800;
 const SHORT_ROUTE_THRESHOLD = 24;
-const IDLE_ROUTE_OPACITY = 0.35;
+const IDLE_ROUTE_OPACITY = 0.2;
 const DEBUG_POINTS_SOURCE = "debug-points-source";
 const DEBUG_POINTS_CIRCLE = "debug-points-circle";
 const DEBUG_POINTS_LABEL = "debug-points-label";
@@ -219,13 +219,14 @@ function lineWidthExpression(
   const suggestedExpression = ["in", ["get", "id"], ["literal", suggestedRouteIds.length > 0 ? suggestedRouteIds : [-1]]] as any;
   const isTeleferico = telefericoRouteExpression();
 
-  void allRoutesMode;
-
   let baseExpression: any;
 
   if (selectedRouteId === null) {
     if (suggestedRouteIds.length === 0) {
-      baseExpression = ["case", isTeleferico, 4, 3] as any;
+      // Estado inactivo: líneas finas para una ciudad limpia (modo all-highlighted las engrosa)
+      baseExpression = allRoutesMode === "all-highlighted"
+        ? (["case", isTeleferico, 4, 3] as any)
+        : (["case", isTeleferico, 3, 2] as any);
     } else if (bestSuggestedRouteId !== null) {
       baseExpression = ["case", ["==", ["get", "id"], bestSuggestedRouteId], 5.8, suggestedExpression, 4.8, 2] as any;
     } else {

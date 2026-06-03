@@ -23,7 +23,10 @@ export async function GET() {
     });
   }
 
-  return Response.json(routes, {
+  // El cliente no usa `verified`; se omite para aligerar el payload.
+  const payload = routes.map(({ verified: _verified, ...rest }) => rest);
+
+  return Response.json(payload, {
     headers: {
       "Content-Type": "application/json",
       "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",

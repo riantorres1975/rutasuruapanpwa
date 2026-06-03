@@ -3,8 +3,18 @@ import Link from "next/link";
 import Logo from "@/components/Logo";
 import ForceDark from "@/components/ForceDark";
 import RoutePreviewSVG from "@/components/RoutePreviewSVG";
+import RutasFilter from "@/components/RutasFilter";
 import { getRouteSeoItems } from "@/lib/route-seo";
+import { getRouteSearchTerms } from "@/lib/route-names";
 import { FARES_2026 } from "@/lib/mobility-config";
+
+function buildSearchText(name: string, destination: string | null, landmarks: string[]): string {
+  return [name, destination ?? "", ...landmarks, ...getRouteSearchTerms(name)]
+    .join(" ")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "");
+}
 
 export const metadata: Metadata = {
   title: "Rutas de camión en Uruapan — Las 40 rutas urbanas",
@@ -115,50 +125,65 @@ export default function RutasPage() {
             </div>
           </div>
 
+          {/* Buscador (filtra las tarjetas sin recargar) */}
+          <div className="mt-8">
+            <RutasFilter total={busRoutes.length} />
+          </div>
+
           {/* Grid de rutas */}
-          <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div id="rutas-grid" className="grid gap-2.5 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3">
             {busRoutes.map((route) => (
               <Link
                 key={route.slug}
                 href={`/ruta/${route.slug}`}
-                className="group rounded-2xl border p-4 transition-all hover:-translate-y-0.5 hover:shadow-[0_12px_40px_rgba(0,0,0,0.4)]"
+                data-search={buildSearchText(route.name, route.destination, route.landmarks)}
+                className="group flex items-center gap-3 rounded-2xl border p-3 transition-all active:scale-[0.99] hover:-translate-y-0.5 hover:border-lima/30 hover:shadow-[0_12px_40px_rgba(0,0,0,0.4)] sm:items-start sm:p-4"
                 style={{ borderColor: "rgba(140,200,80,0.1)", background: "rgba(20,28,16,0.6)" }}
               >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-3">
-                      <span
-                        className="h-3 w-3 shrink-0 rounded-full"
-                        style={{ backgroundColor: route.color }}
-                      />
-                      <span className="font-serif text-base font-black" style={{ color: "#e8f2d8" }}>
-                        {route.name}
-                      </span>
-                    </div>
-                    {route.destination && (
-                      <p className="mt-2 text-xs leading-snug" style={{ color: "#6aab48" }}>
-                        → {route.destination}
-                      </p>
-                    )}
-                    <p className="mt-3 text-[11px] font-semibold uppercase tracking-widest" style={{ color: "rgba(232,242,216,0.3)" }}>
-                      Ver ruta →
-                    </p>
-                  </div>
-                  <div
-                    className="shrink-0 rounded-xl overflow-hidden"
-                    style={{ background: "rgba(0,0,0,0.25)" }}
-                  >
-                    <RoutePreviewSVG
-                      routeName={route.name}
-                      color={route.color}
-                      width={96}
-                      height={60}
-                      strokeWidth={2}
+                <div className="min-w-0 flex-1 order-1">
+                  <div className="flex items-center gap-2.5">
+                    <span
+                      className="h-3 w-3 shrink-0 rounded-full"
+                      style={{ backgroundColor: route.color }}
                     />
+                    <span className="font-serif text-base font-black" style={{ color: "#e8f2d8" }}>
+                      {route.name}
+                    </span>
                   </div>
+                  {route.destination && (
+                    <p className="mt-1.5 text-xs leading-snug" style={{ color: "#6aab48" }}>
+                      → {route.destination}
+                    </p>
+                  )}
+                  <p className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-widest" style={{ color: "rgba(232,242,216,0.35)" }}>
+                    Ver ruta
+                    <span className="transition-transform group-hover:translate-x-0.5">→</span>
+                  </p>
+                </div>
+                <div
+                  className="order-2 shrink-0 overflow-hidden rounded-xl"
+                  style={{ background: "rgba(0,0,0,0.25)" }}
+                >
+                  <RoutePreviewSVG
+                    routeName={route.name}
+                    color={route.color}
+                    width={84}
+                    height={56}
+                    strokeWidth={2}
+                  />
                 </div>
               </Link>
             ))}
+          </div>
+
+          {/* Estado vacío (lo controla RutasFilter) */}
+          <div
+            id="rutas-empty"
+            style={{ display: "none", borderColor: "rgba(140,200,80,0.12)", background: "rgba(20,28,16,0.6)" }}
+            className="mt-4 flex flex-col items-center gap-2 rounded-2xl border px-4 py-10 text-center"
+          >
+            <p className="text-sm font-semibold" style={{ color: "#e8f2d8" }}>Sin resultados</p>
+            <p className="text-xs" style={{ color: "#6aab48" }}>Prueba con otro número, colonia o destino.</p>
           </div>
 
           {/* CTA teleférico */}

@@ -344,7 +344,7 @@ export default function ChatBot() {
 
   if (!mounted) return (
     <button ref={btnRef} type="button" onClick={() => setOpen(true)}
-      className="ov-panel pointer-events-auto inline-flex h-12 w-12 items-center justify-center rounded-2xl border shadow-[0_8px_32px_rgba(0,0,0,0.3)] backdrop-blur-xl transition active:scale-[0.97] md:h-10 md:w-10 md:rounded-lg md:shadow-none border-foreground/12 bg-foreground/5 text-foreground/50"
+      className="ov-panel pointer-events-auto inline-flex h-12 w-12 items-center justify-center rounded-2xl border shadow-[0_8px_32px_rgba(0,0,0,0.3)] backdrop-blur-xl transition active:scale-[0.97] lg:h-10 lg:w-10 lg:rounded-lg lg:shadow-none border-foreground/12 bg-foreground/5 text-foreground/50"
       aria-label="Abrir asistente de rutas"
     >
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -420,7 +420,7 @@ export default function ChatBot() {
         ref={btnRef}
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className={`ov-panel pointer-events-auto inline-flex h-12 w-12 items-center justify-center rounded-2xl border shadow-[0_8px_32px_rgba(0,0,0,0.3)] backdrop-blur-xl transition active:scale-[0.97] md:h-10 md:w-10 md:rounded-lg md:shadow-none ${
+        className={`ov-panel pointer-events-auto inline-flex h-12 w-12 items-center justify-center rounded-2xl border shadow-[0_8px_32px_rgba(0,0,0,0.3)] backdrop-blur-xl transition active:scale-[0.97] lg:h-10 lg:w-10 lg:rounded-lg lg:shadow-none ${
           open ? 'border-lima/40 bg-lima/12 text-lima' : 'border-foreground/12 bg-foreground/5 text-foreground/50 hover:border-foreground/25 hover:text-foreground/80'
         }`}
         aria-label="Abrir asistente de rutas"

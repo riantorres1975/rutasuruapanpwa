@@ -108,7 +108,7 @@ export default function BottomSheet({
       {/* Backdrop — solo en full, no en mini */}
       <div
         onClick={() => (snapPoints && snap === "full" ? setSnap("mini") : onOpenChange(false))}
-        className={`fixed inset-0 z-30 bg-slate-950/60 transition-opacity duration-300 md:hidden ${
+        className={`fixed inset-0 z-30 bg-slate-950/60 transition-opacity duration-300 lg:hidden ${
           open && (!snapPoints || snap === "full")
             ? "pointer-events-auto opacity-100"
             : "pointer-events-none opacity-0"
@@ -121,7 +121,7 @@ export default function BottomSheet({
         aria-modal={open ? "true" : undefined}
         aria-label={title}
         style={{ transform: baseTransform, height: "80dvh", background: "var(--ov-bg)", borderTop: "1px solid var(--ov-border)" }}
-        className={`fixed inset-x-0 bottom-0 z-40 rounded-t-[28px] shadow-soft will-change-transform md:hidden ${
+        className={`fixed inset-x-0 bottom-0 z-40 rounded-t-[28px] shadow-soft will-change-transform lg:hidden ${
           isDragging ? "transition-none" : "transition-[transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
         }`}
       >
@@ -187,7 +187,7 @@ export default function BottomSheet({
       {/* ── DESKTOP: backdrop fallback ── */}
       <div
         aria-hidden={!open}
-        className={`pointer-events-none fixed inset-0 z-30 hidden transition-opacity duration-300 md:block ${
+        className={`pointer-events-none fixed inset-0 z-30 hidden transition-opacity duration-300 lg:block ${
           open ? "pointer-events-auto opacity-100" : "opacity-0"
         }`}
         onClick={() => onOpenChange(false)}

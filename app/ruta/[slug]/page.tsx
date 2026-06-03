@@ -139,7 +139,7 @@ export default async function RoutePage({ params }: RoutePageProps) {
         </Link>
       </nav>
 
-      <div className="px-5 pt-28 pb-8 sm:px-8 lg:px-10">
+      <div className="px-5 pt-28 pb-28 sm:px-8 lg:px-10 lg:pb-8">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
         <div className="mx-auto max-w-3xl">
@@ -204,7 +204,7 @@ export default async function RoutePage({ params }: RoutePageProps) {
                 }
               </p>
 
-              <dl className="mt-8 grid gap-3 sm:grid-cols-4">
+              <dl className="mt-8 grid grid-cols-2 gap-2.5 sm:grid-cols-4 sm:gap-3">
                 <div
                   className="rounded-2xl border p-4"
                   style={{ borderColor: "rgba(140,200,80,0.12)", background: "rgba(106,171,72,0.06)" }}
@@ -308,6 +308,28 @@ export default async function RoutePage({ params }: RoutePageProps) {
             </div>
           </article>
         </div>
+      </div>
+
+      {/* CTA fijo inferior — acceso rápido al mapa en móvil/tablet */}
+      <div
+        className="fixed inset-x-0 bottom-0 z-40 border-t px-4 py-3 backdrop-blur-xl lg:hidden"
+        style={{
+          borderColor: "rgba(140,200,80,0.14)",
+          background: "rgba(12,17,10,0.92)",
+          paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom, 0px))",
+        }}
+      >
+        <Link
+          href={`/mapa?destino=${encodeURIComponent(route.destination ?? route.name)}`}
+          className="flex h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-black text-white transition active:scale-[0.98]"
+          style={{ background: "#6aab48" }}
+        >
+          <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
+            <path d="M12 21s6-5.7 6-11a6 6 0 1 0-12 0c0 5.3 6 11 6 11Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <circle cx="12" cy="10" r="2.2" fill="currentColor" />
+          </svg>
+          Ver {route.name} en el mapa
+        </Link>
       </div>
     </main>
   );

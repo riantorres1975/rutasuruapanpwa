@@ -246,8 +246,7 @@ export default function OnboardingOverlay() {
         aria-live="polite"
           className={`ov-panel fixed z-50 mx-auto max-w-sm rounded-3xl border shadow-[0_24px60px_rgba(0,0,0,0.35)] backdrop-blur-2xl transition-all duration-500 will-change-transform
           inset-x-4 bottom-10
-          md:inset-x-auto md:bottom-10 md:left-[calc(380px+5%)] md:right-[5%]
-          lg:left-[calc(420px+5%)] lg:right-[5%]
+          lg:inset-x-auto lg:bottom-10 lg:left-[calc(420px+5%)] lg:right-[5%]
           ${
           visible
             ? "translate-y-0 opacity-100 pointer-events-auto"
