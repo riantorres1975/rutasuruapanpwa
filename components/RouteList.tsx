@@ -19,6 +19,8 @@ type RouteListProps = {
   nearbyRouteIds: number[];
   selectedRouteId: number | null;
   landmarksByRouteName?: Map<string, ProductionRouteLandmark[]>;
+  favoriteRouteNames?: Set<string>;
+  onToggleFavorite?: (routeName: string) => void;
   onSelectRoute: (routeId: number) => void;
   onClearSelection?: () => void;
   onShowTeleferico?: () => void;
@@ -40,6 +42,9 @@ type RouteItemProps = {
   matchedLandmark: string | null;
   suggestionDir: RouteDirection | undefined;
   showDivider: boolean;
+  showFavoritesHeader: boolean;
+  isFavorite: boolean;
+  onToggleFavorite?: (routeName: string) => void;
   onSelectRoute: (id: number) => void;
 };
 
@@ -55,10 +60,24 @@ const RouteItem = memo(function RouteItem({
   matchedLandmark,
   suggestionDir,
   showDivider,
+  showFavoritesHeader,
+  isFavorite,
+  onToggleFavorite,
   onSelectRoute,
 }: RouteItemProps) {
   return (
     <li style={{ contentVisibility: "auto", containIntrinsicSize: "0 72px" }}>
+      {showFavoritesHeader && (
+        <div className="flex items-center gap-2 pb-1 pt-0.5" aria-hidden="true">
+          <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-lima">
+            <svg viewBox="0 0 24 24" fill="currentColor" className="h-3.5 w-3.5" aria-hidden="true">
+              <path d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27Z" />
+            </svg>
+            Favoritas
+          </span>
+          <span className="flex-1 border-t border-lima/20" />
+        </div>
+      )}
       {showDivider && (
         <div className="flex items-center gap-2 pb-2 pt-1" aria-hidden="true">
           <span className="flex-1 border-t border-slate-200/70 dark:border-slate-700/70" />
@@ -68,6 +87,7 @@ const RouteItem = memo(function RouteItem({
           <span className="flex-1 border-t border-slate-200/70 dark:border-slate-700/70" />
         </div>
       )}
+      <div className="flex items-stretch gap-1.5">
       <button
         type="button"
         onClick={() => onSelectRoute(route.id)}
@@ -76,7 +96,7 @@ const RouteItem = memo(function RouteItem({
             ? { borderColor: "var(--ov-border)", background: "var(--surface)" }
             : undefined
         }
-        className={`flex min-h-16 w-full items-stretch justify-between rounded-2xl border px-2 py-3 text-left transition active:scale-[0.995] ${
+        className={`flex min-h-16 w-full min-w-0 flex-1 items-stretch justify-between rounded-2xl border px-2 py-3 text-left transition active:scale-[0.995] ${
           isSelected
             ? "border-lima/70 bg-lima/10 shadow-[0_4px_24px_rgba(184,232,64,0.08)]"
             : isLandmarkMatch
@@ -159,6 +179,36 @@ const RouteItem = memo(function RouteItem({
           {isSelected && <span className="rounded-full bg-lima/15 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-lima">ACTIVA</span>}
         </span>
       </button>
+      {onToggleFavorite && (
+        <button
+          type="button"
+          onClick={() => onToggleFavorite(route.ruta)}
+          aria-pressed={isFavorite}
+          aria-label={isFavorite ? `Quitar ${route.ruta} de favoritas` : `Guardar ${route.ruta} en favoritas`}
+          style={!isFavorite ? { borderColor: "var(--ov-border)", background: "var(--surface)" } : undefined}
+          className={`flex w-10 shrink-0 items-center justify-center rounded-2xl border transition active:scale-[0.95] ${
+            isFavorite
+              ? "border-lima/50 bg-lima/10 text-lima"
+              : "ov-text-muted hover:border-lima/40 hover:text-lima"
+          }`}
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill={isFavorite ? "currentColor" : "none"}
+            className="h-4.5 w-4.5"
+            style={{ width: 18, height: 18 }}
+            aria-hidden="true"
+          >
+            <path
+              d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27Z"
+              stroke="currentColor"
+              strokeWidth={isFavorite ? 0 : 1.8}
+              strokeLinejoin="round"
+            />
+          </svg>
+        </button>
+      )}
+      </div>
     </li>
   );
 });
@@ -173,6 +223,8 @@ export default function RouteList({
   nearbyRouteIds,
   selectedRouteId,
   landmarksByRouteName,
+  favoriteRouteNames,
+  onToggleFavorite,
   onSelectRoute,
   onClearSelection,
   onShowTeleferico
@@ -311,46 +363,35 @@ export default function RouteList({
       return [...landmark, ...rest];
     }
 
-    // When there are suggestions, pin them to top (best first), then nearby, then rest
-    if (hasSuggested && !normalizedQuery) {
-      const suggested: ResolvedRouteData[] = [];
-      const nearby: ResolvedRouteData[] = [];
-      const rest: ResolvedRouteData[] = [];
+    // Fijar arriba sugeridas (mejor primero), luego cercanas, luego
+    // favoritas y al final el resto. Con búsqueda activa solo se fijan
+    // las cercanas (la relevancia de la búsqueda manda).
+    const pinSuggested = hasSuggested && !normalizedQuery;
+    const hasFavorites = !normalizedQuery && !!favoriteRouteNames && favoriteRouteNames.size > 0;
+    if (!pinSuggested && !hasNearby && !hasFavorites) return base;
 
-      for (const route of base) {
-        if (suggestedRankMap.has(route.id)) {
-          suggested.push(route);
-        } else if (nearbyRankMap.has(route.id)) {
-          nearby.push(route);
-        } else {
-          rest.push(route);
-        }
-      }
-
-      suggested.sort((a, b) => (suggestedRankMap.get(a.id) ?? 0) - (suggestedRankMap.get(b.id) ?? 0));
-      nearby.sort((a, b) => (nearbyRankMap.get(a.id) ?? 0) - (nearbyRankMap.get(b.id) ?? 0));
-
-      return [...suggested, ...nearby, ...rest];
-    }
-
-    if (!hasNearby) return base;
-
-    // Pin nearby routes to top (already sorted nearest→farthest by Map.tsx)
+    const suggested: ResolvedRouteData[] = [];
     const nearby: ResolvedRouteData[] = [];
+    const favorites: ResolvedRouteData[] = [];
     const rest: ResolvedRouteData[] = [];
 
     for (const route of base) {
-      if (nearbyRankMap.has(route.id)) {
+      if (pinSuggested && suggestedRankMap.has(route.id)) {
+        suggested.push(route);
+      } else if (nearbyRankMap.has(route.id)) {
         nearby.push(route);
+      } else if (hasFavorites && favoriteRouteNames?.has(route.ruta)) {
+        favorites.push(route);
       } else {
         rest.push(route);
       }
     }
 
+    suggested.sort((a, b) => (suggestedRankMap.get(a.id) ?? 0) - (suggestedRankMap.get(b.id) ?? 0));
     nearby.sort((a, b) => (nearbyRankMap.get(a.id) ?? 0) - (nearbyRankMap.get(b.id) ?? 0));
 
-    return [...nearby, ...rest];
-  }, [normalizedQuery, searchableRoutes, hasNearby, hasSuggested, suggestedRankMap, nearbyRankMap, landmarkMatchingRouteNames, fuse]);
+    return [...suggested, ...nearby, ...favorites, ...rest];
+  }, [normalizedQuery, searchableRoutes, hasNearby, hasSuggested, suggestedRankMap, nearbyRankMap, landmarkMatchingRouteNames, fuse, favoriteRouteNames]);
 
   const visibleFilteredRoutes = useMemo(
     () => normalizedQuery ? filteredRoutes : filteredRoutes.filter((route) => !isTelefericoRoute(route)),
@@ -503,9 +544,24 @@ export default function RouteList({
             const isNearby = nearbyRank !== undefined;
             const isLandmarkMatch = !!(normalizedQuery && landmarkMatchingRouteNames.has(route.ruta));
             const suggestionDir = suggestedRouteDirections?.get(route.id);
+            const isFavorite = favoriteRouteNames?.has(route.ruta) ?? false;
+            // Una ruta pertenece al grupo "Favoritas" si está fijada como
+            // favorita pero no en un grupo de mayor prioridad (sugerida/cercana).
+            const inFavoriteGroup = !normalizedQuery && isFavorite && !isNearby && !(suggestedRankMap.size > 0 && suggestedRankMap.has(route.id));
             const prevRoute = visibleFilteredRoutes[listIndex - 1];
             const prevIsNearby = prevRoute !== undefined && nearbyRankMap.has(prevRoute.id);
-            const showDivider = hasNearby && !normalizedQuery && !isNearby && prevIsNearby;
+            const prevInFavoriteGroup =
+              prevRoute !== undefined &&
+              !normalizedQuery &&
+              (favoriteRouteNames?.has(prevRoute.ruta) ?? false) &&
+              !nearbyRankMap.has(prevRoute.id) &&
+              !(suggestedRankMap.size > 0 && suggestedRankMap.has(prevRoute.id));
+            const showFavoritesHeader = inFavoriteGroup && !prevInFavoriteGroup;
+            const showDivider =
+              !normalizedQuery &&
+              !isNearby &&
+              !inFavoriteGroup &&
+              (prevIsNearby || prevInFavoriteGroup);
 
             return (
               <RouteItem
@@ -521,6 +577,9 @@ export default function RouteList({
                 matchedLandmark={matchedLandmark}
                 suggestionDir={suggestionDir}
                 showDivider={showDivider}
+                showFavoritesHeader={showFavoritesHeader}
+                isFavorite={isFavorite}
+                onToggleFavorite={isTelefericoRoute(route) ? undefined : onToggleFavorite}
                 onSelectRoute={onSelectRoute}
               />
             );

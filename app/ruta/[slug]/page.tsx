@@ -5,6 +5,7 @@ import Logo from "@/components/Logo";
 import RoutePreviewSVG from "@/components/RoutePreviewSVG";
 import { APP_BRAND, FARES_2026 } from "@/lib/mobility-config";
 import { findRouteSeoItem, getRouteSeoItems } from "@/lib/route-seo";
+import { getSchedule } from "@/lib/schedules";
 import { buildRouteStaticMapUrl } from "@/lib/static-map";
 
 type RoutePageProps = {
@@ -56,6 +57,14 @@ export default async function RoutePage({ params }: RoutePageProps) {
   const directions = route.hasIda && route.hasVuelta ? "Ida y vuelta" : route.hasIda ? "Solo ida" : "Solo vuelta";
   const staticMapUrl = buildRouteStaticMapUrl(route.name, route.color);
   const estimatedMinutes = route.distanceKm > 0 ? Math.round((route.distanceKm / 18) * 60) : null;
+  const schedule = getSchedule(route.name);
+  const frequencyLabel = schedule
+    ? schedule.continuous
+      ? "Servicio continuo"
+      : schedule.freqMin === schedule.freqMax
+        ? `Cada ${schedule.freqMin} min`
+        : `Cada ${schedule.freqMin}–${schedule.freqMax} min`
+    : null;
 
   const faqs = [
     {
@@ -74,6 +83,16 @@ export default async function RoutePage({ params }: RoutePageProps) {
         ? `El recorrido completo de la ${route.name} es de aproximadamente ${route.distanceKm} km, lo que equivale a unos ${estimatedMinutes} minutos de viaje en condiciones normales de tráfico.`
         : `El tiempo varía según el tráfico y la hora del día. Usa el mapa interactivo de UruGo para estimar el tiempo desde tu punto de origen.`
     },
+    ...(schedule
+      ? [
+          {
+            question: `¿Cuál es el horario de la ${route.name}?`,
+            answer: schedule.continuous
+              ? `La ${route.name} opera en servicio continuo de ${schedule.first} a ${schedule.last} horas.`
+              : `La ${route.name} opera aproximadamente de ${schedule.first} a ${schedule.last} horas, con unidades ${frequencyLabel?.toLowerCase()}. Los horarios pueden variar según el día y el tráfico.`
+          }
+        ]
+      : []),
     {
       question: `¿Cómo saber si la ${route.name} pasa cerca de mi destino?`,
       answer: `Abre el mapa de UruGo, marca tu origen y destino, y el sistema calculará si la ${route.name} u otra ruta es la mejor opción, incluyendo caminatas y transbordos.`
@@ -235,6 +254,24 @@ export default async function RoutePage({ params }: RoutePageProps) {
                   <dt className="text-xs font-bold uppercase tracking-widest" style={{ color: "#a8c888" }}>Sentido</dt>
                   <dd className="mt-2 text-sm font-bold" style={{ color: "#e8f2d8" }}>{directions}</dd>
                 </div>
+                {schedule && (
+                  <div
+                    className="rounded-2xl border p-4"
+                    style={{ borderColor: "rgba(140,200,80,0.12)", background: "rgba(106,171,72,0.06)" }}
+                  >
+                    <dt className="text-xs font-bold uppercase tracking-widest" style={{ color: "#a8c888" }}>Horario</dt>
+                    <dd className="mt-2 text-sm font-bold" style={{ color: "#e8f2d8" }}>{schedule.first} – {schedule.last}</dd>
+                  </div>
+                )}
+                {frequencyLabel && (
+                  <div
+                    className="rounded-2xl border p-4"
+                    style={{ borderColor: "rgba(140,200,80,0.12)", background: "rgba(106,171,72,0.06)" }}
+                  >
+                    <dt className="text-xs font-bold uppercase tracking-widest" style={{ color: "#a8c888" }}>Frecuencia</dt>
+                    <dd className="mt-2 text-sm font-bold" style={{ color: "#e8f2d8" }}>{frequencyLabel}</dd>
+                  </div>
+                )}
               </dl>
 
               {route.landmarks.length > 0 && (
@@ -287,7 +324,7 @@ export default async function RoutePage({ params }: RoutePageProps) {
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <Link
-                  href={`/mapa?destino=${encodeURIComponent(route.destination ?? route.name)}`}
+                  href={`/mapa?r=${encodeURIComponent(route.name)}`}
                   className="inline-flex h-12 items-center justify-center rounded-full px-6 text-sm font-black text-white transition hover:opacity-90"
                   style={{ background: "#6aab48" }}
                 >
@@ -320,7 +357,7 @@ export default async function RoutePage({ params }: RoutePageProps) {
         }}
       >
         <Link
-          href={`/mapa?destino=${encodeURIComponent(route.destination ?? route.name)}`}
+          href={`/mapa?r=${encodeURIComponent(route.name)}`}
           className="flex h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-black text-white transition active:scale-[0.98]"
           style={{ background: "#6aab48" }}
         >

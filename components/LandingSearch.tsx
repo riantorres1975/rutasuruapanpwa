@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { searchLocalPlaces, searchPlaces, type PlaceResult } from "@/lib/geocode";
+import { addRecentPlace, getRecentPlaces } from "@/lib/recent-places";
 
 const DEBOUNCE_MS = 280;
 
@@ -15,12 +16,17 @@ export default function LandingSearch() {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<PlaceResult[]>([]);
+  const [recents, setRecents] = useState<PlaceResult[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const listboxId = useId();
+
+  // Con el input casi vacío mostramos los destinos recientes.
+  const showingRecents = query.trim().length < 2;
+  const displayResults = showingRecents ? recents : results;
 
   useEffect(() => {
     const onPointerDown = (event: PointerEvent) => {
@@ -37,6 +43,7 @@ export default function LandingSearch() {
     if (trimmed.length < 2) {
       setResults([]);
       setIsSearching(false);
+      setActiveIndex(-1);
       return;
     }
 
@@ -58,13 +65,14 @@ export default function LandingSearch() {
   }, [query]);
 
   const goTo = (result: PlaceResult) => {
+    addRecentPlace(result);
     setIsOpen(false);
     router.push(mapHref(result));
   };
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
-    const target = activeIndex >= 0 ? results[activeIndex] : results[0];
+    const target = activeIndex >= 0 ? displayResults[activeIndex] : results[0];
     if (target) {
       goTo(target);
       return;
@@ -79,14 +87,14 @@ export default function LandingSearch() {
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (results.length === 0) return;
+    if (displayResults.length === 0) return;
     if (event.key === "ArrowDown") {
       event.preventDefault();
       setIsOpen(true);
-      setActiveIndex((i) => (i + 1) % results.length);
+      setActiveIndex((i) => (i + 1) % displayResults.length);
     } else if (event.key === "ArrowUp") {
       event.preventDefault();
-      setActiveIndex((i) => (i <= 0 ? results.length - 1 : i - 1));
+      setActiveIndex((i) => (i <= 0 ? displayResults.length - 1 : i - 1));
     } else if (event.key === "Escape") {
       setIsOpen(false);
     }
@@ -121,7 +129,13 @@ export default function LandingSearch() {
               value={query}
               autoComplete="off"
               onChange={(event) => { setQuery(event.target.value); setIsOpen(true); }}
-              onFocus={() => { if (results.length > 0) setIsOpen(true); }}
+              onFocus={() => {
+                const stored = getRecentPlaces();
+                setRecents(stored);
+                if (results.length > 0 || (query.trim().length < 2 && stored.length > 0)) {
+                  setIsOpen(true);
+                }
+              }}
               onKeyDown={handleKeyDown}
               placeholder="¿A dónde vas? Ej. Parque Nacional"
               role="combobox"
@@ -154,14 +168,23 @@ export default function LandingSearch() {
         </div>
       </form>
 
-      {isOpen && results.length > 0 && (
+      {isOpen && displayResults.length > 0 && (
         <ul
           id={listboxId}
           role="listbox"
           className="absolute left-0 right-0 z-50 mt-2 max-h-72 overflow-y-auto overscroll-contain rounded-2xl border p-1.5 shadow-[0_20px_60px_rgba(0,0,0,0.5)] backdrop-blur-xl"
           style={{ background: "var(--card, #141c10)", borderColor: "var(--ov-border)" }}
         >
-          {results.map((result, index) => (
+          {showingRecents && (
+            <li
+              role="presentation"
+              className="px-3 pb-1 pt-1.5 text-[10px] font-bold uppercase tracking-widest"
+              style={{ color: "var(--muted)" }}
+            >
+              Recientes
+            </li>
+          )}
+          {displayResults.map((result, index) => (
             <li key={`${result.label}-${result.center.join(",")}`} role="presentation">
               <button
                 id={`${listboxId}-opt-${index}`}
@@ -173,14 +196,21 @@ export default function LandingSearch() {
                 className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left transition"
                 style={index === activeIndex ? { background: "var(--verde-l)" } : undefined}
               >
-                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0" style={{ color: "var(--lima)" }} aria-hidden="true">
-                  <path d="M12 21s6-5.7 6-11a6 6 0 1 0-12 0c0 5.3 6 11 6 11Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                  <circle cx="12" cy="10" r="2" fill="currentColor" />
-                </svg>
+                {showingRecents ? (
+                  <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0" style={{ color: "var(--muted)" }} aria-hidden="true">
+                    <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
+                    <path d="M12 7v5l3 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0" style={{ color: "var(--lima)" }} aria-hidden="true">
+                    <path d="M12 21s6-5.7 6-11a6 6 0 1 0-12 0c0 5.3 6 11 6 11Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                    <circle cx="12" cy="10" r="2" fill="currentColor" />
+                  </svg>
+                )}
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[13px] font-semibold" style={{ color: "var(--ink)" }}>{result.label}</span>
                   <span className="block text-[11px]" style={{ color: "var(--muted)" }}>
-                    {result.source === "local" ? "Lugar conocido" : "Uruapan, Mich."}
+                    {showingRecents ? "Búsqueda reciente" : result.source === "local" ? "Lugar conocido" : "Uruapan, Mich."}
                   </span>
                 </span>
               </button>

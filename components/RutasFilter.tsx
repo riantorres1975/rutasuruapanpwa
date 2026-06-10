@@ -30,12 +30,15 @@ export default function RutasFilter({ total, gridId = "rutas-grid", emptyId = "r
     if (!grid) return;
 
     const q = normalize(query);
+    // Multi-token AND: "hospital ruta 5" encuentra tarjetas que contengan
+    // todas las palabras, sin importar el orden.
+    const tokens = q.split(" ").filter(Boolean);
     const cards = grid.querySelectorAll<HTMLElement>("[data-search]");
     let visible = 0;
 
     cards.forEach((el) => {
       const hay = el.getAttribute("data-search") ?? "";
-      const match = q === "" || hay.includes(q);
+      const match = tokens.length === 0 || tokens.every((token) => hay.includes(token));
       el.style.display = match ? "" : "none";
       if (match) visible += 1;
     });
@@ -92,6 +95,24 @@ export default function RutasFilter({ total, gridId = "rutas-grid", emptyId = "r
           )}
         </div>
       </label>
+      {!query && (
+        <div className="mt-2.5 flex flex-wrap gap-1.5 px-1" aria-label="Búsquedas rápidas">
+          {["Centro", "Central", "Hospital Regional", "Jucutacato", "Pemex", "Balcones"].map((chip) => (
+            <button
+              key={chip}
+              type="button"
+              onClick={() => {
+                setQuery(chip);
+                inputRef.current?.focus();
+              }}
+              className="rounded-full border px-3 py-1.5 text-[11px] font-semibold transition hover:opacity-80 active:scale-[0.97]"
+              style={{ borderColor: "rgba(140,200,80,0.15)", background: "rgba(106,171,72,0.06)", color: "#a8c888" }}
+            >
+              {chip}
+            </button>
+          ))}
+        </div>
+      )}
       <p className="mt-2 px-1 text-[12px] font-semibold" style={{ color: "#6aab48" }} aria-live="polite">
         {count} {count === 1 ? "ruta" : "rutas"}
         {query && ` para “${query.trim()}”`}

@@ -41,6 +41,11 @@ const securityHeaders = [
       "connect-src 'self' https://*.mapbox.com https://api.mapbox.com https://api.deepseek.com",
       "worker-src 'self' blob:",
       "frame-src 'none'",
+      "frame-ancestors 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "object-src 'none'",
+      "manifest-src 'self'",
     ].join("; ")
   }
 ];

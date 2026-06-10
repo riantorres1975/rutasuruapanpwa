@@ -17,6 +17,7 @@ import RouteList from "@/components/RouteList";
 import RouteSchedule from "@/components/RouteSchedule";
 import { geocodePlace, type PlaceResult } from "@/lib/geocode";
 import { useShareRoute } from "@/hooks/useShareRoute";
+import { useFavoriteRoutes } from "@/hooks/useFavoriteRoutes";
 import { formatRouteLabel, getRouteDestination } from "@/lib/route-names";
 import type { Coordinates, ProductionRoute, ProductionRouteLandmark, ResolvedRouteData, RouteDirection } from "@/lib/types";
 import { computeTransferOptionsFromPolylines } from "@/lib/transfers";
@@ -261,6 +262,11 @@ function getEstimatedMinutes(segment: Coordinates[]) {
   return Math.max(4, Math.round(minutes));
 }
 
+// Minutos caminando a paso urbano (~4.5 km/h ≈ 75 m/min).
+function walkMinutes(meters: number) {
+  return Math.max(1, Math.round(meters / 75));
+}
+
 function findNearestLandmark(
   point: Coordinates,
   landmarks: ProductionRouteLandmark[] | undefined,
@@ -356,11 +362,15 @@ export default function HomePage() {
   const [isShortScreen, setIsShortScreen] = useState(false);
   const [abExpanded, setAbExpanded] = useState(false);
   const { share: shareRoute, status: shareStatus } = useShareRoute();
+  const { favorites: favoriteRouteNames, toggleFavorite } = useFavoriteRoutes();
   const activePointRef = useRef(activePoint);
   const originPointRef = useRef(originPoint);
   const destinationPointRef = useRef(destinationPoint);
   const hasHydratedMapModeRef = useRef(false);
   const pendingSharedStateRef = useRef<SharedMapState | null>(null);
+  // /mapa?cerca=1: el usuario llegó pidiendo "rutas cerca de mí" — al
+  // detectar rutas cercanas abrimos la lista de inmediato (en móvil).
+  const wantsNearbyRef = useRef(false);
 
   // Geolocation: watch position on mount.
   // First fix → set userLocation and mark "ok".
@@ -518,6 +528,9 @@ export default function HomePage() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+    if (params.get("cerca") === "1") {
+      wantsNearbyRef.current = true;
+    }
     const destinationParam = parseDestinationParam(params.get("destino"));
 
     if (destinationParam) {
@@ -775,6 +788,13 @@ export default function HomePage() {
   const handleNearbyRoutesFound = useCallback((routeIds: number[]) => {
     setNearbyRouteIds(routeIds);
     setNearbyToast(routeIds.length);
+    if (wantsNearbyRef.current) {
+      wantsNearbyRef.current = false;
+      // En móvil la lista vive en el BottomSheet; en desktop ya es visible.
+      if (routeIds.length > 0 && window.matchMedia("(max-width: 1023px)").matches) {
+        setIsSheetOpen(true);
+      }
+    }
   }, []);
 
   const handleMapPick = useCallback((point: Coordinates) => {
@@ -850,10 +870,11 @@ export default function HomePage() {
 
     if (sharedState.routeName) {
       const normalized = sharedState.routeName.toLowerCase();
-      const route = polylineRoutes.find((r) => {
-        const n = r.name.toLowerCase();
-        return n === normalized || n.includes(normalized);
-      });
+      // Igualdad exacta primero: "Ruta 1" no debe resolver a "Ruta 1A".
+      const route =
+        polylineRoutes.find((r) => r.name.toLowerCase() === normalized) ??
+        polylineRoutes.find((r) => r.name.toLowerCase().startsWith(`${normalized} `)) ??
+        polylineRoutes.find((r) => r.name.toLowerCase().includes(normalized));
       if (route) {
         setSelectedRouteId(route.id);
         if (
@@ -1006,8 +1027,8 @@ export default function HomePage() {
       return {
         title: "Indicaciones",
         items: [
-          `Sube a ${formatRouteLabel(bestSuggestion.ruta)} cerca de ${originLandmark ?? "tu ubicación"} (~${Math.round(bestSuggestion.distanciaA)} m a pie).`,
-          `Baja cerca de ${destLandmark ?? "tu destino"} (~${Math.round(bestSuggestion.distanciaB)} m a pie).`,
+          `Sube a ${formatRouteLabel(bestSuggestion.ruta)} cerca de ${originLandmark ?? "tu ubicación"} (~${Math.round(bestSuggestion.distanciaA)} m, ${walkMinutes(bestSuggestion.distanciaA)} min caminando).`,
+          `Baja cerca de ${destLandmark ?? "tu destino"} (~${Math.round(bestSuggestion.distanciaB)} m, ${walkMinutes(bestSuggestion.distanciaB)} min caminando).`,
           `Tiempo estimado en ruta: ${bestSuggestionEta ?? getEstimatedMinutes(bestSuggestion.segment)} min.`
         ]
       };
@@ -1018,7 +1039,7 @@ export default function HomePage() {
         title: "Indicaciones con transbordo",
         items: [
           `Primero toma ${formatRouteLabel(selectedTransfer.routeAName)}.`,
-          `Camina aproximadamente ${Math.round(selectedTransfer.walkMeters)} m en el punto de transbordo.`,
+          `Camina aproximadamente ${Math.round(selectedTransfer.walkMeters)} m (${walkMinutes(selectedTransfer.walkMeters)} min) en el punto de transbordo.`,
           `Continúa en ${formatRouteLabel(selectedTransfer.routeBName)} hasta acercarte al destino.`
         ]
       };
@@ -1027,7 +1048,7 @@ export default function HomePage() {
     if (transfers.length > 0) {
       return {
         title: "Opciones de transbordo disponibles",
-        items: transfers.slice(0, 2).map((transfer) => `${formatRouteLabel(transfer.routeAName)} a ${formatRouteLabel(transfer.routeBName)}, caminando ~${Math.round(transfer.walkMeters)} m para transbordar.`)
+        items: transfers.slice(0, 2).map((transfer) => `${formatRouteLabel(transfer.routeAName)} a ${formatRouteLabel(transfer.routeBName)}, caminando ~${Math.round(transfer.walkMeters)} m (${walkMinutes(transfer.walkMeters)} min) para transbordar.`)
       };
     }
 
@@ -1395,6 +1416,7 @@ export default function HomePage() {
                 <span className="ov-text text-[13px] font-medium">Buscando mejor ruta...</span>
               </div>
             ) : bestSuggestion ? (
+              <>
               <div className="px-4 py-3">
                 <p className="text-[10px] font-bold tracking-[2px] text-lima">RUTA RECOMENDADA</p>
                 <p className="ov-text mt-0.5 truncate font-display text-[17px] font-bold leading-tight">
@@ -1408,6 +1430,14 @@ export default function HomePage() {
                     </svg>
                     {bestSuggestionEta} min aprox
                   </span>
+                  {bestSuggestionEta !== null && (
+                    <span className="ov-pill ov-border ov-text-muted inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-[12px] font-medium">
+                      <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3" aria-hidden="true">
+                        <path d="M13 5a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM9.5 22l1.5-5-2-2 1-6 3.5-1.5L16 10l3 1M9 9l-3 1.5L5 14m5.5 3L8 22" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                      ~{walkMinutes(bestSuggestion.distanciaA) + bestSuggestionEta + walkMinutes(bestSuggestion.distanciaB)} min puerta a puerta
+                    </span>
+                  )}
                   {suggestions.length > 1 && (
                     <button
                       type="button"
@@ -1482,6 +1512,8 @@ export default function HomePage() {
                   </button>
                 </div>
               </div>
+              <RouteSchedule routeName={bestSuggestion.ruta} />
+              </>
             ) : selectedTransfer ? (
               <div className="px-4 py-3">
                 <p className="text-[10px] font-bold tracking-[2px] text-avocado-400">TRANSBORDO SELECCIONADO</p>
@@ -1786,6 +1818,8 @@ export default function HomePage() {
             nearbyRouteIds={nearbyRouteIds}
             selectedRouteId={selectedRouteId}
             landmarksByRouteName={landmarksByRouteName}
+            favoriteRouteNames={favoriteRouteNames}
+            onToggleFavorite={toggleFavorite}
             onClearSelection={handleClearSelection}
             onShowTeleferico={() => { setShowTeleferico(true); }}
             onSelectRoute={handleSelectRoute}
@@ -2076,6 +2110,8 @@ export default function HomePage() {
           nearbyRouteIds={nearbyRouteIds}
           selectedRouteId={selectedRouteId}
           landmarksByRouteName={landmarksByRouteName}
+          favoriteRouteNames={favoriteRouteNames}
+          onToggleFavorite={toggleFavorite}
           onClearSelection={() => {
             handleClearSelection();
             setIsSheetOpen(false);

@@ -133,46 +133,70 @@ export default function RutasPage() {
           {/* Grid de rutas */}
           <div id="rutas-grid" className="grid gap-2.5 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3">
             {busRoutes.map((route) => (
-              <Link
+              <div
                 key={route.slug}
-                href={`/ruta/${route.slug}`}
                 data-search={buildSearchText(route.name, route.destination, route.landmarks)}
-                className="group flex items-center gap-3 rounded-2xl border p-3 transition-all active:scale-[0.99] hover:-translate-y-0.5 hover:border-lima/30 hover:shadow-[0_12px_40px_rgba(0,0,0,0.4)] sm:items-start sm:p-4"
+                className="flex flex-col rounded-2xl border transition-all hover:-translate-y-0.5 hover:border-lima/30 hover:shadow-[0_12px_40px_rgba(0,0,0,0.4)]"
                 style={{ borderColor: "rgba(140,200,80,0.1)", background: "rgba(20,28,16,0.6)" }}
               >
-                <div className="min-w-0 flex-1 order-1">
-                  <div className="flex items-center gap-2.5">
-                    <span
-                      className="h-3 w-3 shrink-0 rounded-full"
-                      style={{ backgroundColor: route.color }}
-                    />
-                    <span className="font-serif text-base font-black" style={{ color: "#e8f2d8" }}>
-                      {route.name}
-                    </span>
-                  </div>
-                  {route.destination && (
-                    <p className="mt-1.5 text-xs leading-snug" style={{ color: "#6aab48" }}>
-                      → {route.destination}
-                    </p>
-                  )}
-                  <p className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-widest" style={{ color: "rgba(232,242,216,0.35)" }}>
-                    Ver ruta
-                    <span className="transition-transform group-hover:translate-x-0.5">→</span>
-                  </p>
-                </div>
-                <div
-                  className="order-2 shrink-0 overflow-hidden rounded-xl"
-                  style={{ background: "rgba(0,0,0,0.25)" }}
+                <Link
+                  href={`/ruta/${route.slug}`}
+                  className="group flex flex-1 items-center gap-3 p-3 transition active:scale-[0.99] sm:items-start sm:p-4"
                 >
-                  <RoutePreviewSVG
-                    routeName={route.name}
-                    color={route.color}
-                    width={84}
-                    height={56}
-                    strokeWidth={2}
-                  />
+                  <div className="min-w-0 flex-1 order-1">
+                    <div className="flex items-center gap-2.5">
+                      <span
+                        className="h-3 w-3 shrink-0 rounded-full"
+                        style={{ backgroundColor: route.color }}
+                      />
+                      <span className="font-serif text-base font-black" style={{ color: "#e8f2d8" }}>
+                        {route.name}
+                      </span>
+                    </div>
+                    {route.destination && (
+                      <p className="mt-1.5 text-xs leading-snug" style={{ color: "#6aab48" }}>
+                        → {route.destination}
+                      </p>
+                    )}
+                  </div>
+                  <div
+                    className="order-2 shrink-0 overflow-hidden rounded-xl"
+                    style={{ background: "rgba(0,0,0,0.25)" }}
+                  >
+                    <RoutePreviewSVG
+                      routeName={route.name}
+                      color={route.color}
+                      width={84}
+                      height={56}
+                      strokeWidth={2}
+                    />
+                  </div>
+                </Link>
+                <div
+                  className="flex items-center justify-between gap-2 border-t px-3 py-2 sm:px-4"
+                  style={{ borderColor: "rgba(140,200,80,0.08)" }}
+                >
+                  <Link
+                    href={`/ruta/${route.slug}`}
+                    className="inline-flex h-8 items-center gap-1 text-[11px] font-semibold uppercase tracking-widest transition hover:opacity-80"
+                    style={{ color: "rgba(232,242,216,0.45)" }}
+                  >
+                    Detalles →
+                  </Link>
+                  <Link
+                    href={`/mapa?r=${encodeURIComponent(route.name)}`}
+                    className="inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-[11px] font-bold transition hover:opacity-90"
+                    style={{ background: "rgba(106,171,72,0.15)", color: "#b8e840" }}
+                    aria-label={`Ver ${route.name} en el mapa interactivo`}
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" aria-hidden="true">
+                      <path d="M12 21s6-5.7 6-11a6 6 0 1 0-12 0c0 5.3 6 11 6 11Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      <circle cx="12" cy="10" r="2.2" fill="currentColor" />
+                    </svg>
+                    Ver en mapa
+                  </Link>
                 </div>
-              </Link>
+              </div>
             ))}
           </div>
 

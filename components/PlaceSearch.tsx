@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { searchLocalPlaces, searchPlaces, type PlaceResult } from "@/lib/geocode";
+import { addRecentPlace, getRecentPlaces } from "@/lib/recent-places";
 
 type PlaceSearchProps = {
   placeholder?: string;
@@ -21,12 +22,17 @@ export default function PlaceSearch({
 }: PlaceSearchProps) {
   const [query, setQuery] = useState(initialQuery);
   const [results, setResults] = useState<PlaceResult[]>([]);
+  const [recents, setRecents] = useState<PlaceResult[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const listboxId = useId();
+
+  // Con el input casi vacío mostramos los destinos recientes.
+  const showingRecents = query.trim().length < 2;
+  const displayResults = showingRecents ? recents : results;
 
   // Cerrar al hacer click fuera
   useEffect(() => {
@@ -45,6 +51,7 @@ export default function PlaceSearch({
     if (trimmed.length < 2) {
       setResults([]);
       setIsSearching(false);
+      setActiveIndex(-1);
       return;
     }
 
@@ -69,6 +76,8 @@ export default function PlaceSearch({
   }, [query]);
 
   const handleSelect = (result: PlaceResult) => {
+    addRecentPlace(result);
+    setRecents(getRecentPlaces());
     onSelect(result);
     // Limpiar el buscador tras aplicar la búsqueda (el destino queda marcado en el mapa).
     setQuery("");
@@ -78,8 +87,8 @@ export default function PlaceSearch({
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (!isOpen || results.length === 0) {
-      if (event.key === "ArrowDown" && results.length > 0) {
+    if (!isOpen || displayResults.length === 0) {
+      if (event.key === "ArrowDown" && displayResults.length > 0) {
         setIsOpen(true);
         setActiveIndex(0);
         event.preventDefault();
@@ -89,13 +98,13 @@ export default function PlaceSearch({
 
     if (event.key === "ArrowDown") {
       event.preventDefault();
-      setActiveIndex((i) => (i + 1) % results.length);
+      setActiveIndex((i) => (i + 1) % displayResults.length);
     } else if (event.key === "ArrowUp") {
       event.preventDefault();
-      setActiveIndex((i) => (i <= 0 ? results.length - 1 : i - 1));
+      setActiveIndex((i) => (i <= 0 ? displayResults.length - 1 : i - 1));
     } else if (event.key === "Enter") {
       event.preventDefault();
-      const target = results[activeIndex] ?? results[0];
+      const target = displayResults[activeIndex] ?? displayResults[0];
       if (target) handleSelect(target);
     } else if (event.key === "Escape") {
       setIsOpen(false);
@@ -124,7 +133,11 @@ export default function PlaceSearch({
             setIsOpen(true);
           }}
           onFocus={() => {
-            if (results.length > 0) setIsOpen(true);
+            const stored = getRecentPlaces();
+            setRecents(stored);
+            if (results.length > 0 || (query.trim().length < 2 && stored.length > 0)) {
+              setIsOpen(true);
+            }
           }}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
@@ -159,14 +172,19 @@ export default function PlaceSearch({
         ) : null}
       </div>
 
-      {isOpen && results.length > 0 && (
+      {isOpen && displayResults.length > 0 && (
         <ul
           id={listboxId}
           role="listbox"
           className="ov-panel absolute z-50 mt-2 max-h-72 w-full overflow-y-auto overscroll-contain rounded-2xl border p-1.5 shadow-[0_12px_40px_rgba(0,0,0,0.35)] backdrop-blur-xl"
           style={{ borderColor: "var(--ov-border)" }}
         >
-          {results.map((result, index) => (
+          {showingRecents && (
+            <li role="presentation" className="ov-text-muted px-3 pb-1 pt-1.5 text-[10px] font-bold uppercase tracking-widest">
+              Recientes
+            </li>
+          )}
+          {displayResults.map((result, index) => (
             <li key={`${result.label}-${result.center.join(",")}`} role="presentation">
               <button
                 id={`${listboxId}-opt-${index}`}
@@ -179,14 +197,21 @@ export default function PlaceSearch({
                   index === activeIndex ? "bg-lima/10" : "hover:bg-lima/5"
                 }`}
               >
-                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0 text-lima" aria-hidden="true">
-                  <path d="M12 21s6-5.7 6-11a6 6 0 1 0-12 0c0 5.3 6 11 6 11Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                  <circle cx="12" cy="10" r="2" fill="currentColor" />
-                </svg>
+                {showingRecents ? (
+                  <svg viewBox="0 0 24 24" fill="none" className="ov-text-muted h-4 w-4 shrink-0" aria-hidden="true">
+                    <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
+                    <path d="M12 7v5l3 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0 text-lima" aria-hidden="true">
+                    <path d="M12 21s6-5.7 6-11a6 6 0 1 0-12 0c0 5.3 6 11 6 11Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                    <circle cx="12" cy="10" r="2" fill="currentColor" />
+                  </svg>
+                )}
                 <span className="min-w-0 flex-1">
                   <span className="ov-text block truncate text-[13px] font-semibold">{result.label}</span>
                   <span className="ov-text-muted block text-[11px]">
-                    {result.source === "local" ? "Lugar conocido" : "Uruapan, Mich."}
+                    {showingRecents ? "Búsqueda reciente" : result.source === "local" ? "Lugar conocido" : "Uruapan, Mich."}
                   </span>
                 </span>
               </button>

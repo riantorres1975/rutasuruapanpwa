@@ -206,6 +206,21 @@ export default function LandingPage() {
               </svg>
               Ver el mapa
             </Link>
+            <Link
+              href="/mapa?cerca=1"
+              className="inline-flex items-center gap-2 rounded-full border px-7 py-3.5 text-sm font-semibold transition-all hover:-translate-y-0.5"
+              style={{
+                borderColor: "rgba(140,200,80,0.35)",
+                background: "rgba(106,171,72,0.08)",
+                color: "var(--lima)",
+              }}
+            >
+              <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
+                <circle cx="12" cy="12" r="4" fill="currentColor" />
+                <path d="M12 2v3M12 19v3M2 12h3M19 12h3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+              Rutas cerca de mí
+            </Link>
             <a
               href="#como-funciona"
               className="inline-flex items-center gap-2 rounded-full border px-7 py-3.5 text-sm font-medium transition-all"

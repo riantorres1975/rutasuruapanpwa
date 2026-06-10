@@ -8,13 +8,13 @@ type NearbyToastProps = {
   onDismiss: () => void;
 };
 
-const AUTO_DISMISS_MS = 6000;
+const AUTO_DISMISS_MS = 10000;
 
 export default function NearbyToast({ count, onView, onDismiss }: NearbyToastProps) {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const visible = count !== null;
 
-  // Auto-dismiss after 6 s whenever the toast becomes visible
+  // Auto-dismiss after 10 s whenever the toast becomes visible
   useEffect(() => {
     if (!visible) return;
 
