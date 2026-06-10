@@ -4,6 +4,9 @@ export const APP_BRAND = {
   description: "Rutas de camiones, combis suburbanas y Teleférico en un solo mapa."
 } as const;
 
+/** Fecha de la última verificación manual de los datos de rutas (visible al usuario). */
+export const DATA_LAST_UPDATED = "junio 2026";
+
 export const FARES_2026 = {
   urbanBus: {
     label: "Camión urbano",

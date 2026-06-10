@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import Logo from "@/components/Logo";
 import RoutePreviewSVG from "@/components/RoutePreviewSVG";
-import { APP_BRAND, FARES_2026 } from "@/lib/mobility-config";
+import { APP_BRAND, DATA_LAST_UPDATED, FARES_2026 } from "@/lib/mobility-config";
 import { findRouteSeoItem, getRouteSeoItems } from "@/lib/route-seo";
 import { getSchedule } from "@/lib/schedules";
 import { buildRouteStaticMapUrl } from "@/lib/static-map";
@@ -93,6 +93,10 @@ export default async function RoutePage({ params }: RoutePageProps) {
           }
         ]
       : []),
+    {
+      question: `¿Dónde paro la ${route.name}?`,
+      answer: `Los camiones urbanos en Uruapan no tienen paradas fijas: paran casi en cualquier esquina del recorrido. Colócate sobre la calle por donde pasa la ${route.name} y haz la parada con la mano. Para bajar, avisa al chofer o toca el timbre.`
+    },
     {
       question: `¿Cómo saber si la ${route.name} pasa cerca de mi destino?`,
       answer: `Abre el mapa de UruGo, marca tu origen y destino, y el sistema calculará si la ${route.name} u otra ruta es la mejor opción, incluyendo caminatas y transbordos.`
@@ -302,6 +306,13 @@ export default async function RoutePage({ params }: RoutePageProps) {
                   Abre el mapa de UruGo y marca tu punto de origen y tu destino. El sistema calcula si la {route.name} cubre tu trayecto, qué tan lejos están las paradas y si necesitas caminar o hacer transbordo con otra ruta o el Teleférico de Uruapan.
                   {estimatedMinutes && ` El recorrido completo toma aproximadamente ${estimatedMinutes} minutos.`}
                 </p>
+                <p className="mt-3 inline-flex items-center gap-1.5 text-[11px] font-semibold" style={{ color: "#a8c888" }}>
+                  <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 shrink-0" style={{ color: "#b8e840" }} aria-hidden="true">
+                    <path d="M9 12l2 2 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
+                  </svg>
+                  Recorrido verificado en campo · actualizado {DATA_LAST_UPDATED}
+                </p>
               </section>
 
               <section className="mt-8">
@@ -329,6 +340,17 @@ export default async function RoutePage({ params }: RoutePageProps) {
                   style={{ background: "#6aab48" }}
                 >
                   Ver en el mapa
+                </Link>
+                <Link
+                  href="/horarios"
+                  className="inline-flex h-12 items-center justify-center rounded-full border px-6 text-sm font-bold transition"
+                  style={{
+                    borderColor: "rgba(140,200,80,0.15)",
+                    background: "rgba(106,171,72,0.06)",
+                    color: "#e8f2d8",
+                  }}
+                >
+                  Horarios de todas las rutas
                 </Link>
                 <Link
                   href="/rutas"

@@ -2,8 +2,10 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { track } from "@vercel/analytics";
 import { searchLocalPlaces, searchPlaces, type PlaceResult } from "@/lib/geocode";
 import { addRecentPlace, getRecentPlaces } from "@/lib/recent-places";
+import { getSavedPlaces, setSavedPlace, SAVED_SLOT_LABELS, type SavedSlot } from "@/lib/saved-places";
 
 const DEBOUNCE_MS = 280;
 
@@ -17,16 +19,35 @@ export default function LandingSearch() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<PlaceResult[]>([]);
   const [recents, setRecents] = useState<PlaceResult[]>([]);
+  const [savedPlaces, setSavedPlaces] = useState<ReturnType<typeof getSavedPlaces>>({});
+  const [savingSlot, setSavingSlot] = useState<SavedSlot | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const lastTrackedQueryRef = useRef("");
   const listboxId = useId();
 
   // Con el input casi vacío mostramos los destinos recientes.
   const showingRecents = query.trim().length < 2;
   const displayResults = showingRecents ? recents : results;
+
+  // Telemetría: búsquedas sin resultados → candidatos para el índice local.
+  useEffect(() => {
+    const trimmed = query.trim();
+    if (trimmed.length < 3 || isSearching || results.length > 0) return;
+    if (lastTrackedQueryRef.current === trimmed) return;
+    const timer = window.setTimeout(() => {
+      lastTrackedQueryRef.current = trimmed;
+      try {
+        track("busqueda_sin_resultados", { consulta: trimmed, origen: "landing" });
+      } catch {
+        // analytics no disponible: ignorar
+      }
+    }, 1500);
+    return () => window.clearTimeout(timer);
+  }, [query, isSearching, results]);
 
   useEffect(() => {
     const onPointerDown = (event: PointerEvent) => {
@@ -65,6 +86,11 @@ export default function LandingSearch() {
   }, [query]);
 
   const goTo = (result: PlaceResult) => {
+    if (savingSlot) {
+      setSavedPlace(savingSlot, result);
+      setSavedPlaces(getSavedPlaces());
+      setSavingSlot(null);
+    }
     addRecentPlace(result);
     setIsOpen(false);
     router.push(mapHref(result));
@@ -130,9 +156,9 @@ export default function LandingSearch() {
               autoComplete="off"
               onChange={(event) => { setQuery(event.target.value); setIsOpen(true); }}
               onFocus={() => {
-                const stored = getRecentPlaces();
-                setRecents(stored);
-                if (results.length > 0 || (query.trim().length < 2 && stored.length > 0)) {
+                setRecents(getRecentPlaces());
+                setSavedPlaces(getSavedPlaces());
+                if (results.length > 0 || query.trim().length < 2) {
                   setIsOpen(true);
                 }
               }}
@@ -168,14 +194,82 @@ export default function LandingSearch() {
         </div>
       </form>
 
-      {isOpen && displayResults.length > 0 && (
+      {isOpen && (showingRecents || displayResults.length > 0) && (
         <ul
           id={listboxId}
           role="listbox"
           className="absolute left-0 right-0 z-50 mt-2 max-h-72 overflow-y-auto overscroll-contain rounded-2xl border p-1.5 shadow-[0_20px_60px_rgba(0,0,0,0.5)] backdrop-blur-xl"
           style={{ background: "var(--card, #141c10)", borderColor: "var(--ov-border)" }}
         >
-          {showingRecents && (
+          {savingSlot && (
+            <li
+              role="presentation"
+              className="mb-1 flex items-center gap-2 rounded-xl border px-3 py-2"
+              style={{ borderColor: "rgba(184,232,64,0.3)", background: "rgba(184,232,64,0.08)" }}
+            >
+              <span className="flex-1 text-[12px] font-medium" style={{ color: "var(--ink)" }}>
+                Busca un lugar y selecciónalo para guardarlo como{" "}
+                <span className="font-bold" style={{ color: "var(--lima)" }}>{SAVED_SLOT_LABELS[savingSlot]}</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => setSavingSlot(null)}
+                className="shrink-0 text-[11px] font-semibold underline-offset-2 hover:underline"
+                style={{ color: "var(--muted)" }}
+              >
+                Cancelar
+              </button>
+            </li>
+          )}
+          {showingRecents && !savingSlot &&
+            (["casa", "trabajo"] as const).map((slot) => {
+              const saved = savedPlaces[slot];
+              return (
+                <li key={slot} role="presentation">
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => (saved ? goTo(saved) : setSavingSlot(slot))}
+                      className="flex min-w-0 flex-1 items-center gap-2.5 rounded-xl px-3 py-2.5 text-left transition hover:opacity-90"
+                    >
+                      {slot === "casa" ? (
+                        <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0" style={{ color: "var(--lima)" }} aria-hidden="true">
+                          <path d="M3 11.5 12 4l9 7.5M5.5 9.8V20h13V9.8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                          <path d="M10 20v-5h4v5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      ) : (
+                        <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0" style={{ color: "var(--lima)" }} aria-hidden="true">
+                          <rect x="3" y="7" width="18" height="13" rx="2" stroke="currentColor" strokeWidth="1.8" />
+                          <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 12h18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                        </svg>
+                      )}
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[13px] font-semibold" style={{ color: "var(--ink)" }}>
+                          {SAVED_SLOT_LABELS[slot]}
+                        </span>
+                        <span className="block truncate text-[11px]" style={{ color: "var(--muted)" }}>
+                          {saved ? saved.label : "Toca para configurar"}
+                        </span>
+                      </span>
+                    </button>
+                    {saved && (
+                      <button
+                        type="button"
+                        onClick={() => setSavingSlot(slot)}
+                        aria-label={`Cambiar ${SAVED_SLOT_LABELS[slot]}`}
+                        className="grid h-8 w-8 shrink-0 place-items-center rounded-full transition hover:opacity-80"
+                        style={{ background: "rgba(106,171,72,0.12)", color: "var(--muted)" }}
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" aria-hidden="true">
+                          <path d="M4 20h4L19.5 8.5a2.1 2.1 0 0 0-3-3L5 17v3ZM14 6.5l3 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
+          {showingRecents && displayResults.length > 0 && (
             <li
               role="presentation"
               className="px-3 pb-1 pt-1.5 text-[10px] font-bold uppercase tracking-widest"

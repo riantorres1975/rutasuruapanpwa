@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { track } from "@vercel/analytics";
 
 type RutasFilterProps = {
   total: number;
@@ -23,6 +24,23 @@ export default function RutasFilter({ total, gridId = "rutas-grid", emptyId = "r
   const [query, setQuery] = useState("");
   const [count, setCount] = useState(total);
   const inputRef = useRef<HTMLInputElement>(null);
+  const lastTrackedQueryRef = useRef("");
+
+  // Telemetría: filtros sin resultados → rutas/alias que faltan en los datos.
+  useEffect(() => {
+    const trimmed = query.trim();
+    if (trimmed.length < 3 || count > 0) return;
+    if (lastTrackedQueryRef.current === trimmed) return;
+    const timer = window.setTimeout(() => {
+      lastTrackedQueryRef.current = trimmed;
+      try {
+        track("busqueda_sin_resultados", { consulta: trimmed, origen: "rutas" });
+      } catch {
+        // analytics no disponible: ignorar
+      }
+    }, 1500);
+    return () => window.clearTimeout(timer);
+  }, [query, count]);
 
   // Filtra las tarjetas (renderizadas en el servidor) alternando su visibilidad.
   useEffect(() => {

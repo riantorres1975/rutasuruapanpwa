@@ -14,6 +14,7 @@ import NearbyToast from "@/components/NearbyToast";
 import OnboardingOverlay from "@/components/OnboardingOverlay";
 import PlaceSearch from "@/components/PlaceSearch";
 import RouteList from "@/components/RouteList";
+import RoutePreviewSVG from "@/components/RoutePreviewSVG";
 import RouteSchedule from "@/components/RouteSchedule";
 import { geocodePlace, type PlaceResult } from "@/lib/geocode";
 import { useShareRoute } from "@/hooks/useShareRoute";
@@ -24,7 +25,10 @@ import { computeTransferOptionsFromPolylines } from "@/lib/transfers";
 import type { TransferOption } from "@/lib/transfers";
 import { haversineMeters } from "@/lib/geo";
 import { findBestRoutes, getRankedRoutes, type PolylineRoute } from "@/lib/routeMatcher";
+import { FARES_2026 } from "@/lib/mobility-config";
 const AVG_TRIP_SPEED_KMH = 18;
+// Tarifa del camión urbano en pesos (derivada de la config de movilidad).
+const BUS_FARE_MXN = Math.round(Number(FARES_2026.urbanBus.price.replace(/[^0-9.]/g, "")) || 11);
 const BACKGROUND_SIMPLIFY_TOLERANCE = 0.00008;
 const BACKGROUND_MAX_POINTS = 180;
 const MOBILE_MAP_BOOT_DELAY_MS = 3200;
@@ -335,6 +339,13 @@ export default function HomePage() {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isResultSheetOpen, setIsResultSheetOpen] = useState(false);
   const [userLocation, setUserLocation] = useState<Coordinates | null>(null);
+  // Posición "viva": se actualiza con cada lectura del GPS aunque haya deriva
+  // (a diferencia de userLocation, que se congela para no mover el origen).
+  // Se usa para avisar cuando el usuario va en el camión y se acerca a su bajada.
+  const [liveLocation, setLiveLocation] = useState<Coordinates | null>(null);
+  const [dropOffAlert, setDropOffAlert] = useState<string | null>(null);
+  const dropOffArmedRef = useRef(false);
+  const dropOffNotifiedRef = useRef(false);
   const [manualOrigin, setManualOrigin] = useState<Coordinates | null>(null);
   const [geoStatus, setGeoStatus] = useState<"idle" | "locating" | "ok" | "error">("idle");
   const [geoAccuracyWarn, setGeoAccuracyWarn] = useState(false);
@@ -391,6 +402,7 @@ export default function HomePage() {
     const watchId = navigator.geolocation.watchPosition(
       (pos) => {
         const coords: Coordinates = [pos.coords.longitude, pos.coords.latitude];
+        setLiveLocation(coords);
 
         if (!firstFix) {
           // First reading: accept unconditionally
@@ -1010,6 +1022,42 @@ export default function HomePage() {
     () => (bestSuggestion ? getEstimatedMinutes(bestSuggestion.segment) : null),
     [bestSuggestion]
   );
+
+  // ── Aviso "prepárate para bajar" ─────────────────────────────────────────
+  // Con una ruta sugerida activa y GPS encendido, avisamos (vibración + toast)
+  // cuando el usuario se acerca a su punto de bajada. Se "arma" solo después
+  // de haber estado lejos (>500 m) para no disparar al planear viajes cortos.
+  const bestSuggestionRouteId = bestSuggestion?.routeId ?? null;
+  useEffect(() => {
+    dropOffArmedRef.current = false;
+    dropOffNotifiedRef.current = false;
+    setDropOffAlert(null);
+  }, [bestSuggestionRouteId, destinationPoint]);
+
+  useEffect(() => {
+    if (!liveLocation || !bestSuggestion || flowStep !== 3 || dropOffNotifiedRef.current) return;
+    const segment = bestSuggestion.segment;
+    const dropPoint = segment[segment.length - 1];
+    if (!dropPoint) return;
+
+    const distance = haversineMeters(liveLocation, dropPoint);
+
+    if (!dropOffArmedRef.current) {
+      if (distance > 500) dropOffArmedRef.current = true;
+      return;
+    }
+
+    if (distance < 400) {
+      dropOffNotifiedRef.current = true;
+      try {
+        navigator.vibrate?.([200, 100, 200]);
+      } catch {
+        // vibración no soportada: ignorar
+      }
+      setDropOffAlert(`Prepárate para bajar: estás a ~${Math.round(distance)} m de tu parada. Avisa al chofer o toca el timbre.`);
+    }
+  }, [liveLocation, bestSuggestion, flowStep]);
+
   const routeTextSummary = useMemo(() => {
     if (isCalculatingSuggestions || flowStep !== 3) {
       return null;
@@ -1027,9 +1075,9 @@ export default function HomePage() {
       return {
         title: "Indicaciones",
         items: [
-          `Sube a ${formatRouteLabel(bestSuggestion.ruta)} cerca de ${originLandmark ?? "tu ubicación"} (~${Math.round(bestSuggestion.distanciaA)} m, ${walkMinutes(bestSuggestion.distanciaA)} min caminando).`,
-          `Baja cerca de ${destLandmark ?? "tu destino"} (~${Math.round(bestSuggestion.distanciaB)} m, ${walkMinutes(bestSuggestion.distanciaB)} min caminando).`,
-          `Tiempo estimado en ruta: ${bestSuggestionEta ?? getEstimatedMinutes(bestSuggestion.segment)} min.`
+          `Sube a ${formatRouteLabel(bestSuggestion.ruta)} cerca de ${originLandmark ?? "tu ubicación"} (~${Math.round(bestSuggestion.distanciaA)} m, ${walkMinutes(bestSuggestion.distanciaA)} min caminando). Los camiones paran casi en cualquier esquina: haz la parada con la mano.`,
+          `Baja cerca de ${destLandmark ?? "tu destino"} (~${Math.round(bestSuggestion.distanciaB)} m, ${walkMinutes(bestSuggestion.distanciaB)} min caminando). Avisa al chofer o toca el timbre.`,
+          `Tiempo estimado en ruta: ${bestSuggestionEta ?? getEstimatedMinutes(bestSuggestion.segment)} min. Tarifa: $${BUS_FARE_MXN} en efectivo al abordar.`
         ]
       };
     }
@@ -1040,7 +1088,8 @@ export default function HomePage() {
         items: [
           `Primero toma ${formatRouteLabel(selectedTransfer.routeAName)}.`,
           `Camina aproximadamente ${Math.round(selectedTransfer.walkMeters)} m (${walkMinutes(selectedTransfer.walkMeters)} min) en el punto de transbordo.`,
-          `Continúa en ${formatRouteLabel(selectedTransfer.routeBName)} hasta acercarte al destino.`
+          `Continúa en ${formatRouteLabel(selectedTransfer.routeBName)} hasta acercarte al destino.`,
+          `Tarifa total: $${BUS_FARE_MXN * 2} (pagas $${BUS_FARE_MXN} en efectivo en cada camión).`
         ]
       };
     }
@@ -1438,6 +1487,9 @@ export default function HomePage() {
                       ~{walkMinutes(bestSuggestion.distanciaA) + bestSuggestionEta + walkMinutes(bestSuggestion.distanciaB)} min puerta a puerta
                     </span>
                   )}
+                  <span className="ov-pill ov-border ov-text-muted inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-[12px] font-medium">
+                    ${BUS_FARE_MXN} efectivo
+                  </span>
                   {suggestions.length > 1 && (
                     <button
                       type="button"
@@ -1524,7 +1576,11 @@ export default function HomePage() {
                   </svg>
                   <span className="ov-text flex-1 truncate text-[13px] font-semibold">{selectedTransfer.routeBName}</span>
                 </div>
-                <p className="ov-text-muted mt-1 text-[11px]">Camina ~{Math.round(selectedTransfer.walkMeters)} m en el punto de transbordo</p>
+                <p className="ov-text-muted mt-1 text-[11px]">
+                  Camina ~{Math.round(selectedTransfer.walkMeters)} m en el punto de transbordo
+                  <span className="mx-1.5 opacity-40">·</span>
+                  ${BUS_FARE_MXN * 2} total (2 camiones)
+                </p>
                 <div className="mt-3 grid grid-cols-[1fr_auto] gap-2">
 <button
                       type="button"
@@ -1933,6 +1989,42 @@ export default function HomePage() {
           />
         )}
 
+        {/* ── Fallback offline: los tiles de Mapbox necesitan red, pero los
+            recorridos guardados sí se pueden dibujar como SVG ── */}
+        {!isOnline && (
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 bg-ink-900/95 px-6 text-center">
+            <div className="flex items-center gap-2 rounded-full border border-amber-400/30 bg-amber-500/10 px-4 py-2 text-[13px] font-semibold text-amber-300">
+              <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
+                <path d="M2 9.5C4.8 7 8.2 5.5 12 5.5c1.2 0 2.4.15 3.5.44M8.5 13a7.7 7.7 0 0 1 3.5-.9c1.9 0 3.6.65 5 1.75M5.2 11.2A11.4 11.4 0 0 1 9 9.3M12 17.5h.01M3 3l18 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              Sin conexión
+            </div>
+            {selectedRoute ? (
+              <>
+                <p className="max-w-sm text-[13px] leading-6 text-foreground/70">
+                  El mapa de fondo necesita internet, pero aquí tienes el recorrido guardado de la{" "}
+                  <span className="font-bold text-white">{formatRouteLabel(selectedRoute.name)}</span>:
+                </p>
+                <div className="w-full max-w-md overflow-hidden rounded-2xl border border-foreground/10 bg-black/30">
+                  <RoutePreviewSVG
+                    routeName={selectedRoute.name}
+                    color={selectedRoute.color}
+                    width={400}
+                    height={240}
+                    strokeWidth={2.5}
+                    className="h-auto w-full"
+                  />
+                </div>
+              </>
+            ) : (
+              <p className="max-w-sm text-[13px] leading-6 text-foreground/70">
+                El mapa de fondo necesita internet. La búsqueda y la lista de rutas siguen
+                funcionando: selecciona una ruta para ver su recorrido guardado.
+              </p>
+            )}
+          </div>
+        )}
+
         {/* ── MOBILE: Top overlay (oculto en desktop) ── */}
         <section className="pointer-events-none absolute inset-x-0 top-0 z-20 px-4 pt-safe-or-4 lg:hidden">
           {/* Scrim: degradado que separa los controles del mapa para que se lean limpios */}
@@ -1990,6 +2082,34 @@ export default function HomePage() {
             {renderRouteControls("mobile", true)}
           </div>
         </section>
+
+        {/* ── Aviso de bajada próxima (modo viaje) ── */}
+        {dropOffAlert && (
+          <div
+            role="alert"
+            className="pointer-events-none absolute inset-x-0 bottom-36 z-50 flex justify-center px-4"
+          >
+            <div className="pointer-events-auto flex max-w-md items-start gap-2.5 rounded-2xl border border-lima/40 bg-slate-900/95 px-4 py-3 shadow-[0_12px_40px_rgba(0,0,0,0.5)] backdrop-blur-xl">
+              <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-lima/15">
+                <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 text-lima" aria-hidden="true">
+                  <path d="M12 8v4m0 4h.01" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+                  <path d="M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0Z" stroke="currentColor" strokeWidth="1.8" />
+                </svg>
+              </span>
+              <p className="flex-1 text-[13px] font-medium leading-5 text-slate-50">{dropOffAlert}</p>
+              <button
+                type="button"
+                onClick={() => setDropOffAlert(null)}
+                aria-label="Cerrar aviso"
+                className="shrink-0 rounded-full p-1 text-slate-400 transition hover:text-slate-200 active:scale-[0.95]"
+              >
+                <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" aria-hidden="true">
+                  <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* ── Share toast (mobile + desktop, posicion ajustada) ── */}
         <div

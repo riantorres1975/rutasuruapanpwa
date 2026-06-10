@@ -32,8 +32,10 @@ const securityHeaders = [
     value: [
       "default-src 'self'",
       // React Fast Refresh uses eval() in development; production keeps it out.
+      // va.vercel-scripts.com: script de debug de Vercel Analytics (solo dev;
+      // en producción el script se sirve same-origin vía /_vercel/insights).
       process.env.NODE_ENV === "development"
-        ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
+        ? "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com"
         : "script-src 'self' 'unsafe-inline'",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com",

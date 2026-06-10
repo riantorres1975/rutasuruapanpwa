@@ -6,7 +6,7 @@ import RoutePreviewSVG from "@/components/RoutePreviewSVG";
 import RutasFilter from "@/components/RutasFilter";
 import { getRouteSeoItems } from "@/lib/route-seo";
 import { getRouteSearchTerms } from "@/lib/route-names";
-import { FARES_2026 } from "@/lib/mobility-config";
+import { DATA_LAST_UPDATED, FARES_2026 } from "@/lib/mobility-config";
 
 function buildSearchText(name: string, destination: string | null, landmarks: string[]): string {
   return [name, destination ?? "", ...landmarks, ...getRouteSearchTerms(name)]
@@ -104,6 +104,10 @@ export default function RutasPage() {
           </h1>
           <p className="mt-4 max-w-xl text-sm leading-7" style={{ color: "#a8c888" }}>
             Directorio completo de rutas de camión urbano. Toca cualquier ruta para ver destino, tarifa y abrirla en el mapa interactivo.
+            {" "}
+            <Link href="/horarios" className="font-bold transition hover:opacity-80" style={{ color: "#b8e840" }}>
+              Ver horarios de todas las rutas →
+            </Link>
           </p>
 
           {/* Stats bar */}
@@ -122,6 +126,15 @@ export default function RutasPage() {
             <div style={{ borderLeft: "1px solid rgba(140,200,80,0.12)", paddingLeft: "1rem" }}>
               <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "#6aab48" }}>Pago</p>
               <p className="font-serif text-2xl font-black" style={{ color: "#e8f2d8" }}>Efectivo</p>
+            </div>
+            <div className="flex w-full items-center gap-1.5 pt-1 sm:ml-auto sm:w-auto sm:pt-0">
+              <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 shrink-0" style={{ color: "#b8e840" }} aria-hidden="true">
+                <path d="M9 12l2 2 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
+              </svg>
+              <p className="text-[11px] font-semibold" style={{ color: "#a8c888" }}>
+                Rutas verificadas en campo · actualizado {DATA_LAST_UPDATED}
+              </p>
             </div>
           </div>
 

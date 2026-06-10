@@ -64,6 +64,19 @@ Los sistemas de transporte público en ciudades intermedias de México carecen d
 | ♿ Accesibilidad base | Estados `:focus-visible` globales para navegación por teclado y controles con labels accesibles |
 | 🌗 Tema adaptativo | Respeta `prefers-color-scheme` del OS como señal primaria; fallback basado en hora del día para navegadores sin soporte |
 | 🔔 Actualización de PWA | Toast "Nueva versión disponible" al detectar un SW actualizado — el usuario decide cuándo recargar |
+| ⭐ Rutas favoritas | Estrella en la lista de rutas; las favoritas se fijan en una sección propia, persistidas en `localStorage` |
+| 🕐 Destinos recientes | Al enfocar el buscador vacío aparecen las últimas 5 búsquedas — viaje repetido en 1 tap |
+| 🏠 Casa y Trabajo | Atajos con nombre fijo en el buscador (landing y mapa); flujo de guardado integrado en el dropdown |
+| 📅 Horarios visibles | Estado "En servicio · próximo ~N min" en la tarjeta de ruta recomendada y horario/frecuencia en `/ruta/[slug]` |
+| 🗓️ Página `/horarios` | Tabla server-rendered con primer/último camión y frecuencia de las 40 rutas + FAQ con Schema.org |
+| 🔗 Deep links de ruta | `/mapa?r=Ruta 5` abre el mapa con la ruta resaltada; usados por `/ruta/[slug]` y las tarjetas de `/rutas` |
+| 📍 "Rutas cerca de mí" | Botón en la landing y shortcut del manifest (`/mapa?cerca=1`) que abre la lista de rutas cercanas automáticamente |
+| 🚶 Minutos caminando | Indicaciones con tiempo a pie ("~250 m, 3 min caminando") y chip "~22 min puerta a puerta" |
+| 💵 Costo del viaje | Tarifa visible en la sugerencia ($11 efectivo) y total con transbordo ($22, 2 camiones) |
+| 🛎️ Aviso de bajada | Con GPS activo y ruta sugerida, vibración + toast "Prepárate para bajar" al acercarse al punto de descenso |
+| 🍎 Instalación en iOS | Banner con instrucciones "Compartir → Agregar a pantalla de inicio" (Safari no dispara `beforeinstallprompt`) |
+| 📴 Mapa offline degradado | Sin conexión, el recorrido de la ruta seleccionada se dibuja como SVG sobre fondo plano (los tiles de Mapbox requieren red) |
+| 📊 Vercel Analytics | Analítica sin cookies + evento `busqueda_sin_resultados` para detectar lugares que faltan en el índice local |
 
 ---
 
@@ -292,22 +305,34 @@ rutasuruapanpwa/
 │   ├── api/debug/save-route/route.ts  # Endpoint POST para guardar ediciones (solo dev)
 │   ├── robots.ts                       # Robots.txt generado por App Router
 │   ├── sitemap.ts                      # Sitemap XML generado por App Router
-│   ├── layout.tsx                      # Root layout, metadatos, fuentes
+│   ├── layout.tsx                      # Root layout, metadatos, fuentes, Vercel Analytics
 │   ├── mapa/page.tsx                   # Mapa interactivo con overlays y BottomSheets
+│   ├── horarios/page.tsx               # Tabla de horarios de las 40 rutas (SEO)
+│   ├── rutas/page.tsx                  # Directorio de rutas con filtro multi-palabra
+│   ├── ruta/[slug]/page.tsx            # Detalle de ruta (horario, FAQ, deep link al mapa)
 │   └── page.tsx                        # Landing page
 ├── components/
 │   ├── BottomSheet.tsx       # Sheet deslizable con lista de rutas
 │   ├── ChatBot.tsx           # Asistente IA flotante con vistas chat y reporte
 │   ├── Map.tsx               # MapView con Mapbox GL JS
+│   ├── PlaceSearch.tsx       # Buscador con recientes, Casa/Trabajo y geocoding híbrido
+│   ├── PWAInstallBanner.tsx  # Prompt de instalación (Android nativo + instrucciones iOS)
 │   ├── ReportBugForm.tsx     # Formulario de reporte de errores (correo / GitHub)
-│   └── RouteList.tsx         # Lista filtrable de rutas
+│   ├── RouteSchedule.tsx     # Estado en vivo del horario de una ruta
+│   └── RouteList.tsx         # Lista filtrable de rutas con favoritas
 ├── data/
 │   ├── rutas_produccion_final.json # Fuente maestra del motor de rutas
 │   └── gtfs/                  # Datos GTFS auxiliares / experimentales
+├── hooks/
+│   ├── useFavoriteRoutes.ts  # Rutas favoritas persistidas en localStorage
+│   └── useShareRoute.ts      # Compartir ruta (nativo + portapapeles)
 ├── lib/
 │   ├── geo.ts                # Haversine y utilidades geométricas
 │   ├── map.ts                # Utilidades de Mapbox (layers, sources)
 │   ├── map-debug.ts          # Utilidades del editor de rutas (replaceSegment)
+│   ├── recent-places.ts      # Destinos recientes (localStorage)
+│   ├── saved-places.ts       # Lugares con nombre fijo: Casa / Trabajo
+│   ├── schedules.ts          # Horarios y frecuencia por ruta + estado en vivo
 │   ├── transfers.ts          # Motor de transbordos con detección de intersecciones
 │   └── types.ts              # Tipos TypeScript compartidos
 ├── public/
@@ -364,6 +389,16 @@ Mostrar todas las rutas con su resolución completa (miles de puntos) degrada el
 - [x] **Asistente IA** — chatbot con DeepSeek para preguntas en lenguaje natural sobre rutas
 - [x] **Rate limiting** — protección anti-spam en el endpoint del asistente
 - [x] **Reporte de errores en el chat** — botón 🚩 que abre correo o GitHub Issue prellenado
+- [x] **Rutas favoritas y destinos recientes** — persistidos en localStorage, sin cuenta
+- [x] **Atajos Casa / Trabajo** — lugares con nombre fijo en los buscadores
+- [x] **Horarios en la UI** — estado en vivo en la sugerencia, detalle por ruta y página `/horarios`
+- [x] **Deep links de ruta** — `/mapa?r=...` y `/mapa?cerca=1` desde landing, directorio y manifest
+- [x] **Costo del viaje** — tarifa visible en sugerencias y transbordos
+- [x] **Aviso de bajada (modo viaje v1)** — vibración + toast al acercarse al punto de descenso
+- [x] **Instalación guiada en iOS** — instrucciones para Safari sin `beforeinstallprompt`
+- [x] **Mapa offline degradado** — recorrido como SVG cuando no hay conexión
+- [x] **Analítica** — Vercel Analytics + tracking de búsquedas sin resultados
+- [ ] **Paradas exactas en el mapa** — pendiente de mapear (los camiones paran casi en cualquier esquina)
 - [ ] **Panel de accesibilidad** — contraste alto, texto grande, screen reader
 
 ---
