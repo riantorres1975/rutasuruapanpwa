@@ -1,5 +1,6 @@
 ﻿import type { MetadataRoute } from "next";
 import { BLOG_ARTICLES } from "@/lib/blog-content";
+import { getPlaceSeoItems } from "@/lib/como-llegar";
 import { getRouteSeoItems } from "@/lib/route-seo";
 import { SITE_URL } from "@/lib/site-url";
 
@@ -47,6 +48,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.9
     },
     {
+      url: `${SITE_URL}/como-llegar`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.85
+    },
+    {
       url: `${SITE_URL}/blog`,
       lastModified: now,
       changeFrequency: "weekly",
@@ -74,5 +81,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.75
   }));
 
-  return [...staticUrls, ...routeUrls, ...blogUrls];
+  const placeUrls: MetadataRoute.Sitemap = getPlaceSeoItems().map((place) => ({
+    url: `${SITE_URL}/como-llegar/${place.slug}`,
+    lastModified: ROUTES_LAST_MODIFIED,
+    changeFrequency: "monthly",
+    priority: 0.8
+  }));
+
+  return [...staticUrls, ...routeUrls, ...blogUrls, ...placeUrls];
 }

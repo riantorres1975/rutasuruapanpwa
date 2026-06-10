@@ -28,7 +28,7 @@ export type PlaceResult = {
   source: "local" | "mapbox";
 };
 
-type KnownPlace = {
+export type KnownPlace = {
   label: string;
   center: Coordinates;
   /** Términos por los que se puede encontrar este lugar (además del label) */
@@ -36,7 +36,7 @@ type KnownPlace = {
 };
 
 // Lugares con coordenadas reales conocidas (landmarks + estaciones Teleférico).
-const KNOWN_PLACES: KnownPlace[] = [
+export const KNOWN_PLACES: KnownPlace[] = [
   { label: "Unidad Deportiva", center: [-102.03304, 19.42662], aliases: ["unidad deportiva", "deportiva"] },
   { label: "Central de Autobuses", center: [-102.04234, 19.42687], aliases: ["central de autobuses", "central camionera", "central", "camionera"] },
   { label: "UNID Uruapan", center: [-102.04459, 19.42587], aliases: ["unid", "unid uruapan"] },

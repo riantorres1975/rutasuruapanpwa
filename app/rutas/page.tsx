@@ -108,6 +108,10 @@ export default function RutasPage() {
             <Link href="/horarios" className="font-bold transition hover:opacity-80" style={{ color: "#b8e840" }}>
               Ver horarios de todas las rutas →
             </Link>
+            {" "}
+            <Link href="/como-llegar" className="font-bold transition hover:opacity-80" style={{ color: "#b8e840" }}>
+              ¿Cómo llegar a un lugar? →
+            </Link>
           </p>
 
           {/* Stats bar */}

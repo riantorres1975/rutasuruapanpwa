@@ -76,7 +76,14 @@ Los sistemas de transporte público en ciudades intermedias de México carecen d
 | 🛎️ Aviso de bajada | Con GPS activo y ruta sugerida, vibración + toast "Prepárate para bajar" al acercarse al punto de descenso |
 | 🍎 Instalación en iOS | Banner con instrucciones "Compartir → Agregar a pantalla de inicio" (Safari no dispara `beforeinstallprompt`) |
 | 📴 Mapa offline degradado | Sin conexión, el recorrido de la ruta seleccionada se dibuja como SVG sobre fondo plano (los tiles de Mapbox requieren red) |
-| 📊 Vercel Analytics | Analítica sin cookies + evento `busqueda_sin_resultados` para detectar lugares que faltan en el índice local |
+| 📊 Vercel Analytics | Analítica sin cookies + eventos `busqueda_sin_resultados` y `ruta_feedback` para mejorar datos con uso real |
+| 🧭 Páginas "Cómo llegar" | SEO programático: `/como-llegar/[lugar]` calcula en build qué rutas pasan a ≤500 m de cada lugar conocido |
+| 👍 Feedback de ruta | "¿Te sirvió esta ruta?" en la tarjeta de resultado — alimenta Analytics |
+| 🔁 Repetir viaje | El último viaje A→B se guarda y reaparece como chip de 1 tap en el mapa |
+| ⚖️ Comparador de alternativas | Alternativas con ETA, metros a pie y badges "Menos caminata"/"Más rápida"; tap para promover a recomendada |
+| 🚌 Progreso en ruta | Pill "En ruta · faltan ~N min" siguiendo la posición GPS sobre el segmento sugerido |
+| ⚡ Speed Insights | Core Web Vitals reales por página vía `@vercel/speed-insights` |
+| ✅ Tests + CI | Suite Vitest (motor A→B, horarios, geo, storage) + GitHub Actions (lint, test, build) en cada push |
 
 ---
 
@@ -398,6 +405,12 @@ Mostrar todas las rutas con su resolución completa (miles de puntos) degrada el
 - [x] **Instalación guiada en iOS** — instrucciones para Safari sin `beforeinstallprompt`
 - [x] **Mapa offline degradado** — recorrido como SVG cuando no hay conexión
 - [x] **Analítica** — Vercel Analytics + tracking de búsquedas sin resultados
+- [x] **SEO programático "Cómo llegar"** — páginas estáticas por lugar conocido con rutas cercanas
+- [x] **Feedback de ruta** — "¿Te sirvió?" en la tarjeta de resultado
+- [x] **Repetir viaje** — historial A→B con chip de acceso rápido
+- [x] **Comparador de alternativas** — promover alternativas con badges de caminata/velocidad
+- [x] **Progreso en ruta (modo viaje v2)** — minutos restantes siguiendo el GPS sobre el segmento
+- [x] **Tests + CI** — Vitest y GitHub Actions en cada push
 - [ ] **Paradas exactas en el mapa** — pendiente de mapear (los camiones paran casi en cualquier esquina)
 - [ ] **Panel de accesibilidad** — contraste alto, texto grande, screen reader
 

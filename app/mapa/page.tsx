@@ -8,6 +8,7 @@ const SIDEBAR_DEFAULT_MD = 380; // px en breakpoint md (768–1023px)
 const SIDEBAR_DEFAULT_LG = 420; // px en breakpoint lg (1024px+)
 const SIDEBAR_MIN = 300;        // px mínimo al arrastrar
 const SIDEBAR_MAX = 520;        // px máximo al arrastrar
+import { track } from "@vercel/analytics";
 import BottomSheet from "@/components/BottomSheet";
 import ChatBot from "@/components/ChatBot";
 import NearbyToast from "@/components/NearbyToast";
@@ -19,6 +20,7 @@ import RouteSchedule from "@/components/RouteSchedule";
 import { geocodePlace, type PlaceResult } from "@/lib/geocode";
 import { useShareRoute } from "@/hooks/useShareRoute";
 import { useFavoriteRoutes } from "@/hooks/useFavoriteRoutes";
+import { addRecentTrip, getRecentTrips, type RecentTrip } from "@/lib/recent-trips";
 import { formatRouteLabel, getRouteDestination } from "@/lib/route-names";
 import type { Coordinates, ProductionRoute, ProductionRouteLandmark, ResolvedRouteData, RouteDirection } from "@/lib/types";
 import { computeTransferOptionsFromPolylines } from "@/lib/transfers";
@@ -344,8 +346,12 @@ export default function HomePage() {
   // Se usa para avisar cuando el usuario va en el camión y se acerca a su bajada.
   const [liveLocation, setLiveLocation] = useState<Coordinates | null>(null);
   const [dropOffAlert, setDropOffAlert] = useState<string | null>(null);
+  const [tripProgress, setTripProgress] = useState<{ remainingMin: number } | null>(null);
   const dropOffArmedRef = useRef(false);
   const dropOffNotifiedRef = useRef(false);
+  const [feedbackGiven, setFeedbackGiven] = useState(false);
+  const [lastTrip, setLastTrip] = useState<RecentTrip | null>(null);
+  const lastSavedTripKeyRef = useRef("");
   const [manualOrigin, setManualOrigin] = useState<Coordinates | null>(null);
   const [geoStatus, setGeoStatus] = useState<"idle" | "locating" | "ok" | "error">("idle");
   const [geoAccuracyWarn, setGeoAccuracyWarn] = useState(false);
@@ -1032,7 +1038,63 @@ export default function HomePage() {
     dropOffArmedRef.current = false;
     dropOffNotifiedRef.current = false;
     setDropOffAlert(null);
+    setFeedbackGiven(false);
   }, [bestSuggestionRouteId, destinationPoint]);
+
+  // ── Repetir viaje: hidratar el último viaje guardado y guardar los nuevos ──
+  useEffect(() => {
+    setLastTrip(getRecentTrips()[0] ?? null);
+  }, []);
+
+  useEffect(() => {
+    if (!originPoint || !destinationPoint || !bestSuggestion || isCalculatingSuggestions) return;
+    const key = `${originPoint.join(",")}>${destinationPoint.join(",")}`;
+    if (lastSavedTripKeyRef.current === key) return;
+    lastSavedTripKeyRef.current = key;
+    addRecentTrip({
+      origin: originPoint,
+      destination: destinationPoint,
+      destinationLabel: requestedDestination,
+      routeName: bestSuggestion.ruta,
+    });
+    setLastTrip(getRecentTrips()[0] ?? null);
+  }, [originPoint, destinationPoint, bestSuggestion, isCalculatingSuggestions, requestedDestination]);
+
+  const repeatTrip = useCallback((trip: RecentTrip) => {
+    setShowHint(false);
+    setSharedRouteSegment(null);
+    setSharedSegmentColor(null);
+    setManualOrigin(trip.origin);
+    setDestinationPoint(trip.destination);
+    setRequestedDestination(trip.destinationLabel);
+    setActivePoint(null);
+  }, []);
+
+  const handleRouteFeedback = useCallback((util: "si" | "no") => {
+    setFeedbackGiven(true);
+    const current = suggestions[0];
+    try {
+      track("ruta_feedback", {
+        util,
+        ruta: current?.ruta ?? "desconocida",
+        destino: requestedDestination ?? "punto en mapa",
+      });
+    } catch {
+      // analytics no disponible: ignorar
+    }
+  }, [suggestions, requestedDestination]);
+
+  // Promueve una alternativa a "ruta recomendada" reordenando las sugerencias.
+  const promoteSuggestion = useCallback((routeId: number) => {
+    setSuggestions((prev) => {
+      const index = prev.findIndex((s) => s.routeId === routeId);
+      if (index <= 0) return prev;
+      const next = [...prev];
+      const [picked] = next.splice(index, 1);
+      next.unshift(picked);
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     if (!liveLocation || !bestSuggestion || flowStep !== 3 || dropOffNotifiedRef.current) return;
@@ -1057,6 +1119,42 @@ export default function HomePage() {
       setDropOffAlert(`Prepárate para bajar: estás a ~${Math.round(distance)} m de tu parada. Avisa al chofer o toca el timbre.`);
     }
   }, [liveLocation, bestSuggestion, flowStep]);
+
+  // ── Modo viaje: progreso sobre la ruta ────────────────────────────────────
+  // Si el usuario va sobre el segmento sugerido (a <300 m de él) y ya se alejó
+  // de su origen, mostramos cuántos minutos faltan para su bajada.
+  useEffect(() => {
+    if (!liveLocation || !bestSuggestion || flowStep !== 3 || !originPoint) {
+      setTripProgress(null);
+      return;
+    }
+
+    // Aún no se mueve del punto de partida: no hay viaje que seguir.
+    if (haversineMeters(liveLocation, originPoint) < 250) {
+      setTripProgress(null);
+      return;
+    }
+
+    const segment = bestSuggestion.segment;
+    let nearestIndex = -1;
+    let nearestDistance = Infinity;
+    for (let index = 0; index < segment.length; index += 1) {
+      const d = haversineMeters(liveLocation, segment[index]);
+      if (d < nearestDistance) {
+        nearestDistance = d;
+        nearestIndex = index;
+      }
+    }
+
+    // Lejos del recorrido: el usuario no va (o ya no va) sobre esta ruta.
+    if (nearestIndex < 0 || nearestDistance > 300) {
+      setTripProgress(null);
+      return;
+    }
+
+    const remaining = getEstimatedMinutes(segment.slice(nearestIndex));
+    setTripProgress({ remainingMin: remaining });
+  }, [liveLocation, bestSuggestion, flowStep, originPoint]);
 
   const routeTextSummary = useMemo(() => {
     if (isCalculatingSuggestions || flowStep !== 3) {
@@ -1235,6 +1333,20 @@ export default function HomePage() {
               }`}
               aria-label="Destinos frecuentes"
             >
+              {lastTrip && (
+                <button
+                  type="button"
+                  onClick={() => repeatTrip(lastTrip)}
+                  style={{ background: "var(--ov-bg)" }}
+                  className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-lima/45 px-3 py-1.5 text-[12px] font-bold text-lima shadow-soft backdrop-blur-xl transition hover:border-lima/70 active:scale-[0.97]"
+                  aria-label={`Repetir tu último viaje a ${lastTrip.destinationLabel ?? "tu destino anterior"}`}
+                >
+                  <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3 shrink-0" aria-hidden="true">
+                    <path d="M3 12a9 9 0 1 1 2.6 6.4M3 12V7m0 5h5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  Repetir: {lastTrip.destinationLabel ?? "último viaje"}
+                </button>
+              )}
               {DESTINO_CHIPS.map((chip) => (
                 <button
                   key={chip}
@@ -1562,6 +1674,84 @@ export default function HomePage() {
                     </svg>
                     Ver en mapa
                   </button>
+                </div>
+
+                {/* Comparador de alternativas: tap para promover a recomendada */}
+                {suggestions.length > 1 && (
+                  <div className="mt-3 space-y-1.5">
+                    <p className="ov-text-muted text-[10px] font-bold uppercase tracking-widest">Alternativas</p>
+                    {suggestions.slice(1, 4).map((alt) => {
+                      const altEta = getEstimatedMinutes(alt.segment);
+                      const altWalk = Math.round(alt.distanciaA + alt.distanciaB);
+                      const bestWalk = Math.round(bestSuggestion.distanciaA + bestSuggestion.distanciaB);
+                      const lessWalk = altWalk < bestWalk;
+                      const faster = bestSuggestionEta !== null && altEta < bestSuggestionEta;
+                      return (
+                        <button
+                          key={alt.routeId}
+                          type="button"
+                          onClick={() => promoteSuggestion(alt.routeId)}
+                          className="ov-pill ov-border flex w-full items-center gap-2 rounded-xl border px-2.5 py-2 text-left transition active:scale-[0.99] hover:border-lima/40"
+                          aria-label={`Usar ${formatRouteLabel(alt.ruta)} como ruta recomendada`}
+                        >
+                          <span
+                            className="h-2.5 w-2.5 shrink-0 rounded-full"
+                            style={{ backgroundColor: alt.routeColor ?? "#6aab48" }}
+                            aria-hidden="true"
+                          />
+                          <span className="ov-text min-w-0 flex-1 truncate text-[12px] font-semibold">
+                            {formatRouteLabel(alt.ruta)}
+                          </span>
+                          {lessWalk && (
+                            <span className="shrink-0 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-emerald-400">
+                              Menos caminata
+                            </span>
+                          )}
+                          {!lessWalk && faster && (
+                            <span className="shrink-0 rounded-full bg-sky-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-sky-400">
+                              Más rápida
+                            </span>
+                          )}
+                          <span className="ov-text-muted shrink-0 text-[11px]">
+                            {altEta} min · {altWalk} m a pie
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Feedback rápido: alimenta Analytics para mejorar los datos */}
+                <div className="ov-border mt-3 flex min-h-8 items-center justify-between gap-2 border-t pt-2">
+                  {feedbackGiven ? (
+                    <p className="ov-text-muted text-[11px]">¡Gracias! Tu opinión ayuda a mejorar las rutas.</p>
+                  ) : (
+                    <>
+                      <p className="ov-text-muted text-[11px]">¿Te sirvió esta ruta?</p>
+                      <div className="flex gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => handleRouteFeedback("si")}
+                          className="ov-pill ov-border ov-text-muted inline-flex h-8 items-center gap-1 rounded-full border px-3 text-[11px] font-semibold transition active:scale-[0.96] hover:border-emerald-400/50 hover:text-emerald-400"
+                        >
+                          <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3" aria-hidden="true">
+                            <path d="M7 11v9m0-9 3.4-6.8A2 2 0 0 1 14 5v4h4.4a2 2 0 0 1 2 2.4l-1.2 6A2 2 0 0 1 17.2 19H7m0-8H4v9h3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                          Sí
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleRouteFeedback("no")}
+                          className="ov-pill ov-border ov-text-muted inline-flex h-8 items-center gap-1 rounded-full px-3 text-[11px] font-semibold transition active:scale-[0.96] hover:border-red-400/50 hover:text-red-400 border"
+                        >
+                          <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3 rotate-180" aria-hidden="true">
+                            <path d="M7 11v9m0-9 3.4-6.8A2 2 0 0 1 14 5v4h4.4a2 2 0 0 1 2 2.4l-1.2 6A2 2 0 0 1 17.2 19H7m0-8H4v9h3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                          No
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
               <RouteSchedule routeName={bestSuggestion.ruta} />
@@ -2082,6 +2272,18 @@ export default function HomePage() {
             {renderRouteControls("mobile", true)}
           </div>
         </section>
+
+        {/* ── Progreso del viaje (vas arriba del camión) ── */}
+        {tripProgress && !dropOffAlert && (
+          <div className="pointer-events-none absolute inset-x-0 bottom-24 z-40 flex justify-center px-4" aria-live="polite">
+            <div className="inline-flex items-center gap-2 rounded-full border border-lima/30 bg-slate-900/90 px-4 py-2 text-[12px] font-semibold text-slate-50 shadow-[0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-xl">
+              <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 text-lima" aria-hidden="true">
+                <path d="M5 17h14M5 17a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2M5 17v2m14-2v2M3 10h18M7.5 13.5h.01M16.5 13.5h.01" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              En ruta · faltan ~{tripProgress.remainingMin} min para tu bajada
+            </div>
+          </div>
+        )}
 
         {/* ── Aviso de bajada próxima (modo viaje) ── */}
         {dropOffAlert && (
