@@ -451,8 +451,12 @@ export default function HomePage() {
     } else if (!destinationPoint) {
       // Sin destino: el origen sigue al GPS normalmente
       setOriginPoint(userLocation);
+    } else {
+      // Destino ya fijado (p. ej. deep link ?b= desde la búsqueda de la landing):
+      // tomar el primer fix del GPS si aún no hay origen para que el cálculo
+      // arranque, pero sin seguir moviéndolo en refrescados posteriores.
+      setOriginPoint((current) => current ?? userLocation);
     }
-    // Con destino ya fijado y sin manualOrigin: no mover el origen por GPS
   }, [manualOrigin, userLocation, destinationPoint]);
 
   // Auto-advance to destination step when GPS provides location and user hasn't set a destination yet.
@@ -1551,7 +1555,11 @@ export default function HomePage() {
             </svg>
             <p className="ov-text-muted min-w-0 flex-1 text-[12px] leading-snug">
               Llegaste buscando <span className="font-bold text-lima">{requestedDestination}</span>.{" "}
-              {userLocation ? "Usando tu ubicación actual. Toca la zona de destino." : "Toca el mapa para ajustar tu origen y luego marca el destino."}
+              {userLocation
+                ? "Usando tu ubicación actual como origen, calculando tu ruta..."
+                : destinationPoint
+                  ? "Toca el mapa donde estás para marcar tu origen."
+                  : "Toca el mapa para marcar tu origen y luego la zona de destino."}
             </p>
             <button
               type="button"
