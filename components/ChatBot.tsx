@@ -6,6 +6,14 @@ import { createPortal } from 'react-dom';
 const ISSUE_URL = 'https://github.com/riantorres1975/rutasuruapanpwa/issues/new';
 const REPORT_EMAIL = 'contacto@urugo.app';
 
+// Preguntas de arranque: enseñan qué puede responder el bot con un tap.
+const SUGGESTED_QUESTIONS = [
+  '¿Qué ruta me deja en el Centro?',
+  '¿Cómo llego al Hospital Regional?',
+  '¿Cuánto cuesta el pasaje?',
+  '¿Hasta qué hora pasa la Ruta 11?',
+] as const;
+
 type Message = { role: 'user' | 'bot'; text: string };
 type UserLocation = { lat: number; lng: number } | null;
 type View = 'chat' | 'report';
@@ -144,8 +152,8 @@ export default function ChatBot() {
     );
   }, []);
 
-  const send = useCallback(async () => {
-    const text = input.trim();
+  const send = useCallback(async (forcedText?: string) => {
+    const text = (forcedText ?? input).trim();
     if (!text || loading) return;
     const userMsg: Message = { role: 'user', text };
     const next = [...messages, userMsg].slice(-10);
@@ -257,9 +265,33 @@ export default function ChatBot() {
           {/* Mensajes */}
           <div style={{ flex: 1, overflowY: 'auto', padding: 12, display: 'flex', flexDirection: 'column', gap: 8, minHeight: 0 }}>
             {messages.length === 0 && (
-              <p style={{ color: 'var(--foreground, #e8f2d8)', opacity: 0.35, fontSize: 12, textAlign: 'center', margin: 'auto', lineHeight: 1.5 }}>
-                Pregunta sobre rutas, horarios<br />o cómo llegar a algún lugar.
-              </p>
+              <div style={{ margin: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: '0 4px' }}>
+                <p style={{ color: 'var(--foreground, #e8f2d8)', opacity: 0.35, fontSize: 12, textAlign: 'center', margin: 0, lineHeight: 1.5 }}>
+                  Pregunta sobre rutas, horarios<br />o cómo llegar a algún lugar.
+                </p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 6 }}>
+                  {SUGGESTED_QUESTIONS.map((q) => (
+                    <button
+                      key={q}
+                      type="button"
+                      onClick={() => send(q)}
+                      disabled={loading}
+                      style={{
+                        background: 'rgba(106,171,72,0.10)',
+                        border: '1px solid rgba(140,200,80,0.22)',
+                        borderRadius: 999,
+                        padding: '6px 11px',
+                        color: 'var(--foreground, #e8f2d8)',
+                        fontSize: 12,
+                        cursor: 'pointer',
+                        opacity: 0.85,
+                      }}
+                    >
+                      {q}
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
             {messages.map((m, i) => (
               <div key={i} style={{ display: 'flex', justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start' }}>
@@ -304,7 +336,7 @@ export default function ChatBot() {
               disabled={loading}
               style={{ flex: 1, minWidth: 0, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(140,200,80,0.12)', borderRadius: 10, padding: '8px 11px', color: 'var(--foreground, #e8f2d8)', fontSize: 13, outline: 'none' }}
             />
-            <button type="button" onClick={send} disabled={loading || !input.trim()}
+            <button type="button" onClick={() => send()} disabled={loading || !input.trim()}
               style={{ background: 'var(--verde, #6aab48)', border: 'none', borderRadius: 10, padding: '8px 13px', color: '#fff', fontSize: 13, fontWeight: 600, cursor: loading || !input.trim() ? 'default' : 'pointer', opacity: loading || !input.trim() ? 0.4 : 1, transition: 'opacity 0.15s', whiteSpace: 'nowrap' }}
             >Enviar</button>
           </div>

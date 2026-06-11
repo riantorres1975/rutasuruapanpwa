@@ -1,99 +1,11 @@
-// Knowledge base for the UruGo AI assistant (DeepSeek prompt).
-// These structures are intentionally separate from lib/route-names.ts:
-// the data here is formatted and tuned for the AI prompt, not for UI rendering.
-// Edit this file when you need to update what the chatbot knows.
-
-export type Stop = { nombre: string; coords: [number, number] };
-export type RouteDetail = { ida: Stop[]; vuelta: Stop[] };
-export type Schedule = { first: string; last: string; freqMin: number; freqMax: number; continuous?: boolean };
-
-export const CHAT_DESTINATIONS: Record<string, string> = {
-  "Ruta 1":   "PALITO VERDE ↔ Unidad",
-  "Ruta 1A":  "San José de la Mina ↔ Palito Verde",
-  "Ruta 2":   "Constituyentes ↔ Jicalán",
-  "Ruta 2A":  "Constituyentes ↔ Zumpimito / Soriana La Pinera",
-  "Ruta 3":   "Zapata",
-  "Ruta 4":   "Zapata",
-  "Ruta 5":   "Caltzontzin",
-  "Ruta 6":   "Pemex ↔ Taximacuaro",
-  "Ruta 7":   "Pemex ↔ Centro",
-  "Ruta 8":   "Río Volga",
-  "Ruta 9":   "Arroyo Colorado",
-  "Ruta 10":  "Charanda",
-  "Ruta 11":  "Central Camionera",
-  "Ruta 12":  "12 de Diciembre",
-  "Ruta 13":  "Fovissste",
-  "Ruta 14":  "Llanitos",
-  "Ruta 15":  "Inf. Patria ↔ Unidad Deportiva",
-  "Ruta 15A": "Inf. Patria ↔ Cuauhtémoc",
-  "Ruta 17":  "Purhépechas",
-  "Ruta 18":  "18 de Marzo",
-  "Ruta 19":  "Quirindavara ↔ Taximacuaro",
-  "Ruta 20":  "Cuba ↔ México",
-  "Ruta 21":  "Lindavista",
-  "Ruta 22":  "Cuauhtémoc",
-  "Ruta 24":  "Jucutacato",
-  "Ruta 25":  "Antorcha",
-  "Ruta 26":  "Constituyentes ↔ Unidad",
-  "Ruta 27":  "Balcones",
-  "Ruta 28":  "Mapeco",
-  "Ruta 31":  "Jaramillo ↔ Cecati",
-  "Ruta 33":  "Toreo",
-  "Ruta 35":  "La Mora",
-  "Ruta 40":  "Jucutacato",
-  "Ruta 45":  "Interclínicas",
-  "Ruta 50":  "Balcones",
-  "Ruta 66":  "Plan de Ayala ↔ Eti 30",
-  "Ruta 76":  "Constituyentes",
-  "Ruta 85":  "Toreo",
-  "Ruta 102": "EST 102",
-  "Ruta 176": "Quinta ↔ Clínica 76",
-  "Teleférico Uruapan": "Teleférico (servicio continuo)",
-};
-
-export const CHAT_SCHEDULES: Record<string, Schedule> = {
-  "Ruta 1":   { first: "05:30", last: "22:30", freqMin: 8,  freqMax: 12 },
-  "Ruta 1A":  { first: "05:30", last: "22:30", freqMin: 8,  freqMax: 12 },
-  "Ruta 2":   { first: "05:15", last: "20:45", freqMin: 10, freqMax: 15 },
-  "Ruta 2A":  { first: "05:30", last: "21:00", freqMin: 12, freqMax: 18 },
-  "Ruta 3":   { first: "06:00", last: "21:30", freqMin: 12, freqMax: 18 },
-  "Ruta 4":   { first: "06:00", last: "21:30", freqMin: 12, freqMax: 18 },
-  "Ruta 5":   { first: "06:00", last: "21:30", freqMin: 12, freqMax: 18 },
-  "Ruta 6":   { first: "05:30", last: "22:00", freqMin: 10, freqMax: 15 },
-  "Ruta 7":   { first: "05:30", last: "22:00", freqMin: 10, freqMax: 15 },
-  "Ruta 8":   { first: "06:00", last: "21:00", freqMin: 15, freqMax: 20 },
-  "Ruta 9":   { first: "06:00", last: "21:00", freqMin: 15, freqMax: 20 },
-  "Ruta 10":  { first: "06:00", last: "21:00", freqMin: 15, freqMax: 20 },
-  "Ruta 11":  { first: "06:00", last: "22:00", freqMin: 10, freqMax: 15 },
-  "Ruta 12":  { first: "06:00", last: "21:30", freqMin: 12, freqMax: 18 },
-  "Ruta 13":  { first: "06:00", last: "22:00", freqMin: 10, freqMax: 15 },
-  "Ruta 14":  { first: "06:00", last: "21:00", freqMin: 15, freqMax: 20 },
-  "Ruta 15":  { first: "05:30", last: "22:00", freqMin: 10, freqMax: 15 },
-  "Ruta 15A": { first: "05:30", last: "22:00", freqMin: 10, freqMax: 15 },
-  "Ruta 17":  { first: "06:00", last: "21:00", freqMin: 15, freqMax: 20 },
-  "Ruta 18":  { first: "06:00", last: "21:30", freqMin: 12, freqMax: 18 },
-  "Ruta 19":  { first: "05:30", last: "22:00", freqMin: 10, freqMax: 15 },
-  "Ruta 20":  { first: "05:30", last: "22:30", freqMin: 12, freqMax: 15 },
-  "Ruta 21":  { first: "06:00", last: "21:30", freqMin: 12, freqMax: 18 },
-  "Ruta 22":  { first: "06:00", last: "21:30", freqMin: 12, freqMax: 18 },
-  "Ruta 24":  { first: "05:30", last: "22:00", freqMin: 10, freqMax: 15 },
-  "Ruta 25":  { first: "06:00", last: "21:00", freqMin: 15, freqMax: 20 },
-  "Ruta 26":  { first: "05:30", last: "22:00", freqMin: 10, freqMax: 15 },
-  "Ruta 27":  { first: "06:00", last: "21:30", freqMin: 12, freqMax: 18 },
-  "Ruta 28":  { first: "06:00", last: "21:00", freqMin: 15, freqMax: 20 },
-  "Ruta 31":  { first: "06:00", last: "21:30", freqMin: 12, freqMax: 18 },
-  "Ruta 33":  { first: "06:00", last: "21:30", freqMin: 12, freqMax: 18 },
-  "Ruta 35":  { first: "06:00", last: "21:00", freqMin: 15, freqMax: 20 },
-  "Ruta 40":  { first: "05:30", last: "22:00", freqMin: 10, freqMax: 15 },
-  "Ruta 45":  { first: "06:00", last: "21:30", freqMin: 12, freqMax: 18 },
-  "Ruta 50":  { first: "06:00", last: "21:30", freqMin: 12, freqMax: 18 },
-  "Ruta 66":  { first: "06:00", last: "21:00", freqMin: 15, freqMax: 20 },
-  "Ruta 76":  { first: "05:30", last: "22:00", freqMin: 10, freqMax: 15 },
-  "Ruta 85":  { first: "06:00", last: "21:30", freqMin: 12, freqMax: 18 },
-  "Ruta 102": { first: "06:00", last: "21:00", freqMin: 15, freqMax: 20 },
-  "Ruta 176": { first: "05:30", last: "23:30", freqMin: 10, freqMax: 12 },
-  "Teleférico Uruapan": { first: "05:00", last: "23:00", freqMin: 0, freqMax: 0, continuous: true },
-};
+// Knowledge base curada a mano para el asistente de UruGo (prompt de DeepSeek).
+//
+// IMPORTANTE: aquí solo viven los ALIAS (nombres de colonias y referencias
+// locales por ruta), que no se pueden derivar de los datos GPS. Todo lo
+// geográfico (qué ruta pasa por dónde, distancias) y los horarios se calculan
+// del trazo real en lib/chat-grounding.ts y lib/schedules.ts — NO agregar
+// recorridos ni coordenadas a mano aquí: así nació el bug de "la Ruta 2 pasa
+// por el centro" (paradas inventadas con coordenadas equivocadas).
 
 export const CHAT_ALIASES: Record<string, string[]> = {
   "Ruta 1":   ["hospital", "hospital regional", "IMSS bienestar", "mercado municipal", "palito verde"],
@@ -113,27 +25,4 @@ export const CHAT_ALIASES: Record<string, string[]> = {
   "Ruta 76":  ["centro", "centro histórico", "constituyentes", "primer cuadro", "zócalo", "sol naciente"],
   "Ruta 102": ["EST 102", "escuela secundaria", "secundaria técnica"],
   "Ruta 176": ["clínica 76", "IMSS", "brisas", "Las Brisas", "quinta"],
-};
-
-export const CHAT_ROUTE_DETAILS: Record<string, RouteDetail> = {
-  "Ruta 1":  { ida: [{nombre:"Palito Verde",coords:[-102.0595,19.3992]},{nombre:"Panteón",coords:[-102.0623,19.4021]},{nombre:"Centro",coords:[-102.0567,19.4205]},{nombre:"Charanda",coords:[-102.0498,19.4281]},{nombre:"Unidad",coords:[-102.0445,19.4332]}], vuelta: [] },
-  "Ruta 2":  { ida: [{nombre:"Constituyentes",coords:[-102.0635,19.4180]},{nombre:"Sol Naciente",coords:[-102.0700,19.4120]},{nombre:"Costa Rica",coords:[-102.0610,19.4142]},{nombre:"Prepas",coords:[-102.0587,19.4105]},{nombre:"McDonald's",coords:[-102.0562,19.4078]},{nombre:"Jicalán",coords:[-102.0510,19.4043]}], vuelta: [] },
-  "Ruta 3":  { ida: [{nombre:"Zapata",coords:[-102.0700,19.4100]},{nombre:"Comercial Mexicana",coords:[-102.0600,19.4185]},{nombre:"Centro",coords:[-102.0567,19.4205]},{nombre:"ESFU 3",coords:[-102.0505,19.4235]},{nombre:"Casa del Niño",coords:[-102.0480,19.4255]}], vuelta: [] },
-  "Ruta 5":  { ida: [{nombre:"Caltzontzin",coords:[-102.0805,19.3905]},{nombre:"CERESO",coords:[-102.0735,19.3955]},{nombre:"Sam's Club",coords:[-102.0625,19.4100]},{nombre:"Sarabia",coords:[-102.0585,19.4160]},{nombre:"Centro",coords:[-102.0567,19.4205]}], vuelta: [] },
-  "Ruta 6":  { ida: [{nombre:"Pemex",coords:[-102.0755,19.4300]},{nombre:"Clínica 76",coords:[-102.0672,19.4240]},{nombre:"Puente",coords:[-102.0630,19.4220]},{nombre:"Papelera",coords:[-102.0625,19.4210]},{nombre:"Central",coords:[-102.0595,19.4208]},{nombre:"Quinta",coords:[-102.0530,19.4220]},{nombre:"Taximácuaro",coords:[-102.0480,19.4250]}], vuelta: [] },
-  "Ruta 7":  { ida: [{nombre:"Clínica 81",coords:[-102.0701,19.4275]},{nombre:"Clínica 76",coords:[-102.0672,19.4240]},{nombre:"Papelera",coords:[-102.0625,19.4210]},{nombre:"Chocolatera",coords:[-102.0589,19.4202]},{nombre:"Centro",coords:[-102.0567,19.4205]},{nombre:"La Fuente",coords:[-102.0542,19.4220]}], vuelta: [] },
-  "Ruta 9":  { ida: [{nombre:"Arroyo Colorado",coords:[-102.0720,19.3950]},{nombre:"Zumpimito",coords:[-102.0650,19.4050]},{nombre:"Soriana",coords:[-102.0545,19.4215]},{nombre:"Centro",coords:[-102.0567,19.4205]},{nombre:"Presidencia",coords:[-102.0550,19.4215]}], vuelta: [] },
-  "Ruta 11": { ida: [{nombre:"Central Camionera",coords:[-102.0595,19.4208]},{nombre:"IMSS",coords:[-102.0580,19.4180]},{nombre:"Centro",coords:[-102.0567,19.4205]},{nombre:"Parroquia Cristo Rey",coords:[-102.0525,19.4235]},{nombre:"Presidencia",coords:[-102.0550,19.4215]}], vuelta: [] },
-  "Ruta 12": { ida: [{nombre:"Base 12 de Diciembre",coords:[-102.0750,19.3900]},{nombre:"Hielera",coords:[-102.0680,19.4000]},{nombre:"Chocolatera",coords:[-102.0589,19.4202]},{nombre:"Centro",coords:[-102.0567,19.4205]},{nombre:"La Fuente",coords:[-102.0542,19.4220]}], vuelta: [] },
-  "Ruta 13": { ida: [{nombre:"Fovissste",coords:[-102.0800,19.4100]},{nombre:"ISSSTE",coords:[-102.0750,19.4150]},{nombre:"Infonavit Patria",coords:[-102.0700,19.4200]},{nombre:"Comercial Mexicana",coords:[-102.0600,19.4185]},{nombre:"Américas",coords:[-102.0580,19.4200]},{nombre:"Centro",coords:[-102.0567,19.4205]}], vuelta: [] },
-  "Ruta 14": { ida: [{nombre:"Base Patria",coords:[-102.0800,19.4250]},{nombre:"Comercial",coords:[-102.0700,19.4200]},{nombre:"CAPASU",coords:[-102.0650,19.4180]},{nombre:"Gandarillas",coords:[-102.0600,19.4170]},{nombre:"Coppel",coords:[-102.0540,19.4200]}], vuelta: [] },
-  "Ruta 19": { ida: [{nombre:"Quirindavara",coords:[-102.0800,19.4000]},{nombre:"Zumpimito",coords:[-102.0650,19.4050]},{nombre:"Soriana",coords:[-102.0545,19.4215]},{nombre:"Casa del Niño",coords:[-102.0480,19.4255]},{nombre:"Centro/Parque",coords:[-102.0565,19.4210]},{nombre:"Quinta",coords:[-102.0530,19.4220]},{nombre:"Taximácuaro",coords:[-102.0480,19.4250]}], vuelta: [] },
-  "Ruta 20": { ida: [{nombre:"Base La Mora",coords:[-102.0800,19.4050]},{nombre:"CECATI",coords:[-102.0720,19.4100]},{nombre:"Inguambal",coords:[-102.0650,19.4150]},{nombre:"Centro",coords:[-102.0567,19.4205]},{nombre:"Quinta",coords:[-102.0530,19.4220]},{nombre:"Coppel",coords:[-102.0540,19.4200]}], vuelta: [] },
-  "Ruta 21": { ida: [{nombre:"Linda Vista",coords:[-102.0800,19.4300]},{nombre:"Base Inguambal",coords:[-102.0700,19.4200]},{nombre:"Centro",coords:[-102.0567,19.4205]},{nombre:"Cupatitzio",coords:[-102.0500,19.4225]},{nombre:"Coppel",coords:[-102.0540,19.4200]}], vuelta: [] },
-  "Ruta 24": { ida: [{nombre:"Jucutacato",coords:[-102.0900,19.3900]},{nombre:"Casa del Niño",coords:[-102.0480,19.4255]},{nombre:"Centro",coords:[-102.0567,19.4205]},{nombre:"Nicolás Romero",coords:[-102.0500,19.4230]},{nombre:"Linda Vista",coords:[-102.0450,19.4300]}], vuelta: [] },
-  "Ruta 25": { ida: [{nombre:"Base Antorcha",coords:[-102.0820,19.4050]},{nombre:"Sol Naciente",coords:[-102.0700,19.4120]},{nombre:"Constituyentes",coords:[-102.0635,19.4180]},{nombre:"Centro Histórico",coords:[-102.0567,19.4205]},{nombre:"Parque Nacional (a un lado)",coords:[-102.0540,19.4230]}], vuelta: [] },
-  "Ruta 26": { ida: [{nombre:"Sol Naciente",coords:[-102.0700,19.4120]},{nombre:"Constituyentes",coords:[-102.0635,19.4180]},{nombre:"Universidad Don Vasco",coords:[-102.0610,19.4195]},{nombre:"Central Camionera",coords:[-102.0595,19.4208]},{nombre:"Centro Histórico",coords:[-102.0567,19.4205]},{nombre:"Unidad",coords:[-102.0445,19.4332]}], vuelta: [] },
-  "Ruta 27": { ida: [{nombre:"Balcones",coords:[-102.0850,19.4250]},{nombre:"Yucatán",coords:[-102.0750,19.4200]},{nombre:"Centro",coords:[-102.0567,19.4205]},{nombre:"Parque Nacional",coords:[-102.0515,19.4230]},{nombre:"Francisco Villa",coords:[-102.0480,19.4250]},{nombre:"CETIS 27",coords:[-102.0450,19.4280]}], vuelta: [] },
-  "Ruta 31": { ida: [{nombre:"CECATI",coords:[-102.0720,19.4100]},{nombre:"Plaza de Toros",coords:[-102.0650,19.4150]},{nombre:"Centro",coords:[-102.0567,19.4205]},{nombre:"Quinta",coords:[-102.0530,19.4220]},{nombre:"Jaramillo",coords:[-102.0480,19.4260]},{nombre:"28 de Octubre",coords:[-102.0450,19.4290]}], vuelta: [] },
-  "Ruta 76": { ida: [{nombre:"Quirindavara",coords:[-102.0800,19.4000]},{nombre:"Sol Naciente",coords:[-102.0700,19.4120]},{nombre:"Constituyentes",coords:[-102.0635,19.4180]},{nombre:"Boulevard Industrial",coords:[-102.0600,19.4150]},{nombre:"Morelos",coords:[-102.0580,19.4185]},{nombre:"Centro Histórico",coords:[-102.0567,19.4205]},{nombre:"Colorín",coords:[-102.0500,19.4300]}], vuelta: [] },
 };
