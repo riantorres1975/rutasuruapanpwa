@@ -337,6 +337,8 @@ export default function HomePage() {
   const [fetchError, setFetchError] = useState(false);
   const [fetchAttempt, setFetchAttempt] = useState(0);
   const [selectedRouteId, setSelectedRouteId] = useState<number | null>(null);
+  // Hover de la lista del sidebar (desktop): resalta la ruta en el mapa sin seleccionarla
+  const [hoveredRouteId, setHoveredRouteId] = useState<number | null>(null);
   const [selectedDirection, setSelectedDirection] = useState<RouteDirection>("ida");
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isResultSheetOpen, setIsResultSheetOpen] = useState(false);
@@ -2069,6 +2071,7 @@ export default function HomePage() {
             onClearSelection={handleClearSelection}
             onShowTeleferico={() => { setShowTeleferico(true); }}
             onSelectRoute={handleSelectRoute}
+            onHoverRoute={setHoveredRouteId}
           />
         </div>
 
@@ -2173,6 +2176,7 @@ export default function HomePage() {
             showTeleferico={showTeleferico}
             selectedTransfer={selectedTransfer}
             awaitingPick={flowStep === 3 ? null : activePoint}
+            hoveredRouteId={hoveredRouteId}
             onMapPick={handleMapPick}
             onSelectRoute={handleSelectRoute}
             onNearbyRoutesFound={handleNearbyRoutesFound}

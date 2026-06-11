@@ -24,6 +24,8 @@ type RouteListProps = {
   onSelectRoute: (routeId: number) => void;
   onClearSelection?: () => void;
   onShowTeleferico?: () => void;
+  /** Hover de fila → resaltar la ruta en el mapa (solo se pasa en desktop) */
+  onHoverRoute?: (routeId: number | null) => void;
 };
 
 function isTelefericoRoute(route: Pick<ResolvedRouteData, "ruta" | "nombre">) {
@@ -46,6 +48,7 @@ type RouteItemProps = {
   isFavorite: boolean;
   onToggleFavorite?: (routeName: string) => void;
   onSelectRoute: (id: number) => void;
+  onHoverRoute?: (routeId: number | null) => void;
 };
 
 const RouteItem = memo(function RouteItem({
@@ -64,6 +67,7 @@ const RouteItem = memo(function RouteItem({
   isFavorite,
   onToggleFavorite,
   onSelectRoute,
+  onHoverRoute,
 }: RouteItemProps) {
   return (
     <li style={{ contentVisibility: "auto", containIntrinsicSize: "0 72px" }}>
@@ -91,6 +95,8 @@ const RouteItem = memo(function RouteItem({
       <button
         type="button"
         onClick={() => onSelectRoute(route.id)}
+        onMouseEnter={onHoverRoute ? () => onHoverRoute(route.id) : undefined}
+        onMouseLeave={onHoverRoute ? () => onHoverRoute(null) : undefined}
         style={
           !isSelected && !isLandmarkMatch && !isNearby && !isBestSuggestion && !isSuggested
             ? { borderColor: "var(--ov-border)", background: "var(--surface)" }
@@ -227,7 +233,8 @@ export default function RouteList({
   onToggleFavorite,
   onSelectRoute,
   onClearSelection,
-  onShowTeleferico
+  onShowTeleferico,
+  onHoverRoute
 }: RouteListProps) {
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query);
@@ -581,6 +588,7 @@ export default function RouteList({
                 isFavorite={isFavorite}
                 onToggleFavorite={isTelefericoRoute(route) ? undefined : onToggleFavorite}
                 onSelectRoute={onSelectRoute}
+                onHoverRoute={onHoverRoute}
               />
             );
           })}

@@ -123,6 +123,8 @@ type MapProps = {
   showTeleferico?: boolean;
   selectedTransfer?: TransferOption | null;
   awaitingPick?: "origin" | "destination" | null;
+  /** Ruta resaltada al pasar el mouse por la lista (desktop) */
+  hoveredRouteId?: number | null;
   onMapPick: (point: [number, number]) => void;
   onSelectRoute: (routeId: number) => void;
   onNearbyRoutesFound: (routeIds: number[]) => void;
@@ -867,6 +869,7 @@ function MapComponent({
   showTeleferico = false,
   selectedTransfer = null,
   awaitingPick = null,
+  hoveredRouteId = null,
   onMapPick,
   onSelectRoute,
   onNearbyRoutesFound
@@ -1222,6 +1225,11 @@ function MapComponent({
       attributionControl: false,
       antialias: true
     });
+
+    // Zoom +/− solo en desktop: en móvil basta el gesto de pellizcar y estorban.
+    if (window.matchMedia("(min-width: 768px)").matches) {
+      map.addControl(new mapboxgl.NavigationControl({ showCompass: false, visualizePitch: false }), "top-right");
+    }
 
 
     const onRouteClick = (event: mapboxgl.MapLayerMouseEvent) => {
@@ -1786,6 +1794,30 @@ function MapComponent({
     );
   }, [allRoutesMode, bestSuggestedRouteId, debugActive, selectedRouteId, selectedRouteSegment, suggestedRouteIds]);
 
+  // Hover externo (lista del sidebar en desktop): resalta la ruta sin seleccionarla.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !isMapReadyRef.current) {
+      return;
+    }
+    if (hoveredRouteIdRef.current === hoveredRouteId) {
+      return;
+    }
+
+    hoveredRouteIdRef.current = hoveredRouteId;
+    applyRouteLayerStyles(
+      map,
+      selectedRouteId,
+      suggestedRouteIds,
+      bestSuggestedRouteId,
+      isSegmentSelection(selectedRouteId, selectedRouteSegment),
+      allRoutesMode,
+      hoveredRouteIdRef.current,
+      transferRouteIdsRef.current,
+      debugActive
+    );
+  }, [hoveredRouteId, allRoutesMode, bestSuggestedRouteId, debugActive, selectedRouteId, selectedRouteSegment, suggestedRouteIds]);
+
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -1994,8 +2026,8 @@ function MapComponent({
         <div className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-b from-slate-950/20 to-transparent" aria-hidden="true" />
       )}
 
-      {/* Locate-me button + accuracy warning — top-right, debajo del NavigationControl */}
-      <div className="absolute right-2.5 top-[10px] z-20 flex flex-col items-end gap-2">
+      {/* Locate-me button + accuracy warning — top-right; en desktop debajo del control de zoom */}
+      <div className="absolute right-2.5 top-[10px] z-20 flex flex-col items-end gap-2 md:right-4 md:top-[104px]">
         <button
           type="button"
           onClick={handleLocateMe}
