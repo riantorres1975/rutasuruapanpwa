@@ -29,6 +29,9 @@ export default function ChatBot() {
   const [desktopStyle, setDesktopStyle] = useState<React.CSSProperties>({});
   const [mounted, setMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  // Altura en px del sheet cuando el teclado reduce el viewport visual
+  // (fallback para navegadores que panean en vez de redimensionar, ej. iOS).
+  const [keyboardSheetHeight, setKeyboardSheetHeight] = useState<number | null>(null);
 
   // Reporte
   const [reportRoute, setReportRoute] = useState('');
@@ -96,6 +99,29 @@ export default function ChatBot() {
     }
     return () => { document.body.style.overflow = ''; };
   }, [open, isMobile, mounted]);
+
+  // Teclado en mobile: si el navegador panea en vez de redimensionar (iOS),
+  // ajustar la altura del sheet al viewport visual para que el header no
+  // se salga de la pantalla mientras se escribe.
+  useEffect(() => {
+    if (!open || !isMobile) { setKeyboardSheetHeight(null); return; }
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const update = () => {
+      // El teclado está abierto si el viewport visual es bastante más chico
+      // que el de layout (si el layout ya se encogió, no hace falta ajustar).
+      const keyboardOpen = vv.height < window.innerHeight - 80;
+      setKeyboardSheetHeight(keyboardOpen ? Math.round(vv.height) : null);
+    };
+    update();
+    vv.addEventListener('resize', update);
+    vv.addEventListener('scroll', update);
+    return () => {
+      vv.removeEventListener('resize', update);
+      vv.removeEventListener('scroll', update);
+      setKeyboardSheetHeight(null);
+    };
+  }, [open, isMobile]);
 
   // Click fuera para cerrar (solo desktop)
   useEffect(() => {
@@ -195,7 +221,8 @@ export default function ChatBot() {
     width: '100%', background: 'rgba(255,255,255,0.05)',
     border: '1px solid rgba(140,200,80,0.15)', borderRadius: 8,
     padding: '7px 10px', color: 'var(--foreground, #e8f2d8)',
-    fontSize: 12, outline: 'none', resize: 'none' as const,
+    // <16px provoca auto-zoom al enfocar inputs en iOS
+    fontSize: isMobile ? 16 : 12, outline: 'none', resize: 'none' as const,
   };
 
   // ── Contenido interior compartido entre mobile y desktop ──────────────────
@@ -314,16 +341,6 @@ export default function ChatBot() {
             <div ref={bottomRef} />
           </div>
 
-          {/* Banner beta */}
-          <div style={{ padding: '6px 14px', borderTop: '1px solid rgba(140,200,80,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexShrink: 0 }}>
-            <span style={{ fontSize: 11, color: 'var(--foreground, #e8f2d8)', opacity: 0.4, lineHeight: 1.4 }}>
-              ⚠️ Info en beta, puede tener errores
-            </span>
-            <button type="button" onClick={openReport}
-              style={{ background: 'none', border: '1px solid rgba(255,100,50,0.3)', borderRadius: 6, padding: '2px 8px', color: '#f5a623', fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap', fontWeight: 600 }}
-            >🚩 Reportar</button>
-          </div>
-
           {/* Input */}
           <div style={{ display: 'flex', gap: 6, padding: '10px 12px', borderTop: '1px solid rgba(140,200,80,0.10)', flexShrink: 0 }}>
             <input
@@ -334,7 +351,9 @@ export default function ChatBot() {
               onKeyDown={handleKey}
               placeholder="¿Cómo llego al IMSS?"
               disabled={loading}
-              style={{ flex: 1, minWidth: 0, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(140,200,80,0.12)', borderRadius: 10, padding: '8px 11px', color: 'var(--foreground, #e8f2d8)', fontSize: 13, outline: 'none' }}
+              autoComplete="off"
+              enterKeyHint="send"
+              style={{ flex: 1, minWidth: 0, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(140,200,80,0.12)', borderRadius: 10, padding: '8px 11px', color: 'var(--foreground, #e8f2d8)', fontSize: isMobile ? 16 : 13, outline: 'none' }}
             />
             <button type="button" onClick={() => send()} disabled={loading || !input.trim()}
               style={{ background: 'var(--verde, #6aab48)', border: 'none', borderRadius: 10, padding: '8px 13px', color: '#fff', fontSize: 13, fontWeight: 600, cursor: loading || !input.trim() ? 'default' : 'pointer', opacity: loading || !input.trim() ? 0.4 : 1, transition: 'opacity 0.15s', whiteSpace: 'nowrap' }}
@@ -411,8 +430,10 @@ export default function ChatBot() {
           boxShadow: '0 -8px 40px rgba(0,0,0,0.65)',
           display: 'flex',
           flexDirection: 'column',
-          // 70% de la pantalla, se ajusta solo con el teclado gracias a dvh
-          height: '70dvh',
+          // 70% del viewport; con teclado abierto en iOS se fija en px al
+          // viewport visual (en Android lo resuelve interactive-widget).
+          height: keyboardSheetHeight !== null ? `${keyboardSheetHeight}px` : '70dvh',
+          maxHeight: '100dvh',
           transform: open ? 'translateY(0)' : 'translateY(100%)',
           transition: 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)',
           paddingBottom: 'env(safe-area-inset-bottom, 0px)',

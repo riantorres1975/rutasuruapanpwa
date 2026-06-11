@@ -70,7 +70,10 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0c110a"
+  themeColor: "#0c110a",
+  // Con teclado abierto, Android Chrome encoge el viewport en vez de panear:
+  // los paneles anclados abajo (chat, sheets) quedan visibles sobre el teclado.
+  interactiveWidget: "resizes-content"
 };
 
 export default function RootLayout({
