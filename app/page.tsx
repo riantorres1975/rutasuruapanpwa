@@ -16,6 +16,7 @@ import {
   LANDING_SEARCH_SUGGESTIONS,
   TELEFERICO_URUAPAN
 } from "@/lib/mobility-config";
+import { getPlaceSeoItems, getRoutesNearPlace, walkMinutesFor } from "@/lib/como-llegar";
 import { SITE_URL } from "@/lib/site-url";
 
 const HOW_IT_WORKS_STEPS = [
@@ -24,6 +25,42 @@ const HOW_IT_WORKS_STEPS = [
   { n: "03", title: "Marca tu destino", desc: "El mapa detecta las rutas más cercanas." },
   { n: "04", title: "Compara opciones", desc: "Ve la ruta recomendada, tiempo y alternativas." },
 ] as const;
+
+// Rutas con nombre exacto usan ?r= (resalta la ruta); lugares usan ?destino=.
+const POPULAR_LINKS = [
+  { label: "Ruta 11", href: `/mapa?r=${encodeURIComponent("Ruta 11")}` },
+  { label: "Ruta 1", href: `/mapa?r=${encodeURIComponent("Ruta 1")}` },
+  { label: "Ruta 5", href: `/mapa?r=${encodeURIComponent("Ruta 5")}` },
+  { label: "Hospital Regional", href: `/mapa?destino=${encodeURIComponent("Hospital Regional")}` },
+  { label: "Centro Histórico", href: `/mapa?destino=${encodeURIComponent("Centro Histórico")}` },
+  { label: "Mercado Poniente", href: `/mapa?destino=${encodeURIComponent("Mercado Poniente")}` },
+] as const;
+
+const FEATURED_PLACE_LABELS = [
+  "Centro",
+  "Hospital Regional",
+  "Central de Autobuses",
+  "IMSS Hospital General de Zona 8",
+  "Mercado Poniente",
+  "Presidencia Municipal",
+  "Unidad Deportiva",
+  "Parque Lineal Cupatitzio",
+] as const;
+
+// Calculado en build: cuántas rutas dejan cerca de cada lugar destacado.
+const allSeoPlaces = getPlaceSeoItems();
+const featuredPlaces = FEATURED_PLACE_LABELS.map((label) => {
+  const place = allSeoPlaces.find((p) => p.label === label);
+  if (!place) return null;
+  const routes = getRoutesNearPlace(place.center);
+  if (routes.length === 0) return null;
+  return {
+    slug: place.slug,
+    label: place.label,
+    routeCount: routes.length,
+    nearestWalkMin: walkMinutesFor(routes[0].distanceM),
+  };
+}).filter((p): p is NonNullable<typeof p> => p !== null);
 
 export const metadata: Metadata = {
   title: {
@@ -115,6 +152,11 @@ export default function LandingPage() {
         }}
       >
         <Logo size={28} showName showSub />
+        <div className="hidden items-center gap-6 text-sm font-semibold md:flex" style={{ color: "var(--ink2)" }}>
+          <Link href="/rutas" className="transition hover:opacity-75">Rutas</Link>
+          <Link href="/horarios" className="transition hover:opacity-75">Horarios</Link>
+          <Link href="/como-llegar" className="transition hover:opacity-75">Cómo llegar</Link>
+        </div>
         <Link
           href="/mapa"
           className="inline-flex items-center gap-1.5 rounded-full px-5 py-2.5 text-sm font-semibold text-white transition-all hover:scale-[1.03]"
@@ -129,11 +171,11 @@ export default function LandingPage() {
       </nav>
 
       {/* ── HERO ── */}
-      <section className="mx-auto grid max-w-[1200px] grid-cols-1 items-center gap-8 px-5 pb-12 pt-28 lg:grid-cols-2 lg:gap-12">
+      <section className="mx-auto grid max-w-[1200px] grid-cols-1 items-center gap-8 px-5 pb-12 pt-28 lg:grid-cols-2 lg:gap-16 lg:pb-16 lg:pt-32">
         <div className="relative z-10">
           {/* Eyebrow */}
           <div
-            className="mb-6 inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-semibold uppercase tracking-widest"
+            className="animate-fade-up mb-6 inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-semibold uppercase tracking-widest"
             style={{
               background: "var(--verde-l)",
               border: "1px solid rgba(140,200,80,0.2)",
@@ -146,7 +188,7 @@ export default function LandingPage() {
 
           {/* H1 */}
           <h1
-            className="font-serif text-5xl font-black leading-[1.02] tracking-tight sm:text-6xl lg:text-7xl"
+            className="animate-fade-up animate-delay-100 font-serif text-5xl font-black leading-[1.02] tracking-tight sm:text-6xl lg:text-7xl"
             style={{ letterSpacing: "-0.025em" }}
           >
             Muévete por{" "}
@@ -155,28 +197,21 @@ export default function LandingPage() {
             <span style={{ color: "var(--lima)" }}>sin preguntar.</span>
           </h1>
 
-          <p className="mt-5 max-w-sm text-base leading-relaxed" style={{ color: "var(--ink2)" }}>
+          <p className="animate-fade-up animate-delay-200 mt-5 max-w-sm text-base leading-relaxed" style={{ color: "var(--ink2)" }}>
             Camiones urbanos y el único Teleférico de Michoacán en un mapa
             hecho aquí, para Uruapan. Sin cuentas, sin anuncios.
           </p>
 
-          {/* Badge Parque Nacional */}
-          <div
-            className="mt-4 inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-medium"
-            style={{
-              background: "var(--agua-l)",
-              border: "1px solid rgba(72,168,120,0.25)",
-              color: "var(--agua)",
-            }}
-          >
-            🌲 Cerca del Parque Nacional Eduardo Ruiz
+          {/* Search form con autocompletado (mejora progresiva: funciona sin JS) */}
+          <div className="animate-fade-up animate-delay-300">
+            <LandingSearch />
           </div>
 
-          {/* Search form con autocompletado (mejora progresiva: funciona sin JS) */}
-          <LandingSearch />
-
           {/* Chips */}
-          <div className="mt-4 flex flex-wrap gap-2">
+          <div className="animate-fade-up animate-delay-400 mt-4 flex flex-wrap items-center gap-2">
+            <span className="text-[11px] font-bold uppercase tracking-widest" style={{ color: "var(--muted)" }}>
+              Populares
+            </span>
             {LANDING_SEARCH_SUGGESTIONS.slice(0, 6).map((item) => (
               <Link
                 key={item}
@@ -194,20 +229,20 @@ export default function LandingPage() {
           </div>
 
           {/* CTAs */}
-          <div className="mt-7 flex flex-wrap gap-3">
+          <div className="animate-fade-up animate-delay-500 mt-7 flex flex-wrap items-center gap-3">
             <Link
-              href="/mapa"
+              href="/mapa?cerca=1"
               className="inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(106,171,72,0.35)]"
               style={{ background: "var(--verde)" }}
             >
               <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
-                <path d="M12 21s6-5.7 6-11a6 6 0 1 0-12 0c0 5.3 6 11 6 11Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                <circle cx="12" cy="10" r="2.2" fill="currentColor" />
+                <circle cx="12" cy="12" r="4" fill="currentColor" />
+                <path d="M12 2v3M12 19v3M2 12h3M19 12h3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
               </svg>
-              Ver el mapa
+              Rutas cerca de mí
             </Link>
             <Link
-              href="/mapa?cerca=1"
+              href="/mapa"
               className="inline-flex items-center gap-2 rounded-full border px-7 py-3.5 text-sm font-semibold transition-all hover:-translate-y-0.5"
               style={{
                 borderColor: "rgba(140,200,80,0.35)",
@@ -216,23 +251,24 @@ export default function LandingPage() {
               }}
             >
               <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
-                <circle cx="12" cy="12" r="4" fill="currentColor" />
-                <path d="M12 2v3M12 19v3M2 12h3M19 12h3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                <path d="M12 21s6-5.7 6-11a6 6 0 1 0-12 0c0 5.3 6 11 6 11Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                <circle cx="12" cy="10" r="2.2" fill="currentColor" />
               </svg>
-              Rutas cerca de mí
+              Ver el mapa
             </Link>
             <a
               href="#como-funciona"
-              className="inline-flex items-center gap-2 rounded-full border px-7 py-3.5 text-sm font-medium transition-all"
-              style={{ borderColor: "rgba(140,200,80,0.2)", color: "var(--ink2)" }}
+              className="inline-flex items-center gap-1.5 px-2 py-3.5 text-sm font-semibold underline-offset-4 transition hover:underline"
+              style={{ color: "var(--ink2)" }}
             >
               Cómo funciona
+              <span aria-hidden="true">↓</span>
             </a>
           </div>
         </div>
 
         {/* Columna derecha: mapa animado */}
-        <div className="relative mx-auto w-full max-w-sm lg:max-w-none">
+        <div className="animate-fade-up animate-delay-200 relative mx-auto w-full max-w-sm lg:max-w-none">
           <div className="absolute -inset-8 rounded-[3rem] blur-3xl" style={{ background: "rgba(106,171,72,0.08)" }} />
           <HeroMap />
         </div>
@@ -242,7 +278,7 @@ export default function LandingPage() {
       <StatsAnimados />
 
       {/* ── TRANSPORTE ── */}
-      <section id="como-funciona" className="mx-auto max-w-[1200px] px-5 py-16">
+      <section id="transporte" className="mx-auto max-w-[1200px] px-5 py-16 lg:py-24">
         <div
           className="mb-8 flex items-baseline justify-between border-b pb-4"
           style={{ borderColor: "var(--ov-border)" }}
@@ -260,8 +296,9 @@ export default function LandingPage() {
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {/* Card Camión */}
-          <div
-            className="group rounded-2xl p-7 transition-all hover:-translate-y-1 hover:shadow-[0_24px_50px_rgba(0,0,0,0.4)]"
+          <Link
+            href="/rutas"
+            className="group flex flex-col rounded-2xl p-7 transition-all hover:-translate-y-1 hover:shadow-[0_24px_50px_rgba(0,0,0,0.4)]"
             style={{ background: "var(--card, #141c10)", border: "1px solid var(--ov-border)" }}
           >
             <div className="mb-5 flex items-center justify-between">
@@ -269,20 +306,24 @@ export default function LandingPage() {
               <span
                 className="rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider"
                 style={{ background: "rgba(23,32,18,0.8)", color: "var(--muted)", border: "1px solid var(--ov-border)" }}
-              >Efectivo</span>
+              >{FARES_2026.urbanBus.price} · Efectivo</span>
             </div>
             <div className="font-serif text-5xl font-black leading-none tracking-tight" style={{ color: "var(--ink)" }}>
-              <span className="font-sans">$</span>{FARES_2026.urbanBus.price.replace(/^\$/, "")} <span className="text-base font-sans font-normal" style={{ color: "var(--muted)" }}>MXN</span>
+              40 <span className="text-base font-sans font-normal" style={{ color: "var(--muted)" }}>rutas</span>
             </div>
             <p className="mt-1.5 text-sm font-semibold" style={{ color: "var(--ink2)" }}>Camión urbano</p>
             <p className="mt-2.5 text-sm leading-relaxed" style={{ color: "var(--muted)" }}>
-              40 rutas de camión para moverte por toda la ciudad. La mayoría se pagan en efectivo al subir.
+              Cubren toda la ciudad, de las colonias al Centro. La mayoría se pagan en efectivo al subir.
             </p>
-          </div>
+            <span className="mt-auto inline-flex items-center gap-1 pt-4 text-xs font-bold transition group-hover:gap-2" style={{ color: "var(--lima)" }}>
+              Ver las 40 rutas →
+            </span>
+          </Link>
 
           {/* Card Teleférico */}
-          <div
-            className="group rounded-2xl p-7 transition-all hover:-translate-y-1 hover:shadow-[0_24px_50px_rgba(0,0,0,0.4)]"
+          <Link
+            href="/teleferico-uruapan-horario"
+            className="group flex flex-col rounded-2xl p-7 transition-all hover:-translate-y-1 hover:shadow-[0_24px_50px_rgba(0,0,0,0.4)]"
             style={{ background: "var(--card, #141c10)", border: "1px solid var(--ov-border)" }}
           >
             <div className="mb-5 flex items-center justify-between">
@@ -290,21 +331,24 @@ export default function LandingPage() {
               <span
                 className="rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider"
                 style={{ background: "rgba(23,32,18,0.8)", color: "var(--muted)", border: "1px solid var(--ov-border)" }}
-              >Tarjeta movilidad</span>
+              >{FARES_2026.teleferico.price} · Tarjeta</span>
             </div>
             <div className="font-serif text-5xl font-black leading-none tracking-tight" style={{ color: "var(--ink)" }}>
-              <span className="font-sans">$</span>{FARES_2026.teleferico.price.replace(/^\$/, "")} <span className="text-base font-sans font-normal" style={{ color: "var(--muted)" }}>MXN</span>
+              6 <span className="text-base font-sans font-normal" style={{ color: "var(--muted)" }}>estaciones</span>
             </div>
             <p className="mt-1.5 text-sm font-semibold" style={{ color: "var(--ink2)" }}>Teleférico Uruapan</p>
             <p className="mt-2.5 text-sm leading-relaxed" style={{ color: "var(--muted)" }}>
-              Único en Michoacán. Conecta oriente-poniente con 6 estaciones. Opera {TELEFERICO_URUAPAN.hours}.
+              Único en Michoacán. Cruza la ciudad de oriente a poniente. Opera {TELEFERICO_URUAPAN.hours}.
             </p>
-          </div>
+            <span className="mt-auto inline-flex items-center gap-1 pt-4 text-xs font-bold transition group-hover:gap-2" style={{ color: "var(--lima)" }}>
+              Guía del Teleférico →
+            </span>
+          </Link>
         </div>
       </section>
 
       {/* ── TARIFAS ── */}
-      <section id="tarifas" className="mx-auto max-w-[1200px] px-5 pb-16">
+      <section id="tarifas" className="mx-auto max-w-[1200px] px-5 pb-16 lg:pb-24">
         <div className="mb-8 border-b pb-4" style={{ borderColor: "var(--ov-border)" }}>
           <p className="mb-1 text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--muted)" }}>
             Tarifas 2026
@@ -329,7 +373,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── ESTACIONES TELEFÉRICO ── */}
-      <section className="mx-auto max-w-[1200px] px-5 pb-16">
+      <section className="mx-auto max-w-[1200px] px-5 pb-16 lg:pb-24">
         <div className="grid gap-10 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
           <div>
             <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--muted)" }}>
@@ -390,7 +434,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── CUATRO PASOS ── */}
-      <section className="mx-auto max-w-[1200px] px-5 pb-16">
+      <section id="como-funciona" className="mx-auto max-w-[1200px] scroll-mt-20 px-5 pb-16 lg:pb-24">
         <div className="mb-8 border-b pb-4" style={{ borderColor: "var(--ov-border)" }}>
           <p className="mb-1 text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--muted)" }}>
             Cómo se usa
@@ -421,12 +465,12 @@ export default function LandingPage() {
       </section>
 
       {/* ── RUTAS POPULARES ── */}
-      <section className="mx-auto max-w-[1200px] px-5 pb-16">
+      <section className="mx-auto max-w-[1200px] px-5 pb-16 lg:pb-24">
         <div
           className="rounded-2xl border p-6 md:p-8"
           style={{ background: "rgba(20,28,16,0.6)", borderColor: "var(--ov-border)" }}
         >
-          <div className="grid gap-8 lg:grid-cols-2">
+          <div className="grid gap-8 lg:grid-cols-2 lg:items-center">
             <div>
               <h2 className="font-serif text-2xl font-black" style={{ color: "var(--ink)" }}>
                 Rutas y conexiones populares
@@ -443,14 +487,14 @@ export default function LandingPage() {
               </Link>
             </div>
             <div className="flex flex-wrap gap-2">
-              {["Ruta 11 Uruapan", "Ruta 1", "Ruta 5", "Hospital Regional", "Centro Histórico", "Mercado Poniente"].map((item) => (
+              {POPULAR_LINKS.map((item) => (
                 <Link
-                  key={item}
-                  href={`/mapa?destino=${encodeURIComponent(item)}`}
+                  key={item.label}
+                  href={item.href}
                   className="animated-chip inline-flex items-center rounded-full border px-4 py-2 text-xs font-bold transition"
                   style={{ borderColor: "rgba(140,200,80,0.15)", background: "rgba(106,171,72,0.06)", color: "var(--ink2)" }}
                 >
-                  {item}
+                  {item.label}
                 </Link>
               ))}
             </div>
@@ -458,8 +502,57 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── CÓMO LLEGAR (SEO interno + utilidad) ── */}
+      <section className="mx-auto max-w-[1200px] px-5 pb-16 lg:pb-24">
+        <div
+          className="mb-8 flex flex-wrap items-end justify-between gap-3 border-b pb-4"
+          style={{ borderColor: "var(--ov-border)" }}
+        >
+          <div>
+            <p className="mb-1 text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--muted)" }}>
+              Lugares frecuentes
+            </p>
+            <h2 className="font-serif text-3xl font-black tracking-tight" style={{ letterSpacing: "-0.02em" }}>
+              ¿Cómo llegar{" "}
+              <em style={{ fontStyle: "italic", color: "var(--lima)" }}>a...?</em>
+            </h2>
+          </div>
+          <Link
+            href="/como-llegar"
+            className="inline-flex items-center gap-1.5 text-sm font-semibold transition hover:opacity-80"
+            style={{ color: "var(--lima)" }}
+          >
+            Ver todos los lugares →
+          </Link>
+        </div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {featuredPlaces.map((place) => (
+            <Link
+              key={place.slug}
+              href={`/como-llegar/${place.slug}`}
+              className="card-lift group flex flex-col rounded-2xl border p-5"
+              style={{ background: "var(--card, #141c10)", borderColor: "var(--ov-border)" }}
+            >
+              <p className="text-sm font-bold leading-snug" style={{ color: "var(--ink)" }}>
+                {place.label}
+              </p>
+              <p className="mt-1.5 text-xs leading-relaxed" style={{ color: "var(--muted)" }}>
+                {place.routeCount} {place.routeCount === 1 ? "ruta te deja" : "rutas te dejan"} cerca · desde{" "}
+                {place.nearestWalkMin} min a pie
+              </p>
+              <span
+                className="mt-3 inline-flex items-center gap-1 text-xs font-bold transition group-hover:gap-2"
+                style={{ color: "var(--lima)" }}
+              >
+                Cómo llegar →
+              </span>
+            </Link>
+          ))}
+        </div>
+      </section>
+
       {/* ── FAQ ── */}
-      <section className="mx-auto max-w-[1200px] px-5 pb-16">
+      <section className="mx-auto max-w-[1200px] px-5 pb-16 lg:pb-24">
         <div className="mb-8 border-b pb-4" style={{ borderColor: "var(--ov-border)" }}>
           <h2 className="font-serif text-3xl font-black tracking-tight" style={{ letterSpacing: "-0.02em", color: "var(--ink)" }}>
             Preguntas frecuentes
@@ -483,7 +576,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── CTA FINAL ── */}
-      <div className="mx-auto max-w-[1200px] px-5 pb-16">
+      <div className="mx-auto max-w-[1200px] px-5 pb-16 lg:pb-24">
         <div
           style={{
             position: "relative",
@@ -577,9 +670,11 @@ export default function LandingPage() {
             <Logo size={22} showName href="" />
             <span>· Rutas de transporte en Uruapan, Michoacán.</span>
           </p>
-          <div className="flex gap-4">
+          <div className="flex flex-wrap gap-x-4 gap-y-2">
             <Link href="/mapa" className="font-semibold transition hover:opacity-80" style={{ color: "var(--ink2)" }}>Mapa</Link>
             <Link href="/rutas" className="font-semibold transition hover:opacity-80" style={{ color: "var(--ink2)" }}>Rutas</Link>
+            <Link href="/horarios" className="font-semibold transition hover:opacity-80" style={{ color: "var(--ink2)" }}>Horarios</Link>
+            <Link href="/como-llegar" className="font-semibold transition hover:opacity-80" style={{ color: "var(--ink2)" }}>Cómo llegar</Link>
             <Link href="/blog" className="font-semibold transition hover:opacity-80" style={{ color: "var(--ink2)" }}>Blog</Link>
             <Link href="/reportar-error" className="font-semibold transition hover:opacity-80" style={{ color: "var(--ink2)" }}>Reportar error</Link>
             <Link href="/privacidad" className="font-semibold transition hover:opacity-80" style={{ color: "var(--ink2)" }}>Privacidad</Link>

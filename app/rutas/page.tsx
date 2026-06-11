@@ -125,7 +125,9 @@ export default function RutasPage() {
             </div>
             <div style={{ borderLeft: "1px solid rgba(140,200,80,0.12)", paddingLeft: "1rem" }}>
               <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "#6aab48" }}>Tarifa</p>
-              <p className="font-serif text-2xl font-black" style={{ color: "#e8f2d8" }}>{FARES_2026.urbanBus.price}</p>
+              <p className="font-serif text-2xl font-black" style={{ color: "#e8f2d8" }}>
+                <span className="font-sans">$</span>{FARES_2026.urbanBus.price.replace(/^\$/, "")}
+              </p>
             </div>
             <div style={{ borderLeft: "1px solid rgba(140,200,80,0.12)", paddingLeft: "1rem" }}>
               <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "#6aab48" }}>Pago</p>

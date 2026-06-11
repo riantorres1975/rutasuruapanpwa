@@ -152,7 +152,9 @@ export default function TelefericoHorarioPage() {
           </div>
           <div className="rounded-2xl border p-4 backdrop-blur" style={{ borderColor: "rgba(140,200,80,0.1)", background: "rgba(20,28,16,0.6)" }}>
             <dt className="text-[10px] font-bold uppercase tracking-[0.22em]" style={{ color: "#6aab48" }}>Tarifa</dt>
-            <dd className="mt-2 font-serif text-2xl font-black" style={{ color: "#e8f2d8" }}>{TELEFERICO_URUAPAN.fare}</dd>
+            <dd className="mt-2 font-serif text-2xl font-black" style={{ color: "#e8f2d8" }}>
+              <span className="font-sans">$</span>{TELEFERICO_URUAPAN.fare.replace(/^\$/, "")}
+            </dd>
           </div>
           <div className="rounded-2xl border p-4 backdrop-blur" style={{ borderColor: "rgba(140,200,80,0.1)", background: "rgba(20,28,16,0.6)" }}>
             <dt className="text-[10px] font-bold uppercase tracking-[0.22em]" style={{ color: "#6aab48" }}>Pago</dt>

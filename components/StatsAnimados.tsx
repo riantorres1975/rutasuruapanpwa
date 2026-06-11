@@ -50,7 +50,7 @@ function AnimatedStat({
 }
 
 const STATS = [
-  { target: 41, label: "rutas urbanas", color: "var(--lima)", prefix: "" },
+  { target: 40, label: "rutas de camión", color: "var(--lima)", prefix: "" },
   { target: 6, label: "estaciones Teleférico", color: "var(--ink)", prefix: "" },
   { target: 11, label: "tarifa base 2026 MXN", color: "var(--ink)", prefix: "$" },
   { target: 0, label: "anuncios ni cuentas", color: "var(--ink)", prefix: "" },
@@ -69,12 +69,12 @@ export default function StatsAnimados() {
         {STATS.map((s, i) => (
           <div
             key={i}
-            className="px-6 py-7"
+            className="px-6 py-7 lg:px-8 lg:py-9"
             style={{
               borderRight: i < 3 ? "1px solid var(--ov-border)" : "none",
             }}
           >
-            <div className="font-serif text-4xl font-black leading-none tracking-tight">
+            <div className="font-serif text-4xl font-black leading-none tracking-tight lg:text-5xl">
               {s.prefix && (
                 <span className="font-sans" style={{ color: s.color }}>{s.prefix}</span>
               )}
