@@ -199,6 +199,7 @@ export default function HorariosPage() {
                     <td className="px-4 py-3 text-right">
                       <Link
                         href={`/ruta/${route.slug}`}
+                        prefetch={false}
                         className="text-xs font-bold whitespace-nowrap transition hover:opacity-80"
                         style={{ color: "#b8e840" }}
                         aria-label={`Ver detalles de la ${route.name}`}

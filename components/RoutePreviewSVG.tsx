@@ -44,6 +44,30 @@ function normalizePaths(
   );
 }
 
+/**
+ * Decimación en espacio de píxeles: descarta puntos a menos de `tolerance`
+ * px del último conservado. A tamaño miniatura la mayoría de los puntos del
+ * GPS no aportan nada visual y solo engordan el HTML y el costo de raster.
+ */
+function decimatePx(points: [number, number][], tolerance: number): [number, number][] {
+  if (points.length <= 2) return points;
+  const minDistSq = tolerance * tolerance;
+  const out: [number, number][] = [points[0]];
+  let [keptX, keptY] = points[0];
+  for (let i = 1; i < points.length - 1; i++) {
+    const [x, y] = points[i];
+    const dx = x - keptX;
+    const dy = y - keptY;
+    if (dx * dx + dy * dy >= minDistSq) {
+      out.push(points[i]);
+      keptX = x;
+      keptY = y;
+    }
+  }
+  out.push(points[points.length - 1]);
+  return out;
+}
+
 type Props = {
   routeName: string;
   color: string;
@@ -64,7 +88,10 @@ export default function RoutePreviewSVG({
   const paths = getRoutePaths(routeName);
   if (paths.length === 0) return null;
 
-  const normalized = normalizePaths(paths, width, height);
+  // Tolerancia proporcional al grosor del trazo: el detalle perdido queda
+  // siempre por debajo de lo que el ojo distingue bajo la línea dibujada.
+  const tolerance = Math.max(1, strokeWidth * 0.6);
+  const normalized = normalizePaths(paths, width, height).map((pts) => decimatePx(pts, tolerance));
 
   return (
     <svg

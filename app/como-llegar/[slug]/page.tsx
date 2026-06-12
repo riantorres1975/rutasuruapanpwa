@@ -174,6 +174,7 @@ export default async function ComoLlegarPage({ params }: PlacePageProps) {
                       {route.routeSlug && (
                         <Link
                           href={`/ruta/${route.routeSlug}`}
+                          prefetch={false}
                           className="inline-flex h-9 items-center rounded-full border px-4 text-xs font-bold transition hover:opacity-80"
                           style={{ borderColor: "rgba(140,200,80,0.15)", color: "#e8f2d8" }}
                         >
@@ -182,6 +183,7 @@ export default async function ComoLlegarPage({ params }: PlacePageProps) {
                       )}
                       <Link
                         href={`/mapa?r=${encodeURIComponent(route.name)}`}
+                        prefetch={false}
                         className="inline-flex h-9 items-center gap-1 rounded-full px-4 text-xs font-bold transition hover:opacity-90"
                         style={{ background: "rgba(106,171,72,0.15)", color: "#b8e840" }}
                       >

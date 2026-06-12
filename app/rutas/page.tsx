@@ -155,11 +155,21 @@ export default function RutasPage() {
               <div
                 key={route.slug}
                 data-search={buildSearchText(route.name, route.destination, route.landmarks)}
-                className="flex flex-col rounded-2xl border transition-all hover:-translate-y-0.5 hover:border-lima/30 hover:shadow-[0_12px_40px_rgba(0,0,0,0.4)]"
-                style={{ borderColor: "rgba(140,200,80,0.1)", background: "rgba(20,28,16,0.6)" }}
+                className="flex flex-col rounded-2xl border transition-[transform,border-color,box-shadow] hover:-translate-y-0.5 hover:border-lima/30 hover:shadow-[0_12px_40px_rgba(0,0,0,0.4)]"
+                style={{
+                  borderColor: "rgba(140,200,80,0.1)",
+                  background: "rgba(20,28,16,0.6)",
+                  // No renderizar tarjetas fuera de pantalla hasta que se acerquen al scroll
+                  contentVisibility: "auto",
+                  containIntrinsicSize: "0 140px",
+                }}
               >
+                {/* prefetch={false}: con 40 tarjetas × 3 enlaces, el prefetch
+                    automático dispara decenas de fetches al abrir y al hacer
+                    scroll; la navegación bajo demanda es imperceptible. */}
                 <Link
                   href={`/ruta/${route.slug}`}
+                  prefetch={false}
                   className="group flex flex-1 items-center gap-3 p-3 transition active:scale-[0.99] sm:items-start sm:p-4"
                 >
                   <div className="min-w-0 flex-1 order-1">
@@ -197,6 +207,7 @@ export default function RutasPage() {
                 >
                   <Link
                     href={`/ruta/${route.slug}`}
+                    prefetch={false}
                     className="inline-flex h-8 items-center gap-1 text-[11px] font-semibold uppercase tracking-widest transition hover:opacity-80"
                     style={{ color: "rgba(232,242,216,0.45)" }}
                   >
@@ -204,6 +215,7 @@ export default function RutasPage() {
                   </Link>
                   <Link
                     href={`/mapa?r=${encodeURIComponent(route.name)}`}
+                    prefetch={false}
                     className="inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-[11px] font-bold transition hover:opacity-90"
                     style={{ background: "rgba(106,171,72,0.15)", color: "#b8e840" }}
                     aria-label={`Ver ${route.name} en el mapa interactivo`}
