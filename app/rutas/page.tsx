@@ -17,12 +17,14 @@ function buildSearchText(name: string, destination: string | null, landmarks: st
 }
 
 export const metadata: Metadata = {
-  title: "Rutas de camión en Uruapan — Las 40 rutas urbanas",
-  description: "Consulta las 40 rutas de camión urbano en Uruapan, Michoacán. Destinos, tarifa y mapa interactivo para cada ruta.",
+  // El número ("40") es un gancho de CTR y distingue esta página de la home,
+  // que apunta al término amplio "rutas uruapan". El template añade "| UruGo".
+  title: "Las 40 rutas de camiones en Uruapan",
+  description: "El directorio completo de las 40 rutas de camión de Uruapan. Busca por colonia o destino, mira el recorrido de cada una y ábrela en el mapa. Gratis.",
   alternates: { canonical: "https://www.urugo.app/rutas" },
   openGraph: {
-    title: "Rutas de camión en Uruapan — Las 40 rutas urbanas",
-    description: "Directorio completo de rutas de camión urbano en Uruapan, Michoacán.",
+    title: "Las 40 rutas de camiones en Uruapan",
+    description: "Busca por colonia o destino, mira el recorrido de cada ruta de camión de Uruapan y ábrela en el mapa interactivo.",
     url: "https://www.urugo.app/rutas",
     type: "website"
   }

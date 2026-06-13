@@ -63,11 +63,13 @@ const featuredPlaces = FEATURED_PLACE_LABELS.map((label) => {
 }).filter((p): p is NonNullable<typeof p> => p !== null);
 
 export const metadata: Metadata = {
+  // Título orientado a CTR: palabra clave + beneficio al frente, marca al final.
+  // La búsqueda "rutas uruapan" escanea el inicio del título, no la marca.
   title: {
-    absolute: "UruGo | Rutas de camiones y Teleférico en Uruapan"
+    absolute: "Rutas de camiones en Uruapan: mapa y horarios | UruGo"
   },
   description:
-    "Consulta rutas de camiones Uruapan, horario del Teleférico Uruapan, tarifas 2026 y opciones para moverte en transporte público.",
+    "Encuentra qué camión tomar en Uruapan en segundos. Las 40 rutas y el Teleférico en un mapa interactivo, con horarios y tarifas 2026. Gratis, sin registro.",
   alternates: { canonical: SITE_URL },
   openGraph: {
     title: "UruGo | Encuentra tu ruta en Uruapan",
