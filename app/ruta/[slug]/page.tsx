@@ -15,7 +15,11 @@ type RoutePageProps = {
 };
 
 export function generateStaticParams() {
-  return getRouteSeoItems().map((route) => ({ slug: route.slug }));
+  // El teleférico no es ruta de camión: /ruta/teleferico-uruapan redirige a su
+  // guía dedicada (ver next.config.mjs), así que no se construye con esta plantilla.
+  return getRouteSeoItems()
+    .filter((route) => route.slug !== "teleferico-uruapan")
+    .map((route) => ({ slug: route.slug }));
 }
 
 export async function generateMetadata({ params }: RoutePageProps): Promise<Metadata> {

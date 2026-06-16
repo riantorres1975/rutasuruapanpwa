@@ -67,7 +67,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
     }
   ];
 
-  const routeUrls: MetadataRoute.Sitemap = getRouteSeoItems().map((route) => ({
+  const routeUrls: MetadataRoute.Sitemap = getRouteSeoItems()
+    // El teleférico se publica en /teleferico-uruapan-horario; /ruta/teleferico-uruapan redirige allí.
+    .filter((route) => route.slug !== "teleferico-uruapan")
+    .map((route) => ({
     url: `${SITE_URL}/ruta/${route.slug}`,
     lastModified: ROUTES_LAST_MODIFIED,
     changeFrequency: "monthly",

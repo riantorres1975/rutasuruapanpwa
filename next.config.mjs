@@ -57,6 +57,14 @@ const nextConfig = {
 
   async redirects() {
     return [
+      // El teleférico no es una ruta de camión: su página canónica es la guía
+      // dedicada. La URL /ruta/teleferico-uruapan (generada por la plantilla de
+      // camión) mostraba info incorrecta, así que se consolida aquí.
+      {
+        source: "/ruta/teleferico-uruapan",
+        destination: "/teleferico-uruapan-horario",
+        permanent: true
+      },
       {
         source: "/:path*",
         has: [{ type: "host", value: "urugo.app" }],
