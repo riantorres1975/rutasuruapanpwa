@@ -88,8 +88,6 @@ export default function GuiaEstudiantesPage() {
       <ForceDark />
       <article className="relative z-10 mx-auto max-w-3xl">
         <PageHeader
-          backHref="/blog"
-          backLabel="Blog"
           eyebrow="En preparación"
           title={
             <>

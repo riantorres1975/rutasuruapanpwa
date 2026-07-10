@@ -416,13 +416,6 @@ body {
   position: relative;
 }
 
-
-.greca-band {
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='40' height='12' viewBox='0 0 40 12'><g fill='none' stroke='%236aab48' stroke-width='1.4'><path d='M0 6 L6 6 L6 0 L14 0 L14 6 L20 6 L20 12 L26 12 L26 6 L34 6 L34 0 L40 0'/></g></svg>");
-  background-size: 40px 12px;
-  background-repeat: repeat-x;
-}
-
 @keyframes greca-drift {
   to { background-position: 80px 80px; }
 }

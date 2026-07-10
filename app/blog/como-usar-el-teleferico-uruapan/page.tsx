@@ -99,8 +99,6 @@ export default function TelefericoBlogArticlePage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <article className="relative z-10 mx-auto max-w-3xl">
         <PageHeader
-          backHref="/blog"
-          backLabel="Blog"
           kicker="Únicо en Michoacán"
           eyebrow="Guía 2026"
           title={
