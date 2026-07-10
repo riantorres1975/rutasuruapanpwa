@@ -89,7 +89,7 @@ export default function HorariosPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
       <nav
-        className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-5 py-4"
+        className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between gap-3 px-4 py-4 sm:px-5"
         style={{
           background: "rgba(12,17,10,0.9)",
           backdropFilter: "blur(20px)",
@@ -99,10 +99,11 @@ export default function HorariosPage() {
         <Logo size={28} showName showSub />
         <Link
           href="/mapa"
-          className="inline-flex items-center gap-1.5 rounded-full px-5 py-2.5 text-sm font-semibold text-white"
+          className="inline-flex shrink-0 items-center justify-center rounded-full px-4 py-2.5 text-xs font-semibold text-white sm:px-5 sm:text-sm"
           style={{ background: "#6aab48" }}
         >
-          Abrir mapa
+          <span className="sm:hidden">Mapa</span>
+          <span className="hidden sm:inline">Abrir mapa</span>
         </Link>
       </nav>
 
@@ -155,9 +156,76 @@ export default function HorariosPage() {
             </Link>
           </div>
 
-          {/* Tabla de horarios */}
+          {/* Lista de horarios para pantallas pequeñas */}
           <div
-            className="mt-6 overflow-x-auto rounded-2xl border"
+            className="mt-6 overflow-hidden rounded-lg border md:hidden"
+            style={{ borderColor: "rgba(140,200,80,0.12)", background: "rgba(20,28,16,0.6)" }}
+          >
+            <ul className="divide-y" style={{ borderColor: "rgba(140,200,80,0.1)" }}>
+              {rows.map(({ route, schedule }) => (
+                <li key={route.slug} className="p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex min-w-0 items-start gap-2.5">
+                      <span
+                        className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full"
+                        style={{ backgroundColor: route.color }}
+                      />
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold leading-5" style={{ color: "#e8f2d8" }}>
+                          {route.name}
+                        </p>
+                        {route.destination && (
+                          <p className="mt-0.5 text-[11px] leading-4" style={{ color: "#6aab48" }}>
+                            → {route.destination}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <Link
+                      href={`/ruta/${route.slug}`}
+                      prefetch={false}
+                      className="shrink-0 text-xs font-bold transition hover:opacity-80"
+                      style={{ color: "#b8e840" }}
+                      aria-label={`Ver detalles de la ${route.name}`}
+                    >
+                      Ver ruta →
+                    </Link>
+                  </div>
+
+                  <dl className="mt-3 grid grid-cols-3 gap-2 border-t pt-3" style={cellBorder}>
+                    <div>
+                      <dt className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "#6aab48" }}>
+                        Primero
+                      </dt>
+                      <dd className="mt-1 text-sm font-bold" style={{ color: "#e8f2d8" }}>
+                        {schedule.first}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "#6aab48" }}>
+                        Último
+                      </dt>
+                      <dd className="mt-1 text-sm font-bold" style={{ color: "#e8f2d8" }}>
+                        {schedule.last}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "#6aab48" }}>
+                        Frecuencia
+                      </dt>
+                      <dd className="mt-1 text-xs leading-5" style={{ color: "#a8c888" }}>
+                        {frequencyLabel(schedule.freqMin, schedule.freqMax, schedule.continuous)}
+                      </dd>
+                    </div>
+                  </dl>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Tabla de horarios para pantallas medianas y grandes */}
+          <div
+            className="mt-6 hidden overflow-x-auto rounded-2xl border md:block"
             style={{ borderColor: "rgba(140,200,80,0.12)", background: "rgba(20,28,16,0.6)" }}
           >
             <table className="w-full min-w-[560px] border-collapse text-left text-sm">
