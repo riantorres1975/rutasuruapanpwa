@@ -52,12 +52,13 @@ export function getRouteSeoItems(): RouteSeoItem[] {
   const seen = new Map<string, RouteSeoItem & { totalKm: number }>();
   for (const r of routes) {
     const isVuelta = r.original_name.includes("Vuelta");
+    const isTeleferico = r.name === "Teleférico Uruapan";
     const existing = seen.get(r.name);
     const km = pathKm(r.path);
     const lms = r.landmarks.map((l) => l.name);
     if (existing) {
-      if (isVuelta) existing.hasVuelta = true;
-      else existing.hasIda = true;
+      if (isTeleferico || isVuelta) existing.hasVuelta = true;
+      if (isTeleferico || !isVuelta) existing.hasIda = true;
       existing.totalKm += km;
       for (const lm of lms) {
         if (!existing.landmarks.includes(lm)) existing.landmarks.push(lm);
@@ -70,8 +71,8 @@ export function getRouteSeoItems(): RouteSeoItem[] {
         destination,
         slug: `${slugify(r.name)}${destinationSlug}`,
         color: r.color,
-        hasIda: !isVuelta,
-        hasVuelta: isVuelta,
+        hasIda: isTeleferico || !isVuelta,
+        hasVuelta: isTeleferico || isVuelta,
         distanceKm: 0,
         totalKm: km,
         landmarks: [...lms],

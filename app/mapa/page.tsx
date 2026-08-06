@@ -736,10 +736,11 @@ export default function HomePage() {
     const seen = new Map<string, ResolvedRouteData>();
     for (const r of polylineRoutes) {
       const isVuelta = r.original_name.includes("Vuelta");
+      const isTeleferico = r.name === "Teleférico Uruapan";
       const existing = seen.get(r.name);
       if (existing) {
-        if (isVuelta) existing.tieneVuelta = true;
-        else existing.tieneIda = true;
+        if (isTeleferico || isVuelta) existing.tieneVuelta = true;
+        if (isTeleferico || !isVuelta) existing.tieneIda = true;
       } else {
         seen.set(r.name, {
           id: r.id,
@@ -748,8 +749,8 @@ export default function HomePage() {
           color: r.color,
           coordenadas: r.path,
           direccion: isVuelta ? "vuelta" : "ida",
-          tieneIda: !isVuelta,
-          tieneVuelta: isVuelta,
+          tieneIda: isTeleferico || !isVuelta,
+          tieneVuelta: isTeleferico || isVuelta,
         });
       }
     }
