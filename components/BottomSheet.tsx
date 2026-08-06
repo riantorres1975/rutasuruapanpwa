@@ -45,9 +45,10 @@ export default function BottomSheet({
 
   // Cuando se abre en modo snap, empezar en mini
   useEffect(() => {
-    if (open && snapPoints) setSnap("mini");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+    if (!open || !snapPoints) return;
+    const timer = window.setTimeout(() => setSnap("mini"), 0);
+    return () => window.clearTimeout(timer);
+  }, [open, setSnap, snapPoints]);
 
   // Bloquear scroll del body solo en full
   useEffect(() => {

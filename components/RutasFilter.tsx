@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { track } from "@vercel/analytics";
 
 type RutasFilterProps = {
@@ -45,12 +45,12 @@ export default function RutasFilter({ total, gridId = "rutas-grid", emptyId = "r
     return () => window.clearTimeout(timer);
   }, [query, count]);
 
-  // Filtra las tarjetas (renderizadas en el servidor) alternando su visibilidad.
-  useEffect(() => {
+  // Filtra las tarjetas renderizadas en el servidor desde la acción del usuario.
+  const applyFilter = useCallback((value: string) => {
     const grid = document.getElementById(gridId);
-    if (!grid) return;
+    if (!grid) return total;
 
-    const q = normalize(query);
+    const q = normalize(value);
     // Multi-token AND: "hospital ruta 5" encuentra tarjetas que contengan
     // todas las palabras, sin importar el orden.
     const tokens = q.split(" ").filter(Boolean);
@@ -68,7 +68,13 @@ export default function RutasFilter({ total, gridId = "rutas-grid", emptyId = "r
 
     const empty = document.getElementById(emptyId);
     if (empty) empty.style.display = visible === 0 ? "" : "none";
-  }, [query, gridId, emptyId]);
+    return visible;
+  }, [emptyId, gridId, total]);
+
+  const updateQuery = useCallback((value: string) => {
+    setQuery(value);
+    setCount(applyFilter(value));
+  }, [applyFilter]);
 
   return (
     <div
@@ -93,7 +99,7 @@ export default function RutasFilter({ total, gridId = "rutas-grid", emptyId = "r
             type="text"
             inputMode="search"
             value={query}
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={(event) => updateQuery(event.target.value)}
             placeholder="Busca por número, colonia o destino…"
             aria-label="Filtrar rutas"
             className="h-12 w-full rounded-xl border pl-11 pr-11 text-sm font-medium outline-none transition [&::placeholder]:opacity-50"
@@ -103,7 +109,7 @@ export default function RutasFilter({ total, gridId = "rutas-grid", emptyId = "r
             <button
               type="button"
               onClick={() => {
-                setQuery("");
+                updateQuery("");
                 inputRef.current?.focus();
               }}
               className="absolute right-2 top-2.5 grid h-7 w-7 place-items-center rounded-full transition hover:opacity-80"
@@ -124,7 +130,7 @@ export default function RutasFilter({ total, gridId = "rutas-grid", emptyId = "r
               key={chip}
               type="button"
               onClick={() => {
-                setQuery(chip);
+                updateQuery(chip);
                 inputRef.current?.focus();
               }}
               className="rounded-full border px-3 py-1.5 text-[11px] font-semibold transition hover:opacity-80 active:scale-[0.97]"

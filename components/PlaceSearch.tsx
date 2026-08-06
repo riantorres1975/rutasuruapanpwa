@@ -24,13 +24,16 @@ export default function PlaceSearch({
   autoFocus = false,
   initialQuery = "",
 }: PlaceSearchProps) {
+  const initialTrimmed = initialQuery.trim();
   const [query, setQuery] = useState(initialQuery);
-  const [results, setResults] = useState<PlaceResult[]>([]);
+  const [results, setResults] = useState<PlaceResult[]>(() =>
+    initialTrimmed.length >= 2 ? searchLocalPlaces(initialTrimmed) : []
+  );
   const [recents, setRecents] = useState<PlaceResult[]>([]);
   const [savedPlaces, setSavedPlaces] = useState<ReturnType<typeof getSavedPlaces>>({});
   const [savingSlot, setSavingSlot] = useState<SavedSlot | null>(null);
   const [isOpen, setIsOpen] = useState(false);
-  const [isSearching, setIsSearching] = useState(false);
+  const [isSearching, setIsSearching] = useState(initialTrimmed.length >= 2);
   const [activeIndex, setActiveIndex] = useState(-1);
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -40,6 +43,14 @@ export default function PlaceSearch({
   // Con el input casi vacío mostramos los destinos recientes.
   const showingRecents = query.trim().length < 2;
   const displayResults = showingRecents ? recents : results;
+
+  const updateQuery = (value: string) => {
+    const trimmed = value.trim();
+    setQuery(value);
+    setResults(trimmed.length >= 2 ? searchLocalPlaces(trimmed) : []);
+    setIsSearching(trimmed.length >= 2);
+    setActiveIndex(-1);
+  };
 
   // Telemetría: registrar búsquedas que no encontraron nada (tras estabilizarse)
   // para saber qué lugares agregar al índice local.
@@ -75,25 +86,18 @@ export default function PlaceSearch({
   // Búsqueda: resultados locales instantáneos + Mapbox con debounce
   useEffect(() => {
     const trimmed = query.trim();
-    if (trimmed.length < 2) {
-      setResults([]);
-      setIsSearching(false);
-      setActiveIndex(-1);
-      return;
-    }
-
-    // Resultados locales al instante
-    setResults(searchLocalPlaces(trimmed));
-    setActiveIndex(-1);
+    if (trimmed.length < 2) return;
 
     const controller = new AbortController();
-    setIsSearching(true);
     const timer = window.setTimeout(() => {
       searchPlaces(trimmed, { signal: controller.signal })
         .then((merged) => {
           setResults(merged);
         })
-        .finally(() => setIsSearching(false));
+        .catch(() => {})
+        .finally(() => {
+          if (!controller.signal.aborted) setIsSearching(false);
+        });
     }, DEBOUNCE_MS);
 
     return () => {
@@ -112,10 +116,8 @@ export default function PlaceSearch({
     setRecents(getRecentPlaces());
     onSelect(result);
     // Limpiar el buscador tras aplicar la búsqueda (el destino queda marcado en el mapa).
-    setQuery("");
-    setResults([]);
+    updateQuery("");
     setIsOpen(false);
-    setActiveIndex(-1);
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -161,7 +163,7 @@ export default function PlaceSearch({
           value={query}
           autoFocus={autoFocus}
           onChange={(event) => {
-            setQuery(event.target.value);
+            updateQuery(event.target.value);
             setIsOpen(true);
           }}
           onFocus={() => {
@@ -191,8 +193,7 @@ export default function PlaceSearch({
           <button
             type="button"
             onClick={() => {
-              setQuery("");
-              setResults([]);
+              updateQuery("");
               setIsOpen(false);
             }}
             className="ov-pill ov-text-muted absolute right-2 top-2.5 grid h-7 w-7 place-items-center rounded-full transition hover:opacity-80"

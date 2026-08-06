@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import dynamic from "next/dynamic";
 
 // ── Sidebar resize constants ──────────────────────────────────────────────────
@@ -21,7 +21,7 @@ import { geocodePlace, type PlaceResult } from "@/lib/geocode";
 import { useShareRoute } from "@/hooks/useShareRoute";
 import { useFavoriteRoutes } from "@/hooks/useFavoriteRoutes";
 import { useUruapanGeolocation } from "@/hooks/useUruapanGeolocation";
-import { addRecentTrip, getRecentTrips, type RecentTrip } from "@/lib/recent-trips";
+import { addRecentTrip, getRecentTrips, RECENT_TRIPS_EVENT, type RecentTrip } from "@/lib/recent-trips";
 import { formatRouteLabel, getRouteDestination } from "@/lib/route-names";
 import type { Coordinates, ProductionRoute, ProductionRouteLandmark, ResolvedRouteData, RouteDirection } from "@/lib/types";
 import { computeTransferOptionsFromPolylines } from "@/lib/transfers";
@@ -63,6 +63,41 @@ type RouteOption = {
 type ActivePoint = "origin" | "destination" | null;
 type FlowStep = 1 | 2 | 3;
 type RoutesMapMode = "all-visible" | "all-highlighted";
+
+const MAP_MODE_KEY = "rutas-map-mode";
+const MAP_MODE_EVENT = "urugo-map-mode-changed";
+const subscribeOnline = (callback: () => void) => {
+  window.addEventListener("online", callback);
+  window.addEventListener("offline", callback);
+  return () => {
+    window.removeEventListener("online", callback);
+    window.removeEventListener("offline", callback);
+  };
+};
+const subscribeMapMode = (callback: () => void) => {
+  window.addEventListener("storage", callback);
+  window.addEventListener(MAP_MODE_EVENT, callback);
+  return () => {
+    window.removeEventListener("storage", callback);
+    window.removeEventListener(MAP_MODE_EVENT, callback);
+  };
+};
+const getMapModeSnapshot = (): RoutesMapMode => {
+  try {
+    return window.localStorage.getItem(MAP_MODE_KEY) === "all-highlighted" ? "all-highlighted" : "all-visible";
+  } catch {
+    return "all-visible";
+  }
+};
+const subscribeRecentTrips = (callback: () => void) => {
+  window.addEventListener("storage", callback);
+  window.addEventListener(RECENT_TRIPS_EVENT, callback);
+  return () => {
+    window.removeEventListener("storage", callback);
+    window.removeEventListener(RECENT_TRIPS_EVENT, callback);
+  };
+};
+const getRecentTripsSnapshot = () => JSON.stringify(getRecentTrips());
 type SharedMapState = {
   direction: RouteDirection | null;
   routeId: number | null;
@@ -347,11 +382,9 @@ export default function HomePage() {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isResultSheetOpen, setIsResultSheetOpen] = useState(false);
   const [dropOffAlert, setDropOffAlert] = useState<string | null>(null);
-  const [tripProgress, setTripProgress] = useState<{ remainingMin: number } | null>(null);
   const dropOffArmedRef = useRef(false);
   const dropOffNotifiedRef = useRef(false);
   const [feedbackGiven, setFeedbackGiven] = useState(false);
-  const [lastTrip, setLastTrip] = useState<RecentTrip | null>(null);
   const lastSavedTripKeyRef = useRef("");
   const [manualOrigin, setManualOrigin] = useState<Coordinates | null>(null);
   const {
@@ -362,7 +395,7 @@ export default function HomePage() {
     markOutside: markGeolocationOutside,
     clearAccuracyWarning,
   } = useUruapanGeolocation(manualOrigin !== null);
-  const [originPoint, setOriginPoint] = useState<Coordinates | null>(null);
+  const originPoint = manualOrigin ?? userLocation;
   const [destinationPoint, setDestinationPoint] = useState<Coordinates | null>(null);
   const [activePoint, setActivePoint] = useState<ActivePoint>("origin");
   const [suggestions, setSuggestions] = useState<RouteOption[]>([]);
@@ -379,8 +412,10 @@ export default function HomePage() {
   const [sharedRouteSegment, setSharedRouteSegment] = useState<Coordinates[] | null>(null);
   const [sharedSegmentColor, setSharedSegmentColor] = useState<string | null>(null);
   const [requestedDestination, setRequestedDestination] = useState<string | null>(null);
-  const [routesMapMode, setRoutesMapMode] = useState<RoutesMapMode>("all-visible");
-  const [isOnline, setIsOnline] = useState(true);
+  const routesMapMode = useSyncExternalStore<RoutesMapMode>(subscribeMapMode, getMapModeSnapshot, () => "all-visible");
+  const isOnline = useSyncExternalStore(subscribeOnline, () => navigator.onLine, () => true);
+  const recentTripsSnapshot = useSyncExternalStore(subscribeRecentTrips, getRecentTripsSnapshot, () => "[]");
+  const lastTrip = useMemo(() => (JSON.parse(recentTripsSnapshot) as RecentTrip[])[0] ?? null, [recentTripsSnapshot]);
   // Pantallas de poca altura (p. ej. iPhone SE / teclado abierto): la barra A→B
   // se colapsa tras un resumen para dejar más mapa visible.
   const [isShortScreen, setIsShortScreen] = useState(false);
@@ -390,28 +425,10 @@ export default function HomePage() {
   const activePointRef = useRef(activePoint);
   const originPointRef = useRef(originPoint);
   const destinationPointRef = useRef(destinationPoint);
-  const hasHydratedMapModeRef = useRef(false);
   const pendingSharedStateRef = useRef<SharedMapState | null>(null);
   // /mapa?cerca=1: el usuario llegó pidiendo "rutas cerca de mí" — al
   // detectar rutas cercanas abrimos la lista de inmediato (en móvil).
   const wantsNearbyRef = useRef(false);
-
-  // Keep originPoint in sync: manualOrigin overrides userLocation.
-  // Una vez que el usuario pone el pin B (destinationPoint), congelamos el origen
-  // para que los refrescados del GPS no recalculen las sugerencias continuamente.
-  useEffect(() => {
-    if (manualOrigin) {
-      setOriginPoint(manualOrigin);
-    } else if (!destinationPoint) {
-      // Sin destino: el origen sigue al GPS normalmente
-      setOriginPoint(userLocation);
-    } else {
-      // Destino ya fijado (p. ej. deep link ?b= desde la búsqueda de la landing):
-      // tomar el primer fix del GPS si aún no hay origen para que el cálculo
-      // arranque, pero sin seguir moviéndolo en refrescados posteriores.
-      setOriginPoint((current) => current ?? userLocation);
-    }
-  }, [manualOrigin, userLocation, destinationPoint]);
 
   // Auto-advance to destination step when GPS provides location and user hasn't set a destination yet.
   useEffect(() => {
@@ -542,7 +559,7 @@ export default function HomePage() {
     }
 
     if (sharedState.origin) {
-      setOriginPoint(sharedState.origin);
+      setManualOrigin(sharedState.origin);
     }
 
     if (sharedState.destination) {
@@ -571,43 +588,13 @@ export default function HomePage() {
     return () => mq.removeEventListener("change", update);
   }, []);
 
-  useEffect(() => {
-    setIsOnline(navigator.onLine);
-
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
-
-    return () => {
-      window.removeEventListener("online", handleOnline);
-      window.removeEventListener("offline", handleOffline);
-    };
-  }, []);
-
-  useEffect(() => {
+  const toggleRoutesMapMode = useCallback(() => {
+    const next = routesMapMode === "all-visible" ? "all-highlighted" : "all-visible";
     try {
-      const storedMode = window.localStorage.getItem("rutas-map-mode");
-      if (storedMode === "all-visible" || storedMode === "all-highlighted") {
-        setRoutesMapMode(storedMode);
-      }
+      window.localStorage.setItem(MAP_MODE_KEY, next);
+      window.dispatchEvent(new Event(MAP_MODE_EVENT));
     } catch {
-      // noop
-    } finally {
-      hasHydratedMapModeRef.current = true;
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!hasHydratedMapModeRef.current) {
-      return;
-    }
-
-    try {
-      window.localStorage.setItem("rutas-map-mode", routesMapMode);
-    } catch {
-      // noop
+      // El modo se mantiene en su valor actual si localStorage no está disponible.
     }
   }, [routesMapMode]);
 
@@ -657,6 +644,7 @@ export default function HomePage() {
   }, []);
 
   const flowStep = useMemo(() => getFlowStep(originPoint, destinationPoint), [destinationPoint, originPoint]);
+  const resultSheetOpen = flowStep === 3 && isResultSheetOpen;
 
   useEffect(() => {
     activePointRef.current = activePoint;
@@ -842,7 +830,6 @@ export default function HomePage() {
 
     if (activePointRef.current === "origin") {
       setManualOrigin(result.center);
-      setOriginPoint(result.center);
       clearAccuracyWarning();
       setActivePoint(destinationPointRef.current ? null : "destination");
       return;
@@ -1029,11 +1016,7 @@ export default function HomePage() {
     setFeedbackGiven(false);
   }, [bestSuggestionRouteId, destinationPoint]);
 
-  // ── Repetir viaje: hidratar el último viaje guardado y guardar los nuevos ──
-  useEffect(() => {
-    setLastTrip(getRecentTrips()[0] ?? null);
-  }, []);
-
+  // ── Repetir viaje: guardar los nuevos viajes ──────────────────────────────
   useEffect(() => {
     if (!originPoint || !destinationPoint || !bestSuggestion || isCalculatingSuggestions) return;
     const key = `${originPoint.join(",")}>${destinationPoint.join(",")}`;
@@ -1045,7 +1028,6 @@ export default function HomePage() {
       destinationLabel: requestedDestination,
       routeName: bestSuggestion.ruta,
     });
-    setLastTrip(getRecentTrips()[0] ?? null);
   }, [originPoint, destinationPoint, bestSuggestion, isCalculatingSuggestions, requestedDestination]);
 
   const repeatTrip = useCallback((trip: RecentTrip) => {
@@ -1111,16 +1093,14 @@ export default function HomePage() {
   // ── Modo viaje: progreso sobre la ruta ────────────────────────────────────
   // Si el usuario va sobre el segmento sugerido (a <300 m de él) y ya se alejó
   // de su origen, mostramos cuántos minutos faltan para su bajada.
-  useEffect(() => {
+  const tripProgress = useMemo(() => {
     if (!liveLocation || !bestSuggestion || flowStep !== 3 || !originPoint) {
-      setTripProgress(null);
-      return;
+      return null;
     }
 
     // Aún no se mueve del punto de partida: no hay viaje que seguir.
     if (haversineMeters(liveLocation, originPoint) < 250) {
-      setTripProgress(null);
-      return;
+      return null;
     }
 
     const segment = bestSuggestion.segment;
@@ -1136,12 +1116,11 @@ export default function HomePage() {
 
     // Lejos del recorrido: el usuario no va (o ya no va) sobre esta ruta.
     if (nearestIndex < 0 || nearestDistance > 300) {
-      setTripProgress(null);
-      return;
+      return null;
     }
 
     const remaining = getEstimatedMinutes(segment.slice(nearestIndex));
-    setTripProgress({ remainingMin: remaining });
+    return { remainingMin: remaining };
   }, [liveLocation, bestSuggestion, flowStep, originPoint]);
 
   const routeTextSummary = useMemo(() => {
@@ -1248,11 +1227,6 @@ export default function HomePage() {
     setShowHint(true);
   }, [flowStep]);
 
-  // Cerrar el result sheet al salir del paso 3
-  useEffect(() => {
-    if (flowStep !== 3) setIsResultSheetOpen(false);
-  }, [flowStep]);
-
   // Abrir el result sheet una sola vez cuando el usuario coloca el pin B y termina el cálculo.
   // La ref evita re-aperturas causadas por refrescados del GPS.
   const resultSheetOpenedForDestRef = useRef<string | null>(null);
@@ -1278,12 +1252,6 @@ export default function HomePage() {
       window.clearTimeout(timeout);
     };
   }, [flowStep, showHint]);
-
-  useEffect(() => {
-    if (selectedRouteId !== null && !polylineRoutes.some((r) => r.id === selectedRouteId)) {
-      setSelectedRouteId(null);
-    }
-  }, [polylineRoutes, selectedRouteId]);
 
   if (fetchError) {
     const offline = !isOnline;
@@ -2009,7 +1977,7 @@ export default function HomePage() {
           <div className="relative flex items-center gap-2">
             <button
               type="button"
-              onClick={() => setRoutesMapMode((current) => (current === "all-visible" ? "all-highlighted" : "all-visible"))}
+              onClick={toggleRoutesMapMode}
               className={`inline-flex h-10 w-10 items-center justify-center rounded-lg border text-sm transition hover:scale-105 active:scale-95 ${
                 routesMapMode === "all-highlighted"
                   ? "border-lima/40 bg-lima/12 text-lima"
@@ -2267,7 +2235,7 @@ export default function HomePage() {
             </div>
             <button
               type="button"
-              onClick={() => setRoutesMapMode((current) => (current === "all-visible" ? "all-highlighted" : "all-visible"))}
+              onClick={toggleRoutesMapMode}
               className={`ov-panel pointer-events-auto inline-flex h-11 w-11 items-center justify-center rounded-xl border text-sm shadow-[0_4px_16px_rgba(0,0,0,0.18)] backdrop-blur-xl transition active:scale-[0.97] ${
                 routesMapMode === "all-highlighted"
                   ? "border-lima/50 !bg-lima/15 text-lima"
@@ -2382,7 +2350,7 @@ export default function HomePage() {
             onClick={() => setIsResultSheetOpen(true)}
             aria-label="Ver resultado de ruta"
             className={`ov-panel inline-flex h-12 max-w-[55%] items-center gap-2 rounded-2xl border pl-3.5 pr-4 text-[14px] font-semibold shadow-[0_8px_32px_rgba(0,0,0,0.3)] backdrop-blur-xl transition active:scale-[0.97] ${
-              isResultSheetOpen
+              resultSheetOpen
                 ? "border-lima/50 shadow-[0_8px_32px_rgba(232,93,47,0.18)]"
                 : "hover:border-lima/40"
             } ${flowStep === 3 ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"}`}
@@ -2474,7 +2442,7 @@ export default function HomePage() {
 
       {/* ── MOBILE ONLY: Result sheet (full) ── */}
       <BottomSheet
-        open={isResultSheetOpen}
+        open={resultSheetOpen}
         onOpenChange={setIsResultSheetOpen}
         title={
           isCalculatingSuggestions

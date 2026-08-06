@@ -33,6 +33,14 @@ export default function LandingSearch() {
   const showingRecents = query.trim().length < 2;
   const displayResults = showingRecents ? recents : results;
 
+  const updateQuery = (value: string) => {
+    const trimmed = value.trim();
+    setQuery(value);
+    setResults(trimmed.length >= 2 ? searchLocalPlaces(trimmed) : []);
+    setIsSearching(trimmed.length >= 2);
+    setActiveIndex(-1);
+  };
+
   // Telemetría: búsquedas sin resultados → candidatos para el índice local.
   useEffect(() => {
     const trimmed = query.trim();
@@ -64,22 +72,16 @@ export default function LandingSearch() {
 
   useEffect(() => {
     const trimmed = query.trim();
-    if (trimmed.length < 2) {
-      setResults([]);
-      setIsSearching(false);
-      setActiveIndex(-1);
-      return;
-    }
-
-    setResults(searchLocalPlaces(trimmed));
-    setActiveIndex(-1);
+    if (trimmed.length < 2) return;
 
     const controller = new AbortController();
-    setIsSearching(true);
     const timer = window.setTimeout(() => {
       searchPlaces(trimmed, { signal: controller.signal })
         .then(setResults)
-        .finally(() => setIsSearching(false));
+        .catch(() => {})
+        .finally(() => {
+          if (!controller.signal.aborted) setIsSearching(false);
+        });
     }, DEBOUNCE_MS);
 
     return () => {
@@ -157,7 +159,7 @@ export default function LandingSearch() {
               name="destino"
               value={query}
               autoComplete="off"
-              onChange={(event) => { setQuery(event.target.value); setIsOpen(true); }}
+              onChange={(event) => { updateQuery(event.target.value); setIsOpen(true); }}
               onFocus={() => {
                 setRecents(getRecentPlaces());
                 setSavedPlaces(getSavedPlaces());

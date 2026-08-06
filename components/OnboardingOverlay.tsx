@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 const STORAGE_KEY = "rutas-uru-onboarded";
 
@@ -92,8 +92,8 @@ function StepDots({ total, current }: { total: number; current: number }) {
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function OnboardingOverlay() {
-  const [visible, setVisible] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const hydrated = useSyncExternalStore(() => () => {}, () => true, () => false);
+  const [dismissed, setDismissed] = useState(false);
   const [step, setStep] = useState(0);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -104,19 +104,18 @@ export default function OnboardingOverlay() {
   const [dragging, setDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState(0);
 
-  // Check localStorage on mount (client-only)
-  useEffect(() => {
-    setMounted(true);
+  let completed = true;
+  if (hydrated) {
     try {
-      const done = localStorage.getItem(STORAGE_KEY);
-      if (!done) setVisible(true);
+      completed = localStorage.getItem(STORAGE_KEY) === "1";
     } catch {
-      // localStorage unavailable (private mode, etc.) — skip onboarding
+      completed = true;
     }
-  }, []);
+  }
+  const visible = hydrated && !completed && !dismissed;
 
   const dismiss = useCallback(() => {
-    setVisible(false);
+    setDismissed(true);
     try {
       localStorage.setItem(STORAGE_KEY, "1");
     } catch {

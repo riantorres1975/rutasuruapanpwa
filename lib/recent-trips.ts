@@ -13,6 +13,7 @@ export type RecentTrip = {
 };
 
 const STORAGE_KEY = "urugo-recent-trips";
+export const RECENT_TRIPS_EVENT = "urugo-recent-trips-changed";
 const MAX_TRIPS = 3;
 
 function isValidCoords(value: unknown): value is Coordinates {
@@ -62,6 +63,7 @@ export function addRecentTrip(trip: Omit<RecentTrip, "savedAt">): void {
     const rest = getRecentTrips().filter((t) => tripKey(t) !== key);
     const next: RecentTrip[] = [{ ...trip, savedAt: Date.now() }, ...rest].slice(0, MAX_TRIPS);
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    window.dispatchEvent(new Event(RECENT_TRIPS_EVENT));
   } catch {
     // localStorage no disponible: ignorar.
   }

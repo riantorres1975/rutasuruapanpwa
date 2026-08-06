@@ -1,9 +1,18 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 
 const ISSUE_URL = "https://github.com/riantorres1975/rutasuruapanpwa/issues/new";
 const REPORT_EMAIL = "contacto@urugo.app";
+const subscribeBrowserContext = () => () => {};
+
+function getSourceUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const raw = params.get("from");
+  const safePath = raw ? `/${raw.replace(/^\/+/, "").replace(/\.\.\//g, "")}` : null;
+  const from = safePath && /^[\w/-]+$/.test(safePath) ? safePath : null;
+  return from ? `${window.location.origin}${from}` : window.location.href;
+}
 
 const REPORT_TYPES = [
   "Ruta incorrecta",
@@ -21,19 +30,8 @@ export default function ReportBugForm() {
   const [description, setDescription] = useState("");
   const [expected, setExpected] = useState("");
   const [contact, setContact] = useState("");
-  const [sourceUrl, setSourceUrl] = useState("");
-  const [userAgent, setUserAgent] = useState("");
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const raw = params.get("from");
-    const safePath = raw
-      ? `/${raw.replace(/^\/+/, "").replace(/\.\.\//g, "")}`
-      : null;
-    const from = safePath && /^[\w/-]+$/.test(safePath) ? safePath : null;
-    setSourceUrl(from ? `${window.location.origin}${from}` : window.location.href);
-    setUserAgent(window.navigator.userAgent);
-  }, []);
+  const sourceUrl = useSyncExternalStore(subscribeBrowserContext, getSourceUrl, () => "");
+  const userAgent = useSyncExternalStore(subscribeBrowserContext, () => window.navigator.userAgent, () => "");
 
   const reportSubject = useMemo(() => {
     const reportTarget = routeName.trim() || place.trim();

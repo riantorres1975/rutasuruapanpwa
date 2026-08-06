@@ -1,10 +1,19 @@
 'use client';
 
-import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
 
 const ISSUE_URL = 'https://github.com/riantorres1975/rutasuruapanpwa/issues/new';
 const REPORT_EMAIL = 'contacto@urugo.app';
+const subscribeHydration = () => () => {};
+const getClientSnapshot = () => true;
+const getServerSnapshot = () => false;
+const getMobileSnapshot = () => window.matchMedia('(max-width: 767px)').matches;
+const subscribeMobile = (callback: () => void) => {
+  const media = window.matchMedia('(max-width: 767px)');
+  media.addEventListener('change', callback);
+  return () => media.removeEventListener('change', callback);
+};
 
 // Preguntas de arranque: enseñan qué puede responder el bot con un tap.
 const SUGGESTED_QUESTIONS = [
@@ -27,8 +36,8 @@ export default function ChatBot() {
   const [location, setLocation] = useState<UserLocation>(null);
   const [locStatus, setLocStatus] = useState<'idle' | 'granted' | 'denied'>('idle');
   const [desktopStyle, setDesktopStyle] = useState<React.CSSProperties>({});
-  const [mounted, setMounted] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const mounted = useSyncExternalStore(subscribeHydration, getClientSnapshot, getServerSnapshot);
+  const isMobile = useSyncExternalStore(subscribeMobile, getMobileSnapshot, getServerSnapshot);
   // Altura en px del sheet cuando el teclado reduce el viewport visual
   // (fallback para navegadores que panean en vez de redimensionar, ej. iOS).
   const [keyboardSheetHeight, setKeyboardSheetHeight] = useState<number | null>(null);
@@ -81,14 +90,6 @@ export default function ChatBot() {
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    setMounted(true);
-    setIsMobile(window.innerWidth < 768);
-    const onResize = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
-  }, []);
-
   // Bloquear scroll del body cuando el chat está abierto en mobile
   useEffect(() => {
     if (!mounted) return;
@@ -104,7 +105,7 @@ export default function ChatBot() {
   // ajustar la altura del sheet al viewport visual para que el header no
   // se salga de la pantalla mientras se escribe.
   useEffect(() => {
-    if (!open || !isMobile) { setKeyboardSheetHeight(null); return; }
+    if (!open || !isMobile) return;
     const vv = window.visualViewport;
     if (!vv) return;
     const update = () => {
@@ -119,7 +120,6 @@ export default function ChatBot() {
     return () => {
       vv.removeEventListener('resize', update);
       vv.removeEventListener('scroll', update);
-      setKeyboardSheetHeight(null);
     };
   }, [open, isMobile]);
 
