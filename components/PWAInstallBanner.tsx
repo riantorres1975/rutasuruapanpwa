@@ -120,7 +120,7 @@ export default function PWAInstallBanner() {
       </div>
       <button
         onClick={handleInstall}
-        className="cta-shine shrink-0 rounded-xl bg-verde px-4 py-2 text-xs font-black text-white hover:opacity-90"
+        className="cta-shine shrink-0 rounded-xl bg-verde px-4 py-2 text-xs font-black text-ink-900 hover:opacity-90"
       >
         Instalar
       </button>

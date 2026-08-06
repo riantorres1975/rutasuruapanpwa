@@ -327,7 +327,7 @@ export default function ChatBot({ initialOpen = false }: { initialOpen?: boolean
           <div style={{ flex: 1, overflowY: 'auto', padding: 12, display: 'flex', flexDirection: 'column', gap: 8, minHeight: 0 }}>
             {messages.length === 0 && (
               <div style={{ margin: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: '0 4px' }}>
-                <p style={{ color: 'var(--foreground, #e8f2d8)', opacity: 0.35, fontSize: 12, textAlign: 'center', margin: 0, lineHeight: 1.5 }}>
+                <p style={{ color: 'var(--foreground, #e8f2d8)', opacity: 0.6, fontSize: 12, textAlign: 'center', margin: 0, lineHeight: 1.5 }}>
                   Pregunta sobre rutas, horarios<br />o cómo llegar a algún lugar.
                 </p>
                 <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 6 }}>
@@ -360,7 +360,7 @@ export default function ChatBot({ initialOpen = false }: { initialOpen?: boolean
                   maxWidth: '82%', padding: '7px 11px',
                   borderRadius: m.role === 'user' ? '12px 12px 3px 12px' : '12px 12px 12px 3px',
                   background: m.role === 'user' ? 'var(--verde, #6aab48)' : 'rgba(255,255,255,0.07)',
-                  color: m.role === 'user' ? '#fff' : 'var(--foreground, #e8f2d8)',
+                  color: m.role === 'user' ? '#0c110a' : 'var(--foreground, #e8f2d8)',
                   fontSize: 13, lineHeight: 1.45, wordBreak: 'break-word',
                 }}>{m.text}</span>
               </div>
@@ -391,7 +391,7 @@ export default function ChatBot({ initialOpen = false }: { initialOpen?: boolean
               style={{ flex: 1, minWidth: 0, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(140,200,80,0.12)', borderRadius: 10, padding: '8px 11px', color: 'var(--foreground, #e8f2d8)', fontSize: isMobile ? 16 : 13, outline: 'none' }}
             />
             <button type="button" onClick={() => send()} disabled={loading || !input.trim()}
-              style={{ background: 'var(--verde, #6aab48)', border: 'none', borderRadius: 10, padding: '8px 13px', color: '#fff', fontSize: 13, fontWeight: 600, cursor: loading || !input.trim() ? 'default' : 'pointer', opacity: loading || !input.trim() ? 0.4 : 1, transition: 'opacity 0.15s', whiteSpace: 'nowrap' }}
+              style={{ background: 'var(--verde, #6aab48)', border: 'none', borderRadius: 10, padding: '8px 13px', color: '#0c110a', fontSize: 13, fontWeight: 600, cursor: loading || !input.trim() ? 'default' : 'pointer', opacity: loading || !input.trim() ? 0.4 : 1, transition: 'opacity 0.15s', whiteSpace: 'nowrap' }}
             >Enviar</button>
           </div>
         </>
@@ -420,7 +420,7 @@ export default function ChatBot({ initialOpen = false }: { initialOpen?: boolean
               style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px', borderRadius: 8, border: '1px solid rgba(140,200,80,0.2)', color: 'var(--foreground, #e8f2d8)', fontSize: 12, fontWeight: 600, textDecoration: 'none', opacity: reportError.trim() ? 0.8 : 0.3, pointerEvents: reportError.trim() ? 'auto' : 'none' }}
             >Reportar en GitHub</a>
             <a href={emailHref}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px', borderRadius: 8, background: 'var(--verde, #6aab48)', color: '#fff', fontSize: 12, fontWeight: 700, textDecoration: 'none', opacity: reportError.trim() ? 1 : 0.35, pointerEvents: reportError.trim() ? 'auto' : 'none' }}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px', borderRadius: 8, background: 'var(--verde, #6aab48)', color: '#0c110a', fontSize: 12, fontWeight: 700, textDecoration: 'none', opacity: reportError.trim() ? 1 : 0.35, pointerEvents: reportError.trim() ? 'auto' : 'none' }}
             >Enviar por correo</a>
           </div>
         </div>

@@ -24,10 +24,10 @@ export default function FareTicket({ label, price, payment, serial, variant }: P
     >
       <header className="flex items-start justify-between">
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.22em]" style={{ color: "#5a7848" }}>
+          <p className="text-[10px] font-bold uppercase tracking-[0.22em]" style={{ color: "#729260" }}>
             {serial}
           </p>
-          <p className="mt-0.5 text-[11px] font-semibold" style={{ color: "#5a7848" }}>
+          <p className="mt-0.5 text-[11px] font-semibold" style={{ color: "#729260" }}>
             {meta.kicker}
           </p>
         </div>
@@ -40,7 +40,7 @@ export default function FareTicket({ label, price, payment, serial, variant }: P
         <p className="text-sm font-bold" style={{ color: "#e8f2d8" }}>{label}</p>
         <p className="mt-1 font-serif-display text-4xl font-black leading-none" style={{ color: "#b8e840" }}>
           <span className="font-sans">$</span>{price.replace(/^\$/, "")}
-          <span className="ml-1.5 font-sans text-base font-normal" style={{ color: "#5a7848" }}>MXN</span>
+          <span className="ml-1.5 font-sans text-base font-normal" style={{ color: "#729260" }}>MXN</span>
         </p>
       </div>
 
@@ -48,12 +48,12 @@ export default function FareTicket({ label, price, payment, serial, variant }: P
       <div className="h-1" />
 
       <footer className="flex items-end justify-between gap-3">
-        <p className="max-w-[18ch] text-[11px] leading-snug" style={{ color: "#5a7848" }}>
+        <p className="max-w-[18ch] text-[11px] leading-snug" style={{ color: "#729260" }}>
           {payment}
         </p>
         <div className="flex flex-col items-end gap-1">
-          <div className="ticket-barcode w-20" style={{ color: "#5a7848" }} aria-hidden="true" />
-          <span className="text-[9px] font-bold tracking-[0.18em]" style={{ color: "#5a7848" }}>
+          <div className="ticket-barcode w-20" style={{ color: "#729260" }} aria-hidden="true" />
+          <span className="text-[9px] font-bold tracking-[0.18em]" style={{ color: "#729260" }}>
             URP · 2026
           </span>
         </div>

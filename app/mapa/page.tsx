@@ -1273,7 +1273,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
         <button
           type="button"
           onClick={() => { setFetchError(false); setIsLoadingData(true); setFetchAttempt((n) => n + 1); }}
-          className="mt-2 inline-flex h-12 items-center rounded-xl bg-verde px-6 text-[13px] font-bold text-white"
+          className="mt-2 inline-flex h-12 items-center rounded-xl bg-verde px-6 text-[13px] font-bold text-ink-900"
         >
           Reintentar
         </button>
@@ -1658,7 +1658,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
                       setSelectedRouteId(null);
                       if (isMobile) setIsResultSheetOpen(false);
                     }}
-                    className="inline-flex h-10 flex-[2] items-center justify-center gap-1.5 rounded-xl bg-verde text-[12px] font-bold text-white shadow-[0_2px_12px_rgba(232,93,47,0.35)] transition active:scale-[0.97]"
+                    className="inline-flex h-10 flex-[2] items-center justify-center gap-1.5 rounded-xl bg-verde text-[12px] font-bold text-ink-900 shadow-[0_2px_12px_rgba(232,93,47,0.35)] transition active:scale-[0.97]"
                     aria-label={`Ver ${formatRouteLabel(bestSuggestion.ruta)} en el mapa`}
                   >
                     <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">

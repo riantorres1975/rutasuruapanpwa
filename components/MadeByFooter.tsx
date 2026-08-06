@@ -119,7 +119,7 @@ export default function MadeByFooter() {
             className="cta-shine group inline-flex h-12 items-center justify-center gap-2 self-start rounded-full px-6 text-sm font-black transition active:scale-[0.98] md:self-auto"
             style={{
               background: "#6aab48",
-              color: "#e8f2d8",
+              color: "#0c110a",
               boxShadow: "0 14px 40px rgba(106,171,72,0.3)",
             }}
           >
@@ -134,7 +134,7 @@ export default function MadeByFooter() {
         className="mt-6 flex flex-col gap-4 pt-6 text-xs sm:flex-row sm:items-center sm:justify-between"
         style={{
           borderTop: "1px solid rgba(140,200,80,0.1)",
-          color: "rgba(232,242,216,0.45)",
+          color: "rgba(232,242,216,0.55)",
         }}
       >
         <div className="flex flex-col gap-2">

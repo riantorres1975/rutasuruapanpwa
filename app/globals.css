@@ -22,7 +22,7 @@
   /* Texto */
   --ink:   #e8f2d8;
   --ink2:  #a8c888;
-  --muted: #5a7848;
+  --muted: #729260;
 
   /* Overlay tokens — modo oscuro (default) */
   --ov-bg:         rgba(12,17,10,0.97);
@@ -58,7 +58,7 @@
   --verde-l: rgba(106,171,72,0.12);
   --lima:    #b8e840;
   --agua:    #48a878;
-  --muted:   #5a7848;
+  --muted:   #729260;
   --ink:     #e8f2d8;
   --ink2:    #a8c888;
 

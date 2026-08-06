@@ -42,7 +42,7 @@ export default function ReportErrorPage() {
         <Logo size={28} showName showSub />
         <Link
           href="/mapa"
-          className="inline-flex items-center gap-1.5 rounded-full px-5 py-2.5 text-sm font-semibold text-white"
+          className="inline-flex items-center gap-1.5 rounded-full px-5 py-2.5 text-sm font-semibold text-ink-900"
           style={{ background: "#6aab48" }}
         >
           Abrir mapa

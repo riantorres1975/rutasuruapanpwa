@@ -128,7 +128,7 @@ export default function LandingPage() {
           "--ov-text": "#e8f2d8",
           "--ink": "#e8f2d8",
           "--ink2": "#a8c888",
-          "--muted": "#5a7848",
+          "--muted": "#729260",
           "--card": "#141c10",
           "--verde": "#6aab48",
           "--verde-l": "rgba(106,171,72,0.12)",
@@ -161,7 +161,7 @@ export default function LandingPage() {
         </div>
         <Link
           href="/mapa"
-          className="inline-flex items-center gap-1.5 rounded-full px-5 py-2.5 text-sm font-semibold text-white transition-all hover:scale-[1.03]"
+          className="inline-flex items-center gap-1.5 rounded-full px-5 py-2.5 text-sm font-semibold text-ink-900 transition-all hover:scale-[1.03]"
           style={{ background: "var(--verde)" }}
         >
           <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" aria-hidden="true">
@@ -234,7 +234,7 @@ export default function LandingPage() {
           <div className="animate-fade-up animate-delay-500 mt-7 flex flex-wrap items-center gap-3">
             <Link
               href="/mapa?cerca=1"
-              className="inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(106,171,72,0.35)]"
+              className="inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-semibold text-ink-900 transition-all hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(106,171,72,0.35)]"
               style={{ background: "var(--verde)" }}
             >
               <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
@@ -391,7 +391,7 @@ export default function LandingPage() {
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
               <Link
                 href="/teleferico-uruapan-horario"
-                className="cta-shine inline-flex h-11 items-center justify-center rounded-full px-5 text-sm font-black text-white hover:opacity-90"
+                className="cta-shine inline-flex h-11 items-center justify-center rounded-full px-5 text-sm font-black text-ink-900 hover:opacity-90"
                 style={{ background: "var(--verde)" }}
               >
                 Guía del Teleférico
@@ -456,7 +456,7 @@ export default function LandingPage() {
               className="p-6 transition-colors hover:bg-[rgba(23,32,18,0.8)]"
               style={{ borderRight: i < 3 ? "1px solid var(--ov-border)" : "none" }}
             >
-              <div className="mb-4 font-serif text-3xl font-bold leading-none" style={{ color: "var(--lima)", opacity: 0.3 }}>
+              <div className="mb-4 font-serif text-3xl font-bold leading-none" style={{ color: "var(--lima)", opacity: 0.55 }}>
                 {step.n}
               </div>
               <p className="mb-1.5 text-sm font-semibold" style={{ color: "var(--ink)" }}>{step.title}</p>

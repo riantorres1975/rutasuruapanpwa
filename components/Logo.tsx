@@ -114,7 +114,7 @@ export default function Logo({
                 fontWeight: 600,
                 letterSpacing: "0.1em",
                 textTransform: "uppercase",
-                color: "#5a7848",
+                color: "#729260",
                 marginTop: "2px",
               }}
             >

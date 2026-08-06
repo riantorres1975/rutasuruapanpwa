@@ -68,7 +68,7 @@ export default function PWARegistrar() {
       </div>
       <button
         onClick={handleUpdate}
-        className="shrink-0 rounded-xl bg-verde px-4 py-2 text-xs font-black text-white hover:opacity-90"
+        className="shrink-0 rounded-xl bg-verde px-4 py-2 text-xs font-black text-ink-900 hover:opacity-90"
       >
         Actualizar
       </button>

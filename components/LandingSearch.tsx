@@ -191,7 +191,7 @@ export default function LandingSearch() {
             )}
           </div>
           <button
-            className="cta-shine h-12 rounded-2xl px-6 text-sm font-black text-white transition hover:opacity-90"
+            className="cta-shine h-12 rounded-2xl px-6 text-sm font-black text-ink-900 transition hover:opacity-90"
             type="submit"
             style={{ background: "var(--verde)" }}
           >

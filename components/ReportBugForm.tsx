@@ -209,7 +209,7 @@ export default function ReportBugForm() {
             type="submit"
             disabled={!canSubmit}
             className="cta-shine inline-flex h-12 w-full min-w-[168px] items-center justify-center rounded-full px-6 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-45 sm:w-auto whitespace-nowrap"
-            style={{ background: "#6aab48", color: "#e8f2d8" }}
+            style={{ background: "#6aab48", color: "#0c110a" }}
           >
             Enviar por correo
           </button>

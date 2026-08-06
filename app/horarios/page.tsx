@@ -99,7 +99,7 @@ export default function HorariosPage() {
         <Logo size={28} showName showSub />
         <Link
           href="/mapa"
-          className="inline-flex shrink-0 items-center justify-center rounded-full px-4 py-2.5 text-xs font-semibold text-white sm:px-5 sm:text-sm"
+          className="inline-flex shrink-0 items-center justify-center rounded-full px-4 py-2.5 text-xs font-semibold text-ink-900 sm:px-5 sm:text-sm"
           style={{ background: "#6aab48" }}
         >
           <span className="sm:hidden">Mapa</span>
@@ -281,7 +281,7 @@ export default function HorariosPage() {
             </table>
           </div>
 
-          <p className="mt-3 text-[11px]" style={{ color: "rgba(232,242,216,0.45)" }}>
+          <p className="mt-3 text-[11px]" style={{ color: "rgba(232,242,216,0.55)" }}>
             Tarifa única: {FARES_2026.urbanBus.price} en efectivo. Los horarios marcados como estimación
             siguen los patrones típicos de operación en Uruapan y pueden variar.
           </p>
@@ -309,7 +309,7 @@ export default function HorariosPage() {
           <div className="mt-10 flex flex-col gap-3 sm:flex-row">
             <Link
               href="/mapa"
-              className="inline-flex h-12 items-center justify-center rounded-full px-6 text-sm font-black text-white transition hover:opacity-90"
+              className="inline-flex h-12 items-center justify-center rounded-full px-6 text-sm font-black text-ink-900 transition hover:opacity-90"
               style={{ background: "#6aab48" }}
             >
               Planear mi viaje en el mapa

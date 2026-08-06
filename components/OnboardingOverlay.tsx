@@ -325,7 +325,7 @@ export default function OnboardingOverlay() {
             onClick={goNext}
             className={`inline-flex h-11 items-center gap-1.5 rounded-full px-5 text-[14px] font-semibold transition active:scale-[0.97] ${
               isLast
-                ? "bg-verde text-white shadow-[0_4px_20px_rgba(106,171,72,0.40)] hover:opacity-90"
+                ? "bg-verde text-ink-900 shadow-[0_4px_20px_rgba(106,171,72,0.40)] hover:opacity-90"
                 : "ov-pill ov-border ov-text border hover:opacity-80"
             }`}
           >
