@@ -1,5 +1,8 @@
 const STATIC_CACHE_NAME = "rutas-static-__BUILD_ID__";
-const DATA_CACHE_NAME = "rutas-data-__BUILD_ID__";
+// Route data is compatible across app builds. Keep it until the schema changes
+// so activating a new worker does not leave an offline user without routes.
+const DATA_CACHE_NAME = "rutas-data-v1";
+const CACHE_PREFIXES = ["rutas-static-", "rutas-data-"];
 
 // Only shell assets are pre-cached during install.
 // /api/rutas-polyline is NOT included here: if the server is cold on first install,
@@ -43,7 +46,11 @@ self.addEventListener("activate", (event) => {
       const keys = await caches.keys();
       await Promise.all(
         keys
-          .filter((key) => ![STATIC_CACHE_NAME, DATA_CACHE_NAME].includes(key))
+          .filter(
+            (key) =>
+              CACHE_PREFIXES.some((prefix) => key.startsWith(prefix)) &&
+              ![STATIC_CACHE_NAME, DATA_CACHE_NAME].includes(key)
+          )
           .map((key) => caches.delete(key))
       );
       await self.clients.claim();
@@ -57,45 +64,40 @@ self.addEventListener("message", (event) => {
   }
 });
 
-async function cacheFirst(request) {
-  const cached = await caches.match(request);
+function storeInBackground(event, cache, request, response) {
+  event.waitUntil(
+    cache.put(request, response.clone()).catch((error) => {
+      console.warn("[sw] Failed to update cache:", request.url || request, error);
+    })
+  );
+}
+
+async function cacheFirst(request, event) {
+  const cache = await caches.open(STATIC_CACHE_NAME);
+  const cached = await cache.match(request);
   if (cached) {
     return cached;
   }
 
   const response = await fetch(request);
   if (response.ok) {
-    const cache = await caches.open(STATIC_CACHE_NAME);
-    cache.put(request, response.clone());
+    storeInBackground(event, cache, request, response);
   }
   return response;
 }
 
-async function staleWhileRevalidate(request, cacheName) {
-  const cache = await caches.open(cacheName);
-  const cached = await cache.match(request);
-
-  const networkPromise = fetch(request)
-    .then((response) => {
-      if (response.ok) {
-        cache.put(request, response.clone());
-      }
-      return response;
-    })
-    .catch(() => null);
-
-  return cached || networkPromise || new Response("Offline", { status: 503 });
-}
-
-async function networkFirstData(request, cacheName) {
+async function networkFirstData(request, cacheName, event) {
   const cache = await caches.open(cacheName);
 
   try {
     const response = await fetch(request, { cache: "no-store" });
     if (response.ok) {
-      cache.put(request, response.clone());
+      storeInBackground(event, cache, request, response);
+      return response;
     }
-    return response;
+
+    const cached = await cache.match(request);
+    return cached || response;
   } catch {
     const cached = await cache.match(request);
     return cached || new Response("Offline", { status: 503 });
@@ -107,39 +109,41 @@ function canonicalNavigationUrl(request) {
   return `${url.origin}${url.pathname}`;
 }
 
-async function networkFirstNavigation(request) {
+async function navigationFallback(request, cache) {
   const cacheKey = canonicalNavigationUrl(request);
+  const cached = await cache.match(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
+  const offline = await cache.match("/offline.html");
+  return (
+    offline ||
+    new Response("Offline", {
+      status: 503,
+      headers: { "Content-Type": "text/plain; charset=utf-8" }
+    })
+  );
+}
+
+async function networkFirstNavigation(request, event) {
+  const cache = await caches.open(STATIC_CACHE_NAME);
+  const cacheKey = canonicalNavigationUrl(request);
+
   try {
     const response = await fetch(request);
     if (response.ok) {
-      const cache = await caches.open(STATIC_CACHE_NAME);
-      cache.put(cacheKey, response.clone());
+      storeInBackground(event, cache, cacheKey, response);
+      return response;
     }
+
+    if (response.status >= 500) {
+      return (await cache.match(cacheKey)) || response;
+    }
+
     return response;
   } catch {
-    const cached = await caches.match(cacheKey);
-    if (cached) {
-      return cached;
-    }
-
-    const mapShell = await caches.match("/mapa");
-    if (mapShell) {
-      return mapShell;
-    }
-
-    const landing = await caches.match("/");
-    if (landing) {
-      return landing;
-    }
-
-    const offline = await caches.match("/offline.html");
-    return (
-      offline ||
-      new Response("Offline", {
-        status: 503,
-        headers: { "Content-Type": "text/plain; charset=utf-8" }
-      })
-    );
+    return navigationFallback(request, cache);
   }
 }
 
@@ -155,12 +159,12 @@ self.addEventListener("fetch", (event) => {
   }
 
   if (request.mode === "navigate") {
-    event.respondWith(networkFirstNavigation(request));
+    event.respondWith(networkFirstNavigation(request, event));
     return;
   }
 
   if (requestUrl.pathname === "/api/rutas-polyline") {
-    event.respondWith(networkFirstData(request, DATA_CACHE_NAME));
+    event.respondWith(networkFirstData(request, DATA_CACHE_NAME, event));
     return;
   }
 
@@ -171,6 +175,6 @@ self.addEventListener("fetch", (event) => {
     /\.(?:js|css|json|png|jpg|jpeg|svg|ico|woff2?)$/i.test(requestUrl.pathname);
 
   if (isStaticAsset) {
-    event.respondWith(cacheFirst(request));
+    event.respondWith(cacheFirst(request, event));
   }
 });
