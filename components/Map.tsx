@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, type MutableRefObject, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, type MutableRefObject, useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import type * as GeoJSON from "geojson";
 import {
@@ -53,6 +53,53 @@ const DEBUG_SEGMENT_LINE = "debug-segment-line";
 const DEBUG_DRAW_SOURCE = "debug-draw-source";
 const DEBUG_DRAW_LINE = "debug-draw-line";
 type RoutesMapMode = "all-visible" | "all-highlighted";
+type DebugPhase = "idle" | "awaiting-end" | "drawing" | "preview";
+type DebugSaveStatus = "idle" | "saving" | "saved" | "error";
+type DebugEditorState = {
+  routeId: number | null;
+  step: number;
+  clickInfo: string | null;
+  selection: [number, number] | null;
+  phase: DebugPhase;
+  totalPoints: number;
+  drawCount: number;
+  saveStatus: DebugSaveStatus;
+  saveError: string | null;
+  direction: "ida" | "vuelta";
+};
+type DebugEditorAction = {
+  type: "patch";
+  routeId: number | null;
+  initialTotalPoints: number;
+  patch: Partial<Omit<DebugEditorState, "routeId">>;
+};
+
+function createDebugEditorState(
+  routeId: number | null,
+  totalPoints = 0,
+  direction: "ida" | "vuelta" = "ida"
+): DebugEditorState {
+  return {
+    routeId,
+    step: 10,
+    clickInfo: null,
+    selection: null,
+    phase: "idle",
+    totalPoints,
+    drawCount: 0,
+    saveStatus: "idle",
+    saveError: null,
+    direction,
+  };
+}
+
+function debugEditorReducer(state: DebugEditorState, action: DebugEditorAction): DebugEditorState {
+  const current = state.routeId === action.routeId
+    ? state
+    : createDebugEditorState(action.routeId, action.initialTotalPoints, state.direction);
+  return { ...current, ...action.patch };
+}
+
 const cameraEasing = (t: number) => 1 - (1 - t) ** 3;
 
 function createEndpointMarkerElement(color: string, label: string) {
@@ -908,7 +955,7 @@ function MapComponent({
   const debugCoordsRef = useRef<Coordinates[]>([]);
   const debugStartIdxRef = useRef<number | null>(null);
   const debugStepRef = useRef(10);
-  const debugPhaseRef = useRef<"idle" | "awaiting-end" | "drawing" | "preview">("idle");
+  const debugPhaseRef = useRef<DebugPhase>("idle");
   const debugDrawSegmentRef = useRef<Coordinates[]>([]);
   const debugLoadedRouteIdRef = useRef<string | null>(null);
   const debugSaveTokenRef = useRef<string | null>(null);
@@ -917,15 +964,56 @@ function MapComponent({
   const [locationLoading, setLocationLoading] = useState(false);
   const [locationAccuracy, setLocationAccuracy] = useState<number | null>(null);
   const [debugActive] = useState(isDebugMode);
-  const [debugStep, setDebugStep] = useState(10);
-  const [debugClickInfo, setDebugClickInfo] = useState<string | null>(null);
-  const [debugSelection, setDebugSelection] = useState<[number, number] | null>(null);
-  const [debugPhase, setDebugPhase] = useState<"idle" | "awaiting-end" | "drawing" | "preview">("idle");
-  const [debugTotalPoints, setDebugTotalPoints] = useState(0);
-  const [debugDrawCount, setDebugDrawCount] = useState(0);
-  const [debugSaveStatus, setDebugSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
-  const [debugSaveError, setDebugSaveError] = useState<string | null>(null);
-  const [debugDir, setDebugDir] = useState<"ida" | "vuelta">("ida");
+  const [storedDebugEditor, dispatchDebugEditor] = useReducer(
+    debugEditorReducer,
+    createDebugEditorState(null)
+  );
+  const selectedDebugRoute = selectedRouteId === null
+    ? null
+    : routes.find((route) => route.id === selectedRouteId) ?? null;
+  const debugEditor = storedDebugEditor.routeId === selectedRouteId
+    ? storedDebugEditor
+    : createDebugEditorState(
+        selectedRouteId,
+        selectedDebugRoute?.coordenadas.length ?? 0,
+        storedDebugEditor.direction
+      );
+  const {
+    step: debugStep,
+    clickInfo: debugClickInfo,
+    selection: debugSelection,
+    phase: debugPhase,
+    totalPoints: debugTotalPoints,
+    drawCount: debugDrawCount,
+    saveStatus: debugSaveStatus,
+    saveError: debugSaveError,
+    direction: debugDir,
+  } = debugEditor;
+  const patchDebugEditor = (patch: DebugEditorAction["patch"]) => {
+    dispatchDebugEditor({
+      type: "patch",
+      routeId: selectedRouteId,
+      initialTotalPoints: selectedDebugRoute?.coordenadas.length ?? 0,
+      patch,
+    });
+  };
+  const setDebugStep = (step: number) => patchDebugEditor({ step });
+  const setDebugClickInfo = (clickInfo: string | null) => patchDebugEditor({ clickInfo });
+  const setDebugSelection = (selection: [number, number] | null) => patchDebugEditor({ selection });
+  const setDebugPhase = (phase: DebugPhase) => patchDebugEditor({ phase });
+  const setDebugTotalPoints = (totalPoints: number) => patchDebugEditor({ totalPoints });
+  const setDebugDrawCount = (drawCount: number) => patchDebugEditor({ drawCount });
+  const setDebugSaveStatus = (saveStatus: DebugSaveStatus) => patchDebugEditor({ saveStatus });
+  const setDebugSaveError = (saveError: string | null) => patchDebugEditor({ saveError });
+  const setDebugDir = (direction: "ida" | "vuelta") => patchDebugEditor({
+    direction,
+    clickInfo: null,
+    selection: null,
+    phase: "idle",
+    drawCount: 0,
+    saveStatus: "idle",
+    saveError: null,
+  });
 
   const mapToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
   const routeFeatures = useMemo(() => toFeatureCollection(routes), [routes]);
@@ -1292,11 +1380,20 @@ function MapComponent({
       setHoveredRoute(null);
     };
 
+    const patchDebugFromMap = (patch: DebugEditorAction["patch"]) => {
+      dispatchDebugEditor({
+        type: "patch",
+        routeId: selectedRouteIdRef.current,
+        initialTotalPoints: debugCoordsRef.current.length,
+        patch,
+      });
+    };
+
     const onMapClick = (event: mapboxgl.MapMouseEvent) => {
       if (debugActive && debugPhaseRef.current === "drawing") {
         const pt: Coordinates = [event.lngLat.lng, event.lngLat.lat];
         debugDrawSegmentRef.current = [...debugDrawSegmentRef.current, pt];
-        setDebugDrawCount(debugDrawSegmentRef.current.length);
+        patchDebugFromMap({ drawCount: debugDrawSegmentRef.current.length });
         if (debugDrawSegmentRef.current.length >= 2) {
           updateDrawLayer(map, debugDrawSegmentRef.current);
         }
@@ -1310,27 +1407,28 @@ function MapComponent({
 
         if (debugStartIdxRef.current === null) {
           debugStartIdxRef.current = result.index;
-          setDebugClickInfo(
-            `#${result.index}  [${result.coord[0].toFixed(5)}, ${result.coord[1].toFixed(5)}]  ${Math.round(result.distanceM)} m`
-          );
-          setDebugPhase("awaiting-end");
-          setDebugSelection(null);
+          patchDebugFromMap({
+            clickInfo: `#${result.index}  [${result.coord[0].toFixed(5)}, ${result.coord[1].toFixed(5)}]  ${Math.round(result.distanceM)} m`,
+            phase: "awaiting-end",
+            selection: null,
+          });
           clearDebugSegmentLayer(map);
         } else {
           const startIdx = debugStartIdxRef.current;
           const endIdx = result.index;
           debugStartIdxRef.current = null;
-          setDebugPhase("idle");
           if (startIdx === endIdx) {
-            setDebugClickInfo(null);
-            setDebugSelection(null);
+            patchDebugFromMap({ clickInfo: null, phase: "idle", selection: null });
             return;
           }
           renderDebugSegment(map, debugCoordsRef.current, startIdx, endIdx);
           const s = Math.min(startIdx, endIdx);
           const e = Math.max(startIdx, endIdx);
-          setDebugSelection([s, e]);
-          setDebugClickInfo(`Segmento ${s}→${e}  (${e - s + 1} puntos)`);
+          patchDebugFromMap({
+            clickInfo: `Segmento ${s}→${e}  (${e - s + 1} puntos)`,
+            phase: "idle",
+            selection: [s, e],
+          });
         }
         return;
       }
@@ -1850,10 +1948,6 @@ function MapComponent({
       debugCoordsRef.current = [];
       debugLoadedRouteIdRef.current = null;
       debugStartIdxRef.current = null;
-      setDebugClickInfo(null);
-      setDebugSelection(null);
-      setDebugPhase("idle");
-      setDebugTotalPoints(0);
       return;
     }
 
@@ -1869,18 +1963,12 @@ function MapComponent({
       debugLoadedRouteIdRef.current = cacheKey;
       debugCoordsRef.current = resolvedCoords;
       debugStartIdxRef.current = null;
-      setDebugClickInfo(null);
-      setDebugSelection(null);
-      setDebugPhase("idle");
       debugPhaseRef.current = "idle";
-      setDebugSaveStatus("idle");
-      setDebugSaveError(null);
       clearDebugSegmentLayer(map);
     } else if (debugCoordsRef.current.length === 0) {
       debugCoordsRef.current = resolvedCoords;
     }
 
-    setDebugTotalPoints(debugCoordsRef.current.length);
     renderDebugPointLayer(map, debugCoordsRef.current, debugStep);
   }, [debugActive, debugDir, debugStep, isLoading, routes, selectedRouteId]);
 

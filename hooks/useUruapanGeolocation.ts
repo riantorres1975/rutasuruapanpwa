@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   haversineMeters,
   isAccurateEnoughForAutomaticOrigin,
@@ -15,10 +15,27 @@ export function useUruapanGeolocation(disabled = false) {
   const [liveLocation, setLiveLocation] = useState<Coordinates | null>(null);
   const [status, setStatus] = useState<GeoStatus>(disabled ? "idle" : "locating");
   const [accuracyWarning, setAccuracyWarning] = useState(false);
+  const liveLocationRef = useRef<Coordinates | null>(null);
+  const liveLocationListenersRef = useRef(new Set<(location: Coordinates) => void>());
+
+  const publishLiveLocation = useCallback((location: Coordinates) => {
+    liveLocationRef.current = location;
+    setLiveLocation(location);
+    for (const listener of liveLocationListenersRef.current) listener(location);
+  }, []);
+
+  const subscribeToLiveLocation = useCallback((listener: (location: Coordinates) => void) => {
+    liveLocationListenersRef.current.add(listener);
+    if (liveLocationRef.current) listener(liveLocationRef.current);
+    return () => {
+      liveLocationListenersRef.current.delete(listener);
+    };
+  }, []);
 
   const markOutside = useCallback(() => {
     setUserLocation(null);
     setLiveLocation(null);
+    liveLocationRef.current = null;
     setAccuracyWarning(false);
     setStatus("outside");
   }, []);
@@ -42,6 +59,7 @@ export function useUruapanGeolocation(disabled = false) {
         if (!isAccurateEnoughForAutomaticOrigin(position.coords.accuracy)) {
           setUserLocation(null);
           setLiveLocation(null);
+          liveLocationRef.current = null;
           setAccuracyWarning(true);
           setStatus("inaccurate");
           return;
@@ -52,7 +70,7 @@ export function useUruapanGeolocation(disabled = false) {
           return;
         }
 
-        setLiveLocation(coords);
+        publishLiveLocation(coords);
         if (!firstFix) {
           firstFix = coords;
           setUserLocation(coords);
@@ -74,7 +92,7 @@ export function useUruapanGeolocation(disabled = false) {
     );
 
     return () => navigator.geolocation.clearWatch(watchId);
-  }, [disabled, markOutside]);
+  }, [disabled, markOutside, publishLiveLocation]);
 
   return {
     userLocation,
@@ -83,5 +101,6 @@ export function useUruapanGeolocation(disabled = false) {
     accuracyWarning,
     markOutside,
     clearAccuracyWarning,
+    subscribeToLiveLocation,
   };
 }

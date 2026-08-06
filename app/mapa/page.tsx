@@ -63,6 +63,24 @@ type RouteOption = {
 type ActivePoint = "origin" | "destination" | null;
 type FlowStep = 1 | 2 | 3;
 type RoutesMapMode = "all-visible" | "all-highlighted";
+type RouteCalculation = {
+  key: string;
+  suggestions: RouteOption[];
+  alternativeRouteIds: number[];
+  transfers: TransferOption[];
+};
+type TransferSelection = {
+  calculationKey: string;
+  transfer: TransferOption;
+};
+type TripAlert = {
+  tripKey: string;
+  message: string;
+};
+
+const EMPTY_ROUTE_OPTIONS: RouteOption[] = [];
+const EMPTY_ROUTE_IDS: number[] = [];
+const EMPTY_TRANSFERS: TransferOption[] = [];
 
 const MAP_MODE_KEY = "rutas-map-mode";
 const MAP_MODE_EVENT = "urugo-map-mode-changed";
@@ -98,6 +116,11 @@ const subscribeRecentTrips = (callback: () => void) => {
   };
 };
 const getRecentTripsSnapshot = () => JSON.stringify(getRecentTrips());
+const subscribeLocationSearch = (callback: () => void) => {
+  window.addEventListener("popstate", callback);
+  return () => window.removeEventListener("popstate", callback);
+};
+const getLocationSearchSnapshot = () => window.location.search;
 type SharedMapState = {
   direction: RouteDirection | null;
   routeId: number | null;
@@ -331,6 +354,24 @@ function findNearestLandmark(
 }
 
 export default function HomePage() {
+  const initialSearch = useSyncExternalStore<string>(
+    subscribeLocationSearch,
+    getLocationSearchSnapshot,
+    () => "",
+  );
+  return <MapPage key={initialSearch} initialSearch={initialSearch} />;
+}
+
+function MapPage({ initialSearch }: { initialSearch: string }) {
+  const initialUrlState = useMemo(() => {
+    const params = new URLSearchParams(initialSearch);
+    return {
+      destinationParam: parseDestinationParam(params.get("destino")),
+      sharedState: parseSharedMapState(initialSearch),
+      wantsNearby: params.get("cerca") === "1",
+    };
+  }, [initialSearch]);
+
   // ── Sidebar resize state ────────────────────────────────────────────────────
   // null = usa el default por breakpoint (380/420px via CSS), number = ancho fijo tras drag
   const [sidebarWidth, setSidebarWidth] = useState<number | null>(null);
@@ -378,15 +419,41 @@ export default function HomePage() {
   const [selectedRouteId, setSelectedRouteId] = useState<number | null>(null);
   // Hover de la lista del sidebar (desktop): resalta la ruta en el mapa sin seleccionarla
   const [hoveredRouteId, setHoveredRouteId] = useState<number | null>(null);
-  const [selectedDirection, setSelectedDirection] = useState<RouteDirection>("ida");
+  const [selectedDirection, setSelectedDirection] = useState<RouteDirection>(
+    initialUrlState.sharedState?.direction ?? "ida",
+  );
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const [isResultSheetOpen, setIsResultSheetOpen] = useState(false);
-  const [dropOffAlert, setDropOffAlert] = useState<string | null>(null);
+  const [isResultSheetOpen, setIsResultSheetOpen] = useState(
+    Boolean(initialUrlState.sharedState?.origin && initialUrlState.sharedState.destination),
+  );
+  const [dropOffAlertState, setDropOffAlertState] = useState<TripAlert | null>(null);
   const dropOffArmedRef = useRef(false);
   const dropOffNotifiedRef = useRef(false);
-  const [feedbackGiven, setFeedbackGiven] = useState(false);
+  const [feedbackTripKey, setFeedbackTripKey] = useState<string | null>(null);
   const lastSavedTripKeyRef = useRef("");
-  const [manualOrigin, setManualOrigin] = useState<Coordinates | null>(null);
+  const [manualOrigin, setManualOrigin] = useState<Coordinates | null>(
+    initialUrlState.sharedState?.origin ?? null,
+  );
+  const [destinationPoint, setDestinationPoint] = useState<Coordinates | null>(
+    initialUrlState.sharedState?.destination ?? null,
+  );
+  const [requestedActivePoint, setActivePoint] = useState<ActivePoint>(
+    initialUrlState.sharedState?.origin && initialUrlState.sharedState.destination
+      ? null
+      : initialUrlState.sharedState?.origin
+        ? "destination"
+        : "origin",
+  );
+  const [hintVisibility, setHintVisibility] = useState<{ step: FlowStep; visible: boolean }>({
+    step: initialUrlState.sharedState?.origin && initialUrlState.sharedState.destination
+      ? 3
+      : initialUrlState.sharedState?.origin
+        ? 2
+        : 1,
+    visible: !(
+      initialUrlState.sharedState?.origin && initialUrlState.sharedState.destination
+    ),
+  });
   const {
     userLocation,
     liveLocation,
@@ -394,24 +461,31 @@ export default function HomePage() {
     accuracyWarning: geoAccuracyWarn,
     markOutside: markGeolocationOutside,
     clearAccuracyWarning,
+    subscribeToLiveLocation,
   } = useUruapanGeolocation(manualOrigin !== null);
   const originPoint = manualOrigin ?? userLocation;
-  const [destinationPoint, setDestinationPoint] = useState<Coordinates | null>(null);
-  const [activePoint, setActivePoint] = useState<ActivePoint>("origin");
-  const [suggestions, setSuggestions] = useState<RouteOption[]>([]);
-  const [alternativeSuggestedRouteIds, setAlternativeSuggestedRouteIds] = useState<number[]>([]);
-  const [transfers, setTransfers] = useState<TransferOption[]>([]);
-  const [selectedTransfer, setSelectedTransfer] = useState<TransferOption | null>(null);
-  const [isCalculatingSuggestions, setIsCalculatingSuggestions] = useState(false);
-  const [showHint, setShowHint] = useState(true);
+  const flowStep = getFlowStep(originPoint, destinationPoint);
+  const activePoint: ActivePoint = flowStep === 1
+    ? "origin"
+    : flowStep === 2
+      ? "destination"
+      : requestedActivePoint;
+  const showHint = hintVisibility.step === flowStep ? hintVisibility.visible : true;
+  const setShowHint = useCallback((visible: boolean) => {
+    setHintVisibility({ step: flowStep, visible });
+  }, [flowStep]);
   // nearbyToast: null = hidden, number = route count (0 means none found)
   const [nearbyToast, setNearbyToast] = useState<number | null>(null);
   const [nearbyRouteIds, setNearbyRouteIds] = useState<number[]>([]);
-  const [showTeleferico, setShowTeleferico] = useState(false);
+  const [showTeleferico, setShowTeleferico] = useState(
+    initialUrlState.sharedState?.showTeleferico ?? false,
+  );
   const [polylineRoutes, setPolylineRoutes] = useState<ProductionRoute[]>([]);
   const [sharedRouteSegment, setSharedRouteSegment] = useState<Coordinates[] | null>(null);
   const [sharedSegmentColor, setSharedSegmentColor] = useState<string | null>(null);
-  const [requestedDestination, setRequestedDestination] = useState<string | null>(null);
+  const [requestedDestination, setRequestedDestination] = useState<string | null>(
+    initialUrlState.destinationParam,
+  );
   const routesMapMode = useSyncExternalStore<RoutesMapMode>(subscribeMapMode, getMapModeSnapshot, () => "all-visible");
   const isOnline = useSyncExternalStore(subscribeOnline, () => navigator.onLine, () => true);
   const recentTripsSnapshot = useSyncExternalStore(subscribeRecentTrips, getRecentTripsSnapshot, () => "[]");
@@ -425,18 +499,10 @@ export default function HomePage() {
   const activePointRef = useRef(activePoint);
   const originPointRef = useRef(originPoint);
   const destinationPointRef = useRef(destinationPoint);
-  const pendingSharedStateRef = useRef<SharedMapState | null>(null);
+  const pendingSharedStateRef = useRef<SharedMapState | null>(initialUrlState.sharedState);
   // /mapa?cerca=1: el usuario llegó pidiendo "rutas cerca de mí" — al
   // detectar rutas cercanas abrimos la lista de inmediato (en móvil).
-  const wantsNearbyRef = useRef(false);
-
-  // Auto-advance to destination step when GPS provides location and user hasn't set a destination yet.
-  useEffect(() => {
-    if (userLocation && !manualOrigin && !destinationPoint) {
-      setActivePoint("destination");
-      setShowHint(true);
-    }
-  }, [userLocation, manualOrigin, destinationPoint]);
+  const wantsNearbyRef = useRef(initialUrlState.wantsNearby);
 
   useEffect(() => {
     if (polylineRoutes.length > 0) return;
@@ -522,63 +588,20 @@ export default function HomePage() {
   }, [selectedDirection]);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("cerca") === "1") {
-      wantsNearbyRef.current = true;
-    }
-    const destinationParam = parseDestinationParam(params.get("destino"));
+    const destinationParam = initialUrlState.destinationParam;
+    if (!destinationParam || initialUrlState.sharedState?.destination) return;
 
-    if (destinationParam) {
-      setRequestedDestination(destinationParam);
-      setActivePoint("origin");
-      setShowHint(true);
+    const controller = new AbortController();
+    geocodePlace(destinationParam, { signal: controller.signal })
+      .then((result) => {
+        if (!result) return;
+        setDestinationPoint((current) => current ?? result.center);
+        setRequestedDestination(result.label);
+      })
+      .catch(() => {/* degradar: el usuario marca el destino a mano */});
 
-      // Geocodificar el destino y colocar el pin B automáticamente,
-      // salvo que la URL ya traiga coordenadas explícitas (estado compartido).
-      if (!params.get("b")) {
-        const controller = new AbortController();
-        geocodePlace(destinationParam, { signal: controller.signal })
-          .then((result) => {
-            if (!result) return;
-            setDestinationPoint((current) => current ?? result.center);
-            setRequestedDestination(result.label);
-          })
-          .catch(() => {/* degradar: el usuario marca el destino a mano */});
-      }
-    }
-
-    const sharedState = parseSharedMapState(window.location.search);
-    if (!sharedState) {
-      return;
-    }
-
-    pendingSharedStateRef.current = sharedState;
-
-    if (sharedState.direction) {
-      setSelectedDirection(sharedState.direction);
-    }
-
-    if (sharedState.origin) {
-      setManualOrigin(sharedState.origin);
-    }
-
-    if (sharedState.destination) {
-      setDestinationPoint(sharedState.destination);
-    }
-
-    if (sharedState.origin && sharedState.destination) {
-      setActivePoint(null);
-      setShowHint(false);
-      setIsResultSheetOpen(true);
-    } else if (sharedState.origin) {
-      setActivePoint("destination");
-      setShowHint(true);
-    }
-
-    if (sharedState.showTeleferico) {
-      setShowTeleferico(true);
-    }
-  }, []);
+    return () => controller.abort();
+  }, [initialUrlState.destinationParam, initialUrlState.sharedState?.destination]);
 
   useEffect(() => {
     const mq = window.matchMedia("(max-height: 740px)");
@@ -643,7 +666,6 @@ export default function HomePage() {
     return () => cancel(id);
   }, []);
 
-  const flowStep = useMemo(() => getFlowStep(originPoint, destinationPoint), [destinationPoint, originPoint]);
   const resultSheetOpen = flowStep === 3 && isResultSheetOpen;
 
   useEffect(() => {
@@ -657,17 +679,6 @@ export default function HomePage() {
   useEffect(() => {
     destinationPointRef.current = destinationPoint;
   }, [destinationPoint]);
-
-  useEffect(() => {
-    if (flowStep === 1 && activePoint !== "origin") {
-      setActivePoint("origin");
-      return;
-    }
-
-    if (flowStep === 2 && activePoint !== "destination") {
-      setActivePoint("destination");
-    }
-  }, [activePoint, flowStep]);
 
   // Deduplicated list for the route sidebar — one entry per named route, aggregating ida/vuelta
   const listRoutes = useMemo<ResolvedRouteData[]>(() => {
@@ -743,13 +754,30 @@ export default function HomePage() {
     return map;
   }, [polylineRoutes]);
 
+  const calculationKey = originPoint && destinationPoint
+    ? `${formatCoordinateParam(originPoint)}>${formatCoordinateParam(destinationPoint)}@${polylineRoutes.length}`
+    : null;
+  const [routeCalculation, setRouteCalculation] = useState<RouteCalculation | null>(null);
+  const currentCalculation = routeCalculation?.key === calculationKey ? routeCalculation : null;
+  const suggestions = currentCalculation?.suggestions ?? EMPTY_ROUTE_OPTIONS;
+  const alternativeSuggestedRouteIds = currentCalculation?.alternativeRouteIds ?? EMPTY_ROUTE_IDS;
+  const transfers = currentCalculation?.transfers ?? EMPTY_TRANSFERS;
+  const isCalculatingSuggestions = calculationKey !== null && currentCalculation === null;
+  const [transferSelection, setTransferSelection] = useState<TransferSelection | null>(null);
+  const selectedTransfer = transferSelection?.calculationKey === calculationKey
+    ? transferSelection.transfer
+    : null;
+  const setSelectedTransfer = useCallback((transfer: TransferOption | null) => {
+    setTransferSelection(transfer && calculationKey ? { calculationKey, transfer } : null);
+  }, [calculationKey]);
+
   const handleSelectRoute = useCallback((routeId: number) => {
     setSharedRouteSegment(null);
     setSharedSegmentColor(null);
     setSelectedTransfer(null);
     setShowTeleferico(false);
     setSelectedRouteId((current) => (current === routeId ? null : routeId));
-  }, []);
+  }, [setSelectedTransfer]);
 
   const handleClearSelection = useCallback(() => {
     setSharedRouteSegment(null);
@@ -757,7 +785,7 @@ export default function HomePage() {
     setSelectedRouteId(null);
     setSelectedTransfer(null);
     setShowTeleferico(false);
-  }, []);
+  }, [setSelectedTransfer]);
 
   const handleNearbyRoutesFound = useCallback((routeIds: number[]) => {
     setNearbyRouteIds(routeIds);
@@ -777,7 +805,7 @@ export default function HomePage() {
     if (!originPointRef.current) {
       setActivePoint("origin");
     }
-  }, [markGeolocationOutside]);
+  }, [markGeolocationOutside, setShowHint]);
 
   const handleMapPick = useCallback((point: Coordinates) => {
     setShowHint(false);
@@ -818,7 +846,7 @@ export default function HomePage() {
     // Both pins set, no active mode → move destination (most common action)
     setDestinationPoint(point);
     setActivePoint(null);
-  }, []);
+  }, [setShowHint]);
 
   // El mismo buscador permite fijar origen o destino según el punto activo.
   const handlePlaceSearch = useCallback((result: PlaceResult) => {
@@ -840,7 +868,7 @@ export default function HomePage() {
     // Si aún no hay origen, deja activo el origen para que el usuario lo fije
     // (o lo complete el GPS). Si ya hay origen, calcula la ruta de inmediato.
     setActivePoint(originPointRef.current ? null : "origin");
-  }, [clearAccuracyWarning]);
+  }, [clearAccuracyWarning, setSelectedTransfer, setShowHint]);
 
   // Chip de destino rápido: geocodifica (índice local) y coloca el destino.
   const handleChipSearch = useCallback((text: string) => {
@@ -896,15 +924,7 @@ export default function HomePage() {
   }, [polylineRoutes]);
 
   useEffect(() => {
-    if (!originPoint || !destinationPoint) {
-      setSuggestions([]);
-      setTransfers([]);
-      setSelectedTransfer(null);
-      setIsCalculatingSuggestions(false);
-      return;
-    }
-
-    setIsCalculatingSuggestions(true);
+    if (!originPoint || !destinationPoint || !calculationKey) return;
 
     const timer = window.setTimeout(() => {
       let nextAlternativeIds: number[] = [];
@@ -936,21 +956,22 @@ export default function HomePage() {
         nextSuggestions = [];
       }
 
-      setSuggestions(nextSuggestions);
-      setAlternativeSuggestedRouteIds(nextAlternativeIds);
-
       let nextTransfers: TransferOption[] = [];
       if (nextSuggestions.length === 0 && polylineRoutes.length > 0) {
         nextTransfers = computeTransferOptionsFromPolylines(routesForMatching, originPoint, destinationPoint);
       }
-      setTransfers(nextTransfers);
-      setIsCalculatingSuggestions(false);
+      setRouteCalculation({
+        key: calculationKey,
+        suggestions: nextSuggestions,
+        alternativeRouteIds: nextAlternativeIds,
+        transfers: nextTransfers,
+      });
     }, 80);
 
     return () => {
       window.clearTimeout(timer);
     };
-  }, [destinationPoint, originPoint, polylineRoutes.length, routesForMatching]);
+  }, [calculationKey, destinationPoint, originPoint, polylineRoutes.length, routesForMatching]);
 
   const suggestedRouteIds = useMemo(() => suggestions.map((item) => item.routeId), [suggestions]);
   const suggestedRouteDirections = useMemo(
@@ -1009,12 +1030,18 @@ export default function HomePage() {
   // cuando el usuario se acerca a su punto de bajada. Se "arma" solo después
   // de haber estado lejos (>500 m) para no disparar al planear viajes cortos.
   const bestSuggestionRouteId = bestSuggestion?.routeId ?? null;
+  const activeTripKey = bestSuggestionRouteId !== null && destinationPoint
+    ? `${bestSuggestionRouteId}:${formatCoordinateParam(destinationPoint)}`
+    : null;
+  const dropOffAlert = dropOffAlertState?.tripKey === activeTripKey
+    ? dropOffAlertState.message
+    : null;
+  const feedbackGiven = activeTripKey !== null && feedbackTripKey === activeTripKey;
+
   useEffect(() => {
     dropOffArmedRef.current = false;
     dropOffNotifiedRef.current = false;
-    setDropOffAlert(null);
-    setFeedbackGiven(false);
-  }, [bestSuggestionRouteId, destinationPoint]);
+  }, [activeTripKey]);
 
   // ── Repetir viaje: guardar los nuevos viajes ──────────────────────────────
   useEffect(() => {
@@ -1038,10 +1065,10 @@ export default function HomePage() {
     setDestinationPoint(trip.destination);
     setRequestedDestination(trip.destinationLabel);
     setActivePoint(null);
-  }, []);
+  }, [setShowHint]);
 
   const handleRouteFeedback = useCallback((util: "si" | "no") => {
-    setFeedbackGiven(true);
+    if (activeTripKey) setFeedbackTripKey(activeTripKey);
     const current = suggestions[0];
     try {
       track("ruta_feedback", {
@@ -1052,43 +1079,50 @@ export default function HomePage() {
     } catch {
       // analytics no disponible: ignorar
     }
-  }, [suggestions, requestedDestination]);
+  }, [activeTripKey, suggestions, requestedDestination]);
 
   // Promueve una alternativa a "ruta recomendada" reordenando las sugerencias.
   const promoteSuggestion = useCallback((routeId: number) => {
-    setSuggestions((prev) => {
-      const index = prev.findIndex((s) => s.routeId === routeId);
-      if (index <= 0) return prev;
-      const next = [...prev];
+    setRouteCalculation((current) => {
+      if (!current || current.key !== calculationKey) return current;
+      const index = current.suggestions.findIndex((suggestion) => suggestion.routeId === routeId);
+      if (index <= 0) return current;
+      const next = [...current.suggestions];
       const [picked] = next.splice(index, 1);
       next.unshift(picked);
-      return next;
+      return { ...current, suggestions: next };
     });
-  }, []);
+  }, [calculationKey]);
 
   useEffect(() => {
-    if (!liveLocation || !bestSuggestion || flowStep !== 3 || dropOffNotifiedRef.current) return;
-    const segment = bestSuggestion.segment;
-    const dropPoint = segment[segment.length - 1];
-    if (!dropPoint) return;
+    if (!bestSuggestion || flowStep !== 3 || !activeTripKey) return;
 
-    const distance = haversineMeters(liveLocation, dropPoint);
+    return subscribeToLiveLocation((location) => {
+      if (dropOffNotifiedRef.current) return;
+      const segment = bestSuggestion.segment;
+      const dropPoint = segment[segment.length - 1];
+      if (!dropPoint) return;
 
-    if (!dropOffArmedRef.current) {
-      if (distance > 500) dropOffArmedRef.current = true;
-      return;
-    }
-
-    if (distance < 400) {
-      dropOffNotifiedRef.current = true;
-      try {
-        navigator.vibrate?.([200, 100, 200]);
-      } catch {
-        // vibración no soportada: ignorar
+      const distance = haversineMeters(location, dropPoint);
+      if (!dropOffArmedRef.current) {
+        if (distance > 500) dropOffArmedRef.current = true;
+        return;
       }
-      setDropOffAlert(`Prepárate para bajar: estás a ~${Math.round(distance)} m de tu parada. Avisa al chofer o toca el timbre.`);
-    }
-  }, [liveLocation, bestSuggestion, flowStep]);
+
+      if (distance < 400) {
+        dropOffNotifiedRef.current = true;
+        try {
+          navigator.vibrate?.([200, 100, 200]);
+        } catch {
+          // vibración no soportada: ignorar
+        }
+        setDropOffAlertState({
+          tripKey: activeTripKey,
+          message: `Prepárate para bajar: estás a ~${Math.round(distance)} m de tu parada. Avisa al chofer o toca el timbre.`,
+        });
+      }
+    });
+  }, [activeTripKey, bestSuggestion, flowStep, subscribeToLiveLocation]);
 
   // ── Modo viaje: progreso sobre la ruta ────────────────────────────────────
   // Si el usuario va sobre el segmento sugerido (a <300 m de él) y ya se alejó
@@ -1223,10 +1257,6 @@ export default function HomePage() {
     return "No encontramos ruta directa. Ajusta origen o destino.";
   }, [activePoint, bestSuggestion, destinationPoint, flowStep, geoAccuracyWarn, geoStatus, isCalculatingSuggestions, manualOrigin, requestedDestination, transfers]);
 
-  useEffect(() => {
-    setShowHint(true);
-  }, [flowStep]);
-
   // Abrir el result sheet una sola vez cuando el usuario coloca el pin B y termina el cálculo.
   // La ref evita re-aperturas causadas por refrescados del GPS.
   const resultSheetOpenedForDestRef = useRef<string | null>(null);
@@ -1251,7 +1281,7 @@ export default function HomePage() {
     return () => {
       window.clearTimeout(timeout);
     };
-  }, [flowStep, showHint]);
+  }, [flowStep, setShowHint, showHint]);
 
   if (fetchError) {
     const offline = !isOnline;
@@ -1791,7 +1821,7 @@ export default function HomePage() {
                     <li key={`${t.routeAId}-${t.routeBId}`}>
                       <button
                         type="button"
-                        onClick={() => { setSelectedTransfer(t); setTransfers([]); }}
+                        onClick={() => setSelectedTransfer(t)}
                         className="flex w-full items-center gap-2 rounded-xl border border-avocado-400/20 bg-avocado-400/8 px-3 py-2 text-left transition active:scale-[0.99] hover:bg-avocado-400/12"
                       >
                         <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0 text-avocado-400" aria-hidden="true">
@@ -2292,7 +2322,7 @@ export default function HomePage() {
               <p className="flex-1 text-[13px] font-medium leading-5 text-slate-50">{dropOffAlert}</p>
               <button
                 type="button"
-                onClick={() => setDropOffAlert(null)}
+                onClick={() => setDropOffAlertState(null)}
                 aria-label="Cerrar aviso"
                 className="shrink-0 rounded-full p-1 text-slate-400 transition hover:text-slate-200 active:scale-[0.95]"
               >
