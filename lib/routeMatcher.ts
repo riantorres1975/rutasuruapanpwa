@@ -47,6 +47,12 @@ export type RouteMetrics = {
   cumulativeLengthsM: number[];
   segmentLengthsM: number[];
   totalLengthM: number;
+  bounds: {
+    minLng: number;
+    minLat: number;
+    maxLng: number;
+    maxLat: number;
+  };
 };
 
 // ─── Internal geometry ────────────────────────────────────────────────────────
@@ -103,9 +109,23 @@ export function getRouteMetrics(path: Coordinates[]): RouteMetrics {
 
   const cumulativeLengthsM = new Array<number>(path.length);
   const segmentLengthsM = new Array<number>(Math.max(0, path.length - 1));
-  if (path.length > 0) cumulativeLengthsM[0] = 0;
+  let minLng = Infinity;
+  let minLat = Infinity;
+  let maxLng = -Infinity;
+  let maxLat = -Infinity;
 
-  for (let i = 1; i < path.length; i++) {
+  for (let i = 0; i < path.length; i++) {
+    const [lng, lat] = path[i];
+    minLng = Math.min(minLng, lng);
+    minLat = Math.min(minLat, lat);
+    maxLng = Math.max(maxLng, lng);
+    maxLat = Math.max(maxLat, lat);
+
+    if (i === 0) {
+      cumulativeLengthsM[0] = 0;
+      continue;
+    }
+
     const segmentLengthM = haversineDistanceM(path[i - 1], path[i]);
     segmentLengthsM[i - 1] = segmentLengthM;
     cumulativeLengthsM[i] = cumulativeLengthsM[i - 1] + segmentLengthM;
@@ -115,6 +135,7 @@ export function getRouteMetrics(path: Coordinates[]): RouteMetrics {
     cumulativeLengthsM,
     segmentLengthsM,
     totalLengthM: cumulativeLengthsM[path.length - 1] ?? 0,
+    bounds: { minLng, minLat, maxLng, maxLat },
   };
   routeMetricsCache.set(path, metrics);
   return metrics;
@@ -125,6 +146,24 @@ export function getRouteMetrics(path: Coordinates[]): RouteMetrics {
  */
 export function getRouteLength(path: Coordinates[]): number {
   return getRouteMetrics(path).totalLengthM;
+}
+
+export function isPointWithinRouteBounds(
+  point: Coordinates,
+  metrics: RouteMetrics,
+  marginM: number,
+): boolean {
+  const latMargin = marginM / 111_000;
+  const metersPerLngDegree = 111_000 * Math.max(0.01, Math.cos(toRad(point[1])));
+  const lngMargin = marginM / metersPerLngDegree;
+  const { minLng, minLat, maxLng, maxLat } = metrics.bounds;
+
+  return (
+    point[0] >= minLng - lngMargin &&
+    point[0] <= maxLng + lngMargin &&
+    point[1] >= minLat - latMargin &&
+    point[1] <= maxLat + latMargin
+  );
 }
 
 /**
@@ -219,6 +258,13 @@ export function isRouteValid(
   if (route.path.length < 2) return false;
 
   const threshold = route.corridor_width_m;
+  const metrics = getRouteMetrics(route.path);
+  if (
+    !isPointWithinRouteBounds(origin, metrics, threshold) ||
+    !isPointWithinRouteBounds(destination, metrics, threshold)
+  ) {
+    return false;
+  }
 
   const originSeg = getClosestPointOnPath(origin, route.path);
   if (originSeg.distM > threshold) return false;

@@ -4,6 +4,7 @@ import {
   getRankedRoutes,
   getRouteLength,
   getRouteMetrics,
+  isPointWithinRouteBounds,
   type PolylineRoute,
 } from "@/lib/routeMatcher";
 import type { Coordinates } from "@/lib/types";
@@ -81,6 +82,20 @@ describe("getRouteMetrics", () => {
     expect(first.cumulativeLengthsM).toHaveLength(path.length);
     expect(first.segmentLengthsM).toHaveLength(path.length - 1);
     expect(first.totalLengthM).toBeCloseTo(getRouteLength(path), 8);
+    expect(first.bounds).toEqual({
+      minLng: -102.06,
+      minLat: 19.42,
+      maxLng: -102.04,
+      maxLat: 19.42,
+    });
+  });
+
+  it("descarta puntos fuera del corredor antes de recorrer segmentos", () => {
+    const metrics = getRouteMetrics(straightRoute(1, "Ruta Límites").path);
+
+    expect(isPointWithinRouteBounds([-102.05, 19.4209], metrics, 120)).toBe(true);
+    expect(isPointWithinRouteBounds([-102.05, 19.4209], metrics, 50)).toBe(false);
+    expect(isPointWithinRouteBounds([-101.9, 19.6], metrics, 550)).toBe(false);
   });
 });
 

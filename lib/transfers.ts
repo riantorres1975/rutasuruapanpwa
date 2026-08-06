@@ -1,5 +1,10 @@
 import { haversineMeters } from "./geo";
-import { getRouteMetrics, type PolylineRoute, type RouteMetrics } from "./routeMatcher";
+import {
+  getRouteMetrics,
+  isPointWithinRouteBounds,
+  type PolylineRoute,
+  type RouteMetrics,
+} from "./routeMatcher";
 import type { Coordinates } from "./types";
 
 // Max walking distance to board/alight a route (meters)
@@ -85,13 +90,17 @@ export function computeTransferOptionsFromPolylines(
   for (const route of routes) {
     const threshold = route.corridor_width_m;
     const metrics = getRouteMetrics(route.path);
-    const cA = closestOnPath(origin, route.path);
-    if (cA.distance <= threshold) {
-      fromOrigin.push({ route, indexA: cA.index, metrics });
+    if (isPointWithinRouteBounds(origin, metrics, threshold)) {
+      const cA = closestOnPath(origin, route.path);
+      if (cA.distance <= threshold) {
+        fromOrigin.push({ route, indexA: cA.index, metrics });
+      }
     }
-    const cB = closestOnPath(destination, route.path);
-    if (cB.distance <= threshold) {
-      toDestination.push({ route, indexB: cB.index, metrics });
+    if (isPointWithinRouteBounds(destination, metrics, threshold)) {
+      const cB = closestOnPath(destination, route.path);
+      if (cB.distance <= threshold) {
+        toDestination.push({ route, indexB: cB.index, metrics });
+      }
     }
   }
 
