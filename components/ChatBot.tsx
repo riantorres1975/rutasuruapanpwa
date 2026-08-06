@@ -27,8 +27,8 @@ type Message = { role: 'user' | 'bot'; text: string };
 type UserLocation = { lat: number; lng: number } | null;
 type View = 'chat' | 'report';
 
-export default function ChatBot() {
-  const [open, setOpen] = useState(false);
+export default function ChatBot({ initialOpen = false }: { initialOpen?: boolean }) {
+  const [open, setOpen] = useState(initialOpen);
   const [view, setView] = useState<View>('chat');
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');

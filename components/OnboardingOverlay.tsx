@@ -1,8 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
-
-const STORAGE_KEY = "rutas-uru-onboarded";
+import { ONBOARDING_STORAGE_KEY } from "@/lib/onboarding";
 
 // ─── Step data ────────────────────────────────────────────────────────────────
 
@@ -107,7 +106,7 @@ export default function OnboardingOverlay() {
   let completed = true;
   if (hydrated) {
     try {
-      completed = localStorage.getItem(STORAGE_KEY) === "1";
+      completed = localStorage.getItem(ONBOARDING_STORAGE_KEY) === "1";
     } catch {
       completed = true;
     }
@@ -117,7 +116,7 @@ export default function OnboardingOverlay() {
   const dismiss = useCallback(() => {
     setDismissed(true);
     try {
-      localStorage.setItem(STORAGE_KEY, "1");
+      localStorage.setItem(ONBOARDING_STORAGE_KEY, "1");
     } catch {
       // ignore
     }

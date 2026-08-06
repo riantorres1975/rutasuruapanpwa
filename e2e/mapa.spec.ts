@@ -49,6 +49,14 @@ test("un enlace compartido hidrata origen y destino sin mostrar el paso inicial"
   await expect(page.getByText("PASO 1 DE 3", { exact: true })).toHaveCount(0);
 });
 
+test("el asistente diferido abre con un solo toque", async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem("rutas-uru-onboarded", "1"));
+  await page.goto("/mapa");
+
+  await page.locator('button[aria-label="Abrir asistente de rutas"]:visible').click();
+  await expect(page.getByRole("dialog", { name: "Asistente UruGo" })).toBeVisible();
+});
+
 test("el API del chat rechaza cuerpos inválidos antes de llamar al proveedor", async ({ request }) => {
   const response = await request.post("/api/chat", {
     data: { message: "", history: "no-es-un-arreglo" },

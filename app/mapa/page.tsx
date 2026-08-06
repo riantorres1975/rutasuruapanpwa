@@ -10,9 +10,9 @@ const SIDEBAR_MIN = 300;        // px mínimo al arrastrar
 const SIDEBAR_MAX = 520;        // px máximo al arrastrar
 import { track } from "@vercel/analytics";
 import BottomSheet from "@/components/BottomSheet";
-import ChatBot from "@/components/ChatBot";
+import ChatBotLauncher from "@/components/ChatBotLauncher";
 import NearbyToast from "@/components/NearbyToast";
-import OnboardingOverlay from "@/components/OnboardingOverlay";
+import OnboardingGate from "@/components/OnboardingGate";
 import PlaceSearch from "@/components/PlaceSearch";
 import RouteList from "@/components/RouteList";
 import RoutePreviewSVG from "@/components/RoutePreviewSVG";
@@ -642,29 +642,6 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
       window.removeEventListener("keydown", loadMap);
     };
   }, [fetchError, isLoadingData, shouldLoadMap]);
-
-  // Precargar el chunk del mapa (mapbox-gl) en tiempo ocioso para que, cuando
-  // se active, ya esté en caché y la transición sea instantánea.
-  useEffect(() => {
-    const connection = (navigator as Navigator & {
-      connection?: { saveData?: boolean; effectiveType?: string };
-    }).connection;
-    if (connection?.saveData || ["slow-2g", "2g"].includes(connection?.effectiveType ?? "")) {
-      return;
-    }
-
-    const ric: (cb: () => void) => number =
-      typeof window.requestIdleCallback === "function"
-        ? (cb) => window.requestIdleCallback(cb)
-        : (cb) => window.setTimeout(cb, 1500);
-    const cancel: (id: number) => void =
-      typeof window.cancelIdleCallback === "function"
-        ? (id) => window.cancelIdleCallback(id)
-        : (id) => window.clearTimeout(id);
-
-    const id = ric(() => { void import("@/components/Map"); });
-    return () => cancel(id);
-  }, []);
 
   const resultSheetOpen = flowStep === 3 && isResultSheetOpen;
 
@@ -2018,7 +1995,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
             >
               <span aria-hidden="true">👁</span>
             </button>
-            <ChatBot />
+            <ChatBotLauncher />
           </div>
         </div>
 
@@ -2406,7 +2383,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
           <div className="flex shrink-0 flex-col items-end gap-2 self-end ml-auto">
             {/* Botón chat — se oculta cuando el sheet está abierto */}
             <div className={`pointer-events-auto transition-all duration-200 ${isSheetOpen ? "pointer-events-none opacity-0 translate-y-1" : "opacity-100 translate-y-0"}`}>
-              <ChatBot />
+              <ChatBotLauncher />
             </div>
             {/* Botón ver todas las rutas */}
             <button
@@ -2491,7 +2468,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
         </div>
       </BottomSheet>
 
-      <OnboardingOverlay />
+      <OnboardingGate />
     </main>
   );
 }
