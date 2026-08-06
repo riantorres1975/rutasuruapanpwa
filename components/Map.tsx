@@ -911,6 +911,7 @@ function MapComponent({
   const debugPhaseRef = useRef<"idle" | "awaiting-end" | "drawing" | "preview">("idle");
   const debugDrawSegmentRef = useRef<Coordinates[]>([]);
   const debugLoadedRouteIdRef = useRef<string | null>(null);
+  const debugSaveTokenRef = useRef<string | null>(null);
 
   const [isLoading, setIsLoading] = useState(true);
   const [locationLoading, setLocationLoading] = useState(false);
@@ -2315,6 +2316,9 @@ function MapComponent({
                   onClick={async () => {
                     const route = routes.find((r) => r.id === selectedRouteId) as (typeof routes[0] & { ruta?: string; direccion?: string }) | undefined;
                     if (!route) return;
+                    const token = debugSaveTokenRef.current ?? window.prompt("Token del editor de rutas");
+                    if (!token) return;
+                    debugSaveTokenRef.current = token;
                     const payload = {
                       ruta: (route as any).ruta ?? route.nombre,
                       direccion: debugDir,
@@ -2326,7 +2330,10 @@ function MapComponent({
                     try {
                       const res = await fetch("/api/debug/save-route", {
                         method: "POST",
-                        headers: { "Content-Type": "application/json" },
+                        headers: {
+                          "Authorization": `Bearer ${token}`,
+                          "Content-Type": "application/json"
+                        },
                         body: JSON.stringify(payload)
                       });
                       if (!res.ok) {
@@ -2334,6 +2341,7 @@ function MapComponent({
                         const msg = typeof err.error === "string" ? err.error : `HTTP ${res.status}`;
                         console.error("[debug save] error", res.status, msg);
                         setDebugSaveError(msg);
+                        if (res.status === 403) debugSaveTokenRef.current = null;
                       }
                       setDebugSaveStatus(res.ok ? "saved" : "error");
                     } catch (e) {

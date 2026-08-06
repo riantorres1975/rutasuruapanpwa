@@ -1,8 +1,12 @@
 import { readFileSync, writeFileSync } from "fs";
 import { join } from "path";
 import { timingSafeEqual } from "crypto";
+import { isWithinUruapanServiceArea } from "@/lib/geo";
 
 export const dynamic = "force-dynamic";
+const MAX_BODY_BYTES = 250_000;
+const MAX_COORDINATES = 5_000;
+const REQUIRED_BODY_KEYS = ["coordenadas", "direccion", "ruta"];
 
 type ProductionRoute = {
   id: number;
@@ -39,8 +43,22 @@ function isValidCoord(c: unknown): c is [number, number] {
     typeof c[0] === "number" && Number.isFinite(c[0]) &&
     typeof c[1] === "number" && Number.isFinite(c[1]) &&
     c[0] >= -180 && c[0] <= 180 &&
-    c[1] >= -90 && c[1] <= 90
+    c[1] >= -90 && c[1] <= 90 &&
+    isWithinUruapanServiceArea(c as [number, number])
   );
+}
+
+async function readJsonWithLimit(request: Request): Promise<unknown> {
+  const contentLength = Number(request.headers.get("content-length") ?? 0);
+  if (!Number.isFinite(contentLength) || contentLength > MAX_BODY_BYTES) {
+    throw new RangeError("Payload demasiado grande");
+  }
+
+  const rawBody = await request.text();
+  if (new TextEncoder().encode(rawBody).length > MAX_BODY_BYTES) {
+    throw new RangeError("Payload demasiado grande");
+  }
+  return JSON.parse(rawBody);
 }
 
 export async function POST(request: Request) {
@@ -52,16 +70,34 @@ export async function POST(request: Request) {
     return Response.json({ error: "Recurso no disponible" }, { status: 403 });
   }
 
-  let body: Record<string, unknown>;
+  let payload: unknown;
   try {
-    body = await request.json();
-  } catch {
+    payload = await readJsonWithLimit(request);
+  } catch (error) {
+    if (error instanceof RangeError) {
+      return Response.json({ error: error.message }, { status: 413 });
+    }
     return Response.json({ error: "JSON inválido" }, { status: 400 });
+  }
+
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    return Response.json({ error: "Datos inválidos" }, { status: 400 });
+  }
+
+  const body = payload as Record<string, unknown>;
+  if (Object.keys(body).sort().join(",") !== REQUIRED_BODY_KEYS.join(",")) {
+    return Response.json({ error: "Campos inválidos" }, { status: 400 });
   }
 
   const { ruta, direccion, coordenadas } = body;
 
-  if (typeof ruta !== "string" || typeof direccion !== "string" || !Array.isArray(coordenadas)) {
+  if (
+    typeof ruta !== "string" ||
+    ruta.trim().length === 0 ||
+    ruta.length > 120 ||
+    typeof direccion !== "string" ||
+    !Array.isArray(coordenadas)
+  ) {
     return Response.json({ error: "Datos inválidos: se requiere ruta, direccion y coordenadas" }, { status: 400 });
   }
 
@@ -69,12 +105,12 @@ export async function POST(request: Request) {
     return Response.json({ error: "Dirección inválida: usa ida o vuelta" }, { status: 400 });
   }
 
-  if (coordenadas.length > 5000) {
-    return Response.json({ error: "Demasiadas coordenadas (máximo 5000)" }, { status: 400 });
+  if (coordenadas.length < 2 || coordenadas.length > MAX_COORDINATES) {
+    return Response.json({ error: `Se requieren entre 2 y ${MAX_COORDINATES} coordenadas` }, { status: 400 });
   }
 
   if (!coordenadas.every(isValidCoord)) {
-    return Response.json({ error: "Coordenadas inválidas: cada elemento debe ser [lng, lat] con valores finitos dentro del rango" }, { status: 400 });
+    return Response.json({ error: "Coordenadas inválidas o fuera del área de servicio" }, { status: 400 });
   }
 
   const produccionPath = join(process.cwd(), "data/rutas_produccion_final.json");
@@ -90,7 +126,7 @@ export async function POST(request: Request) {
   // Match by name and direction (original_name contains "Vuelta" for reverse direction)
   const isVuelta = direccion === "vuelta";
   const idx = routes.findIndex((r) => {
-    const nameMatch = r.name.toLowerCase() === ruta.toLowerCase();
+    const nameMatch = r.name.toLowerCase() === ruta.trim().toLowerCase();
     const dirMatch = isVuelta ? r.original_name.includes("Vuelta") : !r.original_name.includes("Vuelta");
     return nameMatch && dirMatch;
   });
