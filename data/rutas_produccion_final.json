@@ -281,17 +281,17 @@
       ]
     ],
     "landmarks": [
-      { "name": "Unidad Deportiva", "coordinates": [-102.03304, 19.42662] },
-      { "name": "Central de Autobuses", "coordinates": [-102.04234, 19.42687] },
-      { "name": "UNID Uruapan", "coordinates": [-102.04459, 19.42587] },
-      { "name": "Universidad Don Vasco", "coordinates": [-102.04726, 19.42619] },
-      { "name": "IMSS Hospital General de Zona 8 Uruapan", "coordinates": [-102.05550, 19.42768] },
-      { "name": "Centro", "coordinates": [-102.06303, 19.42101] },
-      { "name": "Coppel Cupatitzio", "coordinates": [-102.06297, 19.41967] },
-      { "name": "Parque Lineal Cupatitzio", "coordinates": [-102.06401, 19.41528] },
-      { "name": "Bodega Aurrera Express, Palito Verde", "coordinates": [-102.07071, 19.40384] },
-      { "name": "Fraccionamiento Viñedos", "coordinates": [-102.07299, 19.40509] },
-      { "name": "ESFU 3", "coordinates": [-102.07498, 19.40752] }
+      { "name": "Unidad Deportiva", "point": [-102.03304, 19.42662] },
+      { "name": "Central de Autobuses", "point": [-102.04234, 19.42687] },
+      { "name": "UNID Uruapan", "point": [-102.04459, 19.42587] },
+      { "name": "Universidad Don Vasco", "point": [-102.04726, 19.42619] },
+      { "name": "IMSS Hospital General de Zona 8 Uruapan", "point": [-102.05550, 19.42768] },
+      { "name": "Centro", "point": [-102.06303, 19.42101] },
+      { "name": "Coppel Cupatitzio", "point": [-102.06297, 19.41967] },
+      { "name": "Parque Lineal Cupatitzio", "point": [-102.06401, 19.41528] },
+      { "name": "Bodega Aurrera Express, Palito Verde", "point": [-102.07071, 19.40384] },
+      { "name": "Fraccionamiento Viñedos", "point": [-102.07299, 19.40509] },
+      { "name": "ESFU 3", "point": [-102.07498, 19.40752] }
     ]
   },
   {
@@ -532,17 +532,17 @@
       ]
     ],
     "landmarks": [
-      { "name": "Unidad Deportiva", "coordinates": [-102.03304, 19.42662] },
-      { "name": "Central de Autobuses", "coordinates": [-102.04234, 19.42687] },
-      { "name": "UNID Uruapan", "coordinates": [-102.04459, 19.42587] },
-      { "name": "Universidad Don Vasco", "coordinates": [-102.04726, 19.42619] },
-      { "name": "IMSS Hospital General de Zona 8 Uruapan", "coordinates": [-102.05550, 19.42768] },
-      { "name": "Centro", "coordinates": [-102.06303, 19.42101] },
-      { "name": "Coppel Cupatitzio", "coordinates": [-102.06297, 19.41967] },
-      { "name": "Parque Lineal Cupatitzio", "coordinates": [-102.06401, 19.41528] },
-      { "name": "Bodega Aurrera Express, Palito Verde", "coordinates": [-102.07071, 19.40384] },
-      { "name": "Fraccionamiento Viñedos", "coordinates": [-102.07299, 19.40509] },
-      { "name": "ESFU 3", "coordinates": [-102.07498, 19.40752] }
+      { "name": "Unidad Deportiva", "point": [-102.03304, 19.42662] },
+      { "name": "Central de Autobuses", "point": [-102.04234, 19.42687] },
+      { "name": "UNID Uruapan", "point": [-102.04459, 19.42587] },
+      { "name": "Universidad Don Vasco", "point": [-102.04726, 19.42619] },
+      { "name": "IMSS Hospital General de Zona 8 Uruapan", "point": [-102.05550, 19.42768] },
+      { "name": "Centro", "point": [-102.06303, 19.42101] },
+      { "name": "Coppel Cupatitzio", "point": [-102.06297, 19.41967] },
+      { "name": "Parque Lineal Cupatitzio", "point": [-102.06401, 19.41528] },
+      { "name": "Bodega Aurrera Express, Palito Verde", "point": [-102.07071, 19.40384] },
+      { "name": "Fraccionamiento Viñedos", "point": [-102.07299, 19.40509] },
+      { "name": "ESFU 3", "point": [-102.07498, 19.40752] }
     ]
   },
   {
