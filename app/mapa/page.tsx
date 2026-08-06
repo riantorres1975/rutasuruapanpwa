@@ -33,6 +33,10 @@ import type {
   RouteCalculationWorkerResponse,
   RouteOption,
 } from "@/lib/route-calculation";
+import {
+  buildRouteCalculationPerformance,
+  type RouteCalculationEngine,
+} from "@/lib/route-performance";
 import { FARES_2026 } from "@/lib/mobility-config";
 const AVG_TRIP_SPEED_KMH = 18;
 // Tarifa del camión urbano en pesos (derivada de la config de movilidad).
@@ -936,14 +940,26 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
   }, [polylineRoutes]);
 
   useEffect(() => {
-    if (!originPoint || !destinationPoint || !calculationKey) return;
+    if (!originPoint || !destinationPoint || !calculationKey || routesForMatching.length === 0) return;
 
     const requestId = ++routeCalculationRequestRef.current;
     const worker = routeWorkerRef.current;
+    let calculationStartedAt: number | null = null;
 
-    const applyResult = (result: RouteCalculationResult) => {
+    const applyResult = (result: RouteCalculationResult, engine: RouteCalculationEngine) => {
       if (routeCalculationRequestRef.current !== requestId) return;
       setRouteCalculation({ key: calculationKey, ...result });
+      const durationMs = calculationStartedAt === null
+        ? Number.NaN
+        : performance.now() - calculationStartedAt;
+      try {
+        track(
+          "route_calculation_performance",
+          buildRouteCalculationPerformance(result, durationMs, engine),
+        );
+      } catch {
+        // Analytics must never affect route results.
+      }
     };
 
     const handleMessage = (event: MessageEvent<RouteCalculationWorkerResponse>) => {
@@ -955,7 +971,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
         return;
       }
 
-      applyResult(message.result);
+      applyResult(message.result, "worker");
     };
 
     if (worker) {
@@ -963,6 +979,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     }
 
     const timer = window.setTimeout(() => {
+      calculationStartedAt = performance.now();
       if (worker) {
         const message: RouteCalculationWorkerRequest = {
           type: "calculate",
@@ -981,10 +998,16 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
 
       void import("@/lib/route-calculation")
         .then(({ calculateRouteOptions }) => {
-          applyResult(calculateRouteOptions(routesForMatching, originPoint, destinationPoint));
+          applyResult(
+            calculateRouteOptions(routesForMatching, originPoint, destinationPoint),
+            "fallback",
+          );
         })
         .catch(() => {
-          applyResult({ suggestions: [], alternativeRouteIds: [], transfers: [] });
+          applyResult(
+            { suggestions: [], alternativeRouteIds: [], transfers: [] },
+            "fallback",
+          );
         });
     }, 80);
 
