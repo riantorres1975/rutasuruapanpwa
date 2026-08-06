@@ -31,7 +31,7 @@ const SECTIONS = [
   },
   {
     title: "Servicios de terceros",
-    body: "Mapbox muestra el mapa y resuelve búsquedas de lugares. Vercel Analytics y Speed Insights recopilan métricas técnicas agregadas; UruGo elimina de esos eventos el texto de búsqueda y los parámetros de ruta con coordenadas. DeepSeek procesa los mensajes que envías voluntariamente al asistente junto con contexto de rutas cercanas."
+    body: "Mapbox muestra el mapa y resuelve búsquedas de lugares. Vercel Analytics y Speed Insights recopilan métricas técnicas agregadas; UruGo elimina de esos eventos el texto de búsqueda y los parámetros de ruta con coordenadas. DeepSeek procesa los mensajes que envías voluntariamente al asistente junto con contexto de rutas cercanas. Los errores inesperados generan una huella técnica anónima para detectar fallos repetidos; no se envían el mensaje del error, la traza, las búsquedas ni la ubicación."
   },
   {
     title: "Información referencial",

@@ -1,8 +1,14 @@
 'use client';
 
 import Link from 'next/link';
+import { useEffect } from 'react';
+import { reportClientError } from '@/lib/client-error-report';
 
-export default function MapError({ reset }: { error: Error; reset: () => void }) {
+export default function MapError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
+  useEffect(() => {
+    reportClientError(error, 'boundary', 'mapa');
+  }, [error]);
+
   return (
     <div
       style={{

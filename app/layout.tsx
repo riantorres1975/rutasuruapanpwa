@@ -5,6 +5,7 @@ import PWARegistrar from "@/components/PWARegistrar";
 import PWAInstallBanner from "@/components/PWAInstallBanner";
 import AdaptiveTheme from "@/components/AdaptiveTheme";
 import PrivacySafeAnalytics from "@/components/PrivacySafeAnalytics";
+import ClientErrorReporter from "@/components/ClientErrorReporter";
 import { SITE_URL } from "@/lib/site-url";
 import "./globals.css";
 
@@ -95,6 +96,7 @@ export default function RootLayout({
         <AdaptiveTheme />
         <PWARegistrar />
         <PWAInstallBanner />
+        <ClientErrorReporter />
         {children}
         <PrivacySafeAnalytics />
         <SpeedInsights />
