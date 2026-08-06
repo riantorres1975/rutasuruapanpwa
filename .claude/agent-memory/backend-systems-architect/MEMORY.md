@@ -1,2 +1,0 @@
-- [Project Architecture](project_rutas_uruapan.md) — Static PWA, no DB/auth; backend = 1 API route + SW + build scripts
-- [Known Issues & Tech Debt](project_known_issues.md) — Fixed items from 2026-04-23 audit + deferred items requiring user action
