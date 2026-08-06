@@ -1,5 +1,9 @@
-import { NextRequest } from "next/server";
+import { after, NextRequest } from "next/server";
 import { isClientErrorReport } from "@/lib/client-error-report";
+import {
+  isOperationsAlertConfigured,
+  notifyCriticalClientError,
+} from "@/lib/operations-alert";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
 
 const MAX_BODY_BYTES = 2_048;
@@ -32,5 +36,15 @@ export async function POST(request: NextRequest) {
   }
 
   console.error("[client-error]", JSON.stringify(payload));
+
+  if (payload.kind === "boundary" && isOperationsAlertConfigured()) {
+    after(async () => {
+      const result = await notifyCriticalClientError(payload);
+      if (result === "failed") {
+        console.error("[client-error-alert] No se pudo entregar la alerta");
+      }
+    });
+  }
+
   return new Response(null, { status: 204 });
 }

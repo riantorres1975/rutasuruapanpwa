@@ -96,10 +96,14 @@ La aplicación estará disponible en [http://localhost:3000](http://localhost:30
 | `DEEPSEEK_API_KEY` | No | Habilita el asistente de transporte |
 | `UPSTASH_REDIS_REST_URL` | No | Almacenamiento compartido para el límite de solicitudes |
 | `UPSTASH_REDIS_REST_TOKEN` | No | Token de acceso a Upstash Redis |
+| `ERROR_ALERT_WEBHOOK_URL` | No | Webhook HTTPS para alertas de errores críticos del cliente |
+| `ERROR_ALERT_WEBHOOK_TOKEN` | No | Token Bearer opcional para autenticar el webhook |
 | `DEBUG_ROUTE_SAVE_ENABLED` | No | Activa el guardado del editor de recorridos en desarrollo |
 | `DEBUG_ROUTE_SAVE_TOKEN` | No | Protege el endpoint del editor cuando está habilitado |
 
 El token público de Mapbox debe restringirse por dominio desde el panel de Mapbox. Las claves privadas no deben usar el prefijo `NEXT_PUBLIC_` ni incluirse en el repositorio.
+
+En producción conviene configurar Upstash para que los límites de solicitudes se compartan entre todas las instancias. El webhook operativo es opcional: recibe únicamente errores críticos de React, deduplicados por huella durante 15 minutos, sin mensajes, trazas ni ubicación del usuario.
 
 ## Comandos disponibles
 
