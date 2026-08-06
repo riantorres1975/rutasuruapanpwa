@@ -1,7 +1,19 @@
 import type { Coordinates } from "@/lib/types";
-import { URUAPAN_CENTER } from "@/lib/map";
 
-export const URUAPAN_SERVICE_RADIUS_M = 20_000;
+export const MAX_AUTO_LOCATION_ACCURACY_M = 250;
+
+// Cobertura derivada de los extremos de las rutas verificadas, con un margen
+// para colonias periféricas. Evita aceptar como origen automático otra ciudad.
+export const URUAPAN_SERVICE_POLYGON: Coordinates[] = [
+  [-102.097, 19.48],
+  [-102.045, 19.485],
+  [-101.99, 19.485],
+  [-101.993, 19.39],
+  [-102.013, 19.355],
+  [-102.065, 19.355],
+  [-102.098, 19.385],
+  [-102.1, 19.445],
+];
 
 export function haversineMeters(a: Coordinates, b: Coordinates): number {
   const R = 6_371_000;
@@ -17,5 +29,19 @@ export function haversineMeters(a: Coordinates, b: Coordinates): number {
 }
 
 export function isWithinUruapanServiceArea(point: Coordinates): boolean {
-  return haversineMeters(URUAPAN_CENTER, point) <= URUAPAN_SERVICE_RADIUS_M;
+  const [x, y] = point;
+  let inside = false;
+
+  for (let i = 0, j = URUAPAN_SERVICE_POLYGON.length - 1; i < URUAPAN_SERVICE_POLYGON.length; j = i++) {
+    const [xi, yi] = URUAPAN_SERVICE_POLYGON[i];
+    const [xj, yj] = URUAPAN_SERVICE_POLYGON[j];
+    const crosses = yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
+    if (crosses) inside = !inside;
+  }
+
+  return inside;
+}
+
+export function isAccurateEnoughForAutomaticOrigin(accuracyM: number): boolean {
+  return Number.isFinite(accuracyM) && accuracyM <= MAX_AUTO_LOCATION_ACCURACY_M;
 }

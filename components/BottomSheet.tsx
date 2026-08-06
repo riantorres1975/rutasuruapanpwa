@@ -1,6 +1,6 @@
 "use client";
 
-import { type PointerEvent, type ReactNode, useEffect, useRef, useState } from "react";
+import { type PointerEvent, type ReactNode, useCallback, useEffect, useId, useRef, useState } from "react";
 
 type SnapPoint = "mini" | "full";
 
@@ -29,11 +29,14 @@ export default function BottomSheet({
   onSnapChange,
 }: BottomSheetProps) {
   const [internalSnap, setInternalSnap] = useState<SnapPoint>("mini");
+  const titleId = useId();
+  const sheetRef = useRef<HTMLElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
   const snap = snapProp ?? internalSnap;
-  const setSnap = (s: SnapPoint) => {
+  const setSnap = useCallback((s: SnapPoint) => {
     setInternalSnap(s);
     onSnapChange?.(s);
-  };
+  }, [onSnapChange]);
 
   const [dragOffset, setDragOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -103,10 +106,48 @@ export default function BottomSheet({
   const miniTranslate = isMini ? `calc(80dvh - ${miniHeight}px)` : "0px";
   const baseTransform = open ? `translateY(calc(${miniTranslate} + ${dragOffset}px))` : "translateY(102%)";
 
+  useEffect(() => {
+    if (!open) return;
+    previousFocusRef.current = document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        if (snapPoints && snap === "full") setSnap("mini");
+        else onOpenChange(false);
+        return;
+      }
+
+      if (event.key !== "Tab" || isMini || !sheetRef.current) return;
+      const focusable = Array.from(sheetRef.current.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      ));
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      previousFocusRef.current?.focus();
+    };
+  }, [isMini, onOpenChange, open, setSnap, snap, snapPoints]);
+
   return (
     <>
       {/* Backdrop — solo en full, no en mini */}
       <div
+        aria-hidden="true"
         onClick={() => (snapPoints && snap === "full" ? setSnap("mini") : onOpenChange(false))}
         className={`fixed inset-0 z-30 bg-slate-950/60 transition-opacity duration-300 lg:hidden ${
           open && (!snapPoints || snap === "full")
@@ -117,9 +158,12 @@ export default function BottomSheet({
 
       {/* ── MOBILE: Bottom Sheet ── */}
       <section
-        role="dialog"
-        aria-modal={open ? "true" : undefined}
-        aria-label={title}
+        ref={sheetRef}
+        role={isMini ? "region" : "dialog"}
+        aria-modal={open && !isMini ? "true" : undefined}
+        aria-labelledby={titleId}
+        aria-hidden={!open}
+        inert={!open ? true : undefined}
         style={{ transform: baseTransform, height: "80dvh", background: "var(--ov-bg)", borderTop: "1px solid var(--ov-border)" }}
         className={`fixed inset-x-0 bottom-0 z-40 rounded-t-[28px] shadow-soft will-change-transform lg:hidden ${
           isDragging ? "transition-none" : "transition-[transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
@@ -138,11 +182,13 @@ export default function BottomSheet({
 
           {snapPoints ? (
             /* En modo snap: la cabecera es solo el handle + contenido mini */
-            <div
+            <button
+              type="button"
               className="flex items-center gap-3"
               onClick={() => !isDragging && setSnap(snap === "mini" ? "full" : "mini")}
+              aria-expanded={snap === "full"}
             >
-              <p className="flex-1 font-display text-[15px] font-bold ov-text" style={{ color: "var(--ov-text)" }}>{title}</p>
+              <span id={titleId} className="flex-1 text-left font-display text-[15px] font-bold ov-text" style={{ color: "var(--ov-text)" }}>{title}</span>
               <svg
                 viewBox="0 0 24 24"
                 fill="none"
@@ -152,10 +198,10 @@ export default function BottomSheet({
               >
                 <path d="M18 15l-6-6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
-            </div>
+            </button>
           ) : (
             <>
-              <p className="pr-12 font-display text-lg font-bold" style={{ color: "var(--ov-text)" }}>{title}</p>
+              <p id={titleId} className="pr-12 font-display text-lg font-bold" style={{ color: "var(--ov-text)" }}>{title}</p>
               <button
                 type="button"
                 onClick={() => onOpenChange(false)}
@@ -172,6 +218,8 @@ export default function BottomSheet({
         </header>
 
         <div
+          aria-hidden={isMini || !open}
+          inert={isMini || !open ? true : undefined}
           className={`overflow-y-auto overscroll-contain px-5 pt-5 transition-opacity duration-200 ${
             snapPoints && snap === "mini" ? "pointer-events-none opacity-0" : "opacity-100"
           }`}
@@ -180,7 +228,7 @@ export default function BottomSheet({
             paddingBottom: "calc(2rem + env(safe-area-inset-bottom, 0px))",
           }}
         >
-          {children}
+          {open ? children : null}
         </div>
       </section>
 

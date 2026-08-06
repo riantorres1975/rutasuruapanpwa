@@ -2,6 +2,7 @@
 
 import { memo, type MutableRefObject, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
+import type * as GeoJSON from "geojson";
 import {
   DEFAULT_ZOOM,
   SOURCE_ID,

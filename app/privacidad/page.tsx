@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "Privacidad | UruGo",
-    description: "UruGo es una PWA de consulta de rutas para Uruapan. No requiere cuenta, no solicita datos personales.",
+    description: "Cómo UruGo usa la ubicación, el almacenamiento local, la analítica y el asistente de rutas.",
     url: "https://www.urugo.app/privacidad",
     type: "website"
   }
@@ -23,15 +23,15 @@ export const metadata: Metadata = {
 const SECTIONS = [
   {
     title: "Uso de ubicación",
-    body: `Si usas el botón de ubicación, el navegador solicita permiso para estimar tu posición. Esa ubicación se usa en tu dispositivo para encontrar rutas cercanas y no se almacena en una base de datos de ${APP_BRAND.name}.`
+    body: `Si autorizas la ubicación, el navegador la usa para encontrar rutas cercanas. ${APP_BRAND.name} no la guarda en una base de datos. Al usar el asistente, la posición se redondea y se procesa temporalmente en el servidor para identificar rutas cercanas; las coordenadas exactas no se envían al proveedor de inteligencia artificial.`
   },
   {
     title: "Datos offline",
-    body: "Como PWA, la app puede guardar archivos de la aplicación y datos de rutas en el caché del navegador para mejorar velocidad y permitir uso parcial sin conexión."
+    body: "La app puede guardar archivos, datos de rutas, favoritos y viajes recientes en el navegador para mejorar la velocidad y permitir uso parcial sin conexión. Puedes borrar estos datos desde la configuración de tu navegador."
   },
   {
     title: "Servicios de terceros",
-    body: "El mapa usa Mapbox para mostrar cartografía. Los tiles del mapa pueden requerir conexión y están sujetos a las políticas del proveedor."
+    body: "Mapbox muestra el mapa y resuelve búsquedas de lugares. Vercel Analytics y Speed Insights recopilan métricas técnicas agregadas; UruGo elimina de esos eventos el texto de búsqueda y los parámetros de ruta con coordenadas. DeepSeek procesa los mensajes que envías voluntariamente al asistente junto con contexto de rutas cercanas."
   },
   {
     title: "Información referencial",
@@ -70,7 +70,7 @@ export default function PrivacyPage() {
               Aviso de <span className="italic" style={{ color: "#b8e840" }}>privacidad</span>.
             </>
           }
-          intro={`${APP_BRAND.name} es una PWA de consulta de rutas para Uruapan. No requiere cuenta, no solicita datos personales y no guarda tu ubicación en servidores propios.`}
+          intro={`${APP_BRAND.name} es una PWA de consulta de rutas para Uruapan. No requiere cuenta ni crea perfiles de usuario. Este aviso explica qué datos se procesan al usar funciones opcionales.`}
         />
 
         <div className="mt-10">

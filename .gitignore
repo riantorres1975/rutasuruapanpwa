@@ -15,6 +15,7 @@
 # local AI assistant configuration
 /.agents/
 /.claude/
+/.codex/
 
 # debug
 npm-debug.log*
@@ -22,6 +23,11 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 .next-dev*.log
+
+# browser tests
+/test-results/
+/playwright-report/
+/blob-report/
 
 # env files
 .env*

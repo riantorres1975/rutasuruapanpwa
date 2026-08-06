@@ -3,6 +3,13 @@ name: CI
 on:
   push:
     branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
   pull_request:
     branches: [main]
 
@@ -20,15 +27,25 @@ jobs:
       - name: Instalar dependencias
         run: npm ci
 
+      - name: Auditar dependencias de producción
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Tipos
+        run: npm run typecheck
+
       - name: Lint
         run: npm run lint
 
       - name: Tests
         run: npm run test
 
+      - name: Instalar Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Pruebas móviles
+        run: npm run test:e2e
+
       - name: Build
         run: npm run build
         env:
-          # El build no necesita secretos: sin token de Mapbox las vistas
-          # previas caen al SVG local y el chat responde 503 solo en runtime.
           NEXT_PUBLIC_SITE_URL: https://www.urugo.app

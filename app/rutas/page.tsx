@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Logo from "@/components/Logo";
 import ForceDark from "@/components/ForceDark";
-import RoutePreviewSVG from "@/components/RoutePreviewSVG";
+import RoutePreviewFromData from "@/components/RoutePreviewFromData";
 import RutasFilter from "@/components/RutasFilter";
 import { getRouteSeoItems } from "@/lib/route-seo";
 import { getRouteSearchTerms } from "@/lib/route-names";
@@ -194,7 +194,7 @@ export default function RutasPage() {
                     className="order-2 shrink-0 overflow-hidden rounded-xl"
                     style={{ background: "rgba(0,0,0,0.25)" }}
                   >
-                    <RoutePreviewSVG
+                    <RoutePreviewFromData
                       routeName={route.name}
                       color={route.color}
                       width={84}

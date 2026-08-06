@@ -1,17 +1,3 @@
-import rutasProduccion from "@/data/rutas_produccion_final.json";
-
-type RawRoute = {
-  name: string;
-  original_name: string;
-  color: string;
-  path: number[][];
-};
-
-function getRoutePaths(routeName: string): [number, number][][] {
-  const routes = (rutasProduccion as unknown as RawRoute[]).filter((r) => r.name === routeName);
-  return routes.map((r) => r.path as [number, number][]);
-}
-
 function normalizePaths(
   paths: [number, number][][],
   w: number,
@@ -69,7 +55,7 @@ function decimatePx(points: [number, number][], tolerance: number): [number, num
 }
 
 type Props = {
-  routeName: string;
+  paths: [number, number][][];
   color: string;
   width?: number;
   height?: number;
@@ -78,14 +64,13 @@ type Props = {
 };
 
 export default function RoutePreviewSVG({
-  routeName,
+  paths,
   color,
   width = 120,
   height = 72,
   strokeWidth = 2.5,
   className,
 }: Props) {
-  const paths = getRoutePaths(routeName);
   if (paths.length === 0) return null;
 
   // Tolerancia proporcional al grosor del trazo: el detalle perdido queda

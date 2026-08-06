@@ -16,6 +16,8 @@ const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
   // Disallow embedding in iframes (clickjacking protection)
   { key: "X-Frame-Options", value: "DENY" },
+  { key: "Cross-Origin-Opener-Policy", value: "same-origin-allow-popups" },
+  { key: "Origin-Agent-Cluster", value: "?1" },
   // Limit referrer information sent to third parties
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   // Restrict access to browser features not used by this app
@@ -37,10 +39,10 @@ const securityHeaders = [
       process.env.NODE_ENV === "development"
         ? "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com"
         : "script-src 'self' 'unsafe-inline'",
-      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-      "font-src 'self' https://fonts.gstatic.com",
-      "img-src 'self' data: https://*.mapbox.com https://*.mapbox.cn https://api.mapbox.com https://images.unsplash.com",
-      "connect-src 'self' https://*.mapbox.com https://api.mapbox.com https://api.deepseek.com",
+      "style-src 'self' 'unsafe-inline'",
+      "font-src 'self'",
+      "img-src 'self' data: blob: https://*.mapbox.com https://*.mapbox.cn https://api.mapbox.com",
+      "connect-src 'self' https://*.mapbox.com https://api.mapbox.com",
       "worker-src 'self' blob:",
       "frame-src 'none'",
       "frame-ancestors 'none'",
@@ -76,6 +78,13 @@ const nextConfig = {
 
   async headers() {
     return [
+      {
+        source: "/sw.js",
+        headers: [
+          ...securityHeaders,
+          { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" }
+        ]
+      },
       {
         source: "/(.*)",
         headers: securityHeaders

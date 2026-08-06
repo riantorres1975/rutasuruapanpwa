@@ -1,4 +1,5 @@
 import type { RouteData } from "@/lib/types";
+import type * as GeoJSON from "geojson";
 
 export const SOURCE_ID = "routes-source";
 export const URUAPAN_CENTER: [number, number] = [-102.0584, 19.4208];

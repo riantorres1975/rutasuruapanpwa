@@ -169,10 +169,44 @@ export default function ChatBot() {
     if (open) bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, open]);
 
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setOpen(false);
+        btnRef.current?.focus();
+        return;
+      }
+
+      if (event.key !== 'Tab' || !panelRef.current) return;
+      const focusable = Array.from(panelRef.current.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), a[href], input:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      ));
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [open]);
+
   const requestLocation = useCallback(() => {
     if (!navigator.geolocation) { setLocStatus('denied'); return; }
     navigator.geolocation.getCurrentPosition(
-      (pos) => { setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }); setLocStatus('granted'); },
+      (pos) => {
+        setLocation({
+          lat: Number(pos.coords.latitude.toFixed(3)),
+          lng: Number(pos.coords.longitude.toFixed(3)),
+        });
+        setLocStatus('granted');
+      },
       () => setLocStatus('denied'),
       { timeout: 6000 }
     );
@@ -236,7 +270,7 @@ export default function ChatBot() {
         )}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--verde, #6aab48)', display: 'inline-block' }} />
-          <span style={{ color: 'var(--foreground, #e8f2d8)', fontSize: 13, fontWeight: 700, letterSpacing: '-0.01em' }}>
+          <span id="urugo-chat-title" style={{ color: 'var(--foreground, #e8f2d8)', fontSize: 13, fontWeight: 700, letterSpacing: '-0.01em' }}>
             {view === 'report' ? 'Reportar error' : 'Asistente UruGo'}
           </span>
           {view === 'chat' && (
@@ -350,6 +384,7 @@ export default function ChatBot() {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKey}
               placeholder="¿Cómo llego al IMSS?"
+              aria-label="Escribe tu pregunta sobre rutas"
               disabled={loading}
               autoComplete="off"
               enterKeyHint="send"
@@ -369,16 +404,16 @@ export default function ChatBot() {
             ¿El bot dio información incorrecta? Llena los campos y elige cómo enviarlo.
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <label style={{ color: 'var(--foreground, #e8f2d8)', fontSize: 11, fontWeight: 600, opacity: 0.7 }}>Ruta (opcional)</label>
-            <input type="text" value={reportRoute} onChange={(e) => setReportRoute(e.target.value)} placeholder="Ej: Ruta 2, Ruta 25..." style={inputStyle} />
+            <label htmlFor="chat-report-route" style={{ color: 'var(--foreground, #e8f2d8)', fontSize: 11, fontWeight: 600, opacity: 0.7 }}>Ruta (opcional)</label>
+            <input id="chat-report-route" type="text" value={reportRoute} onChange={(e) => setReportRoute(e.target.value)} placeholder="Ej: Ruta 2, Ruta 25..." style={inputStyle} />
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <label style={{ color: 'var(--foreground, #e8f2d8)', fontSize: 11, fontWeight: 600, opacity: 0.7 }}>¿Qué dijo mal el bot? *</label>
-            <textarea value={reportError} onChange={(e) => setReportError(e.target.value)} placeholder="Ej: Dijo que la Ruta 2 pasa por el centro..." rows={3} style={inputStyle} />
+            <label htmlFor="chat-report-error" style={{ color: 'var(--foreground, #e8f2d8)', fontSize: 11, fontWeight: 600, opacity: 0.7 }}>¿Qué dijo mal el bot? *</label>
+            <textarea id="chat-report-error" value={reportError} onChange={(e) => setReportError(e.target.value)} placeholder="Ej: Dijo que la Ruta 2 pasa por el centro..." rows={3} style={inputStyle} />
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <label style={{ color: 'var(--foreground, #e8f2d8)', fontSize: 11, fontWeight: 600, opacity: 0.7 }}>¿Cuál es la información correcta?</label>
-            <textarea value={reportCorrect} onChange={(e) => setReportCorrect(e.target.value)} placeholder="Ej: La Ruta 2 va de Constituyentes a Jicalán..." rows={3} style={inputStyle} />
+            <label htmlFor="chat-report-correct" style={{ color: 'var(--foreground, #e8f2d8)', fontSize: 11, fontWeight: 600, opacity: 0.7 }}>¿Cuál es la información correcta?</label>
+            <textarea id="chat-report-correct" value={reportCorrect} onChange={(e) => setReportCorrect(e.target.value)} placeholder="Ej: La Ruta 2 va de Constituyentes a Jicalán..." rows={3} style={inputStyle} />
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 2 }}>
             <a href={issueHref} target="_blank" rel="noreferrer"
@@ -421,6 +456,12 @@ export default function ChatBot() {
       {/* Sheet */}
       <div
         ref={panelRef}
+        id="urugo-chat-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="urugo-chat-title"
+        aria-hidden={!open}
+        inert={!open ? true : undefined}
         style={{
           position: 'fixed', left: 0, right: 0, bottom: 0,
           zIndex: 99999,
@@ -449,6 +490,10 @@ export default function ChatBot() {
   const desktopPanel = !isMobile && open ? createPortal(
     <div
       ref={panelRef}
+      id="urugo-chat-panel"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="urugo-chat-title"
       style={{
         position: 'fixed',
         ...desktopStyle,
@@ -476,7 +521,9 @@ export default function ChatBot() {
         className={`ov-panel pointer-events-auto inline-flex h-12 w-12 items-center justify-center rounded-2xl border shadow-[0_8px_32px_rgba(0,0,0,0.3)] backdrop-blur-xl transition active:scale-[0.97] lg:h-10 lg:w-10 lg:rounded-lg lg:shadow-none ${
           open ? 'border-lima/40 bg-lima/12 text-lima' : 'border-foreground/12 bg-foreground/5 text-foreground/50 hover:border-foreground/25 hover:text-foreground/80'
         }`}
-        aria-label="Abrir asistente de rutas"
+        aria-label={open ? "Cerrar asistente de rutas" : "Abrir asistente de rutas"}
+        aria-expanded={open}
+        aria-controls="urugo-chat-panel"
         title="Pregunta sobre rutas"
       >
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">

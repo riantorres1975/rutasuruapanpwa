@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { haversineMeters, isWithinUruapanServiceArea } from "@/lib/geo";
+import {
+  haversineMeters,
+  isAccurateEnoughForAutomaticOrigin,
+  isWithinUruapanServiceArea,
+} from "@/lib/geo";
 
 describe("haversineMeters", () => {
   it("devuelve 0 para el mismo punto", () => {
@@ -34,5 +38,13 @@ describe("isWithinUruapanServiceArea", () => {
   it("rechaza ubicaciones en otras ciudades", () => {
     expect(isWithinUruapanServiceArea([-101.19498, 19.706])).toBe(false); // Morelia
     expect(isWithinUruapanServiceArea([-99.1332, 19.4326])).toBe(false); // Ciudad de Mexico
+  });
+});
+
+describe("isAccurateEnoughForAutomaticOrigin", () => {
+  it("acepta precisión urbana y rechaza lecturas demasiado amplias", () => {
+    expect(isAccurateEnoughForAutomaticOrigin(35)).toBe(true);
+    expect(isAccurateEnoughForAutomaticOrigin(251)).toBe(false);
+    expect(isAccurateEnoughForAutomaticOrigin(Number.NaN)).toBe(false);
   });
 });

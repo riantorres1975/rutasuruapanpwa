@@ -41,7 +41,10 @@ export default function LandingSearch() {
     const timer = window.setTimeout(() => {
       lastTrackedQueryRef.current = trimmed;
       try {
-        track("busqueda_sin_resultados", { consulta: trimmed, origen: "landing" });
+        track("busqueda_sin_resultados", {
+          longitud: Math.min(trimmed.length, 100),
+          origen: "landing",
+        });
       } catch {
         // analytics no disponible: ignorar
       }
@@ -164,6 +167,7 @@ export default function LandingSearch() {
               }}
               onKeyDown={handleKeyDown}
               placeholder="¿A dónde vas? Ej. Parque Nacional"
+              aria-label="Buscar destino"
               role="combobox"
               aria-expanded={isOpen}
               aria-controls={listboxId}

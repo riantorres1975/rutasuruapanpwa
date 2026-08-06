@@ -34,7 +34,10 @@ export default function RutasFilter({ total, gridId = "rutas-grid", emptyId = "r
     const timer = window.setTimeout(() => {
       lastTrackedQueryRef.current = trimmed;
       try {
-        track("busqueda_sin_resultados", { consulta: trimmed, origen: "rutas" });
+        track("busqueda_sin_resultados", {
+          longitud: Math.min(trimmed.length, 100),
+          origen: "rutas",
+        });
       } catch {
         // analytics no disponible: ignorar
       }
@@ -92,6 +95,7 @@ export default function RutasFilter({ total, gridId = "rutas-grid", emptyId = "r
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Busca por número, colonia o destino…"
+            aria-label="Filtrar rutas"
             className="h-12 w-full rounded-xl border pl-11 pr-11 text-sm font-medium outline-none transition [&::placeholder]:opacity-50"
             style={{ background: "rgba(106,171,72,0.06)", borderColor: "rgba(140,200,80,0.15)", color: "#e8f2d8" }}
           />

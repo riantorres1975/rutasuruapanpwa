@@ -8,6 +8,7 @@ import { getSavedPlaces, setSavedPlace, SAVED_SLOT_LABELS, type SavedSlot } from
 
 type PlaceSearchProps = {
   placeholder?: string;
+  label?: string;
   onSelect: (result: PlaceResult) => void;
   autoFocus?: boolean;
   /** Texto inicial del input (p. ej. el destino que llegó por URL) */
@@ -18,6 +19,7 @@ const DEBOUNCE_MS = 280;
 
 export default function PlaceSearch({
   placeholder = "Busca una colonia, hospital, plaza…",
+  label = "Buscar lugar",
   onSelect,
   autoFocus = false,
   initialQuery = "",
@@ -48,7 +50,10 @@ export default function PlaceSearch({
     const timer = window.setTimeout(() => {
       lastTrackedQueryRef.current = trimmed;
       try {
-        track("busqueda_sin_resultados", { consulta: trimmed, origen: "mapa" });
+        track("busqueda_sin_resultados", {
+          longitud: Math.min(trimmed.length, 100),
+          origen: "mapa",
+        });
       } catch {
         // analytics no disponible: ignorar
       }
@@ -168,6 +173,7 @@ export default function PlaceSearch({
           }}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
+          aria-label={label}
           role="combobox"
           aria-expanded={isOpen}
           aria-controls={listboxId}

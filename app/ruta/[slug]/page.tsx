@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import Logo from "@/components/Logo";
-import RoutePreviewSVG from "@/components/RoutePreviewSVG";
+import RoutePreviewFromData from "@/components/RoutePreviewFromData";
 import { APP_BRAND, DATA_LAST_UPDATED, FARES_2026 } from "@/lib/mobility-config";
 import { findRouteSeoItem, getRouteSeoItems } from "@/lib/route-seo";
 import { getSchedule } from "@/lib/schedules";
@@ -202,7 +202,7 @@ export default async function RoutePage({ params }: RoutePageProps) {
                 />
               ) : (
                 <div style={{ background: "rgba(0,0,0,0.3)" }}>
-                  <RoutePreviewSVG
+                  <RoutePreviewFromData
                     routeName={route.name}
                     color={route.color}
                     width={800}

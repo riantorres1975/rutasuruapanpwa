@@ -1,4 +1,5 @@
 import type { Coordinates, ProductionRouteLandmark } from "@/lib/types";
+import { getSchedule } from "@/lib/schedules";
 
 // ─── Public types ─────────────────────────────────────────────────────────────
 
@@ -31,6 +32,9 @@ export type PolylineRouteMatch = {
   destSegIndex: number;
   segment: Coordinates[];
   routeLengthM: number;
+  rideMinutes: number;
+  expectedWaitMinutes: number;
+  estimatedMinutes: number;
   score: number;
 };
 
@@ -43,6 +47,16 @@ export type RankedRoutes = {
 
 const EARTH_R = 6_371_000;
 const toRad = (d: number) => (d * Math.PI) / 180;
+const WALK_SPEED_M_PER_MIN = 75;
+const BUS_SPEED_M_PER_MIN = 300;
+const DEFAULT_WAIT_MINUTES = 7.5;
+
+function expectedWaitMinutes(routeName: string): number {
+  const schedule = getSchedule(routeName);
+  if (!schedule) return DEFAULT_WAIT_MINUTES;
+  if (schedule.continuous) return 2.5;
+  return (schedule.freqMin + schedule.freqMax) / 4;
+}
 
 // Equirectangular projection to metric XY, accurate within ~0.1% for city-scale areas.
 function toMetricXY(coord: Coordinates, refLat: number): [number, number] {
@@ -201,18 +215,17 @@ function buildSegmentBetween(route: PolylineRoute, originSeg: ClosestOnPath, des
 }
 
 /**
- * Evaluates all routes, discards invalid ones, deduplicates by routeId keeping
+ * Evaluates all routes, discards invalid ones, deduplicates by route name keeping
  * the best-scoring direction, then returns up to 3 results sorted by score.
  *
- * Score = originDistM + destDistM + routeLengthM * 0.01  (lower is better)
- * The length factor rewards shorter routes when walking distances are similar.
+ * Score is the estimated door-to-door time: walking + expected wait + ride.
  */
 export function findBestRoutes(
   origin: Coordinates,
   destination: Coordinates,
   routes: PolylineRoute[]
 ): PolylineRouteMatch[] {
-  const byId = new Map<number, PolylineRouteMatch>();
+  const byRouteName = new Map<string, PolylineRouteMatch>();
 
   for (const route of routes) {
     const result = isRouteValid(origin, destination, route);
@@ -221,12 +234,15 @@ export function findBestRoutes(
     const { originSeg, destSeg } = result;
     const segment = buildSegmentBetween(route, originSeg, destSeg);
     const routeLengthM = getRouteLength(segment);
-    const score = originSeg.distM + destSeg.distM + routeLengthM * 0.01;
+    const rideMinutes = routeLengthM / BUS_SPEED_M_PER_MIN;
+    const waitMinutes = expectedWaitMinutes(route.name);
+    const score = (originSeg.distM + destSeg.distM) / WALK_SPEED_M_PER_MIN + rideMinutes + waitMinutes;
+    const routeKey = route.name.trim().toLocaleLowerCase("es-MX");
 
-    const existing = byId.get(route.id);
+    const existing = byRouteName.get(routeKey);
     if (existing && existing.score <= score) continue;
 
-    byId.set(route.id, {
+    byRouteName.set(routeKey, {
       routeId: route.id,
       routeName: route.name,
       routeColor: route.color,
@@ -237,11 +253,14 @@ export function findBestRoutes(
       destSegIndex: destSeg.segmentIndex,
       segment,
       routeLengthM,
+      rideMinutes: Math.max(1, Math.ceil(rideMinutes)),
+      expectedWaitMinutes: Math.ceil(waitMinutes),
+      estimatedMinutes: Math.max(1, Math.ceil(score)),
       score,
     });
   }
 
-  return Array.from(byId.values())
+  return Array.from(byRouteName.values())
     .sort((a, b) => a.score - b.score)
     .slice(0, 3);
 }

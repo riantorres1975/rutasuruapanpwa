@@ -1,5 +1,6 @@
 import type { Coordinates } from "@/lib/types";
 import { haversineMeters } from "@/lib/geo";
+import type * as GeoJSON from "geojson";
 
 export function isDebugMode(): boolean {
   if (typeof window === "undefined") return false;

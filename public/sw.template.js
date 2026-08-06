@@ -92,7 +92,9 @@ async function networkFirstData(request, cacheName) {
 
   try {
     const response = await fetch(request, { cache: "no-store" });
-    cache.put(request, response.clone());
+    if (response.ok) {
+      cache.put(request, response.clone());
+    }
     return response;
   } catch {
     const cached = await cache.match(request);
@@ -100,14 +102,22 @@ async function networkFirstData(request, cacheName) {
   }
 }
 
+function canonicalNavigationUrl(request) {
+  const url = new URL(request.url);
+  return `${url.origin}${url.pathname}`;
+}
+
 async function networkFirstNavigation(request) {
+  const cacheKey = canonicalNavigationUrl(request);
   try {
     const response = await fetch(request);
-    const cache = await caches.open(STATIC_CACHE_NAME);
-    cache.put(request, response.clone());
+    if (response.ok) {
+      const cache = await caches.open(STATIC_CACHE_NAME);
+      cache.put(cacheKey, response.clone());
+    }
     return response;
   } catch {
-    const cached = await caches.match(request);
+    const cached = await caches.match(cacheKey);
     if (cached) {
       return cached;
     }

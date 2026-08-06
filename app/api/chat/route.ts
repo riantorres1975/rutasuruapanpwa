@@ -10,6 +10,7 @@ import {
 import { getRouteDestination } from "@/lib/route-names";
 import { getSchedule } from "@/lib/schedules";
 import { FARES_2026 } from "@/lib/mobility-config";
+import { isWithinUruapanServiceArea } from "@/lib/geo";
 
 function buildSystemPrompt(location?: { lat: number; lng: number } | null): string {
   // Todo lo geográfico (qué ruta pasa por dónde) se deriva del trazo GPS real
@@ -38,7 +39,7 @@ function buildSystemPrompt(location?: { lat: number; lng: number } | null): stri
     .join("\n");
 
   const locationSection = location
-    ? `\n\n## Ubicación actual del usuario:\nCoordenadas: ${location.lat.toFixed(5)}, ${location.lng.toFixed(5)}\nRutas cuyo trazo real pasa cerca (≤500 m):\n${nearbyRoutesReal(location.lat, location.lng)}\nPrioriza estas rutas al responder si son relevantes para la pregunta.`
+    ? `\n\n## Contexto aproximado de ubicación:\nRutas cuyo trazo real pasa cerca del usuario (≤500 m):\n${nearbyRoutesReal(location.lat, location.lng)}\nPrioriza estas rutas al responder si son relevantes. No conoces ni debes inferir la ubicación exacta del usuario.`
     : "";
 
   return `Eres el asistente de UruGo, la app de transporte urbano de Uruapan, Michoacán, México.
@@ -78,6 +79,24 @@ ${aliasesList}
 // Durable y global entre instancias si hay Upstash configurado (ver lib/rate-limit.ts).
 const RATE_LIMIT = 10;
 const RATE_WINDOW_MS = 60_000;
+const MAX_BODY_BYTES = 32_000;
+const MAX_MESSAGE_CHARS = 1_000;
+const MAX_HISTORY_ITEMS = 20;
+const MAX_HISTORY_ITEM_CHARS = 2_000;
+const UPSTREAM_TIMEOUT_MS = 12_000;
+
+type ChatHistoryItem = { role: "user" | "assistant" | "bot"; text: string };
+type ChatPayload = {
+  message: string;
+  history: ChatHistoryItem[];
+  location: { lat: number; lng: number } | null;
+};
+
+class RequestError extends Error {
+  constructor(message: string, readonly status: number) {
+    super(message);
+  }
+}
 
 function isValidLocation(location: unknown): location is { lat: number; lng: number } {
   if (!location || typeof location !== "object") return false;
@@ -92,6 +111,85 @@ function isValidLocation(location: unknown): location is { lat: number; lng: num
   );
 }
 
+async function readJsonWithLimit(req: NextRequest): Promise<unknown> {
+  const declaredLength = Number(req.headers.get("content-length"));
+  if (Number.isFinite(declaredLength) && declaredLength > MAX_BODY_BYTES) {
+    throw new RequestError("Solicitud demasiado grande", 413);
+  }
+
+  if (!req.body) throw new RequestError("JSON inválido", 400);
+
+  const reader = req.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > MAX_BODY_BYTES) {
+      await reader.cancel();
+      throw new RequestError("Solicitud demasiado grande", 413);
+    }
+    chunks.push(value);
+  }
+
+  const bytes = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+
+  try {
+    return JSON.parse(new TextDecoder().decode(bytes));
+  } catch {
+    throw new RequestError("JSON inválido", 400);
+  }
+}
+
+function parsePayload(input: unknown): ChatPayload {
+  if (!input || typeof input !== "object" || Array.isArray(input)) {
+    throw new RequestError("Solicitud inválida", 400);
+  }
+
+  const value = input as Record<string, unknown>;
+  const message = typeof value.message === "string" ? value.message.trim() : "";
+  if (!message) throw new RequestError("Mensaje inválido", 400);
+  if (message.length > MAX_MESSAGE_CHARS) {
+    throw new RequestError(`Mensaje demasiado largo (máx. ${MAX_MESSAGE_CHARS} caracteres)`, 400);
+  }
+
+  if (!Array.isArray(value.history) || value.history.length > MAX_HISTORY_ITEMS) {
+    throw new RequestError("Historial inválido o demasiado largo", 400);
+  }
+
+  const history: ChatHistoryItem[] = value.history.map((item) => {
+    if (!item || typeof item !== "object" || Array.isArray(item)) {
+      throw new RequestError("Historial inválido", 400);
+    }
+    const entry = item as Record<string, unknown>;
+    if (
+      (entry.role !== "user" && entry.role !== "assistant" && entry.role !== "bot") ||
+      typeof entry.text !== "string" ||
+      entry.text.length > MAX_HISTORY_ITEM_CHARS
+    ) {
+      throw new RequestError("Historial inválido", 400);
+    }
+    return { role: entry.role, text: entry.text };
+  });
+
+  const location = value.location ?? null;
+  if (location !== null && !isValidLocation(location)) {
+    throw new RequestError("Coordenadas inválidas", 400);
+  }
+  if (location && !isWithinUruapanServiceArea([location.lng, location.lat])) {
+    throw new RequestError("Ubicación fuera del área de servicio", 400);
+  }
+
+  return { message, history, location };
+}
+
 export async function POST(req: NextRequest) {
   const ip = getClientIp(req);
   if (!(await rateLimit(`chat:${ip}`, RATE_LIMIT, RATE_WINDOW_MS))) {
@@ -99,27 +197,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { message, history, location } = await req.json() as {
-      message: string;
-      history: { role: string; text: string }[];
-      location?: { lat: number; lng: number } | null;
-    };
-
-    if (!message || typeof message !== "string") {
-      return NextResponse.json({ error: "Mensaje inválido" }, { status: 400 });
-    }
-
-    if (message.length > 1000) {
-      return NextResponse.json({ error: "Mensaje demasiado largo (máx. 1000 caracteres)" }, { status: 400 });
-    }
-
-    if (location != null && !isValidLocation(location)) {
-      return NextResponse.json({ error: "Coordenadas inválidas" }, { status: 400 });
-    }
-
-    if (!Array.isArray(history) || history.length > 20) {
-      return NextResponse.json({ error: "Historial inválido o demasiado largo" }, { status: 400 });
-    }
+    const { message, history, location } = parsePayload(await readJsonWithLimit(req));
 
     const apiKey = process.env.DEEPSEEK_API_KEY;
     if (!apiKey) {
@@ -131,12 +209,10 @@ export async function POST(req: NextRequest) {
     const messages = [
       { role: "system", content: systemPrompt },
       ...history.slice(-8).filter((m) =>
-        typeof m.role === "string" &&
-        (m.role === "user" || m.role === "assistant" || m.role === "bot") &&
-        typeof m.text === "string"
+        m.role === "user" || m.role === "assistant" || m.role === "bot"
       ).map((m) => ({
         role: (m.role === "user" ? "user" : "assistant") as "user" | "assistant",
-        content: m.text.slice(0, 2000),
+        content: m.text,
       })),
       { role: "user", content: message },
     ];
@@ -155,17 +231,19 @@ export async function POST(req: NextRequest) {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
         body: JSON.stringify(body),
+        signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
       }
     );
 
     if (!res.ok) {
-      const err = await res.text();
-      console.error("DeepSeek error:", err);
+      console.error("DeepSeek error status:", res.status);
       return NextResponse.json({ error: "Error al contactar el servicio de IA" }, { status: 502 });
     }
 
     const data = await res.json();
-    let reply = (data?.choices?.[0]?.message?.content ?? "No pude generar una respuesta.")
+    const rawReply = data?.choices?.[0]?.message?.content;
+    let reply = (typeof rawReply === "string" ? rawReply : "No pude generar una respuesta.")
+      .slice(0, 2_000)
       .replace(/\s*⚠️ Beta[^🚩]*🚩\.?/g, "").trim();
 
     if (history.length === 0) {
@@ -174,6 +252,12 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ reply });
   } catch (e) {
+    if (e instanceof RequestError) {
+      return NextResponse.json({ error: e.message }, { status: e.status });
+    }
+    if (e instanceof Error && e.name === "TimeoutError") {
+      return NextResponse.json({ error: "El asistente tardó demasiado en responder" }, { status: 504 });
+    }
     console.error("Chat route error:", e);
     return NextResponse.json({ error: "Error interno" }, { status: 500 });
   }

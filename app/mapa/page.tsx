@@ -20,12 +20,13 @@ import RouteSchedule from "@/components/RouteSchedule";
 import { geocodePlace, type PlaceResult } from "@/lib/geocode";
 import { useShareRoute } from "@/hooks/useShareRoute";
 import { useFavoriteRoutes } from "@/hooks/useFavoriteRoutes";
+import { useUruapanGeolocation } from "@/hooks/useUruapanGeolocation";
 import { addRecentTrip, getRecentTrips, type RecentTrip } from "@/lib/recent-trips";
 import { formatRouteLabel, getRouteDestination } from "@/lib/route-names";
 import type { Coordinates, ProductionRoute, ProductionRouteLandmark, ResolvedRouteData, RouteDirection } from "@/lib/types";
 import { computeTransferOptionsFromPolylines } from "@/lib/transfers";
 import type { TransferOption } from "@/lib/transfers";
-import { haversineMeters, isWithinUruapanServiceArea } from "@/lib/geo";
+import { haversineMeters } from "@/lib/geo";
 import { findBestRoutes, getRankedRoutes, type PolylineRoute } from "@/lib/routeMatcher";
 import { FARES_2026 } from "@/lib/mobility-config";
 const AVG_TRIP_SPEED_KMH = 18;
@@ -52,13 +53,15 @@ type RouteOption = {
   indexA: number;
   indexB: number;
   segment: Coordinates[];
+  rideMinutes: number;
+  expectedWaitMinutes: number;
+  estimatedMinutes: number;
   score: number;
   routeColor?: string;
 };
 
 type ActivePoint = "origin" | "destination" | null;
 type FlowStep = 1 | 2 | 3;
-type GeoStatus = "idle" | "locating" | "ok" | "outside" | "error";
 type RoutesMapMode = "all-visible" | "all-highlighted";
 type SharedMapState = {
   direction: RouteDirection | null;
@@ -343,11 +346,6 @@ export default function HomePage() {
   const [selectedDirection, setSelectedDirection] = useState<RouteDirection>("ida");
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isResultSheetOpen, setIsResultSheetOpen] = useState(false);
-  const [userLocation, setUserLocation] = useState<Coordinates | null>(null);
-  // Posición "viva": se actualiza con cada lectura del GPS aunque haya deriva
-  // (a diferencia de userLocation, que se congela para no mover el origen).
-  // Se usa para avisar cuando el usuario va en el camión y se acerca a su bajada.
-  const [liveLocation, setLiveLocation] = useState<Coordinates | null>(null);
   const [dropOffAlert, setDropOffAlert] = useState<string | null>(null);
   const [tripProgress, setTripProgress] = useState<{ remainingMin: number } | null>(null);
   const dropOffArmedRef = useRef(false);
@@ -356,8 +354,14 @@ export default function HomePage() {
   const [lastTrip, setLastTrip] = useState<RecentTrip | null>(null);
   const lastSavedTripKeyRef = useRef("");
   const [manualOrigin, setManualOrigin] = useState<Coordinates | null>(null);
-  const [geoStatus, setGeoStatus] = useState<GeoStatus>("idle");
-  const [geoAccuracyWarn, setGeoAccuracyWarn] = useState(false);
+  const {
+    userLocation,
+    liveLocation,
+    status: geoStatus,
+    accuracyWarning: geoAccuracyWarn,
+    markOutside: markGeolocationOutside,
+    clearAccuracyWarning,
+  } = useUruapanGeolocation(manualOrigin !== null);
   const [originPoint, setOriginPoint] = useState<Coordinates | null>(null);
   const [destinationPoint, setDestinationPoint] = useState<Coordinates | null>(null);
   const [activePoint, setActivePoint] = useState<ActivePoint>("origin");
@@ -391,67 +395,6 @@ export default function HomePage() {
   // /mapa?cerca=1: el usuario llegó pidiendo "rutas cerca de mí" — al
   // detectar rutas cercanas abrimos la lista de inmediato (en móvil).
   const wantsNearbyRef = useRef(false);
-
-  // Geolocation: watch position on mount.
-  // First fix inside Uruapan → set userLocation and mark "ok".
-  // Fixes outside the service area never become an automatic origin.
-  // Subsequent fixes → if drift > GEO_DRIFT_THRESHOLD_M from first fix,
-  // warn the user to use manual mode instead of silently jumping the origin.
-  // Cancels automatically when unmounted or when user already set manualOrigin.
-  useEffect(() => {
-    const GEO_DRIFT_THRESHOLD_M = 50;
-
-    if (!navigator.geolocation) {
-      setGeoStatus("error");
-      return;
-    }
-
-    setGeoStatus("locating");
-    let firstFix: Coordinates | null = null;
-
-    const watchId = navigator.geolocation.watchPosition(
-      (pos) => {
-        const coords: Coordinates = [pos.coords.longitude, pos.coords.latitude];
-
-        if (!isWithinUruapanServiceArea(coords)) {
-          setUserLocation(null);
-          setLiveLocation(null);
-          setGeoAccuracyWarn(false);
-          setGeoStatus("outside");
-          return;
-        }
-
-        setLiveLocation(coords);
-
-        if (!firstFix) {
-          // First valid reading inside the service area
-          firstFix = coords;
-          setUserLocation(coords);
-          setGeoStatus("ok");
-          return;
-        }
-
-        // Subsequent readings: check drift from the accepted first fix
-        const driftM = haversineMeters(firstFix, coords);
-
-        if (driftM > GEO_DRIFT_THRESHOLD_M) {
-          // GPS is jumping — warn instead of moving the origin silently
-          setGeoAccuracyWarn(true);
-        } else {
-          // Normal GPS refinement — accept the improved reading
-          firstFix = coords;
-          setUserLocation(coords);
-          setGeoAccuracyWarn(false);
-        }
-      },
-      () => {
-        setGeoStatus("error");
-      },
-      { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
-    );
-
-    return () => navigator.geolocation.clearWatch(watchId);
-  }, []);
 
   // Keep originPoint in sync: manualOrigin overrides userLocation.
   // Una vez que el usuario pone el pin B (destinationPoint), congelamos el origen
@@ -693,6 +636,13 @@ export default function HomePage() {
   // Precargar el chunk del mapa (mapbox-gl) en tiempo ocioso para que, cuando
   // se active, ya esté en caché y la transición sea instantánea.
   useEffect(() => {
+    const connection = (navigator as Navigator & {
+      connection?: { saveData?: boolean; effectiveType?: string };
+    }).connection;
+    if (connection?.saveData || ["slow-2g", "2g"].includes(connection?.effectiveType ?? "")) {
+      return;
+    }
+
     const ric: (cb: () => void) => number =
       typeof window.requestIdleCallback === "function"
         ? (cb) => window.requestIdleCallback(cb)
@@ -834,15 +784,12 @@ export default function HomePage() {
   }, []);
 
   const handleLocationOutsideServiceArea = useCallback(() => {
-    setUserLocation(null);
-    setLiveLocation(null);
-    setGeoAccuracyWarn(false);
-    setGeoStatus("outside");
+    markGeolocationOutside();
     setShowHint(true);
     if (!originPointRef.current) {
       setActivePoint("origin");
     }
-  }, []);
+  }, [markGeolocationOutside]);
 
   const handleMapPick = useCallback((point: Coordinates) => {
     setShowHint(false);
@@ -885,26 +832,35 @@ export default function HomePage() {
     setActivePoint(null);
   }, []);
 
-  // Selección desde el buscador de lugares: coloca el destino en coordenadas reales.
-  const handleDestinationSearch = useCallback((result: PlaceResult) => {
+  // El mismo buscador permite fijar origen o destino según el punto activo.
+  const handlePlaceSearch = useCallback((result: PlaceResult) => {
     setSharedRouteSegment(null);
     setSharedSegmentColor(null);
     setSelectedTransfer(null);
     setShowTeleferico(false);
     setShowHint(false);
+
+    if (activePointRef.current === "origin") {
+      setManualOrigin(result.center);
+      setOriginPoint(result.center);
+      clearAccuracyWarning();
+      setActivePoint(destinationPointRef.current ? null : "destination");
+      return;
+    }
+
     setRequestedDestination(result.label);
     setDestinationPoint(result.center);
     // Si aún no hay origen, deja activo el origen para que el usuario lo fije
     // (o lo complete el GPS). Si ya hay origen, calcula la ruta de inmediato.
     setActivePoint(originPointRef.current ? null : "origin");
-  }, []);
+  }, [clearAccuracyWarning]);
 
   // Chip de destino rápido: geocodifica (índice local) y coloca el destino.
   const handleChipSearch = useCallback((text: string) => {
     geocodePlace(text).then((result) => {
-      if (result) handleDestinationSearch(result);
+      if (result) handlePlaceSearch(result);
     }).catch(() => {/* noop */});
-  }, [handleDestinationSearch]);
+  }, [handlePlaceSearch]);
 
   const selectedRoute = useMemo(
     () => selectedRouteId !== null ? (polylineRoutesById.get(selectedRouteId) ?? null) : null,
@@ -978,6 +934,9 @@ export default function HomePage() {
         indexA: m.originSegIndex,
         indexB: m.destSegIndex,
         segment: m.segment,
+        rideMinutes: m.rideMinutes,
+        expectedWaitMinutes: m.expectedWaitMinutes,
+        estimatedMinutes: m.estimatedMinutes,
         score: m.score,
         routeColor: m.routeColor,
       });
@@ -1054,7 +1013,7 @@ export default function HomePage() {
     );
   }, [simplifiedMapRoutes, selectedRoute, selectedRouteId, selectedMapSegment]);
   const bestSuggestionEta = useMemo(
-    () => (bestSuggestion ? getEstimatedMinutes(bestSuggestion.segment) : null),
+    () => bestSuggestion?.rideMinutes ?? null,
     [bestSuggestion]
   );
 
@@ -1106,7 +1065,7 @@ export default function HomePage() {
       track("ruta_feedback", {
         util,
         ruta: current?.ruta ?? "desconocida",
-        destino: requestedDestination ?? "punto en mapa",
+        destino_tipo: requestedDestination ? "busqueda" : "punto_mapa",
       });
     } catch {
       // analytics no disponible: ignorar
@@ -1242,14 +1201,17 @@ export default function HomePage() {
     if (flowStep === 1) {
       if (geoStatus === "outside") {
         return requestedDestination
-          ? `Estás fuera de Uruapan. El destino ${requestedDestination} se mantiene; marca manualmente un origen dentro de la ciudad.`
-          : "Estás fuera de Uruapan. Marca manualmente un origen dentro de la ciudad.";
+          ? `Estás fuera de Uruapan. El destino ${requestedDestination} se mantiene; busca o marca un origen dentro de la ciudad.`
+          : "Estás fuera de Uruapan. Busca o marca manualmente un origen dentro de la ciudad.";
       }
       if (geoStatus === "locating") return "Obteniendo tu ubicación...";
+      if (geoStatus === "inaccurate") {
+        return "La ubicación no es suficientemente precisa. Busca tu origen o márcalo en el mapa.";
+      }
       if (geoStatus === "error") {
         return requestedDestination
-          ? `Destino: ${requestedDestination}. No pudimos obtener tu ubicación. Toca el mapa para marcar tu origen.`
-          : "No pudimos obtener tu ubicación. Toca el mapa para marcar tu origen.";
+          ? `Destino: ${requestedDestination}. No pudimos obtener tu ubicación. Busca o marca tu origen.`
+          : "No pudimos obtener tu ubicación. Busca o marca tu origen.";
       }
       // geoStatus === "ok" — origin is set automatically
       return requestedDestination
@@ -1347,20 +1309,25 @@ export default function HomePage() {
   // ── Bloque de JSX compartido: controles A/B + resultado de ruta ──────────────
   // Se renderiza tanto en el overlay mobile como en el sidebar desktop.
   // Extraido como funcion local para evitar duplicacion de JSX.
-  const renderRouteControls = (context: "mobile" | "desktop", hideStep3 = false) => {
+  const renderRouteControls = (context: "mobile" | "desktop", hideStep3 = false, onlyStep3 = false) => {
     const isMobile = context === "mobile";
     return (
       <>
+        {!onlyStep3 && (
+        <>
         {/* Buscador de destino (acción principal) — coloca el pin B sin conocer el mapa */}
         <div className="w-full">
           <PlaceSearch
-            placeholder="¿A dónde vas? Colonia, hospital, plaza…"
-            onSelect={handleDestinationSearch}
+            label={activePoint === "origin" ? "Buscar origen" : "Buscar destino"}
+            placeholder={activePoint === "origin"
+              ? "¿Desde dónde sales? Colonia, calle, plaza…"
+              : "¿A dónde vas? Colonia, hospital, plaza…"}
+            onSelect={handlePlaceSearch}
           />
           {/* Chips de destinos frecuentes — una sola fila con scroll horizontal.
               En pantallas muy bajas (≤740px, p. ej. iPhone SE) se ocultan en móvil
               para no comerse el mapa; el buscador sigue cubriendo los mismos destinos. */}
-          {!destinationPoint && (
+          {activePoint !== "origin" && !destinationPoint && (
             <div
               className={`mt-2 flex gap-1.5 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${
                 isMobile ? "[@media(max-height:740px)]:hidden" : ""
@@ -1571,9 +1538,11 @@ export default function HomePage() {
                       ? (geoStatus === "locating"
                           ? "Obteniendo tu ubicación..."
                           : geoStatus === "outside"
-                            ? <><span>Estás fuera de Uruapan. Marca tu </span><span className="font-bold text-lima">origen manualmente</span></>
-                            : geoStatus === "error"
-                              ? <><span>Toca el mapa para marcar tu </span><span className="font-bold text-lima">origen</span></>
+                            ? <><span>Estás fuera de Uruapan. Busca tu </span><span className="font-bold text-lima">origen manualmente</span></>
+                            : geoStatus === "inaccurate"
+                              ? <><span>GPS impreciso. Busca tu </span><span className="font-bold text-lima">origen</span></>
+                              : geoStatus === "error"
+                                ? <><span>Busca o marca tu </span><span className="font-bold text-lima">origen</span></>
                               : <><span>Usando tu </span><span className="font-bold text-lima">ubicación actual</span></>)
                       : <><span>Busca arriba o </span><span className="font-bold text-lima">toca el mapa</span></>}
               </p>
@@ -1592,7 +1561,7 @@ export default function HomePage() {
               {userLocation
                 ? "Usando tu ubicación actual como origen, calculando tu ruta..."
                 : geoStatus === "outside"
-                  ? "Estás fuera de Uruapan. Toca el mapa para marcar manualmente un origen dentro de la ciudad."
+                  ? "Estás fuera de Uruapan. Busca o marca manualmente un origen dentro de la ciudad."
                   : destinationPoint
                     ? "Toca el mapa donde estás para marcar tu origen."
                     : "Toca el mapa para marcar tu origen y luego la zona de destino."}
@@ -1608,6 +1577,8 @@ export default function HomePage() {
               </svg>
             </button>
           </div>
+        )}
+        </>
         )}
 
         {/* Resultado de ruta — paso 3 (en mobile va en el result sheet) */}
@@ -1642,7 +1613,7 @@ export default function HomePage() {
                       <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3" aria-hidden="true">
                         <path d="M13 5a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM9.5 22l1.5-5-2-2 1-6 3.5-1.5L16 10l3 1M9 9l-3 1.5L5 14m5.5 3L8 22" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
-                      ~{walkMinutes(bestSuggestion.distanciaA) + bestSuggestionEta + walkMinutes(bestSuggestion.distanciaB)} min puerta a puerta
+                      ~{bestSuggestion.estimatedMinutes} min puerta a puerta
                     </span>
                   )}
                   <span className="ov-pill ov-border ov-text-muted inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-[12px] font-medium">
@@ -1727,11 +1698,11 @@ export default function HomePage() {
                   <div className="mt-3 space-y-1.5">
                     <p className="ov-text-muted text-[10px] font-bold uppercase tracking-widest">Alternativas</p>
                     {suggestions.slice(1, 4).map((alt) => {
-                      const altEta = getEstimatedMinutes(alt.segment);
+                      const altEta = alt.estimatedMinutes;
                       const altWalk = Math.round(alt.distanciaA + alt.distanciaB);
                       const bestWalk = Math.round(bestSuggestion.distanciaA + bestSuggestion.distanciaB);
                       const lessWalk = altWalk < bestWalk;
-                      const faster = bestSuggestionEta !== null && altEta < bestSuggestionEta;
+                      const faster = altEta < bestSuggestion.estimatedMinutes;
                       return (
                         <button
                           key={alt.routeId}
@@ -2005,6 +1976,7 @@ export default function HomePage() {
 
   return (
     <main className="relative flex h-dvh w-full overflow-hidden">
+      <h1 className="sr-only">Mapa de rutas de transporte en Uruapan</h1>
 
       {/* ══════════════════════════════════════════════════════════════════════
           DESKTOP SIDEBAR (md+)
@@ -2246,7 +2218,9 @@ export default function HomePage() {
                 </p>
                 <div className="w-full max-w-md overflow-hidden rounded-2xl border border-foreground/10 bg-black/30">
                   <RoutePreviewSVG
-                    routeName={selectedRoute.name}
+                    paths={polylineRoutes
+                      .filter((route) => route.name === selectedRoute.name)
+                      .map((route) => route.path)}
                     color={selectedRoute.color}
                     width={400}
                     height={240}
@@ -2515,7 +2489,7 @@ export default function HomePage() {
         }
       >
         <div aria-live="polite" className="space-y-2.5">
-          {renderRouteControls("mobile")}
+          {renderRouteControls("mobile", false, true)}
         </div>
       </BottomSheet>
 

@@ -54,6 +54,15 @@ describe("findBestRoutes", () => {
       expect(matches[i].score).toBeGreaterThanOrEqual(matches[i - 1].score);
     }
   });
+
+  it("conserva una sola dirección por ruta lógica aunque los IDs sean distintos", () => {
+    const ida = straightRoute(101, "Ruta Doble");
+    const vuelta = { ...straightRoute(202, "Ruta Doble"), direccion: "vuelta" as const };
+    const matches = findBestRoutes(origin, destination, [ida, vuelta]);
+
+    expect(matches).toHaveLength(1);
+    expect(matches[0].estimatedMinutes).toBeGreaterThan(matches[0].rideMinutes);
+  });
 });
 
 describe("getRankedRoutes", () => {
