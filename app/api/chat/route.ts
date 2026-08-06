@@ -11,6 +11,7 @@ import { getRouteDestination } from "@/lib/route-names";
 import { getSchedule } from "@/lib/schedules";
 import { FARES_2026 } from "@/lib/mobility-config";
 import { isWithinUruapanServiceArea } from "@/lib/geo";
+import { hasJsonContentType, isSameOriginRequest } from "@/lib/request-security";
 
 function buildSystemPrompt(location?: { lat: number; lng: number } | null): string {
   // Todo lo geográfico (qué ruta pasa por dónde) se deriva del trazo GPS real
@@ -191,6 +192,13 @@ function parsePayload(input: unknown): ChatPayload {
 }
 
 export async function POST(req: NextRequest) {
+  if (!isSameOriginRequest(req)) {
+    return NextResponse.json({ error: "Origen no permitido" }, { status: 403 });
+  }
+  if (!hasJsonContentType(req)) {
+    return NextResponse.json({ error: "Content-Type debe ser application/json" }, { status: 415 });
+  }
+
   const ip = getClientIp(req);
   if (!(await rateLimit(`chat:${ip}`, RATE_LIMIT, RATE_WINDOW_MS))) {
     return NextResponse.json({ error: "Demasiadas solicitudes. Espera un momento." }, { status: 429 });

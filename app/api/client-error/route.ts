@@ -5,10 +5,18 @@ import {
   notifyCriticalClientError,
 } from "@/lib/operations-alert";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
+import { hasJsonContentType, isSameOriginRequest } from "@/lib/request-security";
 
 const MAX_BODY_BYTES = 2_048;
 
 export async function POST(request: NextRequest) {
+  if (!isSameOriginRequest(request)) {
+    return new Response(null, { status: 403 });
+  }
+  if (!hasJsonContentType(request)) {
+    return new Response(null, { status: 415 });
+  }
+
   const contentLength = Number(request.headers.get("content-length") ?? 0);
   if (!Number.isFinite(contentLength) || contentLength > MAX_BODY_BYTES) {
     return Response.json({ error: "Payload demasiado grande" }, { status: 413 });

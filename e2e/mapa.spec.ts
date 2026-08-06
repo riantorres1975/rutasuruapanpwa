@@ -64,3 +64,22 @@ test("el API del chat rechaza cuerpos inválidos antes de llamar al proveedor", 
 
   expect(response.status()).toBe(400);
 });
+
+test("el API del chat bloquea solicitudes cross-site y tipos simples", async ({ request }) => {
+  const payload = JSON.stringify({ message: "Centro", history: [], location: null });
+  const crossSite = await request.post("/api/chat", {
+    data: payload,
+    headers: {
+      "content-type": "text/plain",
+      origin: "https://example.com",
+      "sec-fetch-site": "cross-site",
+    },
+  });
+  const simpleContentType = await request.post("/api/chat", {
+    data: payload,
+    headers: { "content-type": "text/plain" },
+  });
+
+  expect(crossSite.status()).toBe(403);
+  expect(simpleContentType.status()).toBe(415);
+});

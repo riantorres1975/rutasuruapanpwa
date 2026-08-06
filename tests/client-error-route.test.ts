@@ -18,6 +18,14 @@ function request(payload: unknown) {
   });
 }
 
+function requestWithHeaders(payload: unknown, headers: HeadersInit) {
+  return new NextRequest("http://localhost/api/client-error", {
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  });
+}
+
 describe("POST /api/client-error", () => {
   afterEach(() => vi.restoreAllMocks());
 
@@ -34,6 +42,28 @@ describe("POST /api/client-error", () => {
     const response = await POST(request({ ...validPayload, message: "dato privado" }));
 
     expect(response.status).toBe(400);
+    expect(log).not.toHaveBeenCalled();
+  });
+
+  it("rechaza solicitudes cross-site antes de registrar el reporte", async () => {
+    const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const response = await POST(requestWithHeaders(validPayload, {
+      "content-type": "application/json",
+      origin: "https://example.com",
+      "sec-fetch-site": "cross-site",
+    }));
+
+    expect(response.status).toBe(403);
+    expect(log).not.toHaveBeenCalled();
+  });
+
+  it("rechaza JSON enviado como un tipo de contenido simple", async () => {
+    const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const response = await POST(requestWithHeaders(validPayload, {
+      "content-type": "text/plain",
+    }));
+
+    expect(response.status).toBe(415);
     expect(log).not.toHaveBeenCalled();
   });
 });
