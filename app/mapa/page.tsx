@@ -25,7 +25,7 @@ import { formatRouteLabel, getRouteDestination } from "@/lib/route-names";
 import type { Coordinates, ProductionRoute, ProductionRouteLandmark, ResolvedRouteData, RouteDirection } from "@/lib/types";
 import { computeTransferOptionsFromPolylines } from "@/lib/transfers";
 import type { TransferOption } from "@/lib/transfers";
-import { haversineMeters } from "@/lib/geo";
+import { haversineMeters, isWithinUruapanServiceArea } from "@/lib/geo";
 import { findBestRoutes, getRankedRoutes, type PolylineRoute } from "@/lib/routeMatcher";
 import { FARES_2026 } from "@/lib/mobility-config";
 const AVG_TRIP_SPEED_KMH = 18;
@@ -58,6 +58,7 @@ type RouteOption = {
 
 type ActivePoint = "origin" | "destination" | null;
 type FlowStep = 1 | 2 | 3;
+type GeoStatus = "idle" | "locating" | "ok" | "outside" | "error";
 type RoutesMapMode = "all-visible" | "all-highlighted";
 type SharedMapState = {
   direction: RouteDirection | null;
@@ -355,7 +356,7 @@ export default function HomePage() {
   const [lastTrip, setLastTrip] = useState<RecentTrip | null>(null);
   const lastSavedTripKeyRef = useRef("");
   const [manualOrigin, setManualOrigin] = useState<Coordinates | null>(null);
-  const [geoStatus, setGeoStatus] = useState<"idle" | "locating" | "ok" | "error">("idle");
+  const [geoStatus, setGeoStatus] = useState<GeoStatus>("idle");
   const [geoAccuracyWarn, setGeoAccuracyWarn] = useState(false);
   const [originPoint, setOriginPoint] = useState<Coordinates | null>(null);
   const [destinationPoint, setDestinationPoint] = useState<Coordinates | null>(null);
@@ -392,7 +393,8 @@ export default function HomePage() {
   const wantsNearbyRef = useRef(false);
 
   // Geolocation: watch position on mount.
-  // First fix → set userLocation and mark "ok".
+  // First fix inside Uruapan → set userLocation and mark "ok".
+  // Fixes outside the service area never become an automatic origin.
   // Subsequent fixes → if drift > GEO_DRIFT_THRESHOLD_M from first fix,
   // warn the user to use manual mode instead of silently jumping the origin.
   // Cancels automatically when unmounted or when user already set manualOrigin.
@@ -410,10 +412,19 @@ export default function HomePage() {
     const watchId = navigator.geolocation.watchPosition(
       (pos) => {
         const coords: Coordinates = [pos.coords.longitude, pos.coords.latitude];
+
+        if (!isWithinUruapanServiceArea(coords)) {
+          setUserLocation(null);
+          setLiveLocation(null);
+          setGeoAccuracyWarn(false);
+          setGeoStatus("outside");
+          return;
+        }
+
         setLiveLocation(coords);
 
         if (!firstFix) {
-          // First reading: accept unconditionally
+          // First valid reading inside the service area
           firstFix = coords;
           setUserLocation(coords);
           setGeoStatus("ok");
@@ -821,6 +832,17 @@ export default function HomePage() {
     }
   }, []);
 
+  const handleLocationOutsideServiceArea = useCallback(() => {
+    setUserLocation(null);
+    setLiveLocation(null);
+    setGeoAccuracyWarn(false);
+    setGeoStatus("outside");
+    setShowHint(true);
+    if (!originPointRef.current) {
+      setActivePoint("origin");
+    }
+  }, []);
+
   const handleMapPick = useCallback((point: Coordinates) => {
     setShowHint(false);
     setSharedRouteSegment(null);
@@ -1217,6 +1239,11 @@ export default function HomePage() {
     }
 
     if (flowStep === 1) {
+      if (geoStatus === "outside") {
+        return requestedDestination
+          ? `Estás fuera de Uruapan. El destino ${requestedDestination} se mantiene; marca manualmente un origen dentro de la ciudad.`
+          : "Estás fuera de Uruapan. Marca manualmente un origen dentro de la ciudad.";
+      }
       if (geoStatus === "locating") return "Obteniendo tu ubicación...";
       if (geoStatus === "error") {
         return requestedDestination
@@ -1420,11 +1447,13 @@ export default function HomePage() {
               aria-label={
                 manualOrigin
                   ? "Origen ajustado manualmente, toca para cambiar"
-                  : geoAccuracyWarn
-                    ? "GPS impreciso, toca el mapa para fijar tu origen manualmente"
-                    : userLocation
-                      ? "Usando tu ubicación actual, toca para ajustar"
-                      : "Toca para marcar punto de origen"
+                  : geoStatus === "outside"
+                    ? "Ubicación fuera de Uruapan, toca el mapa para marcar el origen manualmente"
+                    : geoAccuracyWarn
+                      ? "GPS impreciso, toca el mapa para fijar tu origen manualmente"
+                      : userLocation
+                        ? "Usando tu ubicación actual, toca para ajustar"
+                        : "Toca para marcar punto de origen"
               }
             >
               <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0" aria-hidden="true">
@@ -1434,18 +1463,20 @@ export default function HomePage() {
               <span className="min-w-0 flex-1 truncate">
                 {manualOrigin
                   ? "Origen ajustado"
-                  : geoAccuracyWarn
-                    ? "GPS impreciso"
-                    : userLocation
-                      ? "Mi ubicación"
-                      : "Origen"}
+                  : geoStatus === "outside"
+                    ? "Origen manual"
+                    : geoAccuracyWarn
+                      ? "GPS impreciso"
+                      : userLocation
+                        ? "Mi ubicación"
+                        : "Origen"}
               </span>
-              {originPoint && !geoAccuracyWarn && (
+              {originPoint && !geoAccuracyWarn && (geoStatus !== "outside" || manualOrigin) && (
                 <svg viewBox="0 0 24 24" fill="none" className="ml-auto h-3.5 w-3.5 shrink-0 text-lima" aria-hidden="true">
                   <path d="M5 12l5 5L20 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               )}
-              {geoAccuracyWarn && !manualOrigin && (
+              {(geoAccuracyWarn || geoStatus === "outside") && !manualOrigin && (
                 <span className="ml-auto h-2 w-2 shrink-0 rounded-full bg-amber-400" aria-hidden="true" />
               )}
             </button>
@@ -1538,9 +1569,11 @@ export default function HomePage() {
                     : flowStep === 1
                       ? (geoStatus === "locating"
                           ? "Obteniendo tu ubicación..."
-                          : geoStatus === "error"
-                            ? <><span>Toca el mapa para marcar tu </span><span className="font-bold text-lima">origen</span></>
-                            : <><span>Usando tu </span><span className="font-bold text-lima">ubicación actual</span></>)
+                          : geoStatus === "outside"
+                            ? <><span>Estás fuera de Uruapan. Marca tu </span><span className="font-bold text-lima">origen manualmente</span></>
+                            : geoStatus === "error"
+                              ? <><span>Toca el mapa para marcar tu </span><span className="font-bold text-lima">origen</span></>
+                              : <><span>Usando tu </span><span className="font-bold text-lima">ubicación actual</span></>)
                       : <><span>Busca arriba o </span><span className="font-bold text-lima">toca el mapa</span></>}
               </p>
             </div>
@@ -1557,9 +1590,11 @@ export default function HomePage() {
               Llegaste buscando <span className="font-bold text-lima">{requestedDestination}</span>.{" "}
               {userLocation
                 ? "Usando tu ubicación actual como origen, calculando tu ruta..."
-                : destinationPoint
-                  ? "Toca el mapa donde estás para marcar tu origen."
-                  : "Toca el mapa para marcar tu origen y luego la zona de destino."}
+                : geoStatus === "outside"
+                  ? "Estás fuera de Uruapan. Toca el mapa para marcar manualmente un origen dentro de la ciudad."
+                  : destinationPoint
+                    ? "Toca el mapa donde estás para marcar tu origen."
+                    : "Toca el mapa para marcar tu origen y luego la zona de destino."}
             </p>
             <button
               type="button"
@@ -2188,6 +2223,7 @@ export default function HomePage() {
             onMapPick={handleMapPick}
             onSelectRoute={handleSelectRoute}
             onNearbyRoutesFound={handleNearbyRoutesFound}
+            onLocationOutsideServiceArea={handleLocationOutsideServiceArea}
           />
         )}
 

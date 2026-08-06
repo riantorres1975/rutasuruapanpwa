@@ -12,6 +12,7 @@ import {
   URUAPAN_CENTER
 } from "@/lib/map";
 import type { Coordinates, RouteData } from "@/lib/types";
+import { isWithinUruapanServiceArea } from "@/lib/geo";
 
 type ArrowSegment = { coords: Coordinates[]; color: string; showLine?: boolean };
 import type { TransferOption } from "@/lib/transfers";
@@ -128,6 +129,7 @@ type MapProps = {
   onMapPick: (point: [number, number]) => void;
   onSelectRoute: (routeId: number) => void;
   onNearbyRoutesFound: (routeIds: number[]) => void;
+  onLocationOutsideServiceArea: () => void;
 };
 
 function telefericoRouteExpression() {
@@ -872,7 +874,8 @@ function MapComponent({
   hoveredRouteId = null,
   onMapPick,
   onSelectRoute,
-  onNearbyRoutesFound
+  onNearbyRoutesFound,
+  onLocationOutsideServiceArea
 }: MapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -1891,6 +1894,13 @@ function MapComponent({
         const userLng = coords.longitude;
         const userLat = coords.latitude;
         const accuracyM = coords.accuracy; // metres
+
+        if (!isWithinUruapanServiceArea([userLng, userLat])) {
+          setLocationAccuracy(null);
+          setLocationLoading(false);
+          onLocationOutsideServiceArea();
+          return;
+        }
 
         setLocationAccuracy(accuracyM);
 
