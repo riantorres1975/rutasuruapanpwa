@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { findBestRoutes, getRankedRoutes, type PolylineRoute } from "@/lib/routeMatcher";
+import {
+  findBestRoutes,
+  getRankedRoutes,
+  getRouteLength,
+  getRouteMetrics,
+  type PolylineRoute,
+} from "@/lib/routeMatcher";
 import type { Coordinates } from "@/lib/types";
 
 // Ruta sintética recta de oeste a este sobre la latitud 19.42 (≈2.1 km).
@@ -62,6 +68,19 @@ describe("findBestRoutes", () => {
 
     expect(matches).toHaveLength(1);
     expect(matches[0].estimatedMinutes).toBeGreaterThan(matches[0].rideMinutes);
+  });
+});
+
+describe("getRouteMetrics", () => {
+  it("reutiliza las longitudes acumuladas de la misma polilínea", () => {
+    const path = straightRoute(1, "Ruta Métricas").path;
+    const first = getRouteMetrics(path);
+    const second = getRouteMetrics(path);
+
+    expect(second).toBe(first);
+    expect(first.cumulativeLengthsM).toHaveLength(path.length);
+    expect(first.segmentLengthsM).toHaveLength(path.length - 1);
+    expect(first.totalLengthM).toBeCloseTo(getRouteLength(path), 8);
   });
 });
 

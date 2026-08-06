@@ -43,6 +43,12 @@ export type RankedRoutes = {
   alternatives: PolylineRouteMatch[];
 };
 
+export type RouteMetrics = {
+  cumulativeLengthsM: number[];
+  segmentLengthsM: number[];
+  totalLengthM: number;
+};
+
 // ─── Internal geometry ────────────────────────────────────────────────────────
 
 const EARTH_R = 6_371_000;
@@ -50,6 +56,7 @@ const toRad = (d: number) => (d * Math.PI) / 180;
 const WALK_SPEED_M_PER_MIN = 75;
 const BUS_SPEED_M_PER_MIN = 300;
 const DEFAULT_WAIT_MINUTES = 7.5;
+const routeMetricsCache = new WeakMap<Coordinates[], RouteMetrics>();
 
 function expectedWaitMinutes(routeName: string): number {
   const schedule = getSchedule(routeName);
@@ -87,14 +94,37 @@ function interpolateCoord(a: Coordinates, b: Coordinates, t: number): Coordinate
 // ─── Core functions ───────────────────────────────────────────────────────────
 
 /**
+ * Precomputed distances for a route path. The WeakMap keeps repeated searches
+ * cheap without retaining route arrays after they are replaced.
+ */
+export function getRouteMetrics(path: Coordinates[]): RouteMetrics {
+  const cached = routeMetricsCache.get(path);
+  if (cached) return cached;
+
+  const cumulativeLengthsM = new Array<number>(path.length);
+  const segmentLengthsM = new Array<number>(Math.max(0, path.length - 1));
+  if (path.length > 0) cumulativeLengthsM[0] = 0;
+
+  for (let i = 1; i < path.length; i++) {
+    const segmentLengthM = haversineDistanceM(path[i - 1], path[i]);
+    segmentLengthsM[i - 1] = segmentLengthM;
+    cumulativeLengthsM[i] = cumulativeLengthsM[i - 1] + segmentLengthM;
+  }
+
+  const metrics = {
+    cumulativeLengthsM,
+    segmentLengthsM,
+    totalLengthM: cumulativeLengthsM[path.length - 1] ?? 0,
+  };
+  routeMetricsCache.set(path, metrics);
+  return metrics;
+}
+
+/**
  * Sum of haversine distances between consecutive path points, in meters.
  */
 export function getRouteLength(path: Coordinates[]): number {
-  let total = 0;
-  for (let i = 1; i < path.length; i++) {
-    total += haversineDistanceM(path[i - 1], path[i]);
-  }
-  return total;
+  return getRouteMetrics(path).totalLengthM;
 }
 
 /**
@@ -135,7 +165,7 @@ export function getClosestPointOnPath(
   let bestT = 0;
   let bestProjectedPoint: Coordinates = path[0] ?? point;
   let bestProgressM = 0;
-  let cumulativeM = 0;
+  const metrics = getRouteMetrics(path);
 
   for (let i = 0; i < path.length - 1; i++) {
     const a = path[i];
@@ -152,17 +182,15 @@ export function getClosestPointOnPath(
       : Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / lenSq));
     const projectedPoint = interpolateCoord(a, b, t);
     const d = Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
-    const segmentLengthM = haversineDistanceM(a, b);
+    const segmentLengthM = metrics.segmentLengthsM[i];
 
     if (d < bestDist) {
       bestDist = d;
       bestIndex = i;
       bestT = t;
       bestProjectedPoint = projectedPoint;
-      bestProgressM = cumulativeM + segmentLengthM * t;
+      bestProgressM = metrics.cumulativeLengthsM[i] + segmentLengthM * t;
     }
-
-    cumulativeM += segmentLengthM;
   }
 
   return {

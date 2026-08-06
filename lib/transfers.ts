@@ -1,5 +1,5 @@
 import { haversineMeters } from "./geo";
-import type { PolylineRoute } from "./routeMatcher";
+import { getRouteMetrics, type PolylineRoute, type RouteMetrics } from "./routeMatcher";
 import type { Coordinates } from "./types";
 
 // Max walking distance to board/alight a route (meters)
@@ -26,12 +26,6 @@ const INTERSECTION_METERS = 35;
 // Using TRANSFER_WALK_METERS + 10% margin for safety.
 const LAT_TOL = (TRANSFER_WALK_METERS * 1.1) / 111_000; // ≈ 0.00198°
 const LNG_TOL = (TRANSFER_WALK_METERS * 1.1) / 104_000; // ≈ 0.00212°
-
-type RouteMetrics = {
-  cumulativeLengthsM: number[];
-};
-
-const routeMetricsCache = new WeakMap<Coordinates[], RouteMetrics>();
 
 export type TransferOption = {
   routeAId: number;
@@ -60,22 +54,6 @@ function closestOnPath(point: Coordinates, path: Coordinates[]) {
     }
   }
   return { index: bestIndex, distance: bestDist };
-}
-
-function getRouteMetrics(path: Coordinates[]): RouteMetrics {
-  const cached = routeMetricsCache.get(path);
-  if (cached) return cached;
-
-  const cumulativeLengthsM = new Array<number>(path.length);
-  cumulativeLengthsM[0] = 0;
-
-  for (let i = 1; i < path.length; i++) {
-    cumulativeLengthsM[i] = cumulativeLengthsM[i - 1] + haversineMeters(path[i - 1], path[i]);
-  }
-
-  const metrics = { cumulativeLengthsM };
-  routeMetricsCache.set(path, metrics);
-  return metrics;
 }
 
 function segmentLengthFromMetrics(metrics: RouteMetrics, startIndex: number, endIndex: number) {

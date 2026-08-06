@@ -1,4 +1,4 @@
-import { findBestRoutes, getRankedRoutes, type PolylineRoute } from "@/lib/routeMatcher";
+import { findBestRoutes, getRankedRoutes, getRouteMetrics, type PolylineRoute } from "@/lib/routeMatcher";
 import { computeTransferOptionsFromPolylines, type TransferOption } from "@/lib/transfers";
 import type { Coordinates, RouteDirection } from "@/lib/types";
 
@@ -42,6 +42,12 @@ export type RouteCalculationWorkerResponse =
       result: RouteCalculationResult;
     }
   | { type: "error"; requestId: number; key: string };
+
+export function prepareRouteCalculations(routes: PolylineRoute[]) {
+  for (const route of routes) {
+    getRouteMetrics(route.path);
+  }
+}
 
 export function calculateRouteOptions(
   routes: PolylineRoute[],

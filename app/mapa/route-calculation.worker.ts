@@ -1,5 +1,6 @@
 import {
   calculateRouteOptions,
+  prepareRouteCalculations,
   type RouteCalculationWorkerRequest,
   type RouteCalculationWorkerResponse,
 } from "@/lib/route-calculation";
@@ -18,6 +19,7 @@ workerScope.onmessage = (event) => {
 
   if (message.type === "initialize") {
     routes = message.routes;
+    prepareRouteCalculations(routes);
     return;
   }
 
