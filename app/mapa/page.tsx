@@ -24,10 +24,15 @@ import { useUruapanGeolocation } from "@/hooks/useUruapanGeolocation";
 import { addRecentTrip, getRecentTrips, RECENT_TRIPS_EVENT, type RecentTrip } from "@/lib/recent-trips";
 import { formatRouteLabel, getRouteDestination } from "@/lib/route-names";
 import type { Coordinates, ProductionRoute, ProductionRouteLandmark, ResolvedRouteData, RouteDirection } from "@/lib/types";
-import { computeTransferOptionsFromPolylines } from "@/lib/transfers";
 import type { TransferOption } from "@/lib/transfers";
 import { haversineMeters } from "@/lib/geo";
-import { findBestRoutes, getRankedRoutes, type PolylineRoute } from "@/lib/routeMatcher";
+import type { PolylineRoute } from "@/lib/routeMatcher";
+import type {
+  RouteCalculationResult,
+  RouteCalculationWorkerRequest,
+  RouteCalculationWorkerResponse,
+  RouteOption,
+} from "@/lib/route-calculation";
 import { FARES_2026 } from "@/lib/mobility-config";
 const AVG_TRIP_SPEED_KMH = 18;
 // Tarifa del camión urbano en pesos (derivada de la config de movilidad).
@@ -44,31 +49,10 @@ const MapView = dynamic(() => import("@/components/Map"), {
   loading: () => <div className="h-full w-full animate-pulse bg-ink-900" />
 });
 
-type RouteOption = {
-  routeId: number;
-  ruta: string;
-  direccion: RouteDirection;
-  distanciaA: number;
-  distanciaB: number;
-  indexA: number;
-  indexB: number;
-  segment: Coordinates[];
-  rideMinutes: number;
-  expectedWaitMinutes: number;
-  estimatedMinutes: number;
-  score: number;
-  routeColor?: string;
-};
-
 type ActivePoint = "origin" | "destination" | null;
 type FlowStep = 1 | 2 | 3;
 type RoutesMapMode = "all-visible" | "all-highlighted";
-type RouteCalculation = {
-  key: string;
-  suggestions: RouteOption[];
-  alternativeRouteIds: number[];
-  transfers: TransferOption[];
-};
+type RouteCalculation = RouteCalculationResult & { key: string };
 type TransferSelection = {
   calculationKey: string;
   transfer: TransferOption;
@@ -500,6 +484,9 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
   const originPointRef = useRef(originPoint);
   const destinationPointRef = useRef(destinationPoint);
   const pendingSharedStateRef = useRef<SharedMapState | null>(initialUrlState.sharedState);
+  const routeWorkerRef = useRef<Worker | null>(null);
+  const routeCalculationRequestRef = useRef(0);
+  const [routeWorkerFailed, setRouteWorkerFailed] = useState(false);
   // /mapa?cerca=1: el usuario llegó pidiendo "rutas cerca de mí" — al
   // detectar rutas cercanas abrimos la lista de inmediato (en móvil).
   const wantsNearbyRef = useRef(initialUrlState.wantsNearby);
@@ -716,6 +703,54 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     [polylineRoutes]
   );
 
+  useEffect(() => {
+    if (routesForMatching.length === 0 || routeWorkerFailed) return;
+
+    let worker: Worker;
+    try {
+      worker = new Worker(new URL("./route-calculation.worker.ts", import.meta.url), {
+        name: "urugo-route-calculation",
+        type: "module",
+      });
+    } catch {
+      const fallbackTimer = window.setTimeout(() => setRouteWorkerFailed(true), 0);
+      return () => window.clearTimeout(fallbackTimer);
+    }
+
+    const handleWorkerError = (event: ErrorEvent) => {
+      event.preventDefault();
+      if (routeWorkerRef.current === worker) {
+        routeWorkerRef.current = null;
+        worker.terminate();
+        setRouteWorkerFailed(true);
+      }
+    };
+
+    routeWorkerRef.current = worker;
+    worker.addEventListener("error", handleWorkerError);
+    const initializeMessage: RouteCalculationWorkerRequest = {
+      type: "initialize",
+      routes: routesForMatching,
+    };
+    try {
+      worker.postMessage(initializeMessage);
+    } catch {
+      worker.removeEventListener("error", handleWorkerError);
+      worker.terminate();
+      routeWorkerRef.current = null;
+      const fallbackTimer = window.setTimeout(() => setRouteWorkerFailed(true), 0);
+      return () => window.clearTimeout(fallbackTimer);
+    }
+
+    return () => {
+      worker.removeEventListener("error", handleWorkerError);
+      worker.terminate();
+      if (routeWorkerRef.current === worker) {
+        routeWorkerRef.current = null;
+      }
+    };
+  }, [routeWorkerFailed, routesForMatching]);
+
   const polylineRoutesById = useMemo(
     () => new Map(polylineRoutes.map((route) => [route.id, route])),
     [polylineRoutes]
@@ -903,52 +938,63 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
   useEffect(() => {
     if (!originPoint || !destinationPoint || !calculationKey) return;
 
+    const requestId = ++routeCalculationRequestRef.current;
+    const worker = routeWorkerRef.current;
+
+    const applyResult = (result: RouteCalculationResult) => {
+      if (routeCalculationRequestRef.current !== requestId) return;
+      setRouteCalculation({ key: calculationKey, ...result });
+    };
+
+    const handleMessage = (event: MessageEvent<RouteCalculationWorkerResponse>) => {
+      const message = event.data;
+      if (message.requestId !== requestId || message.key !== calculationKey) return;
+
+      if (message.type === "error") {
+        setRouteWorkerFailed(true);
+        return;
+      }
+
+      applyResult(message.result);
+    };
+
+    if (worker) {
+      worker.addEventListener("message", handleMessage);
+    }
+
     const timer = window.setTimeout(() => {
-      let nextAlternativeIds: number[] = [];
-
-      const matches = findBestRoutes(originPoint, destinationPoint, routesForMatching);
-      const ranked = getRankedRoutes(matches);
-
-      const toOption = (m: (typeof matches)[number]): RouteOption => ({
-        routeId: m.routeId,
-        ruta: m.routeName,
-        direccion: m.direccion,
-        distanciaA: m.originDistM,
-        distanciaB: m.destDistM,
-        indexA: m.originSegIndex,
-        indexB: m.destSegIndex,
-        segment: m.segment,
-        rideMinutes: m.rideMinutes,
-        expectedWaitMinutes: m.expectedWaitMinutes,
-        estimatedMinutes: m.estimatedMinutes,
-        score: m.score,
-        routeColor: m.routeColor,
-      });
-
-      let nextSuggestions: RouteOption[];
-      if (ranked) {
-        nextAlternativeIds = ranked.alternatives.map((m) => m.routeId);
-        nextSuggestions = [ranked.best, ...ranked.alternatives].map(toOption);
-      } else {
-        nextSuggestions = [];
+      if (worker) {
+        const message: RouteCalculationWorkerRequest = {
+          type: "calculate",
+          requestId,
+          key: calculationKey,
+          origin: originPoint,
+          destination: destinationPoint,
+        };
+        try {
+          worker.postMessage(message);
+        } catch {
+          setRouteWorkerFailed(true);
+        }
+        return;
       }
 
-      let nextTransfers: TransferOption[] = [];
-      if (nextSuggestions.length === 0 && polylineRoutes.length > 0) {
-        nextTransfers = computeTransferOptionsFromPolylines(routesForMatching, originPoint, destinationPoint);
-      }
-      setRouteCalculation({
-        key: calculationKey,
-        suggestions: nextSuggestions,
-        alternativeRouteIds: nextAlternativeIds,
-        transfers: nextTransfers,
-      });
+      void import("@/lib/route-calculation")
+        .then(({ calculateRouteOptions }) => {
+          applyResult(calculateRouteOptions(routesForMatching, originPoint, destinationPoint));
+        })
+        .catch(() => {
+          applyResult({ suggestions: [], alternativeRouteIds: [], transfers: [] });
+        });
     }, 80);
 
     return () => {
       window.clearTimeout(timer);
+      if (worker) {
+        worker.removeEventListener("message", handleMessage);
+      }
     };
-  }, [calculationKey, destinationPoint, originPoint, polylineRoutes.length, routesForMatching]);
+  }, [calculationKey, destinationPoint, originPoint, routeWorkerFailed, routesForMatching]);
 
   const suggestedRouteIds = useMemo(() => suggestions.map((item) => item.routeId), [suggestions]);
   const suggestedRouteDirections = useMemo(
