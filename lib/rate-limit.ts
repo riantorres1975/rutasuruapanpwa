@@ -14,26 +14,36 @@ import type { NextRequest } from "next/server";
  */
 
 const memory = new Map<string, { count: number; resetAt: number }>();
+const MAX_MEMORY_ENTRIES = 5_000;
 
-// Limpieza periódica del mapa en memoria en procesos de larga vida (dev).
-if (typeof setInterval !== "undefined" && typeof process !== "undefined" && process.env.NODE_ENV !== "production") {
-  setInterval(() => {
-    const now = Date.now();
-    for (const [key, value] of memory.entries()) {
-      if (now > value.resetAt) memory.delete(key);
-    }
-  }, 300_000);
+function makeRoomInMemory(now: number): void {
+  for (const [key, value] of memory.entries()) {
+    if (now > value.resetAt) memory.delete(key);
+  }
+
+  while (memory.size >= MAX_MEMORY_ENTRIES) {
+    const oldestKey = memory.keys().next().value;
+    if (typeof oldestKey !== "string") break;
+    memory.delete(oldestKey);
+  }
 }
 
 function memoryLimit(key: string, limit: number, windowMs: number): boolean {
   const now = Date.now();
   const entry = memory.get(key);
   if (!entry || now > entry.resetAt) {
+    if (!entry) makeRoomInMemory(now);
     memory.set(key, { count: 1, resetAt: now + windowMs });
     return true;
   }
-  if (entry.count >= limit) return false;
+  if (entry.count >= limit) {
+    memory.delete(key);
+    memory.set(key, entry);
+    return false;
+  }
   entry.count++;
+  memory.delete(key);
+  memory.set(key, entry);
   return true;
 }
 
