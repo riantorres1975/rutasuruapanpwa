@@ -42,7 +42,11 @@ import {
   buildRouteCalculationPerformance,
   type RouteCalculationEngine,
 } from "@/lib/route-performance";
-import { FARES_2026 } from "@/lib/mobility-config";
+import {
+  getJourneyFareSummary,
+  getTelefericoStationName,
+  isTelefericoRouteName,
+} from "@/lib/journey-guidance";
 import {
   createTripTrackingState,
   getTripJourneyKey,
@@ -52,12 +56,9 @@ import {
   type TripTrackingState,
 } from "@/lib/trip-mode";
 const AVG_TRIP_SPEED_KMH = 18;
-// Tarifa del camión urbano en pesos (derivada de la config de movilidad).
-const BUS_FARE_MXN = Math.round(Number(FARES_2026.urbanBus.price.replace(/[^0-9.]/g, "")) || 11);
 const BACKGROUND_SIMPLIFY_TOLERANCE = 0.00008;
 const BACKGROUND_MAX_POINTS = 180;
 const MOBILE_MAP_BOOT_DELAY_MS = 3200;
-const TELEFERICO_ROUTE_NAME = "Teleférico Uruapan";
 // Destinos frecuentes para acceso rápido bajo el buscador (todos resuelven localmente)
 const DESTINO_CHIPS = ["Centro", "Hospital Regional", "Plaza Ágora", "Central"] as const;
 
@@ -224,10 +225,6 @@ function getFlowStep(originPoint: Coordinates | null, destinationPoint: Coordina
   }
 
   return 3;
-}
-
-function isTelefericoRouteName(name: string) {
-  return name === TELEFERICO_ROUTE_NAME;
 }
 
 function getSegmentLengthMeters(segment: Coordinates[]) {
@@ -1334,6 +1331,22 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     }
 
     if (bestSuggestion) {
+      const fare = getJourneyFareSummary([bestSuggestion.ruta]);
+
+      if (isTelefericoRouteName(bestSuggestion.ruta)) {
+        const originStation = getTelefericoStationName(bestSuggestion.indexA);
+        const destinationStation = getTelefericoStationName(bestSuggestion.indexB);
+
+        return {
+          title: "Indicaciones",
+          items: [
+            `Camina hasta ${originStation ? `la estación ${originStation}` : "la estación de abordaje"} (~${Math.round(bestSuggestion.distanciaA)} m, ${walkMinutes(bestSuggestion.distanciaA)} min caminando) y valida tu tarjeta al entrar.`,
+            `Viaja en el Teleférico y baja en ${destinationStation ? `la estación ${destinationStation}` : "la estación indicada"}. Desde ahí camina ~${Math.round(bestSuggestion.distanciaB)} m hasta tu destino.`,
+            `Tiempo estimado en ruta: ${bestSuggestionEta ?? getEstimatedMinutes(bestSuggestion.segment)} min. ${fare.detail}`,
+          ],
+        };
+      }
+
       const bestRoute = polylineRoutesById.get(bestSuggestion.routeId);
       const originLandmark = originPoint
         ? findNearestLandmark(originPoint, bestRoute?.landmarks, 150)
@@ -1347,19 +1360,37 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
         items: [
           `Sube a ${formatRouteLabel(bestSuggestion.ruta)} cerca de ${originLandmark ?? "tu ubicación"} (~${Math.round(bestSuggestion.distanciaA)} m, ${walkMinutes(bestSuggestion.distanciaA)} min caminando). Los camiones paran casi en cualquier esquina: haz la parada con la mano.`,
           `Baja cerca de ${destLandmark ?? "tu destino"} (~${Math.round(bestSuggestion.distanciaB)} m, ${walkMinutes(bestSuggestion.distanciaB)} min caminando). Avisa al chofer o toca el timbre.`,
-          `Tiempo estimado en ruta: ${bestSuggestionEta ?? getEstimatedMinutes(bestSuggestion.segment)} min. Tarifa: $${BUS_FARE_MXN} en efectivo al abordar.`
+          `Tiempo estimado en ruta: ${bestSuggestionEta ?? getEstimatedMinutes(bestSuggestion.segment)} min. ${fare.detail}`
         ]
       };
     }
 
     if (selectedTransfer) {
+      const routeAIsTeleferico = isTelefericoRouteName(selectedTransfer.routeAName);
+      const routeBIsTeleferico = isTelefericoRouteName(selectedTransfer.routeBName);
+      const fare = getJourneyFareSummary([
+        selectedTransfer.routeAName,
+        selectedTransfer.routeBName,
+      ]);
+      const firstInstruction = routeAIsTeleferico
+        ? `Primero aborda el Teleférico en la estación ${getTelefericoStationName(selectedTransfer.routeAStartIndex) ?? "indicada"}.`
+        : `Primero toma ${formatRouteLabel(selectedTransfer.routeAName)}.`;
+      const transferInstruction = routeAIsTeleferico
+        ? `Baja en la estación ${getTelefericoStationName(selectedTransfer.routeATransferIndex) ?? "indicada"} y camina aproximadamente ${Math.round(selectedTransfer.walkMeters)} m (${walkMinutes(selectedTransfer.walkMeters)} min) para transbordar.`
+        : routeBIsTeleferico
+          ? `Camina aproximadamente ${Math.round(selectedTransfer.walkMeters)} m (${walkMinutes(selectedTransfer.walkMeters)} min) hasta la estación ${getTelefericoStationName(selectedTransfer.routeBTransferIndex) ?? "indicada"}.`
+          : `Camina aproximadamente ${Math.round(selectedTransfer.walkMeters)} m (${walkMinutes(selectedTransfer.walkMeters)} min) en el punto de transbordo.`;
+      const secondInstruction = routeBIsTeleferico
+        ? `Continúa en el Teleférico hasta la estación ${getTelefericoStationName(selectedTransfer.routeBEndIndex) ?? "indicada"}.`
+        : `Continúa en ${formatRouteLabel(selectedTransfer.routeBName)} hasta acercarte al destino.`;
+
       return {
         title: "Indicaciones con transbordo",
         items: [
-          `Primero toma ${formatRouteLabel(selectedTransfer.routeAName)}.`,
-          `Camina aproximadamente ${Math.round(selectedTransfer.walkMeters)} m (${walkMinutes(selectedTransfer.walkMeters)} min) en el punto de transbordo.`,
-          `Continúa en ${formatRouteLabel(selectedTransfer.routeBName)} hasta acercarte al destino.`,
-          `Tarifa total: $${BUS_FARE_MXN * 2} (pagas $${BUS_FARE_MXN} en efectivo en cada camión).`
+          firstInstruction,
+          transferInstruction,
+          secondInstruction,
+          fare.detail,
         ]
       };
     }
@@ -1786,7 +1817,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
                     </span>
                   )}
                   <span className="ov-pill ov-border ov-text-muted inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-[12px] font-medium">
-                    ${BUS_FARE_MXN} efectivo
+                    {getJourneyFareSummary([bestSuggestion.ruta]).badge}
                   </span>
                   {suggestions.length > 1 && (
                     <button
@@ -1978,7 +2009,10 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
                 <p className="ov-text-muted mt-1 text-[11px]">
                   Camina ~{Math.round(selectedTransfer.walkMeters)} m en el punto de transbordo
                   <span className="mx-1.5 opacity-40">·</span>
-                  ${BUS_FARE_MXN * 2} total (2 camiones)
+                  {getJourneyFareSummary([
+                    selectedTransfer.routeAName,
+                    selectedTransfer.routeBName,
+                  ]).badge}
                 </p>
                 <button
                   type="button"

@@ -52,6 +52,22 @@ test("un enlace compartido hidrata origen y destino sin mostrar el paso inicial"
   await expect(page.getByRole("button", { name: "Ver resultado de ruta" })).not.toContainText("Buscando...");
 });
 
+test("un viaje en Teleférico muestra estaciones y pago con tarjeta", async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem("rutas-uru-onboarded", "1"));
+  await page.goto("/mapa?a=-102.02093,19.396299&b=-102.0375379,19.4216787");
+
+  const resultButton = page.getByRole("button", { name: "Ver resultado de ruta" });
+  await expect(resultButton).toContainText("Teleférico", { timeout: 10_000 });
+  await resultButton.click({ force: true });
+
+  const resultDialog = page.locator('[role="dialog"]:visible').filter({ hasText: "Teleférico" });
+  await expect(resultDialog).toContainText("$11 tarjeta");
+  await expect(resultDialog).toContainText("estación Hospital Regional");
+  await expect(resultDialog).toContainText("estación Boulevard Industrial / Plaza Agora");
+  await expect(resultDialog).not.toContainText("haz la parada con la mano");
+  expect(await resultDialog.evaluate((element) => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1);
+});
+
 test("una actualización del GPS no borra el transbordo seleccionado", async ({ page, context }) => {
   await context.setGeolocation({ longitude: -102.025, latitude: 19.405 });
   await context.grantPermissions(["geolocation"]);
