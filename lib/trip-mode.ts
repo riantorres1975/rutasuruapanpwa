@@ -10,6 +10,7 @@ const ROUTE_CORRIDOR_M = 300;
 const TRANSFER_RADIUS_M = 120;
 const BOARDED_ROUTE_B_PROGRESS_M = 100;
 const OFF_ROUTE_CONFIRMATION_READINGS = 3;
+const ARRIVAL_CONFIRMATION_READINGS = 2;
 
 export type TripPhase =
   | "boarding"
@@ -57,6 +58,7 @@ export type TripProgress = {
 export type TripTrackingState = {
   progress: TripProgress | null;
   offRouteReadings: number;
+  arrivalReadings: number;
 };
 
 export type TripMilestone = "transfer-near" | "destination-near" | "arrived";
@@ -259,7 +261,11 @@ export function calculateTripProgress(
 }
 
 export function createTripTrackingState(progress: TripProgress | null = null): TripTrackingState {
-  return { progress, offRouteReadings: 0 };
+  return {
+    progress,
+    offRouteReadings: 0,
+    arrivalReadings: progress?.phase === "arrived" ? ARRIVAL_CONFIRMATION_READINGS : 0,
+  };
 }
 
 export function updateTripTrackingState(
@@ -267,17 +273,36 @@ export function updateTripTrackingState(
   location: Coordinates,
   state: TripTrackingState,
 ): TripTrackingState {
-  const candidate = calculateTripProgress(journey, location, state.progress?.phase);
   const previous = state.progress;
+  if (previous?.phase === "arrived") return state;
+
+  const candidate = calculateTripProgress(journey, location, previous?.phase);
+
+  if (candidate.phase === "arrived") {
+    const arrivalReadings = state.arrivalReadings + 1;
+    if (arrivalReadings < ARRIVAL_CONFIRMATION_READINGS) {
+      return {
+        progress: previous,
+        offRouteReadings: 0,
+        arrivalReadings,
+      };
+    }
+
+    return {
+      progress: candidate,
+      offRouteReadings: 0,
+      arrivalReadings: ARRIVAL_CONFIRMATION_READINGS,
+    };
+  }
 
   if (candidate.phase === "off-route" && previous?.phase !== "off-route") {
     const offRouteReadings = state.offRouteReadings + 1;
     if (offRouteReadings < OFF_ROUTE_CONFIRMATION_READINGS) {
-      return { progress: previous, offRouteReadings };
+      return { progress: previous, offRouteReadings, arrivalReadings: 0 };
     }
   }
 
-  const progress = previous && candidate.phase !== "arrived"
+  const progress = previous
     ? {
         ...candidate,
         progressRatio: Math.max(previous.progressRatio, candidate.progressRatio),
@@ -289,6 +314,7 @@ export function updateTripTrackingState(
     offRouteReadings: candidate.phase === "off-route"
       ? OFF_ROUTE_CONFIRMATION_READINGS
       : 0,
+    arrivalReadings: 0,
   };
 }
 

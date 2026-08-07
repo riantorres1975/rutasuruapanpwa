@@ -97,6 +97,29 @@ describe("trip mode", () => {
     expect(tracking.offRouteReadings).toBe(0);
   });
 
+  it("confirma la llegada y evita que una deriva GPS la revierta", () => {
+    let tracking = updateTripTrackingState(
+      direct,
+      [-102.07, 19.42],
+      createTripTrackingState(),
+    );
+
+    tracking = updateTripTrackingState(direct, [-102.06, 19.42], tracking);
+    expect(tracking.progress?.phase).toBe("riding-direct");
+    expect(tracking.arrivalReadings).toBe(1);
+
+    tracking = updateTripTrackingState(direct, [-102.07, 19.42], tracking);
+    expect(tracking.arrivalReadings).toBe(0);
+
+    tracking = updateTripTrackingState(direct, [-102.06, 19.42], tracking);
+    tracking = updateTripTrackingState(direct, [-102.06, 19.42], tracking);
+    expect(tracking.progress?.phase).toBe("arrived");
+    expect(tracking.progress?.progressRatio).toBe(1);
+
+    tracking = updateTripTrackingState(direct, [-102.07, 19.43], tracking);
+    expect(tracking.progress?.phase).toBe("arrived");
+  });
+
   it("avanza en orden por los tramos de un transbordo", () => {
     const first = calculateTripProgress(transfer, [-102.07, 19.42]);
     const walking = calculateTripProgress(transfer, [-102.06, 19.42], first.phase);

@@ -1163,11 +1163,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
       cameraKey: `${plannedJourneyKey}:${Date.now()}`,
       journey: plannedJourney,
     });
-    setTripTracking(
-      liveLocation
-        ? updateTripTrackingState(plannedJourney, liveLocation, createTripTrackingState())
-        : createTripTrackingState(),
-    );
+    setTripTracking(createTripTrackingState());
     setDropOffAlertState(null);
     setShowHint(false);
     setActivePoint(null);
@@ -1186,7 +1182,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     } catch {
       // analytics no disponible: ignorar
     }
-  }, [liveLocation, plannedJourney, plannedJourneyKey, setShowHint, suggestions]);
+  }, [plannedJourney, plannedJourneyKey, setShowHint, suggestions]);
 
   const handleStopTrip = useCallback(() => {
     const journeyKind = tripSession?.journey.kind;

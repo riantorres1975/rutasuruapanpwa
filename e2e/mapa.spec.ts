@@ -188,6 +188,15 @@ test("el modo viaje conserva la ruta durante una pérdida temporal de GPS", asyn
 
   await sendFix({ longitude: -102.05447, latitude: 19.42623, accuracy: 12 });
   await expect(panel).toContainText("EN CAMINO");
+
+  await sendFix({ longitude: -102.042104, latitude: 19.426085, accuracy: 12 });
+  await expect(panel).toContainText("EN CAMINO");
+
+  await sendFix({ longitude: -102.042104, latitude: 19.426085, accuracy: 12 });
+  await expect(panel).toContainText("Llegaste");
+
+  await sendFix({ longitude: -102.05447, latitude: 19.42623, accuracy: 12 });
+  await expect(panel).toContainText("Llegaste");
 });
 
 test("el modo viaje conserva un recorrido con transbordo", async ({ page, context }) => {
