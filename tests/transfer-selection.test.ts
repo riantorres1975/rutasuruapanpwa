@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  findMatchingTransfer,
   getTransferSelectionKey,
   resolveTransferSelection,
   type TransferSelection,
@@ -43,5 +44,15 @@ describe("transfer selection", () => {
 
   it("genera una clave estable para controlar el encuadre de cámara", () => {
     expect(getTransferSelectionKey(selected)).toBe("25:14:0:1:2:3");
+  });
+
+  it("restaura primero el mismo transbordo compartido", () => {
+    const sameRoutesDifferentStop = transfer(25, 14, 8);
+    expect(findMatchingTransfer(selected, [sameRoutesDifferentStop, selected])).toBe(selected);
+  });
+
+  it("recupera el mismo par de rutas si cambiaron los índices", () => {
+    const refreshed = transfer(25, 14, 8);
+    expect(findMatchingTransfer(selected, [transfer(10, 20), refreshed])).toBe(refreshed);
   });
 });

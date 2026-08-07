@@ -5,7 +5,7 @@ export type TransferSelection = {
   transfer: TransferOption;
 };
 
-type TransferSelectionIdentity = Pick<
+export type TransferSelectionIdentity = Pick<
   TransferOption,
   | "routeAId"
   | "routeBId"
@@ -26,6 +26,20 @@ export function getTransferSelectionKey(transfer: TransferSelectionIdentity): st
   ].join(":");
 }
 
+export function findMatchingTransfer(
+  identity: TransferSelectionIdentity,
+  transfers: TransferOption[],
+): TransferOption | null {
+  const identityKey = getTransferSelectionKey(identity);
+  return transfers.find((transfer) => getTransferSelectionKey(transfer) === identityKey) ??
+    transfers.find(
+      (transfer) =>
+        transfer.routeAId === identity.routeAId &&
+        transfer.routeBId === identity.routeBId,
+    ) ??
+    null;
+}
+
 export function resolveTransferSelection(
   selection: TransferSelection | null,
   calculationKey: string | null,
@@ -37,9 +51,5 @@ export function resolveTransferSelection(
     return selection.transfer;
   }
 
-  return transfers.find(
-    (transfer) =>
-      transfer.routeAId === selection.transfer.routeAId &&
-      transfer.routeBId === selection.transfer.routeBId,
-  ) ?? null;
+  return findMatchingTransfer(selection.transfer, transfers);
 }

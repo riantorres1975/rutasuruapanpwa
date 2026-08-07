@@ -114,6 +114,51 @@ test("una actualización del GPS no borra el transbordo seleccionado", async ({ 
   await expect(selectedDialog).toContainText(routeBName);
 });
 
+test("un enlace compartido restaura el transbordo seleccionado", async ({ page, context }) => {
+  await context.setGeolocation({ longitude: -102.025, latitude: 19.405 });
+  await context.grantPermissions(["geolocation"]);
+  await page.addInitScript(() => {
+    localStorage.setItem("rutas-uru-onboarded", "1");
+    Object.defineProperty(navigator, "share", {
+      configurable: true,
+      value: async (data: ShareData) => {
+        (window as typeof window & { __sharedRouteUrl?: string }).__sharedRouteUrl = data.url;
+      },
+    });
+  });
+  await page.goto("/mapa?b=-102.08,19.42");
+
+  const resultButton = page.getByRole("button", { name: "Ver resultado de ruta" });
+  await expect(resultButton).toContainText("con transbordo", { timeout: 10_000 });
+  await resultButton.click({ force: true });
+
+  const transferOption = page.locator('button[aria-label^="Seleccionar transbordo de"]:visible').first();
+  const transferLabel = await transferOption.getAttribute("aria-label");
+  expect(transferLabel).not.toBeNull();
+  const [routeAName, routeBName] = transferLabel!
+    .replace("Seleccionar transbordo de ", "")
+    .split(" a ");
+  await transferOption.click({ force: true });
+
+  const selectedDialog = page
+    .locator('[role="dialog"]:visible')
+    .filter({ hasText: "TRANSBORDO SELECCIONADO" });
+  await selectedDialog.getByRole("button", { name: "Compartir transbordo" }).first().click({ force: true });
+  const sharedUrl = await page.evaluate(
+    () => (window as typeof window & { __sharedRouteUrl?: string }).__sharedRouteUrl,
+  );
+  expect(sharedUrl).toContain("transfer=1");
+
+  await page.goto(sharedUrl!);
+
+  const restoredDialog = page
+    .locator('[role="dialog"]:visible')
+    .filter({ hasText: "TRANSBORDO SELECCIONADO" });
+  await expect(restoredDialog).toBeVisible({ timeout: 10_000 });
+  await expect(restoredDialog).toContainText(routeAName);
+  await expect(restoredDialog).toContainText(routeBName);
+});
+
 test("el modo viaje sigue el GPS sin recuperar la cámara después de un gesto manual", async ({ page, context }) => {
   await context.setGeolocation({ longitude: -102.06303, latitude: 19.42101 });
   await context.grantPermissions(["geolocation"]);

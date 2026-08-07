@@ -27,9 +27,12 @@ import { formatRouteLabel, getRouteDestination } from "@/lib/route-names";
 import type { Coordinates, ProductionRoute, ProductionRouteLandmark, ResolvedRouteData, RouteDirection } from "@/lib/types";
 import type { TransferOption } from "@/lib/transfers";
 import {
+  findMatchingTransfer,
   resolveTransferSelection,
   type TransferSelection,
+  type TransferSelectionIdentity,
 } from "@/lib/transfer-selection";
+import { buildSharedRouteSegment } from "@/lib/shared-route";
 import { haversineMeters } from "@/lib/geo";
 import type { PolylineRoute } from "@/lib/routeMatcher";
 import type {
@@ -359,6 +362,37 @@ export default function HomePage() {
     () => "",
   );
   return <MapPage key={initialSearch} initialSearch={initialSearch} />;
+}
+
+function getSharedTransferIdentity(sharedState: SharedMapState): TransferSelectionIdentity | null {
+  const {
+    transferRouteAId,
+    transferRouteBId,
+    transferRouteAStartIndex,
+    transferRouteATransferIndex,
+    transferRouteBTransferIndex,
+    transferRouteBEndIndex,
+  } = sharedState;
+
+  if (
+    transferRouteAId === null ||
+    transferRouteBId === null ||
+    transferRouteAStartIndex === null ||
+    transferRouteATransferIndex === null ||
+    transferRouteBTransferIndex === null ||
+    transferRouteBEndIndex === null
+  ) {
+    return null;
+  }
+
+  return {
+    routeAId: transferRouteAId,
+    routeBId: transferRouteBId,
+    routeAStartIndex: transferRouteAStartIndex,
+    routeATransferIndex: transferRouteATransferIndex,
+    routeBTransferIndex: transferRouteBTransferIndex,
+    routeBEndIndex: transferRouteBEndIndex,
+  };
 }
 
 function MapPage({ initialSearch }: { initialSearch: string }) {
@@ -923,30 +957,36 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
   useEffect(() => {
     const sharedState = pendingSharedStateRef.current;
     if (!sharedState || polylineRoutes.length === 0) return;
+    const sharedTransferIdentity = getSharedTransferIdentity(sharedState);
 
-    if (sharedState.routeName) {
-      const normalized = sharedState.routeName.toLowerCase();
+    if (!sharedTransferIdentity && (sharedState.routeName || sharedState.routeId)) {
+      const normalized = sharedState.routeName?.toLowerCase() ?? null;
       // Igualdad exacta primero: "Ruta 1" no debe resolver a "Ruta 1A".
       const route =
-        polylineRoutes.find((r) => r.name.toLowerCase() === normalized) ??
-        polylineRoutes.find((r) => r.name.toLowerCase().startsWith(`${normalized} `)) ??
-        polylineRoutes.find((r) => r.name.toLowerCase().includes(normalized));
+        (normalized
+          ? polylineRoutes.find((r) => r.name.toLowerCase() === normalized) ??
+            polylineRoutes.find((r) => r.name.toLowerCase().startsWith(`${normalized} `)) ??
+            polylineRoutes.find((r) => r.name.toLowerCase().includes(normalized))
+          : null) ??
+        (sharedState.routeId
+          ? polylineRoutes.find((r) => r.id === sharedState.routeId)
+          : null);
       if (route) {
         setSelectedRouteId(route.id);
-        if (
-          sharedState.segmentStartIndex !== null &&
-          sharedState.segmentEndIndex !== null &&
-          sharedState.segmentStartIndex < sharedState.segmentEndIndex &&
-          sharedState.segmentEndIndex < route.path.length
-        ) {
-          setSharedRouteSegment(route.path.slice(sharedState.segmentStartIndex, sharedState.segmentEndIndex + 1));
+        const segment = buildSharedRouteSegment(
+          route.path,
+          sharedState.segmentStartIndex,
+          sharedState.segmentEndIndex,
+        );
+        if (segment) {
+          setSharedRouteSegment(segment);
         }
         pendingSharedStateRef.current = null;
         return;
       }
     }
 
-    if (sharedState.showTeleferico) {
+    if (!sharedTransferIdentity && sharedState.showTeleferico) {
       const telefericoRoute = polylineRoutes.find((r) => isTelefericoRouteName(r.name));
       if (telefericoRoute) {
         setSelectedRouteId(telefericoRoute.id);
@@ -956,10 +996,24 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
       return;
     }
 
-    if (sharedState.origin || sharedState.destination) {
+    if (!sharedTransferIdentity && (sharedState.origin || sharedState.destination)) {
       pendingSharedStateRef.current = null;
     }
   }, [polylineRoutes]);
+
+  useEffect(() => {
+    const sharedState = pendingSharedStateRef.current;
+    if (!sharedState || !calculationKey || currentCalculation === null) return;
+
+    const identity = getSharedTransferIdentity(sharedState);
+    if (!identity) return;
+
+    const transfer = findMatchingTransfer(identity, transfers);
+    if (transfer) {
+      setSelectedTransfer(transfer);
+    }
+    pendingSharedStateRef.current = null;
+  }, [calculationKey, currentCalculation, setSelectedTransfer, transfers]);
 
   useEffect(() => {
     if (!originPoint || !destinationPoint || !calculationKey || routesForMatching.length === 0) return;
