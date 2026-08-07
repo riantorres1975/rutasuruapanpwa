@@ -242,7 +242,7 @@ export function getClosestPointOnPath(
   };
 }
 
-function usesStationOnlyAccess(route: PolylineRoute): boolean {
+export function usesStationOnlyAccess(route: PolylineRoute): boolean {
   return route.name === TELEFERICO_ROUTE_NAME;
 }
 

@@ -60,4 +60,97 @@ describe("calculateRouteOptions", () => {
     expect(result.transfers).toHaveLength(1);
     expect(result.transfers[0]).toMatchObject({ routeAId: 10, routeBId: 20 });
   });
+
+  const teleferico: PolylineRoute = {
+    id: 81,
+    name: "Teleférico Uruapan",
+    color: "#00d4aa",
+    corridor_width_m: 500,
+    path: [
+      [0, 0],
+      [0.01, 0],
+      [0.02, 0],
+    ],
+  };
+
+  it("usa el Teleférico de vuelta antes de un transbordo", () => {
+    const bus: PolylineRoute = {
+      id: 20,
+      name: "Ruta B",
+      color: "#34d399",
+      corridor_width_m: 550,
+      direccion: "ida",
+      path: [
+        [0.01, 0],
+        [0.01, 0.01],
+        [0.01, 0.02],
+      ],
+    };
+
+    const result = calculateRouteOptions(
+      [teleferico, bus],
+      [0.02, 0],
+      [0.01, 0.02],
+    );
+
+    expect(result.suggestions).toEqual([]);
+    expect(result.transfers[0]).toMatchObject({ routeAId: 81, routeBId: 20 });
+    expect(result.transfers[0].segmentA).toEqual([
+      [0.02, 0],
+      [0.01, 0],
+    ]);
+  });
+
+  it("usa el Teleférico de vuelta después de un transbordo", () => {
+    const bus: PolylineRoute = {
+      id: 10,
+      name: "Ruta A",
+      color: "#60a5fa",
+      corridor_width_m: 550,
+      direccion: "ida",
+      path: [
+        [0.02, 0.02],
+        [0.02, 0.01],
+        [0.02, 0],
+      ],
+    };
+
+    const result = calculateRouteOptions(
+      [bus, teleferico],
+      [0.02, 0.02],
+      [0, 0],
+    );
+
+    expect(result.suggestions).toEqual([]);
+    expect(result.transfers[0]).toMatchObject({ routeAId: 10, routeBId: 81 });
+    expect(result.transfers[0].segmentB).toEqual([
+      [0.02, 0],
+      [0.01, 0],
+      [0, 0],
+    ]);
+  });
+
+  it("no propone un transbordo abordando debajo del cable", () => {
+    const bus: PolylineRoute = {
+      id: 20,
+      name: "Ruta B",
+      color: "#34d399",
+      corridor_width_m: 550,
+      direccion: "ida",
+      path: [
+        [0, 0],
+        [0, 0.01],
+        [0, 0.02],
+      ],
+    };
+
+    const result = calculateRouteOptions(
+      [teleferico, bus],
+      [0.015, 0],
+      [0, 0.02],
+    );
+
+    expect(result.suggestions).toEqual([]);
+    expect(result.transfers).toEqual([]);
+  });
 });
