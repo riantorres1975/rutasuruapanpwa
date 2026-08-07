@@ -70,6 +70,27 @@ describe("trip mode", () => {
     expect(second.progressRatio).toBeGreaterThan(walking.progressRatio);
   });
 
+  it("no salta el transbordo cuando la segunda ruta vuelve a pasar cerca", () => {
+    const crossingTransfer: TransferTripJourney = {
+      ...transfer,
+      segmentB: [
+        [-102.0615, 19.421],
+        [-102.0607, 19.4205],
+        [-102.06, 19.42],
+        [-102.05, 19.42],
+      ],
+    };
+
+    const progress = calculateTripProgress(
+      crossingTransfer,
+      crossingTransfer.transferPoint,
+      "riding-first",
+    );
+
+    expect(progress.phase).toBe("walking-transfer");
+    expect(progress.nextRouteName).toBe("Ruta 14");
+  });
+
   it("marca llegada y genera una clave estable para la sesión", () => {
     const progress = calculateTripProgress(transfer, [-102.04, 19.42], "riding-second");
 

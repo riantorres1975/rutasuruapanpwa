@@ -155,11 +155,28 @@ export function calculateTripProgress(
   const distanceToTransferM = haversineMeters(location, journey.transferPoint);
   const distanceToRouteBStartM = haversineMeters(location, routeBStart);
   const totalJourneyM = routeA.totalM + journey.walkMeters + routeB.totalM;
-  const wasOnSecondLeg = previousPhase === "walking-transfer" || previousPhase === "riding-second";
+  const wasWalkingTransfer = previousPhase === "walking-transfer";
+  const wasRidingSecond = previousPhase === "riding-second";
+
+  // Some routes cross again shortly after the official transfer point. Keep
+  // the transfer phase until the rider has actually moved away from that point.
+  if (distanceToTransferM <= TRANSFER_RADIUS_M && !wasRidingSecond) {
+    const walkedM = Math.max(0, journey.walkMeters - distanceToRouteBStartM);
+    return {
+      phase: "walking-transfer",
+      progressRatio: totalJourneyM > 0
+        ? clampRatio((routeA.totalM + walkedM) / totalJourneyM)
+        : 0,
+      remainingMinutes: minutesFor(distanceToRouteBStartM, WALK_SPEED_M_PER_MIN),
+      distanceToMilestoneM: distanceToRouteBStartM,
+      currentRouteName: null,
+      nextRouteName: journey.routeBName,
+    };
+  }
 
   if (
     routeB.distanceM <= ROUTE_CORRIDOR_M &&
-    (routeB.progressM >= BOARDED_ROUTE_B_PROGRESS_M || previousPhase === "riding-second")
+    (routeB.progressM >= BOARDED_ROUTE_B_PROGRESS_M || wasWalkingTransfer || wasRidingSecond)
   ) {
     return {
       phase: "riding-second",
@@ -173,7 +190,7 @@ export function calculateTripProgress(
     };
   }
 
-  if (distanceToTransferM <= TRANSFER_RADIUS_M || wasOnSecondLeg) {
+  if (wasWalkingTransfer) {
     const walkedM = Math.max(0, journey.walkMeters - distanceToRouteBStartM);
     return {
       phase: "walking-transfer",
@@ -184,6 +201,17 @@ export function calculateTripProgress(
       distanceToMilestoneM: distanceToRouteBStartM,
       currentRouteName: null,
       nextRouteName: journey.routeBName,
+    };
+  }
+
+  if (wasRidingSecond) {
+    return {
+      phase: "off-route",
+      progressRatio: 0,
+      remainingMinutes: null,
+      distanceToMilestoneM: routeB.distanceM,
+      currentRouteName: journey.routeBName,
+      nextRouteName: null,
     };
   }
 
