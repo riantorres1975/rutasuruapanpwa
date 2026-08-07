@@ -60,7 +60,6 @@ test("un viaje en Teleférico continúa a pie desde la estación", async ({ page
 
   const resultButton = page.getByRole("button", { name: "Ver resultado de ruta" });
   await expect(resultButton).toContainText("Teleférico", { timeout: 10_000 });
-  await resultButton.click({ force: true });
 
   const resultDialog = page.locator('[role="dialog"]:visible').filter({ hasText: "Teleférico" });
   await expect(resultDialog).toContainText("$11 tarjeta");
@@ -69,7 +68,7 @@ test("un viaje en Teleférico continúa a pie desde la estación", async ({ page
   await expect(resultDialog).not.toContainText("haz la parada con la mano");
   expect(await resultDialog.evaluate((element) => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1);
 
-  await resultDialog.locator('button[aria-label^="Iniciar viaje en"]').click({ force: true });
+  await resultDialog.locator('button[aria-label^="Iniciar viaje en"]').click();
   const tripPanel = page.getByRole("region", { name: "Modo viaje" });
   await expect(tripPanel).toContainText("EN CAMINO");
   await expect(tripPanel).toContainText("Baja en la estación Boulevard Industrial / Plaza Agora");
@@ -92,15 +91,15 @@ test("una actualización del GPS no borra el transbordo seleccionado", async ({ 
 
   const resultButton = page.getByRole("button", { name: "Ver resultado de ruta" });
   await expect(resultButton).toContainText("con transbordo", { timeout: 10_000 });
-  await resultButton.click({ force: true });
 
   const transferOption = page.locator('button[aria-label^="Seleccionar transbordo de"]:visible').first();
+  await expect(transferOption).toBeVisible();
   const transferLabel = await transferOption.getAttribute("aria-label");
   expect(transferLabel).not.toBeNull();
   const [routeAName, routeBName] = transferLabel!
     .replace("Seleccionar transbordo de ", "")
     .split(" a ");
-  await transferOption.click({ force: true });
+  await transferOption.click();
   const selectedDialog = page
     .locator('[role="dialog"]:visible')
     .filter({ hasText: "TRANSBORDO SELECCIONADO" });
@@ -130,20 +129,20 @@ test("un enlace compartido restaura el transbordo seleccionado", async ({ page, 
 
   const resultButton = page.getByRole("button", { name: "Ver resultado de ruta" });
   await expect(resultButton).toContainText("con transbordo", { timeout: 10_000 });
-  await resultButton.click({ force: true });
 
   const transferOption = page.locator('button[aria-label^="Seleccionar transbordo de"]:visible').first();
+  await expect(transferOption).toBeVisible();
   const transferLabel = await transferOption.getAttribute("aria-label");
   expect(transferLabel).not.toBeNull();
   const [routeAName, routeBName] = transferLabel!
     .replace("Seleccionar transbordo de ", "")
     .split(" a ");
-  await transferOption.click({ force: true });
+  await transferOption.click();
 
   const selectedDialog = page
     .locator('[role="dialog"]:visible')
     .filter({ hasText: "TRANSBORDO SELECCIONADO" });
-  await selectedDialog.getByRole("button", { name: "Compartir transbordo" }).first().click({ force: true });
+  await selectedDialog.getByRole("button", { name: "Compartir transbordo" }).first().click();
   const sharedUrl = await page.evaluate(
     () => (window as typeof window & { __sharedRouteUrl?: string }).__sharedRouteUrl,
   );
@@ -170,7 +169,6 @@ test("el modo viaje sigue el GPS sin recuperar la cámara después de un gesto m
 
   const resultButton = page.getByRole("button", { name: "Ver resultado de ruta" });
   await expect(resultButton).not.toContainText("Buscando...", { timeout: 10_000 });
-  await resultButton.click({ force: true });
   const startTripButton = page.locator('button[aria-label^="Iniciar viaje en"]:visible');
   await expect(startTripButton).toBeVisible();
   await startTripButton.click();
@@ -259,8 +257,9 @@ test("el modo viaje conserva la ruta durante una pérdida temporal de GPS", asyn
   await page.goto("/mapa?b=-102.042340,19.426870");
   const resultButton = page.getByRole("button", { name: "Ver resultado de ruta" });
   await expect(resultButton).not.toContainText("Buscando...", { timeout: 10_000 });
-  await resultButton.click({ force: true });
-  await page.locator('button[aria-label^="Iniciar viaje en"]:visible').click({ force: true });
+  const startTripButton = page.locator('button[aria-label^="Iniciar viaje en"]:visible');
+  await expect(startTripButton).toBeVisible();
+  await startTripButton.click();
 
   const panel = page.getByRole("region", { name: "Modo viaje" });
   await expect(panel).toContainText("EN CAMINO");
@@ -315,14 +314,13 @@ test("el modo viaje conserva un recorrido con transbordo", async ({ page, contex
 
   const resultButton = page.getByRole("button", { name: "Ver resultado de ruta" });
   await expect(resultButton).toContainText("con transbordo", { timeout: 10_000 });
-  await resultButton.click({ force: true });
   const transferOption = page
     .locator('button[aria-label^="Seleccionar transbordo de"]:visible')
     .first();
   const startTripButton = page.locator('button[aria-label="Iniciar viaje con transbordo"]:visible');
   await expect(transferOption.or(startTripButton).first()).toBeVisible();
   if (!(await startTripButton.isVisible())) {
-    await transferOption.click({ force: true });
+    await transferOption.click();
   }
 
   await expect(startTripButton).toBeVisible();

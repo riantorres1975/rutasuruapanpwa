@@ -9,6 +9,10 @@ const pages = [
 ] as const;
 
 async function expectNoWcagViolations(page: import("@playwright/test").Page) {
+  await page.addStyleTag({
+    content: "*, *::before, *::after { animation: none !important; transition: none !important; }",
+  });
+
   const results = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
     .analyze();

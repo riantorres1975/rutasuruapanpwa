@@ -40,13 +40,14 @@ jobs:
       - name: Tests
         run: npm run test
 
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_MAPBOX_TOKEN: pk.e2e.placeholder
+          NEXT_PUBLIC_SITE_URL: https://www.urugo.app
+
       - name: Instalar Chromium
         run: npx playwright install --with-deps chromium
 
       - name: Pruebas móviles
         run: npm run test:e2e
-
-      - name: Build
-        run: npm run build
-        env:
-          NEXT_PUBLIC_SITE_URL: https://www.urugo.app
