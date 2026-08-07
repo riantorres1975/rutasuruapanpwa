@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  haversineMeters,
   isAccurateEnoughForAutomaticOrigin,
   isWithinUruapanServiceArea,
 } from "@/lib/geo";
@@ -49,7 +48,6 @@ export function useUruapanGeolocation(disabled = false) {
       return () => window.clearTimeout(timer);
     }
 
-    const driftThresholdM = 50;
     let firstFix: Coordinates | null = null;
 
     const watchId = navigator.geolocation.watchPosition(
@@ -75,11 +73,6 @@ export function useUruapanGeolocation(disabled = false) {
           firstFix = coords;
           setUserLocation(coords);
           setStatus("ok");
-          return;
-        }
-
-        if (haversineMeters(firstFix, coords) > driftThresholdM) {
-          setAccuracyWarning(true);
           return;
         }
 

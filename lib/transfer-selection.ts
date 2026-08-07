@@ -5,7 +5,17 @@ export type TransferSelection = {
   transfer: TransferOption;
 };
 
-export function getTransferSelectionKey(transfer: TransferOption): string {
+type TransferSelectionIdentity = Pick<
+  TransferOption,
+  | "routeAId"
+  | "routeBId"
+  | "routeAStartIndex"
+  | "routeATransferIndex"
+  | "routeBTransferIndex"
+  | "routeBEndIndex"
+>;
+
+export function getTransferSelectionKey(transfer: TransferSelectionIdentity): string {
   return [
     transfer.routeAId,
     transfer.routeBId,

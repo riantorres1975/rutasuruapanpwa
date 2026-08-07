@@ -81,6 +81,69 @@ test("una actualización del GPS no borra el transbordo seleccionado", async ({ 
   ).toBeVisible();
 });
 
+test("el modo viaje sigue el GPS sin recuperar la cámara después de un gesto manual", async ({ page, context }) => {
+  await context.setGeolocation({ longitude: -102.06303, latitude: 19.42101 });
+  await context.grantPermissions(["geolocation"]);
+  await page.addInitScript(() => localStorage.setItem("rutas-uru-onboarded", "1"));
+  await page.goto("/mapa?a=-102.063030,19.421010&b=-102.042340,19.426870");
+
+  const resultButton = page.getByRole("button", { name: "Ver resultado de ruta" });
+  await expect(resultButton).not.toContainText("Buscando...", { timeout: 10_000 });
+  await resultButton.click({ force: true });
+  await page.locator('button[aria-label^="Iniciar viaje en"]:visible').click({ force: true });
+
+  await expect(page.getByRole("region", { name: "Modo viaje" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Centrar en mi ubicación durante el viaje" })).toBeVisible();
+
+  const map = page.getByRole("application", { name: /Mapa interactivo/ });
+  const box = await map.boundingBox();
+  expect(box).not.toBeNull();
+  if (box) {
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(box.x + box.width / 2 + 70, box.y + box.height / 2 + 20, { steps: 5 });
+    await page.mouse.up();
+  }
+
+  await expect(page.getByRole("button", { name: "Volver a seguir mi ubicación" })).toBeVisible();
+  await context.setGeolocation({ longitude: -102.0615, latitude: 19.4214 });
+  await page.waitForTimeout(1_000);
+  await expect(page.getByRole("button", { name: "Volver a seguir mi ubicación" })).toBeVisible();
+  await page.getByRole("button", { name: "Volver a seguir mi ubicación" }).click({ force: true });
+  await expect(page.getByRole("button", { name: "Centrar en mi ubicación durante el viaje" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Finalizar viaje" }).click();
+  await expect(page.getByRole("region", { name: "Modo viaje" })).toHaveCount(0);
+  await expect(resultButton).toBeVisible();
+});
+
+test("el modo viaje conserva un recorrido con transbordo", async ({ page, context }) => {
+  await context.setGeolocation({ longitude: -102.025, latitude: 19.405 });
+  await context.grantPermissions(["geolocation"]);
+  await page.addInitScript(() => localStorage.setItem("rutas-uru-onboarded", "1"));
+  await page.goto("/mapa?b=-102.08,19.42");
+
+  const resultButton = page.getByRole("button", { name: "Ver resultado de ruta" });
+  await expect(resultButton).toContainText("con transbordo", { timeout: 10_000 });
+  await resultButton.click({ force: true });
+  await page
+    .locator("button:visible")
+    .filter({ hasText: "transbordo" })
+    .filter({ hasText: "Ruta" })
+    .first()
+    .click({ force: true });
+  const selectedLabel = (await resultButton.innerText()).trim();
+
+  await page.locator('button[aria-label="Iniciar viaje con transbordo"]:visible').click({ force: true });
+  const tripPanel = page.getByRole("region", { name: "Modo viaje" });
+  await expect(tripPanel).toBeVisible();
+  await expect(tripPanel).toContainText(selectedLabel.split("→")[0].trim());
+
+  await context.setGeolocation({ longitude: -102.0249, latitude: 19.405 });
+  await page.waitForTimeout(1_000);
+  await expect(tripPanel).toBeVisible();
+});
+
 test("el asistente diferido abre con un solo toque", async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem("rutas-uru-onboarded", "1"));
   await page.goto("/mapa");

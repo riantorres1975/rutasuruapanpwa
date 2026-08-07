@@ -17,6 +17,7 @@ import PlaceSearch from "@/components/PlaceSearch";
 import RouteList from "@/components/RouteList";
 import RoutePreviewSVG from "@/components/RoutePreviewSVG";
 import RouteSchedule from "@/components/RouteSchedule";
+import TripModePanel from "@/components/TripModePanel";
 import { geocodePlace, type PlaceResult } from "@/lib/geocode";
 import { useShareRoute } from "@/hooks/useShareRoute";
 import { useFavoriteRoutes } from "@/hooks/useFavoriteRoutes";
@@ -42,6 +43,13 @@ import {
   type RouteCalculationEngine,
 } from "@/lib/route-performance";
 import { FARES_2026 } from "@/lib/mobility-config";
+import {
+  calculateTripProgress,
+  getTripJourneyKey,
+  getTripMilestone,
+  type TripJourney,
+  type TripProgress,
+} from "@/lib/trip-mode";
 const AVG_TRIP_SPEED_KMH = 18;
 // Tarifa del camión urbano en pesos (derivada de la config de movilidad).
 const BUS_FARE_MXN = Math.round(Number(FARES_2026.urbanBus.price.replace(/[^0-9.]/g, "")) || 11);
@@ -64,6 +72,11 @@ type RouteCalculation = RouteCalculationResult & { key: string };
 type TripAlert = {
   tripKey: string;
   message: string;
+};
+type TripSession = {
+  key: string;
+  cameraKey: string;
+  journey: TripJourney;
 };
 
 const EMPTY_ROUTE_OPTIONS: RouteOption[] = [];
@@ -415,8 +428,9 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     Boolean(initialUrlState.sharedState?.origin && initialUrlState.sharedState.destination),
   );
   const [dropOffAlertState, setDropOffAlertState] = useState<TripAlert | null>(null);
-  const dropOffArmedRef = useRef(false);
-  const dropOffNotifiedRef = useRef(false);
+  const [tripSession, setTripSession] = useState<TripSession | null>(null);
+  const [tripProgress, setTripProgress] = useState<TripProgress | null>(null);
+  const tripMilestonesRef = useRef(new Set<string>());
   const [feedbackTripKey, setFeedbackTripKey] = useState<string | null>(null);
   const lastSavedTripKeyRef = useRef("");
   const [manualOrigin, setManualOrigin] = useState<Coordinates | null>(
@@ -450,7 +464,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     markOutside: markGeolocationOutside,
     clearAccuracyWarning,
     subscribeToLiveLocation,
-  } = useUruapanGeolocation(manualOrigin !== null);
+  } = useUruapanGeolocation(manualOrigin !== null && tripSession === null);
   const originPoint = manualOrigin ?? userLocation;
   const flowStep = getFlowStep(originPoint, destinationPoint);
   const activePoint: ActivePoint = flowStep === 1
@@ -1085,15 +1099,103 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
   const activeTripKey = bestSuggestionRouteId !== null && destinationPoint
     ? `${bestSuggestionRouteId}:${formatCoordinateParam(destinationPoint)}`
     : null;
-  const dropOffAlert = dropOffAlertState?.tripKey === activeTripKey
+  const plannedJourney = useMemo<TripJourney | null>(() => {
+    if (bestSuggestion) {
+      return {
+        kind: "direct",
+        routeId: bestSuggestion.routeId,
+        routeName: bestSuggestion.ruta,
+        segment: bestSuggestion.segment,
+      };
+    }
+    if (selectedTransfer) {
+      return {
+        kind: "transfer",
+        routeAId: selectedTransfer.routeAId,
+        routeBId: selectedTransfer.routeBId,
+        routeAName: selectedTransfer.routeAName,
+        routeBName: selectedTransfer.routeBName,
+        routeAStartIndex: selectedTransfer.routeAStartIndex,
+        routeATransferIndex: selectedTransfer.routeATransferIndex,
+        routeBTransferIndex: selectedTransfer.routeBTransferIndex,
+        routeBEndIndex: selectedTransfer.routeBEndIndex,
+        segmentA: selectedTransfer.segmentA,
+        segmentB: selectedTransfer.segmentB,
+        transferPoint: selectedTransfer.transferPoint,
+        walkMeters: selectedTransfer.walkMeters,
+      };
+    }
+    return null;
+  }, [bestSuggestion, selectedTransfer]);
+  const plannedJourneyKey = plannedJourney && destinationPoint
+    ? getTripJourneyKey(plannedJourney, destinationPoint)
+    : null;
+  const isTripActive = tripSession !== null && tripSession.key === plannedJourneyKey;
+  const dropOffAlert = dropOffAlertState && dropOffAlertState.tripKey === tripSession?.key
     ? dropOffAlertState.message
     : null;
   const feedbackGiven = activeTripKey !== null && feedbackTripKey === activeTripKey;
+  const tripLocationStatus = liveLocation
+    ? "ready"
+    : geoStatus === "error" || geoStatus === "outside" || geoStatus === "inaccurate"
+      ? "unavailable"
+      : "locating";
 
   useEffect(() => {
-    dropOffArmedRef.current = false;
-    dropOffNotifiedRef.current = false;
-  }, [activeTripKey]);
+    if (!tripSession || tripSession.key === plannedJourneyKey) return;
+    const timer = window.setTimeout(() => {
+      setTripSession(null);
+      setTripProgress(null);
+      setDropOffAlertState(null);
+      tripMilestonesRef.current.clear();
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [plannedJourneyKey, tripSession]);
+
+  const handleStartTrip = useCallback(() => {
+    if (!plannedJourney || !plannedJourneyKey) return;
+
+    tripMilestonesRef.current.clear();
+    setTripSession({
+      key: plannedJourneyKey,
+      cameraKey: `${plannedJourneyKey}:${Date.now()}`,
+      journey: plannedJourney,
+    });
+    setTripProgress(
+      liveLocation ? calculateTripProgress(plannedJourney, liveLocation) : null,
+    );
+    setDropOffAlertState(null);
+    setShowHint(false);
+    setActivePoint(null);
+    setIsResultSheetOpen(false);
+    setIsSheetOpen(false);
+
+    if (plannedJourney.kind === "direct") {
+      setSharedRouteSegment(plannedJourney.segment);
+      const routeColor = suggestions.find((item) => item.routeId === plannedJourney.routeId)?.routeColor;
+      setSharedSegmentColor(routeColor ?? null);
+      setSelectedRouteId(null);
+    }
+
+    try {
+      track("viaje_iniciado", { tipo: plannedJourney.kind });
+    } catch {
+      // analytics no disponible: ignorar
+    }
+  }, [liveLocation, plannedJourney, plannedJourneyKey, setShowHint, suggestions]);
+
+  const handleStopTrip = useCallback(() => {
+    const journeyKind = tripSession?.journey.kind;
+    setTripSession(null);
+    setTripProgress(null);
+    setDropOffAlertState(null);
+    tripMilestonesRef.current.clear();
+    try {
+      track("viaje_finalizado", { tipo: journeyKind ?? "desconocido" });
+    } catch {
+      // analytics no disponible: ignorar
+    }
+  }, [tripSession]);
 
   // ── Repetir viaje: guardar los nuevos viajes ──────────────────────────────
   useEffect(() => {
@@ -1147,67 +1249,34 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
   }, [calculationKey]);
 
   useEffect(() => {
-    if (!bestSuggestion || flowStep !== 3 || !activeTripKey) return;
+    if (!isTripActive || !tripSession) return;
 
     return subscribeToLiveLocation((location) => {
-      if (dropOffNotifiedRef.current) return;
-      const segment = bestSuggestion.segment;
-      const dropPoint = segment[segment.length - 1];
-      if (!dropPoint) return;
-
-      const distance = haversineMeters(location, dropPoint);
-      if (!dropOffArmedRef.current) {
-        if (distance > 500) dropOffArmedRef.current = true;
-        return;
-      }
-
-      if (distance < 400) {
-        dropOffNotifiedRef.current = true;
-        try {
-          navigator.vibrate?.([200, 100, 200]);
-        } catch {
-          // vibración no soportada: ignorar
-        }
-        setDropOffAlertState({
-          tripKey: activeTripKey,
-          message: `Prepárate para bajar: estás a ~${Math.round(distance)} m de tu parada. Avisa al chofer o toca el timbre.`,
-        });
-      }
+      setTripProgress((current) =>
+        calculateTripProgress(tripSession.journey, location, current?.phase),
+      );
     });
-  }, [activeTripKey, bestSuggestion, flowStep, subscribeToLiveLocation]);
+  }, [isTripActive, subscribeToLiveLocation, tripSession]);
 
-  // ── Modo viaje: progreso sobre la ruta ────────────────────────────────────
-  // Si el usuario va sobre el segmento sugerido (a <300 m de él) y ya se alejó
-  // de su origen, mostramos cuántos minutos faltan para su bajada.
-  const tripProgress = useMemo(() => {
-    if (!liveLocation || !bestSuggestion || flowStep !== 3 || !originPoint) {
-      return null;
+  useEffect(() => {
+    if (!tripProgress || !tripSession) return;
+    const milestone = getTripMilestone(tripProgress);
+    if (!milestone || tripMilestonesRef.current.has(milestone)) return;
+
+    tripMilestonesRef.current.add(milestone);
+    const distance = Math.round(tripProgress.distanceToMilestoneM ?? 0);
+    const message = milestone === "transfer-near"
+      ? `Prepárate para transbordar: faltan aproximadamente ${distance} m.`
+      : milestone === "destination-near"
+        ? `Prepárate para bajar: faltan aproximadamente ${distance} m para tu parada.`
+        : "Llegaste a tu destino.";
+    try {
+      navigator.vibrate?.(milestone === "arrived" ? [250, 120, 250] : [200, 100, 200]);
+    } catch {
+      // vibración no soportada: ignorar
     }
-
-    // Aún no se mueve del punto de partida: no hay viaje que seguir.
-    if (haversineMeters(liveLocation, originPoint) < 250) {
-      return null;
-    }
-
-    const segment = bestSuggestion.segment;
-    let nearestIndex = -1;
-    let nearestDistance = Infinity;
-    for (let index = 0; index < segment.length; index += 1) {
-      const d = haversineMeters(liveLocation, segment[index]);
-      if (d < nearestDistance) {
-        nearestDistance = d;
-        nearestIndex = index;
-      }
-    }
-
-    // Lejos del recorrido: el usuario no va (o ya no va) sobre esta ruta.
-    if (nearestIndex < 0 || nearestDistance > 300) {
-      return null;
-    }
-
-    const remaining = getEstimatedMinutes(segment.slice(nearestIndex));
-    return { remainingMin: remaining };
-  }, [liveLocation, bestSuggestion, flowStep, originPoint]);
+    setDropOffAlertState({ tripKey: tripSession.key, message });
+  }, [tripProgress, tripSession]);
 
   const routeTextSummary = useMemo(() => {
     if (isCalculatingSuggestions || flowStep !== 3) {
@@ -1743,6 +1812,29 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
                   </button>
                 </div>
 
+                <button
+                  type="button"
+                  onClick={isTripActive ? handleStopTrip : handleStartTrip}
+                  className={`mt-2 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl text-[12px] font-bold transition active:scale-[0.98] ${
+                    isTripActive
+                      ? "ov-pill ov-border ov-text border"
+                      : "bg-lima text-ink-900 shadow-[0_4px_16px_rgba(181,239,48,0.22)]"
+                  }`}
+                  aria-label={isTripActive ? "Finalizar viaje" : `Iniciar viaje en ${formatRouteLabel(bestSuggestion.ruta)}`}
+                >
+                  {isTripActive ? (
+                    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
+                      <path d="M7 7l10 10M17 7 7 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                  ) : (
+                    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
+                      <path d="m9 7 8 5-8 5V7Z" fill="currentColor" />
+                      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.6" />
+                    </svg>
+                  )}
+                  {isTripActive ? "Finalizar viaje" : "Iniciar viaje"}
+                </button>
+
                 {/* Comparador de alternativas: tap para promover a recomendada */}
                 {suggestions.length > 1 && (
                   <div className="mt-3 space-y-1.5">
@@ -1838,6 +1930,28 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
                   <span className="mx-1.5 opacity-40">·</span>
                   ${BUS_FARE_MXN * 2} total (2 camiones)
                 </p>
+                <button
+                  type="button"
+                  onClick={isTripActive ? handleStopTrip : handleStartTrip}
+                  className={`mt-3 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl text-[12px] font-bold transition active:scale-[0.98] ${
+                    isTripActive
+                      ? "ov-pill ov-border ov-text border"
+                      : "bg-lima text-ink-900 shadow-[0_4px_16px_rgba(181,239,48,0.22)]"
+                  }`}
+                  aria-label={isTripActive ? "Finalizar viaje" : "Iniciar viaje con transbordo"}
+                >
+                  {isTripActive ? (
+                    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
+                      <path d="M7 7l10 10M17 7 7 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                  ) : (
+                    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
+                      <path d="m9 7 8 5-8 5V7Z" fill="currentColor" />
+                      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.6" />
+                    </svg>
+                  )}
+                  {isTripActive ? "Finalizar viaje" : "Iniciar viaje"}
+                </button>
                 <div className="mt-3 grid grid-cols-[1fr_auto] gap-2">
 <button
                       type="button"
@@ -2241,6 +2355,9 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
             destinationPoint={destinationPoint}
             showTeleferico={showTeleferico}
             selectedTransfer={selectedTransfer}
+            tripModeActive={isTripActive}
+            tripSessionKey={isTripActive ? tripSession?.cameraKey ?? null : null}
+            tripLocation={isTripActive ? liveLocation : null}
             awaitingPick={flowStep === 3 ? null : activePoint}
             hoveredRouteId={hoveredRouteId}
             onMapPick={handleMapPick}
@@ -2331,32 +2448,33 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
           </div>
 
           {/* Row 2: Nearby toast */}
-          <div className="pointer-events-auto mt-2">
-            <NearbyToast
-              count={nearbyToast}
-              onView={() => setIsSheetOpen(true)}
-              onDismiss={() => setNearbyToast(null)}
-            />
-          </div>
+          {!isTripActive ? (
+            <div className="pointer-events-auto mt-2">
+              <NearbyToast
+                count={nearbyToast}
+                onView={() => setIsSheetOpen(true)}
+                onDismiss={() => setNearbyToast(null)}
+              />
+            </div>
+          ) : null}
 
           {/* Row 3: Buscador (héroe) + A/B controls. La guía paso a paso va dentro
               de renderRouteControls, evitando un hint duplicado. */}
-          <div className="pointer-events-auto mt-2 space-y-2">
-            {renderRouteControls("mobile", true)}
-          </div>
+          {!isTripActive ? (
+            <div className="pointer-events-auto mt-2 space-y-2">
+              {renderRouteControls("mobile", true)}
+            </div>
+          ) : null}
         </section>
 
-        {/* ── Progreso del viaje (vas arriba del camión) ── */}
-        {tripProgress && !dropOffAlert && (
-          <div className="pointer-events-none absolute inset-x-0 bottom-24 z-40 flex justify-center px-4" aria-live="polite">
-            <div className="inline-flex items-center gap-2 rounded-full border border-lima/30 bg-slate-900/90 px-4 py-2 text-[12px] font-semibold text-slate-50 shadow-[0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-xl">
-              <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 text-lima" aria-hidden="true">
-                <path d="M5 17h14M5 17a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2M5 17v2m14-2v2M3 10h18M7.5 13.5h.01M16.5 13.5h.01" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              En ruta · faltan ~{tripProgress.remainingMin} min para tu bajada
-            </div>
-          </div>
-        )}
+        {isTripActive && tripSession ? (
+          <TripModePanel
+            journey={tripSession.journey}
+            progress={tripProgress}
+            locationStatus={tripLocationStatus}
+            onStop={handleStopTrip}
+          />
+        ) : null}
 
         {/* ── Aviso de bajada próxima (modo viaje) ── */}
         {dropOffAlert && (
@@ -2423,7 +2541,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
 
         {/* ── MOBILE ONLY: FAB row — Resultado (izq) + Rutas (der) ── */}
         <div
-          className="absolute inset-x-4 z-30 flex items-end gap-2 lg:hidden"
+          className={`absolute inset-x-4 z-30 items-end gap-2 lg:hidden ${isTripActive ? "hidden" : "flex"}`}
           style={{ bottom: "calc(1.5rem + env(safe-area-inset-bottom, 0px))" }}
         >
 {/* Botón resultado — solo visible en paso 3 */}

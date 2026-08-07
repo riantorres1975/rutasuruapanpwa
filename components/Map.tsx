@@ -172,6 +172,9 @@ type MapProps = {
   destinationPoint: [number, number] | null;
   showTeleferico?: boolean;
   selectedTransfer?: TransferOption | null;
+  tripModeActive?: boolean;
+  tripSessionKey?: string | null;
+  tripLocation?: Coordinates | null;
   awaitingPick?: "origin" | "destination" | null;
   /** Ruta resaltada al pasar el mouse por la lista (desktop) */
   hoveredRouteId?: number | null;
@@ -688,6 +691,64 @@ function fitBoundsAnimated(
   });
 }
 
+function renderUserLocation(
+  map: mapboxgl.Map,
+  location: Coordinates,
+  accuracyM: number,
+) {
+  const pointGeoJSON: GeoJSON.FeatureCollection<GeoJSON.Point> = {
+    type: "FeatureCollection",
+    features: [{
+      type: "Feature",
+      properties: { accuracy: accuracyM },
+      geometry: { type: "Point", coordinates: location },
+    }],
+  };
+
+  const source = map.getSource(USER_LOC_SOURCE) as mapboxgl.GeoJSONSource | undefined;
+  if (source) {
+    source.setData(pointGeoJSON);
+  } else {
+    map.addSource(USER_LOC_SOURCE, { type: "geojson", data: pointGeoJSON });
+  }
+
+  if (!map.getLayer(USER_LOC_ACCURACY_LAYER)) {
+    map.addLayer({
+      id: USER_LOC_ACCURACY_LAYER,
+      type: "circle",
+      source: USER_LOC_SOURCE,
+      paint: {
+        "circle-radius": [
+          "interpolate", ["linear"], ["zoom"],
+          10, 4,
+          15, ["max", 12, ["*", 0.08, ["get", "accuracy"]]],
+          18, ["max", 24, ["*", 0.5, ["get", "accuracy"]]],
+        ],
+        "circle-color": "#3b82f6",
+        "circle-opacity": 0.15,
+        "circle-stroke-color": "#3b82f6",
+        "circle-stroke-width": 1,
+        "circle-stroke-opacity": 0.4,
+      },
+    }, map.getLayer(LAYER_GLOW_ID) ? LAYER_GLOW_ID : undefined);
+  }
+
+  if (!map.getLayer(USER_LOC_DOT_LAYER)) {
+    map.addLayer({
+      id: USER_LOC_DOT_LAYER,
+      type: "circle",
+      source: USER_LOC_SOURCE,
+      paint: {
+        "circle-radius": 8,
+        "circle-color": "#3b82f6",
+        "circle-opacity": 1,
+        "circle-stroke-color": "#ffffff",
+        "circle-stroke-width": 2.5,
+      },
+    });
+  }
+}
+
 function clearTransferLayers(map: mapboxgl.Map) {
   for (const layer of [TRANSFER_SEG_A_LAYER, TRANSFER_SEG_B_LAYER, TRANSFER_WALK_LAYER, TRANSFER_PIN_LAYER]) {
     if (map.getLayer(layer)) map.removeLayer(layer);
@@ -1017,6 +1078,9 @@ function MapComponent({
   destinationPoint,
   showTeleferico = false,
   selectedTransfer = null,
+  tripModeActive = false,
+  tripSessionKey = null,
+  tripLocation = null,
   awaitingPick = null,
   hoveredRouteId = null,
   onMapPick,
@@ -1048,6 +1112,10 @@ function MapComponent({
   const telefericoGeoJSONRef = useRef<any>(null);
   const arrowSegmentsRef = useRef(arrowSegments);
   const selectedTransferRef = useRef(selectedTransfer);
+  const tripModeActiveRef = useRef(tripModeActive);
+  const tripSessionKeyRef = useRef(tripSessionKey);
+  const tripFollowingRef = useRef(false);
+  const userLocationRef = useRef<{ location: Coordinates; accuracyM: number } | null>(null);
   const lastFittedTransferKeyRef = useRef<string | null>(null);
   const lastFittedRouteKeyRef = useRef<string | null>(null);
   const transferRouteIdsRef = useRef<number[]>(
@@ -1064,6 +1132,10 @@ function MapComponent({
   const [isLoading, setIsLoading] = useState(true);
   const [locationLoading, setLocationLoading] = useState(false);
   const [locationAccuracy, setLocationAccuracy] = useState<number | null>(null);
+  const [releasedTripKey, setReleasedTripKey] = useState<string | null>(null);
+  const isTripFollowing = Boolean(
+    tripModeActive && tripSessionKey && releasedTripKey !== tripSessionKey,
+  );
   const [debugActive] = useState(isDebugMode);
   const [storedDebugEditor, dispatchDebugEditor] = useReducer(
     debugEditorReducer,
@@ -1312,6 +1384,29 @@ function MapComponent({
       fitBoundsAnimated(map, bounds, { top: 120, right: 32, bottom: 160, left: 32, duration: 1200, maxZoom: 15 });
     }
   }, [debugActive, isLoading, selectedTransfer]);
+
+  useEffect(() => {
+    tripModeActiveRef.current = tripModeActive;
+    tripSessionKeyRef.current = tripSessionKey;
+    tripFollowingRef.current = isTripFollowing;
+  }, [isTripFollowing, tripModeActive, tripSessionKey]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !isMapReadyRef.current || !tripModeActive || !tripLocation) return;
+
+    userLocationRef.current = { location: tripLocation, accuracyM: 0 };
+    renderUserLocation(map, tripLocation, 0);
+    if (tripFollowingRef.current) {
+      map.easeTo({
+        center: tripLocation,
+        zoom: Math.max(map.getZoom(), 15.5),
+        duration: 700,
+        padding: { top: 96, right: 24, bottom: 150, left: 24 },
+        essential: true,
+      });
+    }
+  }, [isLoading, tripLocation, tripModeActive]);
 
   const stopRouteAnimation = useCallback(() => {
     animationTokenRef.current += 1;
@@ -1626,6 +1721,13 @@ function MapComponent({
         }
         if (selectedTransferRef.current) {
           renderTransferLayers(map, selectedTransferRef.current);
+        }
+        if (userLocationRef.current) {
+          renderUserLocation(
+            map,
+            userLocationRef.current.location,
+            userLocationRef.current.accuracyM,
+          );
         }
         // Restore arrow layers after style reload (image is tied to style, re-add it)
         ensureChevronImage(map);
@@ -2029,57 +2131,8 @@ function MapComponent({
         });
 
         // ── Draw blue dot + accuracy circle as GeoJSON layers ────────────
-        const pointGeoJSON: GeoJSON.FeatureCollection<GeoJSON.Point> = {
-          type: "FeatureCollection",
-          features: [{
-            type: "Feature",
-            properties: { accuracy: accuracyM },
-            geometry: { type: "Point", coordinates: [userLng, userLat] }
-          }]
-        };
-
-        if (map.getSource(USER_LOC_SOURCE)) {
-          (map.getSource(USER_LOC_SOURCE) as mapboxgl.GeoJSONSource).setData(pointGeoJSON);
-        } else {
-          map.addSource(USER_LOC_SOURCE, { type: "geojson", data: pointGeoJSON });
-
-          // Accuracy circle — radius in pixels approximated via circle-radius
-          // We use a fixed pixel radius and note it's approximate at zoom 15.5
-          // For a proper meter-based circle, Turf or a polygon would be needed;
-          // this gives a clear visual cue without a dependency.
-          map.addLayer({
-            id: USER_LOC_ACCURACY_LAYER,
-            type: "circle",
-            source: USER_LOC_SOURCE,
-            paint: {
-              "circle-radius": [
-                "interpolate", ["linear"], ["zoom"],
-                10, 4,
-                15, ["max", 12, ["*", 0.08, ["get", "accuracy"]]],
-                18, ["max", 24, ["*", 0.5, ["get", "accuracy"]]]
-              ],
-              "circle-color": "#3b82f6",
-              "circle-opacity": 0.15,
-              "circle-stroke-color": "#3b82f6",
-              "circle-stroke-width": 1,
-              "circle-stroke-opacity": 0.4
-            }
-          }, LAYER_GLOW_ID); // insert below route layers
-
-          // Blue dot
-          map.addLayer({
-            id: USER_LOC_DOT_LAYER,
-            type: "circle",
-            source: USER_LOC_SOURCE,
-            paint: {
-              "circle-radius": 8,
-              "circle-color": "#3b82f6",
-              "circle-opacity": 1,
-              "circle-stroke-color": "#ffffff",
-              "circle-stroke-width": 2.5
-            }
-          });
-        }
+        userLocationRef.current = { location: [userLng, userLat], accuracyM };
+        renderUserLocation(map, [userLng, userLat], accuracyM);
 
         // ── Haversine proximity search (400 m threshold) ──────────────────
         const NEARBY_METERS = 400;
@@ -2125,6 +2178,26 @@ function MapComponent({
     );
   };
 
+  const handleResumeTripFollow = () => {
+    const map = mapRef.current;
+    if (!map || !tripLocation) return;
+    tripFollowingRef.current = true;
+    setReleasedTripKey(null);
+    map.easeTo({
+      center: tripLocation,
+      zoom: Math.max(map.getZoom(), 15.5),
+      duration: 700,
+      padding: { top: 96, right: 24, bottom: 150, left: 24 },
+      essential: true,
+    });
+  };
+
+  const releaseTripCamera = () => {
+    if (!tripModeActiveRef.current || !tripFollowingRef.current) return;
+    tripFollowingRef.current = false;
+    if (tripSessionKeyRef.current) setReleasedTripKey(tripSessionKeyRef.current);
+  };
+
   if (!mapToken) {
     return (
       <div className="flex h-full w-full items-center justify-center bg-slate-950 text-slate-100">
@@ -2146,6 +2219,8 @@ function MapComponent({
         className="h-full w-full"
         role="application"
         aria-label="Mapa interactivo de rutas de transporte de Uruapan. Toca para marcar puntos de origen y destino."
+        onPointerDown={releaseTripCamera}
+        onWheel={releaseTripCamera}
       />
 
       {isLoading && (
@@ -2156,12 +2231,23 @@ function MapComponent({
       <div className="absolute right-2.5 top-[10px] z-20 flex flex-col items-end gap-2 md:right-4 md:top-[104px]">
         <button
           type="button"
-          onClick={handleLocateMe}
-          disabled={locationLoading}
-          className="ov-panel ov-border grid h-10 w-10 place-items-center rounded-xl border text-lima shadow-[0_4px_16px_rgba(0,0,0,0.22)] backdrop-blur-xl transition hover:opacity-90 active:scale-95 disabled:opacity-60"
-          aria-label="Ir a mi ubicación"
+          onClick={tripModeActive ? handleResumeTripFollow : handleLocateMe}
+          disabled={tripModeActive ? !tripLocation : locationLoading}
+          className={`ov-panel grid h-10 w-10 place-items-center rounded-xl border text-lima shadow-[0_4px_16px_rgba(0,0,0,0.22)] backdrop-blur-xl transition hover:opacity-90 active:scale-95 disabled:opacity-60 ${
+            tripModeActive && isTripFollowing ? "border-lima/60 bg-lima/15" : "ov-border"
+          }`}
+          aria-label={tripModeActive
+            ? isTripFollowing
+              ? "Centrar en mi ubicación durante el viaje"
+              : "Volver a seguir mi ubicación"
+            : "Ir a mi ubicación"}
+          title={tripModeActive
+            ? isTripFollowing
+              ? "Siguiendo tu ubicación"
+              : "Volver a centrar"
+            : "Ir a mi ubicación"}
         >
-          {locationLoading ? (
+          {!tripModeActive && locationLoading ? (
             <span className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
           ) : (
             <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
@@ -2176,8 +2262,18 @@ function MapComponent({
           )}
         </button>
 
+        {tripModeActive ? (
+          <span className={`rounded-full border px-2 py-1 text-[10px] font-bold shadow-soft backdrop-blur-xl ${
+            tripLocation && isTripFollowing
+              ? "border-lima/40 bg-ink-900/85 text-lima"
+              : "ov-panel ov-border ov-text-muted"
+          }`}>
+            {!tripLocation ? "Buscando GPS" : isTripFollowing ? "Siguiendo" : "Mapa libre"}
+          </span>
+        ) : null}
+
         {/* Accuracy chip — shown after a fix is received */}
-        {locationAccuracy !== null && (
+        {!tripModeActive && locationAccuracy !== null && (
           <div
             className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold shadow-soft backdrop-blur-xl transition-all duration-300 ${
               locationAccuracy > 1200
