@@ -432,6 +432,9 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
   const [tripSession, setTripSession] = useState<TripSession | null>(null);
   const [tripTracking, setTripTracking] = useState<TripTrackingState>(() => createTripTrackingState());
   const tripProgress = tripTracking.progress;
+  const [isStopTripDialogOpen, setIsStopTripDialogOpen] = useState(false);
+  const stopTripDialogRef = useRef<HTMLDivElement>(null);
+  const stopTripConfirmButtonRef = useRef<HTMLButtonElement>(null);
   const tripMilestonesRef = useRef(new Set<string>());
   const [feedbackTripKey, setFeedbackTripKey] = useState<string | null>(null);
   const lastSavedTripKeyRef = useRef("");
@@ -1148,6 +1151,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     const timer = window.setTimeout(() => {
       setTripSession(null);
       setTripTracking(createTripTrackingState());
+      setIsStopTripDialogOpen(false);
       setDropOffAlertState(null);
       tripMilestonesRef.current.clear();
     }, 0);
@@ -1164,6 +1168,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
       journey: plannedJourney,
     });
     setTripTracking(createTripTrackingState());
+    setIsStopTripDialogOpen(false);
     setDropOffAlertState(null);
     setShowHint(false);
     setActivePoint(null);
@@ -1184,10 +1189,11 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     }
   }, [plannedJourney, plannedJourneyKey, setShowHint, suggestions]);
 
-  const handleStopTrip = useCallback(() => {
+  const completeStopTrip = useCallback(() => {
     const journeyKind = tripSession?.journey.kind;
     setTripSession(null);
     setTripTracking(createTripTrackingState());
+    setIsStopTripDialogOpen(false);
     setDropOffAlertState(null);
     tripMilestonesRef.current.clear();
     try {
@@ -1196,6 +1202,50 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
       // analytics no disponible: ignorar
     }
   }, [tripSession]);
+
+  const handleStopTrip = useCallback(() => {
+    if (tripProgress?.phase === "arrived") {
+      completeStopTrip();
+      return;
+    }
+    setIsStopTripDialogOpen(true);
+  }, [completeStopTrip, tripProgress?.phase]);
+
+  useEffect(() => {
+    if (!isStopTripDialogOpen) return;
+
+    const previousFocus = document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null;
+    const focusFrame = window.requestAnimationFrame(() => stopTripConfirmButtonRef.current?.focus());
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsStopTripDialogOpen(false);
+        return;
+      }
+      if (event.key !== "Tab") return;
+
+      const buttons = Array.from(
+        stopTripDialogRef.current?.querySelectorAll<HTMLButtonElement>("button:not([disabled])") ?? [],
+      );
+      const firstButton = buttons[0];
+      const lastButton = buttons[buttons.length - 1];
+      if (event.shiftKey && document.activeElement === firstButton) {
+        event.preventDefault();
+        lastButton?.focus();
+      } else if (!event.shiftKey && document.activeElement === lastButton) {
+        event.preventDefault();
+        firstButton?.focus();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.cancelAnimationFrame(focusFrame);
+      document.removeEventListener("keydown", handleKeyDown);
+      if (previousFocus?.isConnected) previousFocus.focus();
+    };
+  }, [isStopTripDialogOpen]);
 
   // ── Repetir viaje: guardar los nuevos viajes ──────────────────────────────
   useEffect(() => {
@@ -2475,6 +2525,47 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
             locationStatus={tripLocationStatus}
             onStop={handleStopTrip}
           />
+        ) : null}
+
+        {isStopTripDialogOpen && isTripActive ? (
+          <div
+            className="fixed inset-0 z-[90] flex items-end justify-center bg-black/65 px-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] pt-4 sm:items-center sm:pb-4"
+            onClick={() => setIsStopTripDialogOpen(false)}
+          >
+            <div
+              ref={stopTripDialogRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="stop-trip-title"
+              aria-describedby="stop-trip-description"
+              className="ov-panel ov-border w-full max-w-sm rounded-lg border p-4 shadow-[0_18px_60px_rgba(0,0,0,0.55)]"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <p id="stop-trip-title" className="ov-text text-base font-bold">
+                ¿Finalizar el viaje?
+              </p>
+              <p id="stop-trip-description" className="ov-text-muted mt-1 text-sm leading-5">
+                El seguimiento y los avisos de bajada se detendrán.
+              </p>
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsStopTripDialogOpen(false)}
+                  className="ov-pill ov-border ov-text h-11 rounded-lg border px-4 text-sm font-semibold transition active:scale-[0.98]"
+                >
+                  Cancelar
+                </button>
+                <button
+                  ref={stopTripConfirmButtonRef}
+                  type="button"
+                  onClick={completeStopTrip}
+                  className="h-11 rounded-lg border border-red-400/45 bg-red-500/15 px-4 text-sm font-bold text-red-300 transition hover:bg-red-500/25 active:scale-[0.98]"
+                >
+                  Finalizar viaje
+                </button>
+              </div>
+            </div>
+          </div>
         ) : null}
 
         {/* ── Aviso de bajada próxima (modo viaje) ── */}

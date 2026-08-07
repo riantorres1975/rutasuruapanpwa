@@ -118,12 +118,12 @@ export default function TripModePanel({
             type="button"
             onClick={onStop}
             className="ov-pill ov-border ov-text-muted inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl border px-3 text-[11px] font-semibold transition hover:border-red-400/50 hover:text-red-400 active:scale-[0.97]"
-            aria-label="Finalizar viaje"
+            aria-label={progress?.phase === "arrived" ? "Cerrar viaje completado" : "Finalizar viaje"}
           >
             <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" aria-hidden="true">
               <path d="M7 7l10 10M17 7 7 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
             </svg>
-            Finalizar
+            {progress?.phase === "arrived" ? "Cerrar" : "Finalizar"}
           </button>
         </div>
 

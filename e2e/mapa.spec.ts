@@ -105,6 +105,28 @@ test("el modo viaje sigue el GPS sin recuperar la cámara después de un gesto m
   await expect(page.getByRole("button", { name: "Volver a seguir mi ubicación" })).toBeVisible();
   await page.getByRole("button", { name: "Volver a seguir mi ubicación" }).click({ force: true });
   await expect(page.getByRole("button", { name: "Centrar en mi ubicación durante el viaje" })).toBeVisible();
+
+  const tripPanel = page.getByRole("region", { name: "Modo viaje" });
+  await tripPanel.getByRole("button", { name: "Finalizar viaje" }).click({ force: true });
+  const stopDialog = page.getByRole("dialog", { name: "¿Finalizar el viaje?" });
+  await expect(stopDialog).toBeVisible();
+  await expect(stopDialog.getByRole("button", { name: "Finalizar viaje" })).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(stopDialog).toHaveCount(0);
+  await expect(tripPanel.getByRole("button", { name: "Finalizar viaje" })).toBeFocused();
+
+  await tripPanel.getByRole("button", { name: "Finalizar viaje" }).click({ force: true });
+  await stopDialog
+    .getByRole("button", { name: "Cancelar" })
+    .evaluate((button) => (button as HTMLButtonElement).click());
+  await expect(stopDialog).toHaveCount(0);
+  await expect(tripPanel).toBeVisible();
+
+  await tripPanel.getByRole("button", { name: "Finalizar viaje" }).click({ force: true });
+  await stopDialog
+    .getByRole("button", { name: "Finalizar viaje" })
+    .evaluate((button) => (button as HTMLButtonElement).click());
+  await expect(tripPanel).toHaveCount(0);
 });
 
 test("el modo viaje conserva la ruta durante una pérdida temporal de GPS", async ({ page }) => {
@@ -197,6 +219,8 @@ test("el modo viaje conserva la ruta durante una pérdida temporal de GPS", asyn
 
   await sendFix({ longitude: -102.05447, latitude: 19.42623, accuracy: 12 });
   await expect(panel).toContainText("Llegaste");
+  await panel.getByRole("button", { name: "Cerrar viaje completado" }).click({ force: true });
+  await expect(panel).toHaveCount(0);
 });
 
 test("el modo viaje conserva un recorrido con transbordo", async ({ page, context }) => {
