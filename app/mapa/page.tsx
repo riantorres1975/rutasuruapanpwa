@@ -1102,15 +1102,27 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     ? `${bestSuggestionRouteId}:${formatCoordinateParam(destinationPoint)}`
     : null;
   const plannedJourney = useMemo<TripJourney | null>(() => {
+    if (!destinationPoint) return null;
+
     if (bestSuggestion) {
+      const isTeleferico = isTelefericoRouteName(bestSuggestion.ruta);
       return {
         kind: "direct",
         routeId: bestSuggestion.routeId,
         routeName: bestSuggestion.ruta,
         segment: bestSuggestion.segment,
+        destination: destinationPoint,
+        boardingStopLabel: isTeleferico
+          ? getTelefericoStationName(bestSuggestion.indexA) ?? undefined
+          : undefined,
+        destinationStopLabel: isTeleferico
+          ? getTelefericoStationName(bestSuggestion.indexB) ?? undefined
+          : undefined,
       };
     }
     if (selectedTransfer) {
+      const routeAIsTeleferico = isTelefericoRouteName(selectedTransfer.routeAName);
+      const routeBIsTeleferico = isTelefericoRouteName(selectedTransfer.routeBName);
       return {
         kind: "transfer",
         routeAId: selectedTransfer.routeAId,
@@ -1125,12 +1137,25 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
         segmentB: selectedTransfer.segmentB,
         transferPoint: selectedTransfer.transferPoint,
         walkMeters: selectedTransfer.walkMeters,
+        destination: destinationPoint,
+        boardingStopLabel: routeAIsTeleferico
+          ? getTelefericoStationName(selectedTransfer.routeAStartIndex) ?? undefined
+          : undefined,
+        transferArrivalStopLabel: routeAIsTeleferico
+          ? getTelefericoStationName(selectedTransfer.routeATransferIndex) ?? undefined
+          : undefined,
+        transferBoardingStopLabel: routeBIsTeleferico
+          ? getTelefericoStationName(selectedTransfer.routeBTransferIndex) ?? undefined
+          : undefined,
+        destinationStopLabel: routeBIsTeleferico
+          ? getTelefericoStationName(selectedTransfer.routeBEndIndex) ?? undefined
+          : undefined,
       };
     }
     return null;
-  }, [bestSuggestion, selectedTransfer]);
-  const plannedJourneyKey = plannedJourney && destinationPoint
-    ? getTripJourneyKey(plannedJourney, destinationPoint)
+  }, [bestSuggestion, destinationPoint, selectedTransfer]);
+  const plannedJourneyKey = plannedJourney
+    ? getTripJourneyKey(plannedJourney)
     : null;
   const isTripActive = tripSession !== null && tripSession.key === plannedJourneyKey;
   const dropOffAlert = dropOffAlertState && dropOffAlertState.tripKey === tripSession?.key
@@ -1312,10 +1337,18 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
 
     tripMilestonesRef.current.add(milestone);
     const distance = Math.round(tripProgress.distanceToMilestoneM ?? 0);
+    const transferStopLabel = tripSession.journey.kind === "transfer"
+      ? tripSession.journey.transferArrivalStopLabel
+      : null;
+    const destinationStopLabel = tripSession.journey.destinationStopLabel;
     const message = milestone === "transfer-near"
-      ? `Prepárate para transbordar: faltan aproximadamente ${distance} m.`
+      ? transferStopLabel
+        ? `Prepárate para bajar en la estación ${transferStopLabel} y transbordar: faltan aproximadamente ${distance} m.`
+        : `Prepárate para transbordar: faltan aproximadamente ${distance} m.`
       : milestone === "destination-near"
-        ? `Prepárate para bajar: faltan aproximadamente ${distance} m para tu parada.`
+        ? destinationStopLabel
+          ? `Prepárate para bajar en la estación ${destinationStopLabel}: faltan aproximadamente ${distance} m.`
+          : `Prepárate para bajar: faltan aproximadamente ${distance} m para tu parada.`
         : "Llegaste a tu destino.";
     try {
       navigator.vibrate?.(milestone === "arrived" ? [250, 120, 250] : [200, 100, 200]);

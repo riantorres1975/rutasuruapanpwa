@@ -52,9 +52,11 @@ test("un enlace compartido hidrata origen y destino sin mostrar el paso inicial"
   await expect(page.getByRole("button", { name: "Ver resultado de ruta" })).not.toContainText("Buscando...");
 });
 
-test("un viaje en Teleférico muestra estaciones y pago con tarjeta", async ({ page }) => {
+test("un viaje en Teleférico continúa a pie desde la estación", async ({ page, context }) => {
+  await context.setGeolocation({ longitude: -102.02093, latitude: 19.396299 });
+  await context.grantPermissions(["geolocation"]);
   await page.addInitScript(() => localStorage.setItem("rutas-uru-onboarded", "1"));
-  await page.goto("/mapa?a=-102.02093,19.396299&b=-102.0375379,19.4216787");
+  await page.goto("/mapa?a=-102.02093,19.396299&b=-102.0375379,19.4241787");
 
   const resultButton = page.getByRole("button", { name: "Ver resultado de ruta" });
   await expect(resultButton).toContainText("Teleférico", { timeout: 10_000 });
@@ -66,6 +68,20 @@ test("un viaje en Teleférico muestra estaciones y pago con tarjeta", async ({ p
   await expect(resultDialog).toContainText("estación Boulevard Industrial / Plaza Agora");
   await expect(resultDialog).not.toContainText("haz la parada con la mano");
   expect(await resultDialog.evaluate((element) => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1);
+
+  await resultDialog.locator('button[aria-label^="Iniciar viaje en"]').click({ force: true });
+  const tripPanel = page.getByRole("region", { name: "Modo viaje" });
+  await expect(tripPanel).toContainText("EN CAMINO");
+  await expect(tripPanel).toContainText("Baja en la estación Boulevard Industrial / Plaza Agora");
+
+  await context.setGeolocation({ longitude: -102.0375379, latitude: 19.4216787 });
+  await expect(tripPanel).toContainText("ÚLTIMO TRAMO");
+  await expect(tripPanel).toContainText("Camina a tu destino");
+
+  await context.setGeolocation({ longitude: -102.0375379, latitude: 19.4241787 });
+  await expect(tripPanel).toContainText("ÚLTIMO TRAMO");
+  await context.setGeolocation({ longitude: -102.03745, latitude: 19.4241787 });
+  await expect(tripPanel).toContainText("Llegaste");
 });
 
 test("una actualización del GPS no borra el transbordo seleccionado", async ({ page, context }) => {
@@ -228,9 +244,12 @@ test("el modo viaje conserva la ruta durante una pérdida temporal de GPS", asyn
   await expect(panel).toContainText("EN CAMINO");
 
   await sendFix({ longitude: -102.042104, latitude: 19.426085, accuracy: 12 });
-  await expect(panel).toContainText("EN CAMINO");
+  await expect(panel).toContainText("ÚLTIMO TRAMO");
+  await expect(panel).toContainText("Camina a tu destino");
 
-  await sendFix({ longitude: -102.042104, latitude: 19.426085, accuracy: 12 });
+  await sendFix({ longitude: -102.04234, latitude: 19.42687, accuracy: 12 });
+  await expect(panel).toContainText("ÚLTIMO TRAMO");
+  await sendFix({ longitude: -102.04225, latitude: 19.42687, accuracy: 12 });
   await expect(panel).toContainText("Llegaste");
 
   await sendFix({ longitude: -102.05447, latitude: 19.42623, accuracy: 12 });

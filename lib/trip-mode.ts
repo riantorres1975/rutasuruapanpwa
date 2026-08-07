@@ -6,6 +6,7 @@ import type { Coordinates } from "@/lib/types";
 const BUS_SPEED_M_PER_MIN = 300;
 const WALK_SPEED_M_PER_MIN = 75;
 const ARRIVAL_RADIUS_M = 90;
+const ALIGHTING_RADIUS_M = 120;
 const ROUTE_CORRIDOR_M = 300;
 const TRANSFER_RADIUS_M = 120;
 const BOARDED_ROUTE_B_PROGRESS_M = 100;
@@ -18,6 +19,7 @@ export type TripPhase =
   | "riding-first"
   | "walking-transfer"
   | "riding-second"
+  | "walking-destination"
   | "off-route"
   | "arrived";
 
@@ -26,6 +28,9 @@ export type DirectTripJourney = {
   routeId: number;
   routeName: string;
   segment: Coordinates[];
+  destination: Coordinates;
+  boardingStopLabel?: string;
+  destinationStopLabel?: string;
 };
 
 export type TransferTripJourney = {
@@ -42,6 +47,11 @@ export type TransferTripJourney = {
   segmentB: Coordinates[];
   transferPoint: Coordinates;
   walkMeters: number;
+  destination: Coordinates;
+  boardingStopLabel?: string;
+  transferArrivalStopLabel?: string;
+  transferBoardingStopLabel?: string;
+  destinationStopLabel?: string;
 };
 
 export type TripJourney = DirectTripJourney | TransferTripJourney;
@@ -106,8 +116,28 @@ function arrivedProgress(): TripProgress {
   };
 }
 
-export function getTripJourneyKey(journey: TripJourney, destination: Coordinates): string {
-  const destinationKey = destination.map((value) => value.toFixed(6)).join(",");
+function walkingDestinationProgress(
+  distanceToDestinationM: number,
+  completedTransitM: number,
+  finalWalkM: number,
+): TripProgress {
+  const walkedM = Math.max(0, finalWalkM - distanceToDestinationM);
+  const totalJourneyM = completedTransitM + finalWalkM;
+
+  return {
+    phase: "walking-destination",
+    progressRatio: totalJourneyM > 0
+      ? clampRatio((completedTransitM + walkedM) / totalJourneyM)
+      : 0,
+    remainingMinutes: minutesFor(distanceToDestinationM, WALK_SPEED_M_PER_MIN),
+    distanceToMilestoneM: distanceToDestinationM,
+    currentRouteName: null,
+    nextRouteName: null,
+  };
+}
+
+export function getTripJourneyKey(journey: TripJourney): string {
+  const destinationKey = journey.destination.map((value) => value.toFixed(6)).join(",");
   if (journey.kind === "direct") {
     return `direct:${journey.routeId}:${destinationKey}`;
   }
@@ -121,9 +151,24 @@ export function calculateTripProgress(
   previousPhase?: TripPhase,
 ): TripProgress {
   if (journey.kind === "direct") {
-    const destination = journey.segment[journey.segment.length - 1];
-    if (destination && haversineMeters(location, destination) <= ARRIVAL_RADIUS_M) {
+    const distanceToDestinationM = haversineMeters(location, journey.destination);
+    if (distanceToDestinationM <= ARRIVAL_RADIUS_M) {
       return arrivedProgress();
+    }
+
+    const dropOffPoint = journey.segment[journey.segment.length - 1];
+    const finalWalkM = dropOffPoint
+      ? haversineMeters(dropOffPoint, journey.destination)
+      : distanceToDestinationM;
+    const routeTotalM = getRouteMetrics(journey.segment).totalLengthM;
+    const distanceToDropOffM = dropOffPoint
+      ? haversineMeters(location, dropOffPoint)
+      : Infinity;
+    if (
+      previousPhase === "walking-destination" ||
+      (previousPhase === "riding-direct" && distanceToDropOffM <= ALIGHTING_RADIUS_M)
+    ) {
+      return walkingDestinationProgress(distanceToDestinationM, routeTotalM, finalWalkM);
     }
 
     const position = locateOnPath(location, journey.segment);
@@ -152,19 +197,34 @@ export function calculateTripProgress(
     };
   }
 
-  const destination = journey.segmentB[journey.segmentB.length - 1];
-  if (destination && haversineMeters(location, destination) <= ARRIVAL_RADIUS_M) {
+  const distanceToDestinationM = haversineMeters(location, journey.destination);
+  if (distanceToDestinationM <= ARRIVAL_RADIUS_M) {
     return arrivedProgress();
   }
 
   const routeA = locateOnPath(location, journey.segmentA);
   const routeB = locateOnPath(location, journey.segmentB);
   const routeBStart = journey.segmentB[0] ?? journey.transferPoint;
+  const dropOffPoint = journey.segmentB[journey.segmentB.length - 1];
+  const distanceToDropOffM = dropOffPoint
+    ? haversineMeters(location, dropOffPoint)
+    : Infinity;
+  const finalWalkM = dropOffPoint
+    ? haversineMeters(dropOffPoint, journey.destination)
+    : distanceToDestinationM;
   const distanceToTransferM = haversineMeters(location, journey.transferPoint);
   const distanceToRouteBStartM = haversineMeters(location, routeBStart);
-  const totalJourneyM = routeA.totalM + journey.walkMeters + routeB.totalM;
+  const completedTransitM = routeA.totalM + journey.walkMeters + routeB.totalM;
+  const totalJourneyM = completedTransitM + finalWalkM;
   const wasWalkingTransfer = previousPhase === "walking-transfer";
   const wasRidingSecond = previousPhase === "riding-second";
+
+  if (
+    previousPhase === "walking-destination" ||
+    (wasRidingSecond && distanceToDropOffM <= ALIGHTING_RADIUS_M)
+  ) {
+    return walkingDestinationProgress(distanceToDestinationM, completedTransitM, finalWalkM);
+  }
 
   // Some routes cross again shortly after the official transfer point. Keep
   // the transfer phase until the rider has actually moved away from that point.

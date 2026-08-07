@@ -32,6 +32,15 @@ function getTripCopy(
 
   switch (progress.phase) {
     case "boarding":
+      if (journey.boardingStopLabel) {
+        return {
+          eyebrow: "VE A LA ESTACIÓN",
+          title: journey.boardingStopLabel,
+          detail: progress.remainingMinutes
+            ? `A ~${progress.remainingMinutes} min caminando`
+            : "Acércate al acceso del Teleférico",
+        };
+      }
       return {
         eyebrow: "VE AL PUNTO DE SUBIDA",
         title: progress.currentRouteName ?? "Primera ruta",
@@ -43,15 +52,26 @@ function getTripCopy(
       return {
         eyebrow: "EN CAMINO",
         title: progress.currentRouteName ?? "Ruta activa",
-        detail: `Bajada en ~${progress.remainingMinutes ?? 0} min`,
+        detail: journey.destinationStopLabel
+          ? `Baja en la estación ${journey.destinationStopLabel} · ~${progress.remainingMinutes ?? 0} min`
+          : `Bajada en ~${progress.remainingMinutes ?? 0} min`,
       };
     case "riding-first":
       return {
         eyebrow: "PRIMER TRAMO",
         title: progress.currentRouteName ?? (journey.kind === "transfer" ? journey.routeAName : "Ruta activa"),
-        detail: `Transbordo en ~${progress.remainingMinutes ?? 0} min`,
+        detail: journey.kind === "transfer" && journey.transferArrivalStopLabel
+          ? `Baja en la estación ${journey.transferArrivalStopLabel} · ~${progress.remainingMinutes ?? 0} min`
+          : `Transbordo en ~${progress.remainingMinutes ?? 0} min`,
       };
     case "walking-transfer":
+      if (journey.kind === "transfer" && journey.transferBoardingStopLabel) {
+        return {
+          eyebrow: "VE A LA ESTACIÓN",
+          title: journey.transferBoardingStopLabel,
+          detail: `Para tomar ${progress.nextRouteName ?? "el Teleférico"} · ~${Math.round(progress.distanceToMilestoneM ?? 0)} m`,
+        };
+      }
       return {
         eyebrow: "TRANSBORDO",
         title: `Cambia a ${progress.nextRouteName ?? "la segunda ruta"}`,
@@ -61,7 +81,15 @@ function getTripCopy(
       return {
         eyebrow: "SEGUNDO TRAMO",
         title: progress.currentRouteName ?? "Segunda ruta",
-        detail: `Bajada en ~${progress.remainingMinutes ?? 0} min`,
+        detail: journey.destinationStopLabel
+          ? `Baja en la estación ${journey.destinationStopLabel} · ~${progress.remainingMinutes ?? 0} min`
+          : `Bajada en ~${progress.remainingMinutes ?? 0} min`,
+      };
+    case "walking-destination":
+      return {
+        eyebrow: "ÚLTIMO TRAMO",
+        title: "Camina a tu destino",
+        detail: `Faltan ~${Math.round(progress.distanceToMilestoneM ?? 0)} m · ${progress.remainingMinutes ?? 0} min`,
       };
     case "off-route":
       return {
@@ -110,8 +138,8 @@ export default function TripModePanel({
 
           <div className="min-w-0 flex-1" role="status" aria-live="polite">
             <p className="text-[9px] font-bold tracking-[1.5px] text-lima">{copy.eyebrow}</p>
-            <p className="ov-text truncate text-[14px] font-bold leading-5">{copy.title}</p>
-            <p className="ov-text-muted truncate text-[11px] leading-4">{copy.detail}</p>
+            <p className="ov-text text-[14px] font-bold leading-5">{copy.title}</p>
+            <p className="ov-text-muted text-[11px] leading-4">{copy.detail}</p>
           </div>
 
           <button

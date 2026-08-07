@@ -18,6 +18,7 @@ const direct: DirectTripJourney = {
     [-102.07, 19.42],
     [-102.06, 19.42],
   ],
+  destination: [-102.06, 19.42],
 };
 
 const transfer: TransferTripJourney = {
@@ -42,6 +43,7 @@ const transfer: TransferTripJourney = {
   ],
   transferPoint: [-102.06, 19.42],
   walkMeters: 55,
+  destination: [-102.04, 19.42],
 };
 
 describe("trip mode", () => {
@@ -52,6 +54,33 @@ describe("trip mode", () => {
     expect(progress.progressRatio).toBeGreaterThan(0.45);
     expect(progress.progressRatio).toBeLessThan(0.55);
     expect(progress.currentRouteName).toBe("Ruta 25");
+  });
+
+  it("continúa a pie después de bajar y llega al destino real", () => {
+    const journey: DirectTripJourney = {
+      ...direct,
+      destination: [-102.06, 19.423],
+      destinationStopLabel: "Centro",
+    };
+
+    const walking = calculateTripProgress(journey, [-102.06, 19.42], "riding-direct");
+    expect(walking.phase).toBe("walking-destination");
+    expect(walking.distanceToMilestoneM).toBeGreaterThan(300);
+    expect(getTripMilestone(walking)).toBeNull();
+
+    const arrived = calculateTripProgress(journey, journey.destination, walking.phase);
+    expect(arrived.phase).toBe("arrived");
+  });
+
+  it("aplica el último tramo a pie después de un transbordo", () => {
+    const journey: TransferTripJourney = {
+      ...transfer,
+      destination: [-102.04, 19.423],
+    };
+
+    const walking = calculateTripProgress(journey, [-102.04, 19.42], "riding-second");
+    expect(walking.phase).toBe("walking-destination");
+    expect(walking.remainingMinutes).toBeGreaterThan(0);
   });
 
   it("detecta cuando el usuario se aleja del recorrido directo", () => {
@@ -181,7 +210,7 @@ describe("trip mode", () => {
 
     expect(progress.phase).toBe("arrived");
     expect(getTripMilestone(progress)).toBe("arrived");
-    expect(getTripJourneyKey(direct, [-102.06, 19.42])).toBe(
+    expect(getTripJourneyKey(direct)).toBe(
       "direct:25:-102.060000,19.420000",
     );
   });
