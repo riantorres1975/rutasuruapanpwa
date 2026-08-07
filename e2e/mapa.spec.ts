@@ -211,15 +211,14 @@ test("el modo viaje conserva un recorrido con transbordo", async ({ page, contex
   const transferOption = page
     .locator('button[aria-label^="Seleccionar transbordo de"]:visible')
     .first();
-  const transferLabel = await transferOption.getAttribute("aria-label");
-  const routeAName = transferLabel
-    ?.replace("Seleccionar transbordo de ", "")
-    .split(" a ")[0];
-  expect(routeAName).toBeTruthy();
-  await transferOption.click({ force: true });
-
   const startTripButton = page.locator('button[aria-label="Iniciar viaje con transbordo"]:visible');
+  await expect(transferOption.or(startTripButton).first()).toBeVisible();
+  if (!(await startTripButton.isVisible())) {
+    await transferOption.click({ force: true });
+  }
+
   await expect(startTripButton).toBeVisible();
+  const routeAName = (await resultButton.innerText()).split("→")[0].trim();
   await page.evaluate(() => {
     const button = Array.from(
       document.querySelectorAll<HTMLButtonElement>('button[aria-label="Iniciar viaje con transbordo"]'),

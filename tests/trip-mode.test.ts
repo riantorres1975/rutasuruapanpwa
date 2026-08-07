@@ -132,6 +132,29 @@ describe("trip mode", () => {
     expect(second.progressRatio).toBeGreaterThan(walking.progressRatio);
   });
 
+  it("detecta y recupera un desvío durante el transbordo a pie", () => {
+    let tracking = updateTripTrackingState(
+      transfer,
+      [-102.07, 19.42],
+      createTripTrackingState(),
+    );
+    tracking = updateTripTrackingState(transfer, transfer.transferPoint, tracking);
+    expect(tracking.progress?.phase).toBe("walking-transfer");
+
+    for (let reading = 0; reading < 2; reading += 1) {
+      tracking = updateTripTrackingState(transfer, [-102.06, 19.43], tracking);
+    }
+    expect(tracking.progress?.phase).toBe("walking-transfer");
+
+    tracking = updateTripTrackingState(transfer, [-102.06, 19.43], tracking);
+    expect(tracking.progress?.phase).toBe("off-route");
+    expect(tracking.progress?.nextRouteName).toBe("Ruta 14");
+
+    tracking = updateTripTrackingState(transfer, transfer.transferPoint, tracking);
+    expect(tracking.progress?.phase).toBe("walking-transfer");
+    expect(tracking.offRouteReadings).toBe(0);
+  });
+
   it("no salta el transbordo cuando la segunda ruta vuelve a pasar cerca", () => {
     const crossingTransfer: TransferTripJourney = {
       ...transfer,

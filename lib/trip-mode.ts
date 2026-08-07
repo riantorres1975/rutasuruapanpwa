@@ -198,6 +198,21 @@ export function calculateTripProgress(
     };
   }
 
+  if (
+    wasWalkingTransfer &&
+    distanceToTransferM > ROUTE_CORRIDOR_M &&
+    routeB.distanceM > ROUTE_CORRIDOR_M
+  ) {
+    return {
+      phase: "off-route",
+      progressRatio: 0,
+      remainingMinutes: null,
+      distanceToMilestoneM: Math.min(distanceToTransferM, routeB.distanceM),
+      currentRouteName: null,
+      nextRouteName: journey.routeBName,
+    };
+  }
+
   if (wasWalkingTransfer) {
     const walkedM = Math.max(0, journey.walkMeters - distanceToRouteBStartM);
     return {
