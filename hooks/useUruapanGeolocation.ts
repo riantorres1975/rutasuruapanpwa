@@ -83,8 +83,8 @@ export function useUruapanGeolocation(disabled = false) {
           return;
         }
 
-        firstFix = coords;
-        setUserLocation(coords);
+        // El punto A representa dónde se planeó el viaje y no debe seguir el
+        // GPS. `liveLocation` sí continúa actualizándose para el modo viaje.
         setAccuracyWarning(false);
       },
       () => setStatus("error"),

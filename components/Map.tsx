@@ -17,6 +17,7 @@ import { isWithinUruapanServiceArea } from "@/lib/geo";
 
 type ArrowSegment = { coords: Coordinates[]; color: string; showLine?: boolean };
 import type { TransferOption } from "@/lib/transfers";
+import { getTransferSelectionKey } from "@/lib/transfer-selection";
 import { isDebugMode, getClosestPoint, buildDebugPointsGeoJSON, exportRouteCoords, replaceSegment } from "@/lib/map-debug";
 
 const LAYER_GLOW_ID = "routes-glow";
@@ -687,6 +688,104 @@ function fitBoundsAnimated(
   });
 }
 
+function clearTransferLayers(map: mapboxgl.Map) {
+  for (const layer of [TRANSFER_SEG_A_LAYER, TRANSFER_SEG_B_LAYER, TRANSFER_WALK_LAYER, TRANSFER_PIN_LAYER]) {
+    if (map.getLayer(layer)) map.removeLayer(layer);
+  }
+  if (map.getSource(TRANSFER_SOURCE)) map.removeSource(TRANSFER_SOURCE);
+}
+
+function renderTransferLayers(map: mapboxgl.Map, transfer: TransferOption) {
+  const geojson: GeoJSON.FeatureCollection = {
+    type: "FeatureCollection",
+    features: [
+      {
+        type: "Feature",
+        properties: { type: "segA" },
+        geometry: { type: "LineString", coordinates: transfer.segmentA }
+      },
+      {
+        type: "Feature",
+        properties: { type: "segB" },
+        geometry: { type: "LineString", coordinates: transfer.segmentB }
+      },
+      {
+        type: "Feature",
+        properties: { type: "walk", walkMeters: transfer.walkMeters },
+        geometry: {
+          type: "LineString",
+          coordinates: [transfer.transferPoint, transfer.segmentB[0]]
+        }
+      },
+      {
+        type: "Feature",
+        properties: { type: "pin" },
+        geometry: { type: "Point", coordinates: transfer.transferPoint }
+      }
+    ]
+  };
+
+  const source = map.getSource(TRANSFER_SOURCE) as mapboxgl.GeoJSONSource | undefined;
+  if (source) {
+    source.setData(geojson);
+  } else {
+    map.addSource(TRANSFER_SOURCE, { type: "geojson", data: geojson });
+  }
+
+  if (!map.getLayer(TRANSFER_SEG_A_LAYER)) {
+    map.addLayer({
+      id: TRANSFER_SEG_A_LAYER,
+      type: "line",
+      source: TRANSFER_SOURCE,
+      filter: ["==", ["get", "type"], "segA"],
+      layout: { "line-cap": "round", "line-join": "round" },
+      paint: { "line-color": "#60a5fa", "line-width": 5, "line-opacity": 0.95 }
+    });
+  }
+
+  if (!map.getLayer(TRANSFER_SEG_B_LAYER)) {
+    map.addLayer({
+      id: TRANSFER_SEG_B_LAYER,
+      type: "line",
+      source: TRANSFER_SOURCE,
+      filter: ["==", ["get", "type"], "segB"],
+      layout: { "line-cap": "round", "line-join": "round" },
+      paint: { "line-color": "#34d399", "line-width": 5, "line-opacity": 0.95 }
+    });
+  }
+
+  if (!map.getLayer(TRANSFER_WALK_LAYER)) {
+    map.addLayer({
+      id: TRANSFER_WALK_LAYER,
+      type: "line",
+      source: TRANSFER_SOURCE,
+      filter: ["==", ["get", "type"], "walk"],
+      layout: { "line-cap": "round", "line-join": "round" },
+      paint: {
+        "line-color": "#ffffff",
+        "line-width": 2.5,
+        "line-opacity": 0.7,
+        "line-dasharray": [2, 2.5]
+      }
+    });
+  }
+
+  if (!map.getLayer(TRANSFER_PIN_LAYER)) {
+    map.addLayer({
+      id: TRANSFER_PIN_LAYER,
+      type: "circle",
+      source: TRANSFER_SOURCE,
+      filter: ["==", ["get", "type"], "pin"],
+      paint: {
+        "circle-radius": 9,
+        "circle-color": "#f59e0b",
+        "circle-stroke-color": "#ffffff",
+        "circle-stroke-width": 2.5
+      }
+    });
+  }
+}
+
 function interpolatePoint(start: [number, number], end: [number, number], ratio: number): [number, number] {
   return [start[0] + (end[0] - start[0]) * ratio, start[1] + (end[1] - start[1]) * ratio];
 }
@@ -949,6 +1048,8 @@ function MapComponent({
   const telefericoGeoJSONRef = useRef<any>(null);
   const arrowSegmentsRef = useRef(arrowSegments);
   const selectedTransferRef = useRef(selectedTransfer);
+  const lastFittedTransferKeyRef = useRef<string | null>(null);
+  const lastFittedRouteKeyRef = useRef<string | null>(null);
   const transferRouteIdsRef = useRef<number[]>(
     selectedTransfer ? [selectedTransfer.routeAId, selectedTransfer.routeBId] : []
   );
@@ -1195,99 +1296,19 @@ function MapComponent({
       debugActive
     );
 
-    const clearTransferLayers = () => {
-      for (const layer of [TRANSFER_SEG_A_LAYER, TRANSFER_SEG_B_LAYER, TRANSFER_WALK_LAYER, TRANSFER_PIN_LAYER]) {
-        if (map.getLayer(layer)) map.removeLayer(layer);
-      }
-      if (map.getSource(TRANSFER_SOURCE)) map.removeSource(TRANSFER_SOURCE);
-    };
+    if (!selectedTransfer) {
+      clearTransferLayers(map);
+      lastFittedTransferKeyRef.current = null;
+      return;
+    }
 
-    clearTransferLayers();
-
-    if (!selectedTransfer) return;
-
-    // Walk segment: from route A transfer point to route B boarding point
-    const walkCoords: number[][] = [
-      selectedTransfer.transferPoint as number[],
-      selectedTransfer.segmentB[0] as number[]
-    ];
-
-    const geojson: GeoJSON.FeatureCollection = {
-      type: "FeatureCollection",
-      features: [
-        {
-          type: "Feature",
-          properties: { type: "segA" },
-          geometry: { type: "LineString", coordinates: selectedTransfer.segmentA as number[][] }
-        },
-        {
-          type: "Feature",
-          properties: { type: "segB" },
-          geometry: { type: "LineString", coordinates: selectedTransfer.segmentB as number[][] }
-        },
-        {
-          type: "Feature",
-          properties: { type: "walk", walkMeters: selectedTransfer.walkMeters },
-          geometry: { type: "LineString", coordinates: walkCoords }
-        },
-        {
-          type: "Feature",
-          properties: { type: "pin" },
-          geometry: { type: "Point", coordinates: selectedTransfer.transferPoint as number[] }
-        }
-      ]
-    };
-
-    map.addSource(TRANSFER_SOURCE, { type: "geojson", data: geojson });
-
-    map.addLayer({
-      id: TRANSFER_SEG_A_LAYER,
-      type: "line",
-      source: TRANSFER_SOURCE,
-      filter: ["==", ["get", "type"], "segA"],
-      layout: { "line-cap": "round", "line-join": "round" },
-      paint: { "line-color": "#60a5fa", "line-width": 5, "line-opacity": 0.95 }
-    });
-
-    map.addLayer({
-      id: TRANSFER_SEG_B_LAYER,
-      type: "line",
-      source: TRANSFER_SOURCE,
-      filter: ["==", ["get", "type"], "segB"],
-      layout: { "line-cap": "round", "line-join": "round" },
-      paint: { "line-color": "#34d399", "line-width": 5, "line-opacity": 0.95 }
-    });
-
-    map.addLayer({
-      id: TRANSFER_WALK_LAYER,
-      type: "line",
-      source: TRANSFER_SOURCE,
-      filter: ["==", ["get", "type"], "walk"],
-      layout: { "line-cap": "round", "line-join": "round" },
-      paint: {
-        "line-color": "#ffffff",
-        "line-width": 2.5,
-        "line-opacity": 0.7,
-        "line-dasharray": [2, 2.5]
-      }
-    });
-
-    map.addLayer({
-      id: TRANSFER_PIN_LAYER,
-      type: "circle",
-      source: TRANSFER_SOURCE,
-      filter: ["==", ["get", "type"], "pin"],
-      paint: {
-        "circle-radius": 9,
-        "circle-color": "#f59e0b",
-        "circle-stroke-color": "#ffffff",
-        "circle-stroke-width": 2.5
-      }
-    });
+    renderTransferLayers(map, selectedTransfer);
 
     const allCoords = [...selectedTransfer.segmentA, ...selectedTransfer.segmentB];
     const bounds = getBoundsFromCoordinates(allCoords);
-    if (bounds) {
+    const transferKey = getTransferSelectionKey(selectedTransfer);
+    if (bounds && lastFittedTransferKeyRef.current !== transferKey) {
+      lastFittedTransferKeyRef.current = transferKey;
       fitBoundsAnimated(map, bounds, { top: 120, right: 32, bottom: 160, left: 32, duration: 1200, maxZoom: 15 });
     }
   }, [debugActive, isLoading, selectedTransfer]);
@@ -1604,9 +1625,7 @@ function MapComponent({
           addTelefericoLayers(telefericoGeoJSONRef.current);
         }
         if (selectedTransferRef.current) {
-          const t = selectedTransferRef.current;
-          selectedTransferRef.current = null;
-          setTimeout(() => { selectedTransferRef.current = t; }, 0);
+          renderTransferLayers(map, selectedTransferRef.current);
         }
         // Restore arrow layers after style reload (image is tied to style, re-add it)
         ensureChevronImage(map);
@@ -1737,7 +1756,9 @@ function MapComponent({
     prevOriginRef.current = effectiveOrigin ?? null;
     prevDestinationRef.current = effectiveDestination ?? null;
 
-    if (selectedRouteIdRef.current === null && (originChanged || destinationChanged)) {
+    const hasSelectedJourney =
+      selectedRouteIdRef.current !== null || selectedTransferRef.current !== null;
+    if (!hasSelectedJourney && (originChanged || destinationChanged)) {
       if (effectiveOrigin && effectiveDestination) {
         // Ambos pines presentes: ajustar para ver los dos
         const bounds = getBoundsFromCoordinates([effectiveOrigin, effectiveDestination]);
@@ -1799,14 +1820,18 @@ function MapComponent({
       if (route) {
         const selectedCoordinates = selectedSegmentActive && selectedRouteSegment ? selectedRouteSegment : route.coordenadas;
         const bounds = getBoundsFromCoordinates(selectedCoordinates);
-        fitBoundsAnimated(map, bounds, {
-          top: 116,
-          right: 32,
-          bottom: 154,
-          left: 32,
-          duration: CAMERA_DURATION,
-          maxZoom: 15
-        });
+        const routeFitKey = `${selectedRouteId}:${selectedSegmentActive ? "segment" : "full"}`;
+        if (lastFittedRouteKeyRef.current !== routeFitKey) {
+          lastFittedRouteKeyRef.current = routeFitKey;
+          fitBoundsAnimated(map, bounds, {
+            top: 116,
+            right: 32,
+            bottom: 154,
+            left: 32,
+            duration: CAMERA_DURATION,
+            maxZoom: 15
+          });
+        }
 
         const featureIndex = routeFeatures.features.findIndex(
           (feature) => Number((feature.properties as { id?: number })?.id) === selectedRouteId
@@ -1875,6 +1900,7 @@ function MapComponent({
       return;
     }
 
+    lastFittedRouteKeyRef.current = null;
     source.setData(routeFeatures);
   }, [debugActive, routeFeatures, routes, selectedRouteId, selectedRouteSegment, stopRouteAnimation]);
 

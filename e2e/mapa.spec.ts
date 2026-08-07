@@ -52,6 +52,35 @@ test("un enlace compartido hidrata origen y destino sin mostrar el paso inicial"
   await expect(page.getByRole("button", { name: "Ver resultado de ruta" })).not.toContainText("Buscando...");
 });
 
+test("una actualización del GPS no borra el transbordo seleccionado", async ({ page, context }) => {
+  await context.setGeolocation({ longitude: -102.025, latitude: 19.405 });
+  await context.grantPermissions(["geolocation"]);
+  await page.addInitScript(() => localStorage.setItem("rutas-uru-onboarded", "1"));
+  await page.goto("/mapa?b=-102.08,19.42");
+
+  const resultButton = page.getByRole("button", { name: "Ver resultado de ruta" });
+  await expect(resultButton).toContainText("con transbordo", { timeout: 10_000 });
+  await resultButton.click({ force: true });
+
+  const transferOption = page
+    .locator("button:visible")
+    .filter({ hasText: "transbordo" })
+    .filter({ hasText: "Ruta" })
+    .first();
+  await transferOption.click({ force: true });
+  await expect(resultButton).not.toContainText("con transbordo");
+  const selectedLabel = (await resultButton.innerText()).trim();
+
+  await context.setGeolocation({ longitude: -102.0249, latitude: 19.405 });
+  await page.waitForTimeout(1_200);
+
+  await expect(resultButton).toHaveText(selectedLabel);
+  await resultButton.click({ force: true });
+  await expect(
+    page.locator('[role="dialog"]:visible').filter({ hasText: "TRANSBORDO SELECCIONADO" }),
+  ).toBeVisible();
+});
+
 test("el asistente diferido abre con un solo toque", async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem("rutas-uru-onboarded", "1"));
   await page.goto("/mapa");

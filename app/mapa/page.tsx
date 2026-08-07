@@ -25,6 +25,10 @@ import { addRecentTrip, getRecentTrips, RECENT_TRIPS_EVENT, type RecentTrip } fr
 import { formatRouteLabel, getRouteDestination } from "@/lib/route-names";
 import type { Coordinates, ProductionRoute, ProductionRouteLandmark, ResolvedRouteData, RouteDirection } from "@/lib/types";
 import type { TransferOption } from "@/lib/transfers";
+import {
+  resolveTransferSelection,
+  type TransferSelection,
+} from "@/lib/transfer-selection";
 import { haversineMeters } from "@/lib/geo";
 import type { PolylineRoute } from "@/lib/routeMatcher";
 import type {
@@ -57,10 +61,6 @@ type ActivePoint = "origin" | "destination" | null;
 type FlowStep = 1 | 2 | 3;
 type RoutesMapMode = "all-visible" | "all-highlighted";
 type RouteCalculation = RouteCalculationResult & { key: string };
-type TransferSelection = {
-  calculationKey: string;
-  transfer: TransferOption;
-};
 type TripAlert = {
   tripKey: string;
   message: string;
@@ -780,9 +780,15 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
   const transfers = currentCalculation?.transfers ?? EMPTY_TRANSFERS;
   const isCalculatingSuggestions = calculationKey !== null && currentCalculation === null;
   const [transferSelection, setTransferSelection] = useState<TransferSelection | null>(null);
-  const selectedTransfer = transferSelection?.calculationKey === calculationKey
-    ? transferSelection.transfer
-    : null;
+  const selectedTransfer = useMemo(
+    () => resolveTransferSelection(
+      transferSelection,
+      calculationKey,
+      currentCalculation !== null,
+      transfers,
+    ),
+    [calculationKey, currentCalculation, transferSelection, transfers],
+  );
   const setSelectedTransfer = useCallback((transfer: TransferOption | null) => {
     setTransferSelection(transfer && calculationKey ? { calculationKey, transfer } : null);
   }, [calculationKey]);
