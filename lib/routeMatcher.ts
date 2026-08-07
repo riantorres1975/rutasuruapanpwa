@@ -62,6 +62,7 @@ const toRad = (d: number) => (d * Math.PI) / 180;
 const WALK_SPEED_M_PER_MIN = 75;
 const BUS_SPEED_M_PER_MIN = 300;
 const DEFAULT_WAIT_MINUTES = 7.5;
+const TELEFERICO_ROUTE_NAME = "Teleférico Uruapan";
 const routeMetricsCache = new WeakMap<Coordinates[], RouteMetrics>();
 
 function expectedWaitMinutes(routeName: string): number {
@@ -241,6 +242,32 @@ export function getClosestPointOnPath(
   };
 }
 
+function usesStationOnlyAccess(route: PolylineRoute): boolean {
+  return route.name === TELEFERICO_ROUTE_NAME;
+}
+
+function getClosestStationOnPath(point: Coordinates, path: Coordinates[]): ClosestOnPath {
+  const metrics = getRouteMetrics(path);
+  let bestIndex = 0;
+  let bestDistanceM = Infinity;
+
+  for (let index = 0; index < path.length; index += 1) {
+    const distanceM = haversineDistanceM(point, path[index]);
+    if (distanceM < bestDistanceM) {
+      bestDistanceM = distanceM;
+      bestIndex = index;
+    }
+  }
+
+  return {
+    distM: bestDistanceM,
+    segmentIndex: bestIndex,
+    segmentT: 0,
+    projectedPoint: path[bestIndex] ?? point,
+    progressM: metrics.cumulativeLengthsM[bestIndex] ?? 0,
+  };
+}
+
 /**
  * Returns false when the route cannot serve the trip; otherwise returns the
  * closest-segment results so the caller can compute a score without repeating work.
@@ -249,6 +276,7 @@ export function getClosestPointOnPath(
  *   1. origin must be within corridor_width_m of the path.
  *   2. destination must be within corridor_width_m of the path.
  *   3. destination must be farther along the route than origin (forward direction).
+ * Station-only systems use their nearest stations and may travel in either direction.
  */
 export function isRouteValid(
   origin: Coordinates,
@@ -266,18 +294,35 @@ export function isRouteValid(
     return false;
   }
 
-  const originSeg = getClosestPointOnPath(origin, route.path);
+  const stationOnlyAccess = usesStationOnlyAccess(route);
+  const originSeg = stationOnlyAccess
+    ? getClosestStationOnPath(origin, route.path)
+    : getClosestPointOnPath(origin, route.path);
   if (originSeg.distM > threshold) return false;
 
-  const destSeg = getClosestPointOnPath(destination, route.path);
+  const destSeg = stationOnlyAccess
+    ? getClosestStationOnPath(destination, route.path)
+    : getClosestPointOnPath(destination, route.path);
   if (destSeg.distM > threshold) return false;
 
-  if (destSeg.progressM <= originSeg.progressM) return false;
+  if (stationOnlyAccess) {
+    if (destSeg.segmentIndex === originSeg.segmentIndex) return false;
+  } else if (destSeg.progressM <= originSeg.progressM) {
+    return false;
+  }
 
   return { originSeg, destSeg };
 }
 
 function buildSegmentBetween(route: PolylineRoute, originSeg: ClosestOnPath, destSeg: ClosestOnPath): Coordinates[] {
+  if (usesStationOnlyAccess(route)) {
+    const startIndex = originSeg.segmentIndex;
+    const endIndex = destSeg.segmentIndex;
+    return startIndex < endIndex
+      ? route.path.slice(startIndex, endIndex + 1)
+      : route.path.slice(endIndex, startIndex + 1).reverse();
+  }
+
   const segment: Coordinates[] = [originSeg.projectedPoint];
 
   for (let i = originSeg.segmentIndex + 1; i <= destSeg.segmentIndex; i++) {
@@ -320,7 +365,9 @@ export function findBestRoutes(
       routeId: route.id,
       routeName: route.name,
       routeColor: route.color,
-      direccion: route.direccion ?? "ida",
+      direccion: usesStationOnlyAccess(route)
+        ? destSeg.progressM > originSeg.progressM ? "ida" : "vuelta"
+        : route.direccion ?? "ida",
       originDistM: originSeg.distM,
       destDistM: destSeg.distM,
       originSegIndex: originSeg.segmentIndex,

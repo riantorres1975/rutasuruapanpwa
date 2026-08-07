@@ -72,6 +72,56 @@ describe("findBestRoutes", () => {
   });
 });
 
+describe("acceso al Teleférico", () => {
+  const stations: Coordinates[] = [
+    [-102.06, 19.42],
+    [-102.048, 19.42],
+    [-102.036, 19.42],
+  ];
+  const teleferico: PolylineRoute = {
+    id: 81,
+    name: "Teleférico Uruapan",
+    color: "#00D4AA",
+    corridor_width_m: 500,
+    path: stations,
+  };
+
+  it("calcula caminatas y recorrido desde estaciones", () => {
+    const [match] = findBestRoutes(
+      [-102.0595, 19.4202],
+      [-102.0363, 19.4202],
+      [teleferico],
+    );
+
+    expect(match.originDistM).toBeGreaterThan(0);
+    expect(match.originDistM).toBeLessThan(100);
+    expect(match.destDistM).toBeLessThan(100);
+    expect(match.segment).toEqual(stations);
+    expect(match.direccion).toBe("ida");
+  });
+
+  it("permite viajar en sentido de vuelta entre estaciones", () => {
+    const [match] = findBestRoutes(
+      [-102.0363, 19.4202],
+      [-102.0595, 19.4202],
+      [teleferico],
+    );
+
+    expect(match.segment).toEqual([...stations].reverse());
+    expect(match.direccion).toBe("vuelta");
+  });
+
+  it("no permite abordar a mitad del cable lejos de una estación", () => {
+    const matches = findBestRoutes(
+      [-102.054, 19.4201],
+      [-102.0363, 19.4202],
+      [teleferico],
+    );
+
+    expect(matches).toHaveLength(0);
+  });
+});
+
 describe("getRouteMetrics", () => {
   it("reutiliza las longitudes acumuladas de la misma polilínea", () => {
     const path = straightRoute(1, "Ruta Métricas").path;
