@@ -1135,10 +1135,10 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     ? dropOffAlertState.message
     : null;
   const feedbackGiven = activeTripKey !== null && feedbackTripKey === activeTripKey;
-  const tripLocationStatus = liveLocation
-    ? "ready"
-    : geoStatus === "error" || geoStatus === "outside" || geoStatus === "inaccurate"
-      ? "unavailable"
+  const tripLocationStatus = geoStatus === "error" || geoStatus === "outside" || geoStatus === "inaccurate"
+    ? "unavailable"
+    : liveLocation
+      ? "ready"
       : "locating";
 
   useEffect(() => {
@@ -1988,6 +1988,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
                       <button
                         type="button"
                         onClick={() => setSelectedTransfer(t)}
+                        aria-label={`Seleccionar transbordo de ${t.routeAName} a ${t.routeBName}`}
                         className="flex w-full items-center gap-2 rounded-xl border border-avocado-400/20 bg-avocado-400/8 px-3 py-2 text-left transition active:scale-[0.99] hover:bg-avocado-400/12"
                       >
                         <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0 text-avocado-400" aria-hidden="true">

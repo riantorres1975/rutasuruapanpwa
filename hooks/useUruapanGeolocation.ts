@@ -55,30 +55,30 @@ export function useUruapanGeolocation(disabled = false) {
         const coords: Coordinates = [position.coords.longitude, position.coords.latitude];
 
         if (!isAccurateEnoughForAutomaticOrigin(position.coords.accuracy)) {
-          setUserLocation(null);
-          setLiveLocation(null);
-          liveLocationRef.current = null;
+          // Keep the last trusted fix so a brief accuracy drop cannot erase an
+          // active route. No listeners are notified until GPS quality recovers.
           setAccuracyWarning(true);
           setStatus("inaccurate");
           return;
         }
 
         if (!isWithinUruapanServiceArea(coords)) {
-          markOutside();
+          if (liveLocationRef.current) {
+            setAccuracyWarning(false);
+            setStatus("outside");
+          } else {
+            markOutside();
+          }
           return;
         }
 
         publishLiveLocation(coords);
+        setAccuracyWarning(false);
+        setStatus("ok");
         if (!firstFix) {
           firstFix = coords;
           setUserLocation(coords);
-          setStatus("ok");
-          return;
         }
-
-        // El punto A representa dónde se planeó el viaje y no debe seguir el
-        // GPS. `liveLocation` sí continúa actualizándose para el modo viaje.
-        setAccuracyWarning(false);
       },
       () => setStatus("error"),
       { enableHighAccuracy: true, timeout: 10_000, maximumAge: 15_000 }

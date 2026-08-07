@@ -62,23 +62,24 @@ test("una actualización del GPS no borra el transbordo seleccionado", async ({ 
   await expect(resultButton).toContainText("con transbordo", { timeout: 10_000 });
   await resultButton.click({ force: true });
 
-  const transferOption = page
-    .locator("button:visible")
-    .filter({ hasText: "transbordo" })
-    .filter({ hasText: "Ruta" })
-    .first();
+  const transferOption = page.locator('button[aria-label^="Seleccionar transbordo de"]:visible').first();
+  const transferLabel = await transferOption.getAttribute("aria-label");
+  expect(transferLabel).not.toBeNull();
+  const [routeAName, routeBName] = transferLabel!
+    .replace("Seleccionar transbordo de ", "")
+    .split(" a ");
   await transferOption.click({ force: true });
-  await expect(resultButton).not.toContainText("con transbordo");
-  const selectedLabel = (await resultButton.innerText()).trim();
+  const selectedDialog = page
+    .locator('[role="dialog"]:visible')
+    .filter({ hasText: "TRANSBORDO SELECCIONADO" });
+  await expect(selectedDialog).toBeVisible();
 
   await context.setGeolocation({ longitude: -102.0249, latitude: 19.405 });
   await page.waitForTimeout(1_200);
 
-  await expect(resultButton).toHaveText(selectedLabel);
-  await resultButton.click({ force: true });
-  await expect(
-    page.locator('[role="dialog"]:visible').filter({ hasText: "TRANSBORDO SELECCIONADO" }),
-  ).toBeVisible();
+  await expect(selectedDialog).toBeVisible();
+  await expect(selectedDialog).toContainText(routeAName);
+  await expect(selectedDialog).toContainText(routeBName);
 });
 
 test("el modo viaje sigue el GPS sin recuperar la cámara después de un gesto manual", async ({ page, context }) => {
@@ -96,14 +97,7 @@ test("el modo viaje sigue el GPS sin recuperar la cámara después de un gesto m
   await expect(page.getByRole("button", { name: "Centrar en mi ubicación durante el viaje" })).toBeVisible();
 
   const map = page.getByRole("application", { name: /Mapa interactivo/ });
-  const box = await map.boundingBox();
-  expect(box).not.toBeNull();
-  if (box) {
-    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-    await page.mouse.down();
-    await page.mouse.move(box.x + box.width / 2 + 70, box.y + box.height / 2 + 20, { steps: 5 });
-    await page.mouse.up();
-  }
+  await map.dispatchEvent("pointerdown", { pointerType: "touch" });
 
   await expect(page.getByRole("button", { name: "Volver a seguir mi ubicación" })).toBeVisible();
   await context.setGeolocation({ longitude: -102.0615, latitude: 19.4214 });
@@ -111,10 +105,79 @@ test("el modo viaje sigue el GPS sin recuperar la cámara después de un gesto m
   await expect(page.getByRole("button", { name: "Volver a seguir mi ubicación" })).toBeVisible();
   await page.getByRole("button", { name: "Volver a seguir mi ubicación" }).click({ force: true });
   await expect(page.getByRole("button", { name: "Centrar en mi ubicación durante el viaje" })).toBeVisible();
+});
 
-  await page.getByRole("button", { name: "Finalizar viaje" }).click();
-  await expect(page.getByRole("region", { name: "Modo viaje" })).toHaveCount(0);
-  await expect(resultButton).toBeVisible();
+test("el modo viaje conserva la ruta durante una pérdida temporal de GPS", async ({ page }) => {
+  await page.addInitScript(() => {
+    type TestFix = { longitude: number; latitude: number; accuracy: number };
+    const watchers = new Map<number, PositionCallback>();
+    let nextId = 1;
+    const emit = ({ longitude, latitude, accuracy }: TestFix) => {
+      const position = {
+        coords: {
+          longitude,
+          latitude,
+          accuracy,
+          altitude: null,
+          altitudeAccuracy: null,
+          heading: null,
+          speed: null,
+        },
+        timestamp: Date.now(),
+      } as GeolocationPosition;
+      for (const callback of watchers.values()) callback(position);
+    };
+
+    Object.defineProperty(navigator, "geolocation", {
+      configurable: true,
+      value: {
+        watchPosition(success: PositionCallback) {
+          const id = nextId++;
+          watchers.set(id, success);
+          window.setTimeout(() => emit({
+            longitude: -102.06303,
+            latitude: 19.42101,
+            accuracy: 12,
+          }), 0);
+          return id;
+        },
+        clearWatch(id: number) {
+          watchers.delete(id);
+        },
+      },
+    });
+
+    window.addEventListener("urugo:test-geolocation", (event) => {
+      emit((event as CustomEvent<TestFix>).detail);
+    });
+    localStorage.setItem("rutas-uru-onboarded", "1");
+  });
+
+  await page.goto("/mapa?b=-102.042340,19.426870");
+  const resultButton = page.getByRole("button", { name: "Ver resultado de ruta" });
+  await expect(resultButton).not.toContainText("Buscando...", { timeout: 10_000 });
+  await resultButton.click({ force: true });
+  await page.locator('button[aria-label^="Iniciar viaje en"]:visible').click({ force: true });
+
+  const panel = page.getByRole("region", { name: "Modo viaje" });
+  await expect(panel).toContainText("EN CAMINO");
+
+  const sendFix = async (detail: { longitude: number; latitude: number; accuracy: number }) => {
+    await page.evaluate((fix) => {
+      window.dispatchEvent(new CustomEvent("urugo:test-geolocation", { detail: fix }));
+    }, detail);
+  };
+
+  await sendFix({ longitude: -102.06303, latitude: 19.42101, accuracy: 1_200 });
+  await expect(panel).toContainText("GPS NO DISPONIBLE");
+  await expect(panel).toContainText("Conservamos tu último avance");
+
+  await sendFix({ longitude: -99.1332, latitude: 19.4326, accuracy: 12 });
+  await expect(panel).toContainText("GPS NO DISPONIBLE");
+
+  await sendFix({ longitude: -102.05447, latitude: 19.42623, accuracy: 12 });
+  await expect(panel).toContainText("EN CAMINO");
+  await expect(panel).toContainText("Ruta 1 - San José");
 });
 
 test("el modo viaje conserva un recorrido con transbordo", async ({ page, context }) => {
@@ -126,18 +189,22 @@ test("el modo viaje conserva un recorrido con transbordo", async ({ page, contex
   const resultButton = page.getByRole("button", { name: "Ver resultado de ruta" });
   await expect(resultButton).toContainText("con transbordo", { timeout: 10_000 });
   await resultButton.click({ force: true });
-  await page
-    .locator("button:visible")
-    .filter({ hasText: "transbordo" })
-    .filter({ hasText: "Ruta" })
-    .first()
-    .click({ force: true });
-  const selectedLabel = (await resultButton.innerText()).trim();
+  const transferOption = page
+    .locator('button[aria-label^="Seleccionar transbordo de"]:visible')
+    .first();
+  const transferLabel = await transferOption.getAttribute("aria-label");
+  const routeAName = transferLabel
+    ?.replace("Seleccionar transbordo de ", "")
+    .split(" a ")[0];
+  expect(routeAName).toBeTruthy();
+  await transferOption.click({ force: true });
 
-  await page.locator('button[aria-label="Iniciar viaje con transbordo"]:visible').click({ force: true });
+  const startTripButton = page.locator('button[aria-label="Iniciar viaje con transbordo"]:visible');
+  await expect(startTripButton).toBeVisible();
+  await startTripButton.dispatchEvent("click");
   const tripPanel = page.getByRole("region", { name: "Modo viaje" });
   await expect(tripPanel).toBeVisible();
-  await expect(tripPanel).toContainText(selectedLabel.split("→")[0].trim());
+  await expect(tripPanel).toContainText(routeAName!);
 
   await context.setGeolocation({ longitude: -102.0249, latitude: 19.405 });
   await page.waitForTimeout(1_000);

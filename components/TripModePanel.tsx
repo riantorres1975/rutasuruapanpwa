@@ -14,18 +14,20 @@ function getTripCopy(
   progress: TripProgress | null,
   locationStatus: TripLocationStatus,
 ) {
+  if (locationStatus === "unavailable") {
+    return {
+      eyebrow: "GPS NO DISPONIBLE",
+      title: "Conservamos tu último avance",
+      detail: "El seguimiento continuará cuando vuelva la señal.",
+    };
+  }
+
   if (!progress) {
-    return locationStatus === "unavailable"
-      ? {
-          eyebrow: "GPS NO DISPONIBLE",
-          title: "No podemos seguir tu avance",
-          detail: "Revisa el permiso de ubicación para continuar.",
-        }
-      : {
-          eyebrow: "CONECTANDO GPS",
-          title: "Buscando tu ubicación",
-          detail: "El recorrido ya está listo.",
-        };
+    return {
+      eyebrow: "CONECTANDO GPS",
+      title: "Buscando tu ubicación",
+      detail: "El recorrido ya está listo.",
+    };
   }
 
   switch (progress.phase) {
