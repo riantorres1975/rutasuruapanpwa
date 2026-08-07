@@ -165,15 +165,19 @@ test("el modo viaje sigue el GPS sin recuperar la cámara después de un gesto m
   await page.addInitScript(() => localStorage.setItem("rutas-uru-onboarded", "1"));
   await page.goto("/mapa?a=-102.063030,19.421010&b=-102.042340,19.426870");
 
+  const map = page.getByRole("application", { name: /Mapa interactivo/ });
+  await expect(map).toBeVisible({ timeout: 20_000 });
+
   const resultButton = page.getByRole("button", { name: "Ver resultado de ruta" });
   await expect(resultButton).not.toContainText("Buscando...", { timeout: 10_000 });
   await resultButton.click({ force: true });
-  await page.locator('button[aria-label^="Iniciar viaje en"]:visible').click({ force: true });
+  const startTripButton = page.locator('button[aria-label^="Iniciar viaje en"]:visible');
+  await expect(startTripButton).toBeVisible();
+  await startTripButton.click();
 
   await expect(page.getByRole("region", { name: "Modo viaje" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Centrar en mi ubicación durante el viaje" })).toBeVisible();
 
-  const map = page.getByRole("application", { name: /Mapa interactivo/ });
   await map.dispatchEvent("pointerdown", { pointerType: "touch" });
 
   await expect(page.getByRole("button", { name: "Volver a seguir mi ubicación" })).toBeVisible();
