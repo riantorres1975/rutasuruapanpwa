@@ -178,6 +178,16 @@ test("el modo viaje conserva la ruta durante una pérdida temporal de GPS", asyn
   await sendFix({ longitude: -102.05447, latitude: 19.42623, accuracy: 12 });
   await expect(panel).toContainText("EN CAMINO");
   await expect(panel).toContainText("Ruta 1 - San José");
+
+  await sendFix({ longitude: -102.02, latitude: 19.47, accuracy: 12 });
+  await sendFix({ longitude: -102.02, latitude: 19.47, accuracy: 12 });
+  await expect(panel).toContainText("EN CAMINO");
+
+  await sendFix({ longitude: -102.02, latitude: 19.47, accuracy: 12 });
+  await expect(panel).toContainText("FUERA DEL RECORRIDO");
+
+  await sendFix({ longitude: -102.05447, latitude: 19.42623, accuracy: 12 });
+  await expect(panel).toContainText("EN CAMINO");
 });
 
 test("el modo viaje conserva un recorrido con transbordo", async ({ page, context }) => {
@@ -201,7 +211,13 @@ test("el modo viaje conserva un recorrido con transbordo", async ({ page, contex
 
   const startTripButton = page.locator('button[aria-label="Iniciar viaje con transbordo"]:visible');
   await expect(startTripButton).toBeVisible();
-  await startTripButton.dispatchEvent("click");
+  await page.evaluate(() => {
+    const button = Array.from(
+      document.querySelectorAll<HTMLButtonElement>('button[aria-label="Iniciar viaje con transbordo"]'),
+    ).find((candidate) => candidate.offsetParent !== null);
+    if (!button) throw new Error("No se encontró el botón para iniciar el viaje con transbordo");
+    button.click();
+  });
   const tripPanel = page.getByRole("region", { name: "Modo viaje" });
   await expect(tripPanel).toBeVisible();
   await expect(tripPanel).toContainText(routeAName!);

@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   calculateTripProgress,
+  createTripTrackingState,
   getTripJourneyKey,
   getTripMilestone,
+  updateTripTrackingState,
   type DirectTripJourney,
   type TransferTripJourney,
 } from "@/lib/trip-mode";
@@ -56,6 +58,43 @@ describe("trip mode", () => {
     const progress = calculateTripProgress(direct, [-102.07, 19.43], "riding-direct");
 
     expect(progress.phase).toBe("off-route");
+  });
+
+  it("ignora dos lecturas aisladas fuera del recorrido", () => {
+    let tracking = updateTripTrackingState(
+      direct,
+      [-102.07, 19.42],
+      createTripTrackingState(),
+    );
+
+    tracking = updateTripTrackingState(direct, [-102.07, 19.43], tracking);
+    expect(tracking.progress?.phase).toBe("riding-direct");
+    expect(tracking.offRouteReadings).toBe(1);
+
+    tracking = updateTripTrackingState(direct, [-102.07, 19.43], tracking);
+    expect(tracking.progress?.phase).toBe("riding-direct");
+    expect(tracking.offRouteReadings).toBe(2);
+  });
+
+  it("confirma el desvío y conserva el avance al volver a la ruta", () => {
+    let tracking = updateTripTrackingState(
+      direct,
+      [-102.07, 19.42],
+      createTripTrackingState(),
+    );
+    const reachedRatio = tracking.progress?.progressRatio ?? 0;
+
+    for (let reading = 0; reading < 3; reading += 1) {
+      tracking = updateTripTrackingState(direct, [-102.07, 19.43], tracking);
+    }
+
+    expect(tracking.progress?.phase).toBe("off-route");
+    expect(tracking.progress?.progressRatio).toBe(reachedRatio);
+
+    tracking = updateTripTrackingState(direct, [-102.075, 19.42], tracking);
+    expect(tracking.progress?.phase).toBe("riding-direct");
+    expect(tracking.progress?.progressRatio).toBe(reachedRatio);
+    expect(tracking.offRouteReadings).toBe(0);
   });
 
   it("avanza en orden por los tramos de un transbordo", () => {

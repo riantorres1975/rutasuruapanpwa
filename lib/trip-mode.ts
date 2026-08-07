@@ -9,6 +9,7 @@ const ARRIVAL_RADIUS_M = 90;
 const ROUTE_CORRIDOR_M = 300;
 const TRANSFER_RADIUS_M = 120;
 const BOARDED_ROUTE_B_PROGRESS_M = 100;
+const OFF_ROUTE_CONFIRMATION_READINGS = 3;
 
 export type TripPhase =
   | "boarding"
@@ -51,6 +52,11 @@ export type TripProgress = {
   distanceToMilestoneM: number | null;
   currentRouteName: string | null;
   nextRouteName: string | null;
+};
+
+export type TripTrackingState = {
+  progress: TripProgress | null;
+  offRouteReadings: number;
 };
 
 export type TripMilestone = "transfer-near" | "destination-near" | "arrived";
@@ -249,6 +255,40 @@ export function calculateTripProgress(
     distanceToMilestoneM: boardingDistanceM,
     currentRouteName: journey.routeAName,
     nextRouteName: journey.routeBName,
+  };
+}
+
+export function createTripTrackingState(progress: TripProgress | null = null): TripTrackingState {
+  return { progress, offRouteReadings: 0 };
+}
+
+export function updateTripTrackingState(
+  journey: TripJourney,
+  location: Coordinates,
+  state: TripTrackingState,
+): TripTrackingState {
+  const candidate = calculateTripProgress(journey, location, state.progress?.phase);
+  const previous = state.progress;
+
+  if (candidate.phase === "off-route" && previous?.phase !== "off-route") {
+    const offRouteReadings = state.offRouteReadings + 1;
+    if (offRouteReadings < OFF_ROUTE_CONFIRMATION_READINGS) {
+      return { progress: previous, offRouteReadings };
+    }
+  }
+
+  const progress = previous && candidate.phase !== "arrived"
+    ? {
+        ...candidate,
+        progressRatio: Math.max(previous.progressRatio, candidate.progressRatio),
+      }
+    : candidate;
+
+  return {
+    progress,
+    offRouteReadings: candidate.phase === "off-route"
+      ? OFF_ROUTE_CONFIRMATION_READINGS
+      : 0,
   };
 }
 

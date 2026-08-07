@@ -44,11 +44,12 @@ import {
 } from "@/lib/route-performance";
 import { FARES_2026 } from "@/lib/mobility-config";
 import {
-  calculateTripProgress,
+  createTripTrackingState,
   getTripJourneyKey,
   getTripMilestone,
+  updateTripTrackingState,
   type TripJourney,
-  type TripProgress,
+  type TripTrackingState,
 } from "@/lib/trip-mode";
 const AVG_TRIP_SPEED_KMH = 18;
 // Tarifa del camión urbano en pesos (derivada de la config de movilidad).
@@ -429,7 +430,8 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
   );
   const [dropOffAlertState, setDropOffAlertState] = useState<TripAlert | null>(null);
   const [tripSession, setTripSession] = useState<TripSession | null>(null);
-  const [tripProgress, setTripProgress] = useState<TripProgress | null>(null);
+  const [tripTracking, setTripTracking] = useState<TripTrackingState>(() => createTripTrackingState());
+  const tripProgress = tripTracking.progress;
   const tripMilestonesRef = useRef(new Set<string>());
   const [feedbackTripKey, setFeedbackTripKey] = useState<string | null>(null);
   const lastSavedTripKeyRef = useRef("");
@@ -1145,7 +1147,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     if (!tripSession || tripSession.key === plannedJourneyKey) return;
     const timer = window.setTimeout(() => {
       setTripSession(null);
-      setTripProgress(null);
+      setTripTracking(createTripTrackingState());
       setDropOffAlertState(null);
       tripMilestonesRef.current.clear();
     }, 0);
@@ -1161,8 +1163,10 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
       cameraKey: `${plannedJourneyKey}:${Date.now()}`,
       journey: plannedJourney,
     });
-    setTripProgress(
-      liveLocation ? calculateTripProgress(plannedJourney, liveLocation) : null,
+    setTripTracking(
+      liveLocation
+        ? updateTripTrackingState(plannedJourney, liveLocation, createTripTrackingState())
+        : createTripTrackingState(),
     );
     setDropOffAlertState(null);
     setShowHint(false);
@@ -1187,7 +1191,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
   const handleStopTrip = useCallback(() => {
     const journeyKind = tripSession?.journey.kind;
     setTripSession(null);
-    setTripProgress(null);
+    setTripTracking(createTripTrackingState());
     setDropOffAlertState(null);
     tripMilestonesRef.current.clear();
     try {
@@ -1252,8 +1256,8 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     if (!isTripActive || !tripSession) return;
 
     return subscribeToLiveLocation((location) => {
-      setTripProgress((current) =>
-        calculateTripProgress(tripSession.journey, location, current?.phase),
+      setTripTracking((current) =>
+        updateTripTrackingState(tripSession.journey, location, current),
       );
     });
   }, [isTripActive, subscribeToLiveLocation, tripSession]);
