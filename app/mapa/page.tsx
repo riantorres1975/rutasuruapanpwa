@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { startTransition, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import dynamic from "next/dynamic";
 
 // ── Sidebar resize constants ──────────────────────────────────────────────────
@@ -62,12 +62,24 @@ const MapView = dynamic(loadMapView, {
   ssr: false,
   loading: () => <div className="h-full w-full animate-pulse bg-ink-900" />
 });
-const RouteList = dynamic(() => import("@/components/RouteList"), {
-  loading: () => (
-    <div className="py-8 text-center text-sm text-foreground/50" role="status">
-      Cargando rutas...
-    </div>
-  ),
+const loadRouteList = () => import("@/components/RouteList");
+let routeListPreloadPromise: Promise<boolean> | null = null;
+const preloadRouteList = () => {
+  routeListPreloadPromise ??= loadRouteList()
+    .then(() => true)
+    .catch(() => {
+      routeListPreloadPromise = null;
+      return false;
+    });
+  return routeListPreloadPromise;
+};
+const RouteListLoading = () => (
+  <div className="py-8 text-center text-sm text-foreground/50" role="status">
+    Cargando rutas...
+  </div>
+);
+const RouteList = dynamic(loadRouteList, {
+  loading: RouteListLoading,
 });
 const RoutePreviewSVG = dynamic(() => import("@/components/RoutePreviewSVG"));
 const RouteSchedule = dynamic(() => import("@/components/RouteSchedule"));
@@ -219,6 +231,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
 
   const [shouldLoadMap, setShouldLoadMap] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [routeListReady, setRouteListReady] = useState(false);
   const [isResultSheetOpen, setIsResultSheetOpen] = useState(
     Boolean(initialUrlState.sharedState?.origin && initialUrlState.sharedState.destination),
   );
@@ -325,6 +338,37 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
   // detectar rutas cercanas abrimos la lista de inmediato (en móvil).
   const wantsNearbyRef = useRef(initialUrlState.wantsNearby);
 
+  const prepareRouteList = useCallback(() => {
+    void preloadRouteList().then((loaded) => {
+      if (!loaded) return;
+      startTransition(() => setRouteListReady(true));
+    });
+  }, []);
+
+  const openRouteList = useCallback(() => {
+    prepareRouteList();
+    setIsSheetOpen(true);
+  }, [prepareRouteList]);
+
+  useEffect(() => {
+    if (isDesktopLayout || isLoadingData || routeListReady) return;
+    if (getNetworkInformation()?.saveData) return;
+
+    let idleCallback: number | undefined;
+    const timer = window.setTimeout(() => {
+      if (typeof window.requestIdleCallback === "function") {
+        idleCallback = window.requestIdleCallback(prepareRouteList, { timeout: 1800 });
+      } else {
+        prepareRouteList();
+      }
+    }, 500);
+
+    return () => {
+      window.clearTimeout(timer);
+      if (idleCallback !== undefined) window.cancelIdleCallback(idleCallback);
+    };
+  }, [isDesktopLayout, isLoadingData, prepareRouteList, routeListReady]);
+
   useEffect(() => {
     const mq = window.matchMedia("(max-height: 740px)");
     const update = () => setIsShortScreen(mq.matches);
@@ -415,10 +459,10 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
       wantsNearbyRef.current = false;
       // En móvil la lista vive en el BottomSheet; en desktop ya es visible.
       if (routeIds.length > 0 && window.matchMedia("(max-width: 1023px)").matches) {
-        setIsSheetOpen(true);
+        openRouteList();
       }
     }
-  }, []);
+  }, [openRouteList]);
 
   const handleLocationOutsideServiceArea = useCallback(() => {
     markGeolocationOutside();
@@ -1020,7 +1064,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
                   onShowAlternatives={() => {
                     if (!isMobile) return;
                     setIsResultSheetOpen(false);
-                    window.setTimeout(() => setIsSheetOpen(true), 50);
+                    window.setTimeout(openRouteList, 50);
                   }}
                   onToggleTrip={isTripActive ? handleStopTrip : handleStartTrip}
                   onViewMap={() => {
@@ -1304,7 +1348,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
             <div className="pointer-events-auto mt-2">
               <NearbyToast
                 count={nearbyToast}
-                onView={() => setIsSheetOpen(true)}
+                onView={openRouteList}
                 onDismiss={() => setNearbyToast(null)}
               />
             </div>
@@ -1413,7 +1457,8 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
             {/* Botón ver todas las rutas */}
             <button
               type="button"
-              onClick={() => setIsSheetOpen(true)}
+              onPointerDown={() => { void preloadRouteList(); }}
+              onClick={openRouteList}
               className="ov-panel pointer-events-auto inline-flex h-12 items-center gap-2 rounded-2xl border pl-3.5 pr-4 text-[14px] font-semibold shadow-[0_8px_32px_rgba(0,0,0,0.3)] backdrop-blur-xl transition hover:border-lima/40 hover:shadow-[0_8px_32px_rgba(232,93,47,0.15)] active:scale-[0.97]"
               aria-label={selectedRoute ? `Ruta activa: ${formatRouteLabel(selectedRoute.name, selectedRoute.name)}` : `Rutas ${visibleRouteCount}, ver rutas disponibles`}
             >
@@ -1446,7 +1491,13 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
 
       {/* ── MOBILE ONLY: BottomSheet con lista de rutas ── */}
       {!isDesktopLayout && (
-      <BottomSheet open={isSheetOpen} onOpenChange={setIsSheetOpen} title="Selecciona una ruta">
+      <BottomSheet
+        open={isSheetOpen}
+        onOpenChange={setIsSheetOpen}
+        title="Selecciona una ruta"
+        keepMounted
+      >
+        {routeListReady ? (
         <RouteList
           routes={listRoutes}
           isLoading={isLoadingData}
@@ -1472,6 +1523,9 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
             setIsSheetOpen(false);
           }}
         />
+        ) : (
+          <RouteListLoading />
+        )}
       </BottomSheet>
       )}
 

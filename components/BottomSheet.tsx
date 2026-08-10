@@ -16,6 +16,8 @@ type BottomSheetProps = {
   /** Snap actual controlado desde fuera. */
   snap?: SnapPoint;
   onSnapChange?: (snap: SnapPoint) => void;
+  /** Conserva el contenido montado mientras la hoja está cerrada. */
+  keepMounted?: boolean;
 };
 
 export default function BottomSheet({
@@ -27,6 +29,7 @@ export default function BottomSheet({
   snapPoints,
   snap: snapProp,
   onSnapChange,
+  keepMounted = false,
 }: BottomSheetProps) {
   const [internalSnap, setInternalSnap] = useState<SnapPoint>("mini");
   const titleId = useId();
@@ -229,7 +232,7 @@ export default function BottomSheet({
             paddingBottom: "calc(2rem + env(safe-area-inset-bottom, 0px))",
           }}
         >
-          {open ? children : null}
+          {open || keepMounted ? children : null}
         </div>
       </section>
 

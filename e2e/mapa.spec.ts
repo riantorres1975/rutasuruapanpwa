@@ -40,6 +40,12 @@ test("monta una sola interfaz del mapa al cambiar de tamaño", async ({ page }) 
   const routeSheet = page.getByRole("dialog", { name: "Selecciona una ruta" });
   await expect(routeSheet).toBeVisible();
   await expect(routeSheet.getByRole("heading", { name: "Rutas disponibles" })).toBeVisible();
+
+  await routeSheet.getByRole("button", { name: "Cerrar panel" }).click();
+  await expect(routeSheet).toBeHidden();
+  await page.locator('button[aria-label^="Rutas "]:visible').click();
+  await expect(routeSheet.getByRole("heading", { name: "Rutas disponibles" })).toBeVisible();
+  await expect(routeSheet.getByRole("status")).toHaveCount(0);
 });
 
 test("respeta ahorro de datos hasta que el usuario activa el mapa", async ({ page }) => {
