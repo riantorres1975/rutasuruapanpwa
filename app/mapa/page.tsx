@@ -27,13 +27,14 @@ import TripOverlays from "@/components/TripOverlays";
 import { geocodePlace, type PlaceResult } from "@/lib/geocode";
 import { useFavoriteRoutes } from "@/hooks/useFavoriteRoutes";
 import { useMapRouteSelection } from "@/hooks/useMapRouteSelection";
+import { useMapRouteViewModel } from "@/hooks/useMapRouteViewModel";
 import { useRouteData } from "@/hooks/useRouteData";
 import { useRoutePlanner } from "@/hooks/useRoutePlanner";
 import { useSharedMapState } from "@/hooks/useSharedMapState";
 import { useTripSession } from "@/hooks/useTripSession";
 import { addRecentTrip, getRecentTrips, RECENT_TRIPS_EVENT, type RecentTrip } from "@/lib/recent-trips";
 import { formatRouteLabel, getRouteDestination } from "@/lib/route-names";
-import type { Coordinates, ProductionRoute, ProductionRouteLandmark, ResolvedRouteData } from "@/lib/types";
+import type { Coordinates, ProductionRouteLandmark } from "@/lib/types";
 import { findMatchingTransfer } from "@/lib/transfer-selection";
 import { buildSharedRouteSegment } from "@/lib/shared-route";
 import { formatCoordinateParam, getSharedTransferIdentity } from "@/lib/shared-map-state";
@@ -53,8 +54,6 @@ import {
   type TripJourney,
 } from "@/lib/trip-mode";
 const AVG_TRIP_SPEED_KMH = 18;
-const BACKGROUND_SIMPLIFY_TOLERANCE = 0.00008;
-const BACKGROUND_MAX_POINTS = 180;
 const loadMapView = () => import("@/components/Map");
 const preloadMapView = () => {
   void loadMapView().catch(() => undefined);
@@ -129,94 +128,6 @@ function getSegmentLengthMeters(segment: Coordinates[]) {
     total += haversineMeters(segment[index - 1], segment[index]);
   }
   return total;
-}
-
-function perpendicularDistanceSquared(point: Coordinates, start: Coordinates, end: Coordinates) {
-  const [x, y] = point;
-  const [x1, y1] = start;
-  const [x2, y2] = end;
-
-  const dx = x2 - x1;
-  const dy = y2 - y1;
-
-  if (dx === 0 && dy === 0) {
-    const ddx = x - x1;
-    const ddy = y - y1;
-    return ddx * ddx + ddy * ddy;
-  }
-
-  const t = ((x - x1) * dx + (y - y1) * dy) / (dx * dx + dy * dy);
-  const clamped = Math.max(0, Math.min(1, t));
-  const projectedX = x1 + clamped * dx;
-  const projectedY = y1 + clamped * dy;
-  const ddx = x - projectedX;
-  const ddy = y - projectedY;
-  return ddx * ddx + ddy * ddy;
-}
-
-function simplifyCoordinates(points: Coordinates[], tolerance: number) {
-  if (points.length <= 2) {
-    return points;
-  }
-
-  const squaredTolerance = tolerance * tolerance;
-  const keep = new Array(points.length).fill(false);
-  keep[0] = true;
-  keep[points.length - 1] = true;
-
-  const stack: [number, number][] = [[0, points.length - 1]];
-
-  while (stack.length > 0) {
-    const [start, end] = stack.pop() as [number, number];
-    let maxDistance = 0;
-    let maxIndex = -1;
-
-    for (let index = start + 1; index < end; index += 1) {
-      const distance = perpendicularDistanceSquared(points[index], points[start], points[end]);
-      if (distance > maxDistance) {
-        maxDistance = distance;
-        maxIndex = index;
-      }
-    }
-
-    if (maxIndex !== -1 && maxDistance > squaredTolerance) {
-      keep[maxIndex] = true;
-      stack.push([start, maxIndex], [maxIndex, end]);
-    }
-  }
-
-  return points.filter((_, index) => keep[index]);
-}
-
-function decimateCoordinates(points: Coordinates[], maxPoints: number) {
-  if (points.length <= maxPoints) {
-    return points;
-  }
-
-  const step = Math.ceil(points.length / maxPoints);
-  const reduced: Coordinates[] = [points[0]];
-
-  for (let index = step; index < points.length - 1; index += step) {
-    reduced.push(points[index]);
-  }
-
-  const lastPoint = points[points.length - 1];
-  const previous = reduced[reduced.length - 1];
-
-  if (!previous || previous[0] !== lastPoint[0] || previous[1] !== lastPoint[1]) {
-    reduced.push(lastPoint);
-  }
-
-  return reduced;
-}
-
-function simplifyBackgroundCoordinates(points: Coordinates[]) {
-  if (points.length <= BACKGROUND_MAX_POINTS) {
-    return points;
-  }
-
-  const simplified = simplifyCoordinates(points, BACKGROUND_SIMPLIFY_TOLERANCE);
-  return decimateCoordinates(simplified, BACKGROUND_MAX_POINTS);
 }
 
 function getEstimatedMinutes(segment: Coordinates[]) {
@@ -473,66 +384,29 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
 
   const resultSheetOpen = flowStep === 3 && isResultSheetOpen;
 
-  // Deduplicated list for the route sidebar — one entry per named route, aggregating ida/vuelta
-  const listRoutes = useMemo<ResolvedRouteData[]>(() => {
-    const seen = new Map<string, ResolvedRouteData>();
-    for (const r of polylineRoutes) {
-      const isVuelta = r.original_name.includes("Vuelta");
-      const isTeleferico = r.name === "Teleférico Uruapan";
-      const existing = seen.get(r.name);
-      if (existing) {
-        if (isTeleferico || isVuelta) existing.tieneVuelta = true;
-        if (isTeleferico || !isVuelta) existing.tieneIda = true;
-      } else {
-        seen.set(r.name, {
-          id: r.id,
-          ruta: r.name,
-          nombre: r.name,
-          color: r.color,
-          coordenadas: r.path,
-          direccion: isVuelta ? "vuelta" : "ida",
-          tieneIda: isTeleferico || !isVuelta,
-          tieneVuelta: isTeleferico || isVuelta,
-        });
-      }
-    }
-    return Array.from(seen.values());
-  }, [polylineRoutes]);
-
-  const visibleRouteCount = useMemo(
-    () => listRoutes.filter((route) => !isTelefericoRouteName(route.ruta)).length,
-    [listRoutes]
-  );
-
-  // Simplified routes for map background rendering
-  const simplifiedMapRoutes = useMemo<ResolvedRouteData[]>(
-    () => polylineRoutes.map((r) => ({
-      id: r.id,
-      ruta: r.name,
-      nombre: r.name,
-      color: r.color,
-      coordenadas: simplifyBackgroundCoordinates(r.path),
-      direccion: r.original_name.includes("Vuelta") ? "vuelta" as const : "ida" as const,
-      tieneIda: true,
-      tieneVuelta: false,
-    })),
-    [polylineRoutes]
-  );
-
-  const polylineRoutesById = useMemo(
-    () => new Map(polylineRoutes.map((route) => [route.id, route])),
-    [polylineRoutes]
-  );
-
-  const landmarksByRouteName = useMemo(() => {
-    const map = new Map<string, ProductionRouteLandmark[]>();
-    for (const r of polylineRoutes) {
-      if (r.landmarks?.length && !map.has(r.name)) {
-        map.set(r.name, r.landmarks);
-      }
-    }
-    return map;
-  }, [polylineRoutes]);
+  const {
+    arrowSegments,
+    bestSuggestion,
+    landmarksByRouteName,
+    listRoutes,
+    mapRoutes,
+    routesById: polylineRoutesById,
+    selectedMapSegment,
+    selectedRoute,
+    selectedSuggestion,
+    suggestedRouteDirections,
+    suggestedRouteIds,
+    visibleRouteCount,
+  } = useMapRouteViewModel({
+    destination: destinationPoint,
+    origin: originPoint,
+    routes: polylineRoutes,
+    selectedRouteId,
+    selectedTransfer,
+    sharedRouteSegment,
+    sharedSegmentColor,
+    suggestions,
+  });
 
   const handleNearbyRoutesFound = useCallback((routeIds: number[]) => {
     setNearbyRouteIds(routeIds);
@@ -648,11 +522,6 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     }).catch(() => {/* noop */});
   }, [handlePlaceSearch]);
 
-  const selectedRoute = useMemo(
-    () => selectedRouteId !== null ? (polylineRoutesById.get(selectedRouteId) ?? null) : null,
-    [polylineRoutesById, selectedRouteId]
-  );
-
   useEffect(() => {
     const sharedState = pendingSharedStateRef.current;
     if (!sharedState || polylineRoutes.length === 0) return;
@@ -720,53 +589,6 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     pendingSharedStateRef.current = null;
   }, [calculationKey, currentCalculation, pendingSharedStateRef, setSelectedTransfer, transfers]);
 
-  const suggestedRouteIds = useMemo(() => suggestions.map((item) => item.routeId), [suggestions]);
-  const suggestedRouteDirections = useMemo(
-    () => new Map(suggestions.map((item) => [item.routeId, item.direccion])),
-    [suggestions]
-  );
-  const bestSuggestion = suggestions[0] ?? null;
-  const selectedSuggestion = useMemo(
-    () => suggestions.find((item) => item.routeId === selectedRouteId) ?? null,
-    [selectedRouteId, suggestions]
-  );
-  const selectedMapSegment = selectedSuggestion?.segment ?? sharedRouteSegment ?? null;
-
-  // Arrow segments: show direction arrows on suggested segment, transfer segments, or both directions of selected route
-  const arrowSegments = useMemo<{ coords: Coordinates[]; color: string; showLine?: boolean }[]>(() => {
-    // Case 1: active transfer — arrows only, lines already drawn by transfer layers
-    if (selectedTransfer) {
-      return [
-        { coords: selectedTransfer.segmentA, color: "#60a5fa", showLine: false },
-        { coords: selectedTransfer.segmentB, color: "#34d399", showLine: false }
-      ];
-    }
-    // Case 2a: new routing — segment painted directly, no selectedRoute needed
-    if (sharedRouteSegment && sharedSegmentColor && !selectedRoute) {
-      return [{ coords: sharedRouteSegment, color: sharedSegmentColor, showLine: true }];
-    }
-    // Case 2b: active suggestion with pins — arrows only, line already drawn by main layer
-    if (selectedMapSegment && selectedRoute) {
-      return [{ coords: selectedMapSegment, color: selectedRoute.color, showLine: false }];
-    }
-    // Case 3: route selected without pins — draw all directions of that named route
-    if (selectedRoute && !originPoint && !destinationPoint) {
-      const color = selectedRoute.color;
-      return polylineRoutes
-        .filter((r) => r.name === selectedRoute.name)
-        .map((r) => ({ coords: r.path, color, showLine: true }));
-    }
-    return [];
-  }, [selectedTransfer, selectedMapSegment, selectedRoute, originPoint, destinationPoint, polylineRoutes, sharedRouteSegment, sharedSegmentColor]);
-  const mapRoutes = useMemo(() => {
-    if (selectedRouteId === null) return simplifiedMapRoutes;
-    const fullPath = selectedRoute?.path ?? null;
-    if (!fullPath) return simplifiedMapRoutes;
-    const displayCoords = selectedMapSegment ?? fullPath;
-    return simplifiedMapRoutes.map((r) =>
-      r.id === selectedRouteId ? { ...r, coordenadas: displayCoords } : r
-    );
-  }, [simplifiedMapRoutes, selectedRoute, selectedRouteId, selectedMapSegment]);
   const bestSuggestionEta = useMemo(
     () => bestSuggestion?.rideMinutes ?? null,
     [bestSuggestion]
