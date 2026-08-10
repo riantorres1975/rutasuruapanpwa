@@ -13,26 +13,27 @@ import BottomSheet from "@/components/BottomSheet";
 import ChatBotLauncher from "@/components/ChatBotLauncher";
 import NearbyToast from "@/components/NearbyToast";
 import OnboardingGate from "@/components/OnboardingGate";
-import PlaceSearch from "@/components/PlaceSearch";
 import { DesktopMapSidebar, MobileMapControls } from "@/components/MapResponsiveControls";
+import RoutePlannerSearch from "@/components/RoutePlannerSearch";
 import TripOverlays from "@/components/TripOverlays";
 import { geocodePlace, type PlaceResult } from "@/lib/geocode";
 import { useShareRoute } from "@/hooks/useShareRoute";
 import { useFavoriteRoutes } from "@/hooks/useFavoriteRoutes";
 import { useRouteData } from "@/hooks/useRouteData";
+import { useRoutePlanner } from "@/hooks/useRoutePlanner";
+import { useSharedMapState } from "@/hooks/useSharedMapState";
 import { useTripSession } from "@/hooks/useTripSession";
-import { useUruapanGeolocation } from "@/hooks/useUruapanGeolocation";
 import { addRecentTrip, getRecentTrips, RECENT_TRIPS_EVENT, type RecentTrip } from "@/lib/recent-trips";
 import { formatRouteLabel, getRouteDestination } from "@/lib/route-names";
-import type { Coordinates, ProductionRoute, ProductionRouteLandmark, ResolvedRouteData, RouteDirection } from "@/lib/types";
+import type { Coordinates, ProductionRoute, ProductionRouteLandmark, ResolvedRouteData } from "@/lib/types";
 import type { TransferOption } from "@/lib/transfers";
 import {
   findMatchingTransfer,
   resolveTransferSelection,
   type TransferSelection,
-  type TransferSelectionIdentity,
 } from "@/lib/transfer-selection";
 import { buildSharedRouteSegment } from "@/lib/shared-route";
+import { formatCoordinateParam, getSharedTransferIdentity } from "@/lib/shared-map-state";
 import { haversineMeters } from "@/lib/geo";
 import {
   getMapAutoLoadDelay,
@@ -51,9 +52,6 @@ import {
 const AVG_TRIP_SPEED_KMH = 18;
 const BACKGROUND_SIMPLIFY_TOLERANCE = 0.00008;
 const BACKGROUND_MAX_POINTS = 180;
-// Destinos frecuentes para acceso rápido bajo el buscador (todos resuelven localmente)
-const DESTINO_CHIPS = ["Centro", "Hospital Regional", "Plaza Ágora", "Central"] as const;
-
 const loadMapView = () => import("@/components/Map");
 const preloadMapView = () => {
   void loadMapView().catch(() => undefined);
@@ -73,8 +71,6 @@ const RoutePreviewSVG = dynamic(() => import("@/components/RoutePreviewSVG"));
 const RouteSchedule = dynamic(() => import("@/components/RouteSchedule"));
 const TripModePanel = dynamic(() => import("@/components/TripModePanel"));
 
-type ActivePoint = "origin" | "destination" | null;
-type FlowStep = 1 | 2 | 3;
 type RoutesMapMode = "all-visible" | "all-highlighted";
 const MAP_MODE_KEY = "rutas-map-mode";
 const MAP_MODE_EVENT = "urugo-map-mode-changed";
@@ -124,109 +120,6 @@ const subscribeLocationSearch = (callback: () => void) => {
   return () => window.removeEventListener("popstate", callback);
 };
 const getLocationSearchSnapshot = () => window.location.search;
-type SharedMapState = {
-  direction: RouteDirection | null;
-  routeId: number | null;
-  routeName: string | null;
-  transferRouteAId: number | null;
-  transferRouteBId: number | null;
-  transferRouteAStartIndex: number | null;
-  transferRouteATransferIndex: number | null;
-  transferRouteBTransferIndex: number | null;
-  transferRouteBEndIndex: number | null;
-  segmentStartIndex: number | null;
-  segmentEndIndex: number | null;
-  origin: Coordinates | null;
-  destination: Coordinates | null;
-  showTeleferico: boolean;
-};
-
-function formatCoordinateParam(point: Coordinates) {
-  return `${point[0].toFixed(6)},${point[1].toFixed(6)}`;
-}
-
-function parseCoordinateParam(value: string | null): Coordinates | null {
-  if (!value) {
-    return null;
-  }
-
-  const [lngRaw, latRaw] = value.split(",");
-  const lng = Number(lngRaw);
-  const lat = Number(latRaw);
-
-  if (!Number.isFinite(lng) || !Number.isFinite(lat) || Math.abs(lng) > 180 || Math.abs(lat) > 90) {
-    return null;
-  }
-
-  return [Number(lng.toFixed(6)), Number(lat.toFixed(6))];
-}
-
-function parseDestinationParam(value: string | null) {
-  const destination = value?.trim();
-  return destination ? destination.slice(0, 80) : null;
-}
-
-function parsePositiveIntParam(value: string | null) {
-  const parsed = Number(value);
-  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
-}
-
-function parseNonNegativeIntParam(value: string | null) {
-  const parsed = Number(value);
-  return Number.isInteger(parsed) && parsed >= 0 ? parsed : null;
-}
-
-function parseSharedMapState(search: string): SharedMapState | null {
-  const params = new URLSearchParams(search);
-  const dir = params.get("dir");
-  const routeId = parsePositiveIntParam(params.get("rid"));
-  const segmentStartIndex = parseNonNegativeIntParam(params.get("ia"));
-  const segmentEndIndex = parseNonNegativeIntParam(params.get("ib"));
-  const transferRouteAId = parsePositiveIntParam(params.get("tra"));
-  const transferRouteBId = parsePositiveIntParam(params.get("trb"));
-  const transferRouteAStartIndex = parseNonNegativeIntParam(params.get("tas"));
-  const transferRouteATransferIndex = parseNonNegativeIntParam(params.get("tax"));
-  const transferRouteBTransferIndex = parseNonNegativeIntParam(params.get("tbx"));
-  const transferRouteBEndIndex = parseNonNegativeIntParam(params.get("tbe"));
-  const routeName = params.get("r")?.trim() || null;
-  const origin = parseCoordinateParam(params.get("a"));
-  const destination = parseCoordinateParam(params.get("b"));
-  const showTeleferico = params.get("teleferico") === "1";
-
-  if (!routeId && !routeName && !transferRouteAId && !transferRouteBId && !origin && !destination && !showTeleferico) {
-    return null;
-  }
-
-  return {
-    direction: dir === "ida" || dir === "vuelta" ? dir : null,
-    routeId,
-    routeName,
-    transferRouteAId,
-    transferRouteBId,
-    transferRouteAStartIndex,
-    transferRouteATransferIndex,
-    transferRouteBTransferIndex,
-    transferRouteBEndIndex,
-    segmentStartIndex,
-    segmentEndIndex,
-    origin,
-    destination,
-    showTeleferico
-  };
-}
-
-function getFlowStep(originPoint: Coordinates | null, destinationPoint: Coordinates | null): FlowStep {
-  if (!originPoint) {
-    return 1;
-  }
-
-  if (!destinationPoint) {
-    return 2;
-  }
-
-  return 3;
-}
-
 function getSegmentLengthMeters(segment: Coordinates[]) {
   let total = 0;
   for (let index = 1; index < segment.length; index += 1) {
@@ -361,46 +254,14 @@ export default function HomePage() {
   return <MapPage key={initialSearch} initialSearch={initialSearch} />;
 }
 
-function getSharedTransferIdentity(sharedState: SharedMapState): TransferSelectionIdentity | null {
-  const {
-    transferRouteAId,
-    transferRouteBId,
-    transferRouteAStartIndex,
-    transferRouteATransferIndex,
-    transferRouteBTransferIndex,
-    transferRouteBEndIndex,
-  } = sharedState;
-
-  if (
-    transferRouteAId === null ||
-    transferRouteBId === null ||
-    transferRouteAStartIndex === null ||
-    transferRouteATransferIndex === null ||
-    transferRouteBTransferIndex === null ||
-    transferRouteBEndIndex === null
-  ) {
-    return null;
-  }
-
-  return {
-    routeAId: transferRouteAId,
-    routeBId: transferRouteBId,
-    routeAStartIndex: transferRouteAStartIndex,
-    routeATransferIndex: transferRouteATransferIndex,
-    routeBTransferIndex: transferRouteBTransferIndex,
-    routeBEndIndex: transferRouteBEndIndex,
-  };
-}
-
 function MapPage({ initialSearch }: { initialSearch: string }) {
-  const initialUrlState = useMemo(() => {
-    const params = new URLSearchParams(initialSearch);
-    return {
-      destinationParam: parseDestinationParam(params.get("destino")),
-      sharedState: parseSharedMapState(initialSearch),
-      wantsNearby: params.get("cerca") === "1",
-    };
-  }, [initialSearch]);
+  const {
+    buildShareUrl,
+    initialUrlState,
+    pendingSharedStateRef,
+    selectedDirection,
+    setSelectedDirection,
+  } = useSharedMapState(initialSearch);
 
   // ── Sidebar resize state ────────────────────────────────────────────────────
   // null = usa el default por breakpoint (380/420px via CSS), number = ancho fijo tras drag
@@ -446,9 +307,6 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
   const [selectedRouteId, setSelectedRouteId] = useState<number | null>(null);
   // Hover de la lista del sidebar (desktop): resalta la ruta en el mapa sin seleccionarla
   const [hoveredRouteId, setHoveredRouteId] = useState<number | null>(null);
-  const [selectedDirection, setSelectedDirection] = useState<RouteDirection>(
-    initialUrlState.sharedState?.direction ?? "ida",
-  );
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isResultSheetOpen, setIsResultSheetOpen] = useState(
     Boolean(initialUrlState.sharedState?.origin && initialUrlState.sharedState.destination),
@@ -468,59 +326,39 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
   } = useTripSession();
   const [feedbackTripKey, setFeedbackTripKey] = useState<string | null>(null);
   const lastSavedTripKeyRef = useRef("");
-  const [manualOrigin, setManualOrigin] = useState<Coordinates | null>(
-    initialUrlState.sharedState?.origin ?? null,
-  );
-  const [destinationPoint, setDestinationPoint] = useState<Coordinates | null>(
-    initialUrlState.sharedState?.destination ?? null,
-  );
-  const [requestedActivePoint, setActivePoint] = useState<ActivePoint>(
-    initialUrlState.sharedState?.origin && initialUrlState.sharedState.destination
-      ? null
-      : initialUrlState.sharedState?.origin
-        ? "destination"
-        : "origin",
-  );
-  const [hintVisibility, setHintVisibility] = useState<{ step: FlowStep; visible: boolean }>({
-    step: initialUrlState.sharedState?.origin && initialUrlState.sharedState.destination
-      ? 3
-      : initialUrlState.sharedState?.origin
-        ? 2
-        : 1,
-    visible: !(
-      initialUrlState.sharedState?.origin && initialUrlState.sharedState.destination
-    ),
-  });
   const {
-    userLocation,
+    activePoint,
+    activePointRef,
+    destinationPoint,
+    destinationPointRef,
+    flowStep,
     liveLocation,
+    manualOrigin,
+    originPoint,
+    originPointRef,
+    requestedDestination,
+    setActivePoint,
+    setDestinationPoint,
+    setManualOrigin,
+    setRequestedDestination,
+    setSharedRouteSegment,
+    setSharedSegmentColor,
+    setShowHint,
+    sharedRouteSegment,
+    sharedSegmentColor,
+    showHint,
     status: geoStatus,
     accuracyWarning: geoAccuracyWarn,
     markOutside: markGeolocationOutside,
     clearAccuracyWarning,
     subscribeToLiveLocation,
-  } = useUruapanGeolocation(manualOrigin !== null && tripSession === null);
-  const originPoint = manualOrigin ?? userLocation;
-  const flowStep = getFlowStep(originPoint, destinationPoint);
-  const activePoint: ActivePoint = flowStep === 1
-    ? "origin"
-    : flowStep === 2
-      ? "destination"
-      : requestedActivePoint;
-  const showHint = hintVisibility.step === flowStep ? hintVisibility.visible : true;
-  const setShowHint = useCallback((visible: boolean) => {
-    setHintVisibility({ step: flowStep, visible });
-  }, [flowStep]);
+    userLocation,
+  } = useRoutePlanner({ initialUrlState, tripSessionActive: tripSession !== null });
   // nearbyToast: null = hidden, number = route count (0 means none found)
   const [nearbyToast, setNearbyToast] = useState<number | null>(null);
   const [nearbyRouteIds, setNearbyRouteIds] = useState<number[]>([]);
   const [showTeleferico, setShowTeleferico] = useState(
     initialUrlState.sharedState?.showTeleferico ?? false,
-  );
-  const [sharedRouteSegment, setSharedRouteSegment] = useState<Coordinates[] | null>(null);
-  const [sharedSegmentColor, setSharedSegmentColor] = useState<string | null>(null);
-  const [requestedDestination, setRequestedDestination] = useState<string | null>(
-    initialUrlState.destinationParam,
   );
   const routesMapMode = useSyncExternalStore<RoutesMapMode>(subscribeMapMode, getMapModeSnapshot, () => "all-visible");
   const isDesktopLayout = useSyncExternalStore(subscribeDesktopLayout, getDesktopLayoutSnapshot, () => false);
@@ -547,80 +385,9 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
   const [abExpanded, setAbExpanded] = useState(false);
   const { share: shareRoute, status: shareStatus } = useShareRoute();
   const { favorites: favoriteRouteNames, toggleFavorite } = useFavoriteRoutes();
-  const activePointRef = useRef(activePoint);
-  const originPointRef = useRef(originPoint);
-  const destinationPointRef = useRef(destinationPoint);
-  const pendingSharedStateRef = useRef<SharedMapState | null>(initialUrlState.sharedState);
   // /mapa?cerca=1: el usuario llegó pidiendo "rutas cerca de mí" — al
   // detectar rutas cercanas abrimos la lista de inmediato (en móvil).
   const wantsNearbyRef = useRef(initialUrlState.wantsNearby);
-
-  const buildShareUrl = useCallback((options: {
-    routeId?: number | null;
-    routeName?: string | null;
-    origin?: Coordinates | null;
-    destination?: Coordinates | null;
-    segmentStartIndex?: number | null;
-    segmentEndIndex?: number | null;
-    transfer?: TransferOption | null;
-    showTeleferico?: boolean;
-  }) => {
-    const url = new URL("/mapa", window.location.origin);
-    url.searchParams.set("dir", selectedDirection);
-
-    if (options.routeId) {
-      url.searchParams.set("rid", String(options.routeId));
-    }
-
-    if (options.routeName) {
-      url.searchParams.set("r", options.routeName);
-    }
-
-    if (options.origin) {
-      url.searchParams.set("a", formatCoordinateParam(options.origin));
-    }
-
-    if (options.destination) {
-      url.searchParams.set("b", formatCoordinateParam(options.destination));
-    }
-
-    if (Number.isInteger(options.segmentStartIndex) && Number.isInteger(options.segmentEndIndex)) {
-      url.searchParams.set("ia", String(options.segmentStartIndex));
-      url.searchParams.set("ib", String(options.segmentEndIndex));
-    }
-
-    if (options.transfer) {
-      url.searchParams.set("transfer", "1");
-      url.searchParams.set("tra", String(options.transfer.routeAId));
-      url.searchParams.set("trb", String(options.transfer.routeBId));
-      url.searchParams.set("tas", String(options.transfer.routeAStartIndex));
-      url.searchParams.set("tax", String(options.transfer.routeATransferIndex));
-      url.searchParams.set("tbx", String(options.transfer.routeBTransferIndex));
-      url.searchParams.set("tbe", String(options.transfer.routeBEndIndex));
-    }
-
-    if (options.showTeleferico) {
-      url.searchParams.set("teleferico", "1");
-    }
-
-    return url.toString();
-  }, [selectedDirection]);
-
-  useEffect(() => {
-    const destinationParam = initialUrlState.destinationParam;
-    if (!destinationParam || initialUrlState.sharedState?.destination) return;
-
-    const controller = new AbortController();
-    geocodePlace(destinationParam, { signal: controller.signal })
-      .then((result) => {
-        if (!result) return;
-        setDestinationPoint((current) => current ?? result.center);
-        setRequestedDestination(result.label);
-      })
-      .catch(() => {/* degradar: el usuario marca el destino a mano */});
-
-    return () => controller.abort();
-  }, [initialUrlState.destinationParam, initialUrlState.sharedState?.destination]);
 
   useEffect(() => {
     const mq = window.matchMedia("(max-height: 740px)");
@@ -680,18 +447,6 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
   }, [activateMap, fetchError, isLoadingData, isOnline, shouldLoadMap]);
 
   const resultSheetOpen = flowStep === 3 && isResultSheetOpen;
-
-  useEffect(() => {
-    activePointRef.current = activePoint;
-  }, [activePoint]);
-
-  useEffect(() => {
-    originPointRef.current = originPoint;
-  }, [originPoint]);
-
-  useEffect(() => {
-    destinationPointRef.current = destinationPoint;
-  }, [destinationPoint]);
 
   // Deduplicated list for the route sidebar — one entry per named route, aggregating ida/vuelta
   const listRoutes = useMemo<ResolvedRouteData[]>(() => {
@@ -774,7 +529,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     setSelectedTransfer(null);
     setShowTeleferico(false);
     setSelectedRouteId((current) => (current === routeId ? null : routeId));
-  }, [setSelectedTransfer]);
+  }, [setSelectedTransfer, setSharedRouteSegment, setSharedSegmentColor]);
 
   const handleClearSelection = useCallback(() => {
     setSharedRouteSegment(null);
@@ -782,7 +537,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     setSelectedRouteId(null);
     setSelectedTransfer(null);
     setShowTeleferico(false);
-  }, [setSelectedTransfer]);
+  }, [setSelectedTransfer, setSharedRouteSegment, setSharedSegmentColor]);
 
   const handleNearbyRoutesFound = useCallback((routeIds: number[]) => {
     setNearbyRouteIds(routeIds);
@@ -802,7 +557,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     if (!originPointRef.current) {
       setActivePoint("origin");
     }
-  }, [markGeolocationOutside, setShowHint]);
+  }, [markGeolocationOutside, originPointRef, setActivePoint, setShowHint]);
 
   const handleMapPick = useCallback((point: Coordinates) => {
     setShowHint(false);
@@ -843,7 +598,17 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     // Both pins set, no active mode → move destination (most common action)
     setDestinationPoint(point);
     setActivePoint(null);
-  }, [setShowHint]);
+  }, [
+    activePointRef,
+    destinationPointRef,
+    originPointRef,
+    setActivePoint,
+    setDestinationPoint,
+    setManualOrigin,
+    setSharedRouteSegment,
+    setSharedSegmentColor,
+    setShowHint,
+  ]);
 
   // El mismo buscador permite fijar origen o destino según el punto activo.
   const handlePlaceSearch = useCallback((result: PlaceResult) => {
@@ -865,7 +630,20 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     // Si aún no hay origen, deja activo el origen para que el usuario lo fije
     // (o lo complete el GPS). Si ya hay origen, calcula la ruta de inmediato.
     setActivePoint(originPointRef.current ? null : "origin");
-  }, [clearAccuracyWarning, setSelectedTransfer, setShowHint]);
+  }, [
+    activePointRef,
+    clearAccuracyWarning,
+    destinationPointRef,
+    originPointRef,
+    setActivePoint,
+    setDestinationPoint,
+    setManualOrigin,
+    setRequestedDestination,
+    setSelectedTransfer,
+    setSharedRouteSegment,
+    setSharedSegmentColor,
+    setShowHint,
+  ]);
 
   // Chip de destino rápido: geocodifica (índice local) y coloca el destino.
   const handleChipSearch = useCallback((text: string) => {
@@ -924,7 +702,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     if (!sharedTransferIdentity && (sharedState.origin || sharedState.destination)) {
       pendingSharedStateRef.current = null;
     }
-  }, [polylineRoutes]);
+  }, [pendingSharedStateRef, polylineRoutes, setSharedRouteSegment]);
 
   useEffect(() => {
     const sharedState = pendingSharedStateRef.current;
@@ -938,7 +716,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
       setSelectedTransfer(transfer);
     }
     pendingSharedStateRef.current = null;
-  }, [calculationKey, currentCalculation, setSelectedTransfer, transfers]);
+  }, [calculationKey, currentCalculation, pendingSharedStateRef, setSelectedTransfer, transfers]);
 
   const suggestedRouteIds = useMemo(() => suggestions.map((item) => item.routeId), [suggestions]);
   const suggestedRouteDirections = useMemo(
@@ -1086,7 +864,16 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
       setSelectedRouteId(null);
     }
 
-  }, [plannedJourney, plannedJourneyKey, setShowHint, startTripSession, suggestions]);
+  }, [
+    plannedJourney,
+    plannedJourneyKey,
+    setActivePoint,
+    setSharedRouteSegment,
+    setSharedSegmentColor,
+    setShowHint,
+    startTripSession,
+    suggestions,
+  ]);
 
   // ── Repetir viaje: guardar los nuevos viajes ──────────────────────────────
   useEffect(() => {
@@ -1110,7 +897,15 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     setDestinationPoint(trip.destination);
     setRequestedDestination(trip.destinationLabel);
     setActivePoint(null);
-  }, [setShowHint]);
+  }, [
+    setActivePoint,
+    setDestinationPoint,
+    setManualOrigin,
+    setRequestedDestination,
+    setSharedRouteSegment,
+    setSharedSegmentColor,
+    setShowHint,
+  ]);
 
   const handleRouteFeedback = useCallback((util: "si" | "no") => {
     if (activeTripKey) setFeedbackTripKey(activeTripKey);
@@ -1322,57 +1117,15 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
       <>
         {!onlyStep3 && (
         <>
-        {/* Buscador de destino (acción principal) — coloca el pin B sin conocer el mapa */}
-        <div className="w-full">
-          <PlaceSearch
-            label={activePoint === "origin" ? "Buscar origen" : "Buscar destino"}
-            placeholder={activePoint === "origin"
-              ? "¿Desde dónde sales? Colonia, calle, plaza…"
-              : "¿A dónde vas? Colonia, hospital, plaza…"}
-            onSelect={handlePlaceSearch}
-          />
-          {/* Chips de destinos frecuentes — una sola fila con scroll horizontal.
-              En pantallas muy bajas (≤740px, p. ej. iPhone SE) se ocultan en móvil
-              para no comerse el mapa; el buscador sigue cubriendo los mismos destinos. */}
-          {activePoint !== "origin" && !destinationPoint && (
-            <div
-              className={`mt-2 flex gap-1.5 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${
-                isMobile ? "[@media(max-height:740px)]:hidden" : ""
-              }`}
-              aria-label="Destinos frecuentes"
-            >
-              {lastTrip && (
-                <button
-                  type="button"
-                  onClick={() => repeatTrip(lastTrip)}
-                  style={{ background: "var(--ov-bg)" }}
-                  className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-lima/45 px-3 py-1.5 text-[12px] font-bold text-lima shadow-soft backdrop-blur-xl transition hover:border-lima/70 active:scale-[0.97]"
-                  aria-label={`Repetir tu último viaje a ${lastTrip.destinationLabel ?? "tu destino anterior"}`}
-                >
-                  <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3 shrink-0" aria-hidden="true">
-                    <path d="M3 12a9 9 0 1 1 2.6 6.4M3 12V7m0 5h5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  Repetir: {lastTrip.destinationLabel ?? "último viaje"}
-                </button>
-              )}
-              {DESTINO_CHIPS.map((chip) => (
-                <button
-                  key={chip}
-                  type="button"
-                  onClick={() => handleChipSearch(chip)}
-                  style={{ background: "var(--ov-bg)", borderColor: "var(--ov-border)" }}
-                  className="ov-text inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border px-3 py-1.5 text-[12px] font-semibold shadow-soft backdrop-blur-xl transition hover:border-lima/50 hover:text-lima active:scale-[0.97]"
-                >
-                  <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3 shrink-0 text-lima" aria-hidden="true">
-                    <path d="M12 21s6-5.7 6-11a6 6 0 1 0-12 0c0 5.3 6 11 6 11Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    <circle cx="12" cy="10" r="2" fill="currentColor" />
-                  </svg>
-                  {chip}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        <RoutePlannerSearch
+          activePoint={activePoint}
+          destinationSelected={destinationPoint !== null}
+          isMobile={isMobile}
+          lastTrip={lastTrip}
+          onDestinationSelect={handleChipSearch}
+          onPlaceSelect={handlePlaceSearch}
+          onRepeatTrip={repeatTrip}
+        />
 
         {/* A→B (control manual, secundario). En pantallas muy bajas se colapsa
             tras un resumen tocable para liberar espacio de mapa. */}
