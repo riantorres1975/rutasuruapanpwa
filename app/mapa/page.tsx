@@ -25,8 +25,8 @@ import {
 } from "@/components/RoutePlannerResults";
 import TripOverlays from "@/components/TripOverlays";
 import { geocodePlace, type PlaceResult } from "@/lib/geocode";
-import { useShareRoute } from "@/hooks/useShareRoute";
 import { useFavoriteRoutes } from "@/hooks/useFavoriteRoutes";
+import { useMapRouteSelection } from "@/hooks/useMapRouteSelection";
 import { useRouteData } from "@/hooks/useRouteData";
 import { useRoutePlanner } from "@/hooks/useRoutePlanner";
 import { useSharedMapState } from "@/hooks/useSharedMapState";
@@ -34,12 +34,7 @@ import { useTripSession } from "@/hooks/useTripSession";
 import { addRecentTrip, getRecentTrips, RECENT_TRIPS_EVENT, type RecentTrip } from "@/lib/recent-trips";
 import { formatRouteLabel, getRouteDestination } from "@/lib/route-names";
 import type { Coordinates, ProductionRoute, ProductionRouteLandmark, ResolvedRouteData } from "@/lib/types";
-import type { TransferOption } from "@/lib/transfers";
-import {
-  findMatchingTransfer,
-  resolveTransferSelection,
-  type TransferSelection,
-} from "@/lib/transfer-selection";
+import { findMatchingTransfer } from "@/lib/transfer-selection";
 import { buildSharedRouteSegment } from "@/lib/shared-route";
 import { formatCoordinateParam, getSharedTransferIdentity } from "@/lib/shared-map-state";
 import { haversineMeters } from "@/lib/geo";
@@ -312,9 +307,6 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
   }, []);
 
   const [shouldLoadMap, setShouldLoadMap] = useState(false);
-  const [selectedRouteId, setSelectedRouteId] = useState<number | null>(null);
-  // Hover de la lista del sidebar (desktop): resalta la ruta en el mapa sin seleccionarla
-  const [hoveredRouteId, setHoveredRouteId] = useState<number | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isResultSheetOpen, setIsResultSheetOpen] = useState(
     Boolean(initialUrlState.sharedState?.origin && initialUrlState.sharedState.destination),
@@ -362,12 +354,13 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     subscribeToLiveLocation,
     userLocation,
   } = useRoutePlanner({ initialUrlState, tripSessionActive: tripSession !== null });
+  const clearSharedRoute = useCallback(() => {
+    setSharedRouteSegment(null);
+    setSharedSegmentColor(null);
+  }, [setSharedRouteSegment, setSharedSegmentColor]);
   // nearbyToast: null = hidden, number = route count (0 means none found)
   const [nearbyToast, setNearbyToast] = useState<number | null>(null);
   const [nearbyRouteIds, setNearbyRouteIds] = useState<number[]>([]);
-  const [showTeleferico, setShowTeleferico] = useState(
-    initialUrlState.sharedState?.showTeleferico ?? false,
-  );
   const routesMapMode = useSyncExternalStore<RoutesMapMode>(subscribeMapMode, getMapModeSnapshot, () => "all-visible");
   const isDesktopLayout = useSyncExternalStore(subscribeDesktopLayout, getDesktopLayoutSnapshot, () => false);
   const isOnline = useSyncExternalStore(subscribeOnline, () => navigator.onLine, () => true);
@@ -385,13 +378,37 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     suggestions,
     transfers,
   } = useRouteData({ destination: destinationPoint, isOnline, origin: originPoint });
+  const {
+    clearSelection: handleClearSelection,
+    hoveredRouteId,
+    selectRoute: handleSelectRoute,
+    selectedRouteId,
+    selectedTransfer,
+    setHoveredRouteId,
+    setSelectedRouteId,
+    setSelectedTransfer,
+    setShowTeleferico,
+    shareActiveSelection,
+    shareDirectRoute,
+    shareStatus,
+    shareTransfer,
+    showTeleferico,
+  } = useMapRouteSelection({
+    buildShareUrl,
+    calculationKey,
+    clearSharedRoute,
+    destination: destinationPoint,
+    hasCurrentCalculation: currentCalculation !== null,
+    initialShowTeleferico: initialUrlState.sharedState?.showTeleferico ?? false,
+    origin: originPoint,
+    transfers,
+  });
   const recentTripsSnapshot = useSyncExternalStore(subscribeRecentTrips, getRecentTripsSnapshot, () => "[]");
   const lastTrip = useMemo(() => (JSON.parse(recentTripsSnapshot) as RecentTrip[])[0] ?? null, [recentTripsSnapshot]);
   // Pantallas de poca altura (p. ej. iPhone SE / teclado abierto): la barra A→B
   // se colapsa tras un resumen para dejar más mapa visible.
   const [isShortScreen, setIsShortScreen] = useState(false);
   const [abExpanded, setAbExpanded] = useState(false);
-  const { share: shareRoute, status: shareStatus } = useShareRoute();
   const { favorites: favoriteRouteNames, toggleFavorite } = useFavoriteRoutes();
   // /mapa?cerca=1: el usuario llegó pidiendo "rutas cerca de mí" — al
   // detectar rutas cercanas abrimos la lista de inmediato (en móvil).
@@ -517,36 +534,6 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     return map;
   }, [polylineRoutes]);
 
-  const [transferSelection, setTransferSelection] = useState<TransferSelection | null>(null);
-  const selectedTransfer = useMemo(
-    () => resolveTransferSelection(
-      transferSelection,
-      calculationKey,
-      currentCalculation !== null,
-      transfers,
-    ),
-    [calculationKey, currentCalculation, transferSelection, transfers],
-  );
-  const setSelectedTransfer = useCallback((transfer: TransferOption | null) => {
-    setTransferSelection(transfer && calculationKey ? { calculationKey, transfer } : null);
-  }, [calculationKey]);
-
-  const handleSelectRoute = useCallback((routeId: number) => {
-    setSharedRouteSegment(null);
-    setSharedSegmentColor(null);
-    setSelectedTransfer(null);
-    setShowTeleferico(false);
-    setSelectedRouteId((current) => (current === routeId ? null : routeId));
-  }, [setSelectedTransfer, setSharedRouteSegment, setSharedSegmentColor]);
-
-  const handleClearSelection = useCallback(() => {
-    setSharedRouteSegment(null);
-    setSharedSegmentColor(null);
-    setSelectedRouteId(null);
-    setSelectedTransfer(null);
-    setShowTeleferico(false);
-  }, [setSelectedTransfer, setSharedRouteSegment, setSharedSegmentColor]);
-
   const handleNearbyRoutesFound = useCallback((routeIds: number[]) => {
     setNearbyRouteIds(routeIds);
     setNearbyToast(routeIds.length);
@@ -651,6 +638,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     setSharedRouteSegment,
     setSharedSegmentColor,
     setShowHint,
+    setShowTeleferico,
   ]);
 
   // Chip de destino rápido: geocodifica (índice local) y coloca el destino.
@@ -710,7 +698,13 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     if (!sharedTransferIdentity && (sharedState.origin || sharedState.destination)) {
       pendingSharedStateRef.current = null;
     }
-  }, [pendingSharedStateRef, polylineRoutes, setSharedRouteSegment]);
+  }, [
+    pendingSharedStateRef,
+    polylineRoutes,
+    setSelectedRouteId,
+    setSharedRouteSegment,
+    setShowTeleferico,
+  ]);
 
   useEffect(() => {
     const sharedState = pendingSharedStateRef.current;
@@ -876,6 +870,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     plannedJourney,
     plannedJourneyKey,
     setActivePoint,
+    setSelectedRouteId,
     setSharedRouteSegment,
     setSharedSegmentColor,
     setShowHint,
@@ -1199,17 +1194,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
                   }}
                   onFeedback={handleRouteFeedback}
                   onPromote={promoteSuggestion}
-                  onShare={() => shareRoute(
-                    formatRouteLabel(bestSuggestion.ruta),
-                    buildShareUrl({
-                      routeId: bestSuggestion.routeId,
-                      routeName: bestSuggestion.ruta,
-                      origin: originPoint,
-                      destination: destinationPoint,
-                      segmentStartIndex: bestSuggestion.indexA,
-                      segmentEndIndex: bestSuggestion.indexB,
-                    }),
-                  )}
+                  onShare={() => shareDirectRoute(bestSuggestion)}
                   onShowAlternatives={() => {
                     if (!isMobile) return;
                     setIsResultSheetOpen(false);
@@ -1231,15 +1216,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
                 isTripActive={isTripActive}
                 transfer={selectedTransfer}
                 onClear={handleClearSelection}
-                onShare={() => shareRoute(
-                  `${formatRouteLabel(selectedTransfer.routeAName)} → ${formatRouteLabel(selectedTransfer.routeBName)}`,
-                  buildShareUrl({
-                    routeName: `${selectedTransfer.routeAName} → ${selectedTransfer.routeBName}`,
-                    origin: originPoint,
-                    destination: destinationPoint,
-                    transfer: selectedTransfer,
-                  }),
-                )}
+                onShare={() => shareTransfer(selectedTransfer)}
                 onToggleTrip={isTripActive ? handleStopTrip : handleStartTrip}
               />
             ) : transfers.length > 0 ? (
@@ -1267,33 +1244,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
               showTeleferico={showTeleferico}
               transfer={selectedTransfer}
               onClear={handleClearSelection}
-              onShare={() => {
-                if (selectedTransfer) {
-                  void shareRoute(
-                    `${formatRouteLabel(selectedTransfer.routeAName)} → ${formatRouteLabel(selectedTransfer.routeBName)}`,
-                    buildShareUrl({
-                      routeName: `${selectedTransfer.routeAName} → ${selectedTransfer.routeBName}`,
-                      origin: originPoint,
-                      destination: destinationPoint,
-                      transfer: selectedTransfer,
-                    }),
-                  );
-                  return;
-                }
-
-                void shareRoute(
-                  selectedRoute ? formatRouteLabel(selectedRoute.name, selectedRoute.name) : "Teleférico",
-                  buildShareUrl({
-                    routeId: selectedRoute?.id ?? null,
-                    routeName: selectedRoute?.name ?? "Teleférico Uruapan",
-                    origin: originPoint,
-                    destination: destinationPoint,
-                    segmentStartIndex: selectedSuggestion?.indexA,
-                    segmentEndIndex: selectedSuggestion?.indexB,
-                    showTeleferico: !selectedRoute,
-                  }),
-                );
-              }}
+              onShare={() => shareActiveSelection(selectedRoute, selectedSuggestion)}
             >
               {selectedRoute && <RouteSchedule routeName={selectedRoute.name} />}
             </ActiveRouteSummary>
