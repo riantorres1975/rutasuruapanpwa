@@ -14,9 +14,13 @@ import ChatBotLauncher from "@/components/ChatBotLauncher";
 import NearbyToast from "@/components/NearbyToast";
 import OnboardingGate from "@/components/OnboardingGate";
 import PlaceSearch from "@/components/PlaceSearch";
+import { DesktopMapSidebar, MobileMapControls } from "@/components/MapResponsiveControls";
+import TripOverlays from "@/components/TripOverlays";
 import { geocodePlace, type PlaceResult } from "@/lib/geocode";
 import { useShareRoute } from "@/hooks/useShareRoute";
 import { useFavoriteRoutes } from "@/hooks/useFavoriteRoutes";
+import { useRouteData } from "@/hooks/useRouteData";
+import { useTripSession } from "@/hooks/useTripSession";
 import { useUruapanGeolocation } from "@/hooks/useUruapanGeolocation";
 import { addRecentTrip, getRecentTrips, RECENT_TRIPS_EVENT, type RecentTrip } from "@/lib/recent-trips";
 import { formatRouteLabel, getRouteDestination } from "@/lib/route-names";
@@ -29,36 +33,20 @@ import {
   type TransferSelectionIdentity,
 } from "@/lib/transfer-selection";
 import { buildSharedRouteSegment } from "@/lib/shared-route";
-import { fetchRouteDataResponse, ROUTE_DATA_SOURCE_HEADER } from "@/lib/route-data-client";
 import { haversineMeters } from "@/lib/geo";
 import {
   getMapAutoLoadDelay,
   shouldPreloadMap,
   type MapNetworkInformation,
 } from "@/lib/map-load-policy";
-import type { PolylineRoute } from "@/lib/routeMatcher";
-import type {
-  RouteCalculationResult,
-  RouteCalculationWorkerRequest,
-  RouteCalculationWorkerResponse,
-  RouteOption,
-} from "@/lib/route-calculation";
-import {
-  buildRouteCalculationPerformance,
-  type RouteCalculationEngine,
-} from "@/lib/route-performance";
 import {
   getJourneyFareSummary,
   getTelefericoStationName,
   isTelefericoRouteName,
 } from "@/lib/journey-guidance";
 import {
-  createTripTrackingState,
   getTripJourneyKey,
-  getTripMilestone,
-  updateTripTrackingState,
   type TripJourney,
-  type TripTrackingState,
 } from "@/lib/trip-mode";
 const AVG_TRIP_SPEED_KMH = 18;
 const BACKGROUND_SIMPLIFY_TOLERANCE = 0.00008;
@@ -88,21 +76,6 @@ const TripModePanel = dynamic(() => import("@/components/TripModePanel"));
 type ActivePoint = "origin" | "destination" | null;
 type FlowStep = 1 | 2 | 3;
 type RoutesMapMode = "all-visible" | "all-highlighted";
-type RouteCalculation = RouteCalculationResult & { key: string };
-type TripAlert = {
-  tripKey: string;
-  message: string;
-};
-type TripSession = {
-  key: string;
-  cameraKey: string;
-  journey: TripJourney;
-};
-
-const EMPTY_ROUTE_OPTIONS: RouteOption[] = [];
-const EMPTY_ROUTE_IDS: number[] = [];
-const EMPTY_TRANSFERS: TransferOption[] = [];
-
 const MAP_MODE_KEY = "rutas-map-mode";
 const MAP_MODE_EVENT = "urugo-map-mode-changed";
 const DESKTOP_LAYOUT_QUERY = "(min-width: 1024px)";
@@ -469,11 +442,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     };
   }, []);
 
-  const [isLoadingData, setIsLoadingData] = useState(true);
   const [shouldLoadMap, setShouldLoadMap] = useState(false);
-  const [fetchError, setFetchError] = useState(false);
-  const [isUsingCachedRoutes, setIsUsingCachedRoutes] = useState(false);
-  const [fetchAttempt, setFetchAttempt] = useState(0);
   const [selectedRouteId, setSelectedRouteId] = useState<number | null>(null);
   // Hover de la lista del sidebar (desktop): resalta la ruta en el mapa sin seleccionarla
   const [hoveredRouteId, setHoveredRouteId] = useState<number | null>(null);
@@ -484,14 +453,19 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
   const [isResultSheetOpen, setIsResultSheetOpen] = useState(
     Boolean(initialUrlState.sharedState?.origin && initialUrlState.sharedState.destination),
   );
-  const [dropOffAlertState, setDropOffAlertState] = useState<TripAlert | null>(null);
-  const [tripSession, setTripSession] = useState<TripSession | null>(null);
-  const [tripTracking, setTripTracking] = useState<TripTrackingState>(() => createTripTrackingState());
-  const tripProgress = tripTracking.progress;
-  const [isStopTripDialogOpen, setIsStopTripDialogOpen] = useState(false);
-  const stopTripDialogRef = useRef<HTMLDivElement>(null);
-  const stopTripConfirmButtonRef = useRef<HTMLButtonElement>(null);
-  const tripMilestonesRef = useRef(new Set<string>());
+  const {
+    cancelStop: cancelStopTrip,
+    completeStop: completeStopTrip,
+    dismissDropOffAlert,
+    dropOffAlert,
+    isStopDialogOpen: isStopTripDialogOpen,
+    progress: tripProgress,
+    requestStop: handleStopTrip,
+    reset: resetTripSession,
+    session: tripSession,
+    start: startTripSession,
+    updateLocation: updateTripLocation,
+  } = useTripSession();
   const [feedbackTripKey, setFeedbackTripKey] = useState<string | null>(null);
   const lastSavedTripKeyRef = useRef("");
   const [manualOrigin, setManualOrigin] = useState<Coordinates | null>(
@@ -543,7 +517,6 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
   const [showTeleferico, setShowTeleferico] = useState(
     initialUrlState.sharedState?.showTeleferico ?? false,
   );
-  const [polylineRoutes, setPolylineRoutes] = useState<ProductionRoute[]>([]);
   const [sharedRouteSegment, setSharedRouteSegment] = useState<Coordinates[] | null>(null);
   const [sharedSegmentColor, setSharedSegmentColor] = useState<string | null>(null);
   const [requestedDestination, setRequestedDestination] = useState<string | null>(
@@ -552,7 +525,20 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
   const routesMapMode = useSyncExternalStore<RoutesMapMode>(subscribeMapMode, getMapModeSnapshot, () => "all-visible");
   const isDesktopLayout = useSyncExternalStore(subscribeDesktopLayout, getDesktopLayoutSnapshot, () => false);
   const isOnline = useSyncExternalStore(subscribeOnline, () => navigator.onLine, () => true);
-  const wasOnlineRef = useRef(isOnline);
+  const {
+    alternativeRouteIds: alternativeSuggestedRouteIds,
+    calculationKey,
+    currentCalculation,
+    fetchError,
+    isCalculating: isCalculatingSuggestions,
+    isLoading: isLoadingData,
+    isUsingCachedRoutes,
+    polylineRoutes,
+    promoteSuggestion,
+    retry: retryRouteData,
+    suggestions,
+    transfers,
+  } = useRouteData({ destination: destinationPoint, isOnline, origin: originPoint });
   const recentTripsSnapshot = useSyncExternalStore(subscribeRecentTrips, getRecentTripsSnapshot, () => "[]");
   const lastTrip = useMemo(() => (JSON.parse(recentTripsSnapshot) as RecentTrip[])[0] ?? null, [recentTripsSnapshot]);
   // Pantallas de poca altura (p. ej. iPhone SE / teclado abierto): la barra A→B
@@ -565,61 +551,9 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
   const originPointRef = useRef(originPoint);
   const destinationPointRef = useRef(destinationPoint);
   const pendingSharedStateRef = useRef<SharedMapState | null>(initialUrlState.sharedState);
-  const routeWorkerRef = useRef<Worker | null>(null);
-  const routeCalculationRequestRef = useRef(0);
-  const [routeWorkerFailed, setRouteWorkerFailed] = useState(false);
   // /mapa?cerca=1: el usuario llegó pidiendo "rutas cerca de mí" — al
   // detectar rutas cercanas abrimos la lista de inmediato (en móvil).
   const wantsNearbyRef = useRef(initialUrlState.wantsNearby);
-
-  useEffect(() => {
-    const connectionWasRestored = isOnline && !wasOnlineRef.current;
-    wasOnlineRef.current = isOnline;
-    if (connectionWasRestored && isUsingCachedRoutes) {
-      setFetchAttempt((attempt) => attempt + 1);
-    }
-  }, [isOnline, isUsingCachedRoutes]);
-
-  useEffect(() => {
-    if (polylineRoutes.length > 0 && fetchAttempt === 0) return;
-    let cancelled = false;
-    const controller = new AbortController();
-    // Sin no-store: el navegador respeta el Cache-Control (max-age + SWR) de la
-    // API, evitando re-descargar el payload de rutas en cada visita al mapa.
-    fetchRouteDataResponse({ signal: controller.signal })
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        if (!cancelled) {
-          setIsUsingCachedRoutes(res.headers.get(ROUTE_DATA_SOURCE_HEADER) === "cache");
-        }
-        return res.json();
-      })
-      .then((data: ProductionRoute[]) => {
-        if (!cancelled) {
-          if (Array.isArray(data) && data.length > 0) {
-            setPolylineRoutes(data);
-          } else {
-            console.error("[rutas-polyline] returned empty or invalid data");
-            setFetchError(true);
-          }
-          setIsLoadingData(false);
-        }
-      })
-      .catch((err: unknown) => {
-        if (!cancelled) {
-          console.error("[rutas-polyline] Failed to load:", err instanceof Error ? err.message : err);
-          if (polylineRoutes.length === 0) {
-            setFetchError(true);
-          }
-          setIsLoadingData(false);
-        }
-      });
-    return () => {
-      cancelled = true;
-      controller.abort();
-    };
-  // fetchAttempt triggers retry when user clicks "Reintentar"
-  }, [polylineRoutes.length, fetchAttempt]);
 
   const buildShareUrl = useCallback((options: {
     routeId?: number | null;
@@ -805,67 +739,6 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     [polylineRoutes]
   );
 
-  const routesForMatching = useMemo<PolylineRoute[]>(
-    () => polylineRoutes.map((r) => ({
-      id: r.id,
-      name: r.name,
-      color: r.color,
-      corridor_width_m: r.corridor_width_m,
-      path: r.path,
-      direccion: r.original_name.includes("Vuelta") ? "vuelta" : "ida",
-      landmarks: r.landmarks,
-    })),
-    [polylineRoutes]
-  );
-
-  useEffect(() => {
-    if (routesForMatching.length === 0 || routeWorkerFailed) return;
-
-    let worker: Worker;
-    try {
-      worker = new Worker(new URL("./route-calculation.worker.ts", import.meta.url), {
-        name: "urugo-route-calculation",
-        type: "module",
-      });
-    } catch {
-      const fallbackTimer = window.setTimeout(() => setRouteWorkerFailed(true), 0);
-      return () => window.clearTimeout(fallbackTimer);
-    }
-
-    const handleWorkerError = (event: ErrorEvent) => {
-      event.preventDefault();
-      if (routeWorkerRef.current === worker) {
-        routeWorkerRef.current = null;
-        worker.terminate();
-        setRouteWorkerFailed(true);
-      }
-    };
-
-    routeWorkerRef.current = worker;
-    worker.addEventListener("error", handleWorkerError);
-    const initializeMessage: RouteCalculationWorkerRequest = {
-      type: "initialize",
-      routes: routesForMatching,
-    };
-    try {
-      worker.postMessage(initializeMessage);
-    } catch {
-      worker.removeEventListener("error", handleWorkerError);
-      worker.terminate();
-      routeWorkerRef.current = null;
-      const fallbackTimer = window.setTimeout(() => setRouteWorkerFailed(true), 0);
-      return () => window.clearTimeout(fallbackTimer);
-    }
-
-    return () => {
-      worker.removeEventListener("error", handleWorkerError);
-      worker.terminate();
-      if (routeWorkerRef.current === worker) {
-        routeWorkerRef.current = null;
-      }
-    };
-  }, [routeWorkerFailed, routesForMatching]);
-
   const polylineRoutesById = useMemo(
     () => new Map(polylineRoutes.map((route) => [route.id, route])),
     [polylineRoutes]
@@ -881,15 +754,6 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     return map;
   }, [polylineRoutes]);
 
-  const calculationKey = originPoint && destinationPoint
-    ? `${formatCoordinateParam(originPoint)}>${formatCoordinateParam(destinationPoint)}@${polylineRoutes.length}`
-    : null;
-  const [routeCalculation, setRouteCalculation] = useState<RouteCalculation | null>(null);
-  const currentCalculation = routeCalculation?.key === calculationKey ? routeCalculation : null;
-  const suggestions = currentCalculation?.suggestions ?? EMPTY_ROUTE_OPTIONS;
-  const alternativeSuggestedRouteIds = currentCalculation?.alternativeRouteIds ?? EMPTY_ROUTE_IDS;
-  const transfers = currentCalculation?.transfers ?? EMPTY_TRANSFERS;
-  const isCalculatingSuggestions = calculationKey !== null && currentCalculation === null;
   const [transferSelection, setTransferSelection] = useState<TransferSelection | null>(null);
   const selectedTransfer = useMemo(
     () => resolveTransferSelection(
@@ -1076,86 +940,6 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     pendingSharedStateRef.current = null;
   }, [calculationKey, currentCalculation, setSelectedTransfer, transfers]);
 
-  useEffect(() => {
-    if (!originPoint || !destinationPoint || !calculationKey || routesForMatching.length === 0) return;
-
-    const requestId = ++routeCalculationRequestRef.current;
-    const worker = routeWorkerRef.current;
-    let calculationStartedAt: number | null = null;
-
-    const applyResult = (result: RouteCalculationResult, engine: RouteCalculationEngine) => {
-      if (routeCalculationRequestRef.current !== requestId) return;
-      setRouteCalculation({ key: calculationKey, ...result });
-      const durationMs = calculationStartedAt === null
-        ? Number.NaN
-        : performance.now() - calculationStartedAt;
-      try {
-        track(
-          "route_calculation_performance",
-          buildRouteCalculationPerformance(result, durationMs, engine),
-        );
-      } catch {
-        // Analytics must never affect route results.
-      }
-    };
-
-    const handleMessage = (event: MessageEvent<RouteCalculationWorkerResponse>) => {
-      const message = event.data;
-      if (message.requestId !== requestId || message.key !== calculationKey) return;
-
-      if (message.type === "error") {
-        setRouteWorkerFailed(true);
-        return;
-      }
-
-      applyResult(message.result, "worker");
-    };
-
-    if (worker) {
-      worker.addEventListener("message", handleMessage);
-    }
-
-    const timer = window.setTimeout(() => {
-      calculationStartedAt = performance.now();
-      if (worker) {
-        const message: RouteCalculationWorkerRequest = {
-          type: "calculate",
-          requestId,
-          key: calculationKey,
-          origin: originPoint,
-          destination: destinationPoint,
-        };
-        try {
-          worker.postMessage(message);
-        } catch {
-          setRouteWorkerFailed(true);
-        }
-        return;
-      }
-
-      void import("@/lib/route-calculation")
-        .then(({ calculateRouteOptions }) => {
-          applyResult(
-            calculateRouteOptions(routesForMatching, originPoint, destinationPoint),
-            "fallback",
-          );
-        })
-        .catch(() => {
-          applyResult(
-            { suggestions: [], alternativeRouteIds: [], transfers: [] },
-            "fallback",
-          );
-        });
-    }, 80);
-
-    return () => {
-      window.clearTimeout(timer);
-      if (worker) {
-        worker.removeEventListener("message", handleMessage);
-      }
-    };
-  }, [calculationKey, destinationPoint, originPoint, routeWorkerFailed, routesForMatching]);
-
   const suggestedRouteIds = useMemo(() => suggestions.map((item) => item.routeId), [suggestions]);
   const suggestedRouteDirections = useMemo(
     () => new Map(suggestions.map((item) => [item.routeId, item.direccion])),
@@ -1273,9 +1057,6 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     ? getTripJourneyKey(plannedJourney)
     : null;
   const isTripActive = tripSession !== null && tripSession.key === plannedJourneyKey;
-  const dropOffAlert = dropOffAlertState && dropOffAlertState.tripKey === tripSession?.key
-    ? dropOffAlertState.message
-    : null;
   const feedbackGiven = activeTripKey !== null && feedbackTripKey === activeTripKey;
   const tripLocationStatus = geoStatus === "error" || geoStatus === "outside" || geoStatus === "inaccurate"
     ? "unavailable"
@@ -1285,28 +1066,14 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
 
   useEffect(() => {
     if (!tripSession || tripSession.key === plannedJourneyKey) return;
-    const timer = window.setTimeout(() => {
-      setTripSession(null);
-      setTripTracking(createTripTrackingState());
-      setIsStopTripDialogOpen(false);
-      setDropOffAlertState(null);
-      tripMilestonesRef.current.clear();
-    }, 0);
+    const timer = window.setTimeout(resetTripSession, 0);
     return () => window.clearTimeout(timer);
-  }, [plannedJourneyKey, tripSession]);
+  }, [plannedJourneyKey, resetTripSession, tripSession]);
 
   const handleStartTrip = useCallback(() => {
     if (!plannedJourney || !plannedJourneyKey) return;
 
-    tripMilestonesRef.current.clear();
-    setTripSession({
-      key: plannedJourneyKey,
-      cameraKey: `${plannedJourneyKey}:${Date.now()}`,
-      journey: plannedJourney,
-    });
-    setTripTracking(createTripTrackingState());
-    setIsStopTripDialogOpen(false);
-    setDropOffAlertState(null);
+    startTripSession(plannedJourney);
     setShowHint(false);
     setActivePoint(null);
     setIsResultSheetOpen(false);
@@ -1319,70 +1086,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
       setSelectedRouteId(null);
     }
 
-    try {
-      track("viaje_iniciado", { tipo: plannedJourney.kind });
-    } catch {
-      // analytics no disponible: ignorar
-    }
-  }, [plannedJourney, plannedJourneyKey, setShowHint, suggestions]);
-
-  const completeStopTrip = useCallback(() => {
-    const journeyKind = tripSession?.journey.kind;
-    setTripSession(null);
-    setTripTracking(createTripTrackingState());
-    setIsStopTripDialogOpen(false);
-    setDropOffAlertState(null);
-    tripMilestonesRef.current.clear();
-    try {
-      track("viaje_finalizado", { tipo: journeyKind ?? "desconocido" });
-    } catch {
-      // analytics no disponible: ignorar
-    }
-  }, [tripSession]);
-
-  const handleStopTrip = useCallback(() => {
-    if (tripProgress?.phase === "arrived") {
-      completeStopTrip();
-      return;
-    }
-    setIsStopTripDialogOpen(true);
-  }, [completeStopTrip, tripProgress?.phase]);
-
-  useEffect(() => {
-    if (!isStopTripDialogOpen) return;
-
-    const previousFocus = document.activeElement instanceof HTMLElement
-      ? document.activeElement
-      : null;
-    const focusFrame = window.requestAnimationFrame(() => stopTripConfirmButtonRef.current?.focus());
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setIsStopTripDialogOpen(false);
-        return;
-      }
-      if (event.key !== "Tab") return;
-
-      const buttons = Array.from(
-        stopTripDialogRef.current?.querySelectorAll<HTMLButtonElement>("button:not([disabled])") ?? [],
-      );
-      const firstButton = buttons[0];
-      const lastButton = buttons[buttons.length - 1];
-      if (event.shiftKey && document.activeElement === firstButton) {
-        event.preventDefault();
-        lastButton?.focus();
-      } else if (!event.shiftKey && document.activeElement === lastButton) {
-        event.preventDefault();
-        firstButton?.focus();
-      }
-    };
-    document.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      window.cancelAnimationFrame(focusFrame);
-      document.removeEventListener("keydown", handleKeyDown);
-      if (previousFocus?.isConnected) previousFocus.focus();
-    };
-  }, [isStopTripDialogOpen]);
+  }, [plannedJourney, plannedJourneyKey, setShowHint, startTripSession, suggestions]);
 
   // ── Repetir viaje: guardar los nuevos viajes ──────────────────────────────
   useEffect(() => {
@@ -1422,56 +1126,11 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     }
   }, [activeTripKey, suggestions, requestedDestination]);
 
-  // Promueve una alternativa a "ruta recomendada" reordenando las sugerencias.
-  const promoteSuggestion = useCallback((routeId: number) => {
-    setRouteCalculation((current) => {
-      if (!current || current.key !== calculationKey) return current;
-      const index = current.suggestions.findIndex((suggestion) => suggestion.routeId === routeId);
-      if (index <= 0) return current;
-      const next = [...current.suggestions];
-      const [picked] = next.splice(index, 1);
-      next.unshift(picked);
-      return { ...current, suggestions: next };
-    });
-  }, [calculationKey]);
-
   useEffect(() => {
     if (!isTripActive || !tripSession) return;
 
-    return subscribeToLiveLocation((location) => {
-      setTripTracking((current) =>
-        updateTripTrackingState(tripSession.journey, location, current),
-      );
-    });
-  }, [isTripActive, subscribeToLiveLocation, tripSession]);
-
-  useEffect(() => {
-    if (!tripProgress || !tripSession) return;
-    const milestone = getTripMilestone(tripProgress);
-    if (!milestone || tripMilestonesRef.current.has(milestone)) return;
-
-    tripMilestonesRef.current.add(milestone);
-    const distance = Math.round(tripProgress.distanceToMilestoneM ?? 0);
-    const transferStopLabel = tripSession.journey.kind === "transfer"
-      ? tripSession.journey.transferArrivalStopLabel
-      : null;
-    const destinationStopLabel = tripSession.journey.destinationStopLabel;
-    const message = milestone === "transfer-near"
-      ? transferStopLabel
-        ? `Prepárate para bajar en la estación ${transferStopLabel} y transbordar: faltan aproximadamente ${distance} m.`
-        : `Prepárate para transbordar: faltan aproximadamente ${distance} m.`
-      : milestone === "destination-near"
-        ? destinationStopLabel
-          ? `Prepárate para bajar en la estación ${destinationStopLabel}: faltan aproximadamente ${distance} m.`
-          : `Prepárate para bajar: faltan aproximadamente ${distance} m para tu parada.`
-        : "Llegaste a tu destino.";
-    try {
-      navigator.vibrate?.(milestone === "arrived" ? [250, 120, 250] : [200, 100, 200]);
-    } catch {
-      // vibración no soportada: ignorar
-    }
-    setDropOffAlertState({ tripKey: tripSession.key, message });
-  }, [tripProgress, tripSession]);
+    return subscribeToLiveLocation(updateTripLocation);
+  }, [isTripActive, subscribeToLiveLocation, tripSession, updateTripLocation]);
 
   const routeTextSummary = useMemo(() => {
     if (isCalculatingSuggestions || flowStep !== 3) {
@@ -1645,7 +1304,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
         </p>
         <button
           type="button"
-          onClick={() => { setFetchError(false); setIsLoadingData(true); setFetchAttempt((n) => n + 1); }}
+          onClick={retryRouteData}
           className="mt-2 inline-flex h-12 items-center rounded-xl bg-verde px-6 text-[13px] font-bold text-ink-900"
         >
           Reintentar
@@ -2382,94 +2041,28 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
           En mobile: oculto (los controles van en el overlay flotante y el BottomSheet).
       ══════════════════════════════════════════════════════════════════════ */}
       {isDesktopLayout && (
-      <aside
-        className={`relative z-30 hidden h-full shrink-0 flex-col border-r border-foreground/8 bg-ink-900/98 backdrop-blur-2xl lg:flex ${
-          sidebarWidth == null ? "lg:w-[420px]" : ""
-        }`}
-        style={sidebarWidth != null ? { width: `${sidebarWidth}px` } : undefined}
-      >
-
-        {/* ── Header del sidebar ──────────────────────────────────────────── */}
-        <div className="flex shrink-0 items-center justify-between border-b border-foreground/8 px-5 py-4">
-          <div className="flex items-center gap-2.5">
-            {/* Dot de estado */}
-            <span className="relative flex h-2.5 w-2.5" aria-hidden="true">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-lima opacity-50" />
-              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-lima" />
-            </span>
-            <p className="font-serif-display text-[16px] font-black tracking-tight text-white">UruGo</p>
-            <span className="rounded-full border border-lima/25 bg-lima/10 px-2 py-0.5 text-[11px] font-semibold text-lima">
-              {visibleRouteCount} rutas
-            </span>
-          </div>
-
-          {/* Mode toggle */}
-          <div className="relative flex items-center gap-2">
-            <button
-              type="button"
-              onClick={toggleRoutesMapMode}
-              className={`inline-flex h-10 w-10 items-center justify-center rounded-lg border text-sm transition hover:scale-105 active:scale-95 ${
-                routesMapMode === "all-highlighted"
-                  ? "border-lima/40 bg-lima/12 text-lima"
-                  : "border-foreground/12 bg-foreground/5 text-foreground/50 hover:border-foreground/25 hover:text-foreground/80"
-              }`}
-              aria-label={routesMapMode === "all-visible" ? "Cambiar a modo todas destacadas" : "Cambiar a modo todas visibles"}
-              title={routesMapMode === "all-visible" ? "Modo: todas visibles" : "Modo: todas destacadas"}
-            >
-              <span aria-hidden="true">👁</span>
-            </button>
-            <ChatBotLauncher />
-          </div>
-        </div>
-
-        {/* ── Flow step indicator + hint ──────────────────────────────────── */}
-        <div className="shrink-0 border-b border-foreground/5 px-5 py-3">
-          {/* Step pills */}
-          <div className="mb-2.5 flex items-center gap-2" role="group" aria-label="Progreso del viaje">
-            {[
-              { n: 1, label: "Origen" },
-              { n: 2, label: "Destino" },
-              { n: 3, label: "Resultado" }
-            ].map(({ n, label }) => {
-              const isActive = n === flowStep;
-              const isDone = n < flowStep;
-              return (
-                <div key={n} className="flex flex-1 flex-col items-center gap-1">
-                  <div className={`h-1 w-full rounded-full transition-all duration-300 ${
-                    isActive ? "bg-lima" : isDone ? "bg-lima/40" : "bg-foreground/12"
-                  }`} />
-                  <span className={`text-[10px] font-semibold transition-colors duration-300 ${
-                    isActive ? "text-lima" : isDone ? "text-lima/60" : "text-foreground/25"
-                  }`}>{label}</span>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Hint message */}
+      <DesktopMapSidebar
+        width={sidebarWidth}
+        routeCount={visibleRouteCount}
+        flowStep={flowStep}
+        routesMapMode={routesMapMode}
+        onToggleMode={toggleRoutesMapMode}
+        hint={(
           <div className={`transition-all duration-300 ${showHint ? "opacity-100" : "opacity-0"}`}>
             <p className="text-[12px] leading-snug text-foreground/60">{hintMessage}</p>
           </div>
-        </div>
-
-        {/* ── Controles A/B + resultado de ruta ──────────────────────────── */}
-        <div className="shrink-0 space-y-2.5 border-b border-foreground/5 px-5 py-4">
-          {renderRouteControls("desktop")}
-        </div>
-
-        {/* ── NearbyToast en sidebar ──────────────────────────────────────── */}
-        {nearbyToast !== null && (
+        )}
+        controls={renderRouteControls("desktop")}
+        nearbyNotice={nearbyToast !== null ? (
           <div className="shrink-0 px-5 pt-3">
             <NearbyToast
               count={nearbyToast}
-              onView={() => {/* En desktop ya se ve la lista abajo */}}
+              onView={() => undefined}
               onDismiss={() => setNearbyToast(null)}
             />
           </div>
-        )}
-
-        {/* ── Lista de rutas (scrollable) ─────────────────────────────────── */}
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4">
+        ) : null}
+        routeList={(
           <RouteList
             routes={listRoutes}
             isLoading={isLoadingData}
@@ -2483,19 +2076,12 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
             favoriteRouteNames={favoriteRouteNames}
             onToggleFavorite={toggleFavorite}
             onClearSelection={handleClearSelection}
-            onShowTeleferico={() => { setShowTeleferico(true); }}
+            onShowTeleferico={() => setShowTeleferico(true)}
             onSelectRoute={handleSelectRoute}
             onHoverRoute={setHoveredRouteId}
           />
-        </div>
-
-        {/* ── Footer del sidebar: creditos ────────────────────────────────── */}
-        <div className="shrink-0 border-t border-foreground/5 px-5 py-3">
-          <p className="text-[11px] text-foreground/45">
-            UruGo · Datos actualizados · Uruapan, Mich.
-          </p>
-        </div>
-      </aside>
+        )}
+      />
       )}
 
       {/* ══════════════════════════════════════════════════════════════════════
@@ -2663,49 +2249,12 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
 
         {/* ── MOBILE: Top overlay (oculto en desktop) ── */}
         {!isDesktopLayout && (
-        <section className="pointer-events-none absolute inset-x-0 top-0 z-20 px-4 pt-safe-or-4 lg:hidden">
-          {/* Scrim: degradado que separa los controles del mapa para que se lean limpios */}
-          <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-72 bg-gradient-to-b from-black/45 via-black/20 to-transparent" aria-hidden="true" />
-          {/* Row 1: logo pill + mode toggle */}
-          <div className="flex items-center gap-2">
-            <div className="ov-panel pointer-events-auto inline-flex items-center gap-2 rounded-2xl border px-3 py-2 shadow-[0_4px_24px_rgba(0,0,0,0.18)] backdrop-blur-xl">
-              <span className="h-2 w-2 rounded-full bg-lima" aria-hidden="true" />
-              <p className="ov-text font-serif-display text-[15px] font-black leading-none tracking-tight">UruGo</p>
-              <span className="ov-pill ov-text-muted rounded-full px-1.5 py-0.5 text-[11px] font-medium">
-                {visibleRouteCount}
-              </span>
-              <span className="ml-0.5 inline-flex items-center gap-1" role="img" aria-label="Progreso del viaje">
-                {[1, 2, 3].map((step) => {
-                  const isActive = step === flowStep;
-                  const isDone = step < flowStep;
-                  return (
-                    <span
-                      key={step}
-                      className={`rounded-full transition-all duration-300 ${
-                        isActive ? "h-2 w-4 bg-lima" : isDone ? "h-2 w-2 bg-lima/50" : "h-2 w-2 bg-black/15"
-                      }`}
-                    />
-                  );
-                })}
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={toggleRoutesMapMode}
-              className={`ov-panel pointer-events-auto inline-flex h-11 w-11 items-center justify-center rounded-xl border text-sm shadow-[0_4px_16px_rgba(0,0,0,0.18)] backdrop-blur-xl transition active:scale-[0.97] ${
-                routesMapMode === "all-highlighted"
-                  ? "border-lima/50 !bg-lima/15 text-lima"
-                  : ""
-              }`}
-              aria-label={routesMapMode === "all-visible" ? "Cambiar a modo todas destacadas" : "Cambiar a modo todas visibles"}
-              title={routesMapMode === "all-visible" ? "Modo: todas visibles" : "Modo: todas destacadas"}
-            >
-              <span aria-hidden="true">👁</span>
-            </button>
-          </div>
-
-          {/* Row 2: Nearby toast */}
-          {!isTripActive ? (
+        <MobileMapControls
+          flowStep={flowStep}
+          routeCount={visibleRouteCount}
+          routesMapMode={routesMapMode}
+          onToggleMode={toggleRoutesMapMode}
+          nearbyNotice={!isTripActive ? (
             <div className="pointer-events-auto mt-2">
               <NearbyToast
                 count={nearbyToast}
@@ -2714,15 +2263,13 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
               />
             </div>
           ) : null}
-
-          {/* Row 3: Buscador (héroe) + A/B controls. La guía paso a paso va dentro
-              de renderRouteControls, evitando un hint duplicado. */}
+        >
           {!isTripActive ? (
             <div className="pointer-events-auto mt-2 space-y-2">
               {renderRouteControls("mobile", true)}
             </div>
           ) : null}
-        </section>
+        </MobileMapControls>
         )}
 
         {isTripActive && tripSession ? (
@@ -2734,74 +2281,13 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
           />
         ) : null}
 
-        {isStopTripDialogOpen && isTripActive ? (
-          <div
-            className="fixed inset-0 z-[90] flex items-end justify-center bg-black/65 px-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] pt-4 sm:items-center sm:pb-4"
-            onClick={() => setIsStopTripDialogOpen(false)}
-          >
-            <div
-              ref={stopTripDialogRef}
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="stop-trip-title"
-              aria-describedby="stop-trip-description"
-              className="ov-panel ov-border w-full max-w-sm rounded-lg border p-4 shadow-[0_18px_60px_rgba(0,0,0,0.55)]"
-              onClick={(event) => event.stopPropagation()}
-            >
-              <p id="stop-trip-title" className="ov-text text-base font-bold">
-                ¿Finalizar el viaje?
-              </p>
-              <p id="stop-trip-description" className="ov-text-muted mt-1 text-sm leading-5">
-                El seguimiento y los avisos de bajada se detendrán.
-              </p>
-              <div className="mt-4 grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIsStopTripDialogOpen(false)}
-                  className="ov-pill ov-border ov-text h-11 rounded-lg border px-4 text-sm font-semibold transition active:scale-[0.98]"
-                >
-                  Cancelar
-                </button>
-                <button
-                  ref={stopTripConfirmButtonRef}
-                  type="button"
-                  onClick={completeStopTrip}
-                  className="h-11 rounded-lg border border-red-400/45 bg-red-500/15 px-4 text-sm font-bold text-red-300 transition hover:bg-red-500/25 active:scale-[0.98]"
-                >
-                  Finalizar viaje
-                </button>
-              </div>
-            </div>
-          </div>
-        ) : null}
-
-        {/* ── Aviso de bajada próxima (modo viaje) ── */}
-        {dropOffAlert && (
-          <div
-            role="alert"
-            className="pointer-events-none absolute inset-x-0 bottom-36 z-50 flex justify-center px-4"
-          >
-            <div className="pointer-events-auto flex max-w-md items-start gap-2.5 rounded-2xl border border-lima/40 bg-slate-900/95 px-4 py-3 shadow-[0_12px_40px_rgba(0,0,0,0.5)] backdrop-blur-xl">
-              <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-lima/15">
-                <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 text-lima" aria-hidden="true">
-                  <path d="M12 8v4m0 4h.01" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
-                  <path d="M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0Z" stroke="currentColor" strokeWidth="1.8" />
-                </svg>
-              </span>
-              <p className="flex-1 text-[13px] font-medium leading-5 text-slate-50">{dropOffAlert}</p>
-              <button
-                type="button"
-                onClick={() => setDropOffAlertState(null)}
-                aria-label="Cerrar aviso"
-                className="shrink-0 rounded-full p-1 text-slate-400 transition hover:text-slate-200 active:scale-[0.95]"
-              >
-                <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" aria-hidden="true">
-                  <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                </svg>
-              </button>
-            </div>
-          </div>
-        )}
+        <TripOverlays
+          alert={dropOffAlert}
+          stopDialogOpen={isStopTripDialogOpen && isTripActive}
+          onCancelStop={cancelStopTrip}
+          onConfirmStop={completeStopTrip}
+          onDismissAlert={dismissDropOffAlert}
+        />
 
         {/* ── Share toast (mobile + desktop, posicion ajustada) ── */}
         <div
