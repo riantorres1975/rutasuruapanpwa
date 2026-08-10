@@ -33,6 +33,7 @@ import {
   type TransferSelectionIdentity,
 } from "@/lib/transfer-selection";
 import { buildSharedRouteSegment } from "@/lib/shared-route";
+import { fetchRouteDataResponse, ROUTE_DATA_SOURCE_HEADER } from "@/lib/route-data-client";
 import { haversineMeters } from "@/lib/geo";
 import type { PolylineRoute } from "@/lib/routeMatcher";
 import type {
@@ -448,6 +449,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [shouldLoadMap, setShouldLoadMap] = useState(false);
   const [fetchError, setFetchError] = useState(false);
+  const [isUsingCachedRoutes, setIsUsingCachedRoutes] = useState(false);
   const [fetchAttempt, setFetchAttempt] = useState(0);
   const [selectedRouteId, setSelectedRouteId] = useState<number | null>(null);
   // Hover de la lista del sidebar (desktop): resalta la ruta en el mapa sin seleccionarla
@@ -526,6 +528,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
   );
   const routesMapMode = useSyncExternalStore<RoutesMapMode>(subscribeMapMode, getMapModeSnapshot, () => "all-visible");
   const isOnline = useSyncExternalStore(subscribeOnline, () => navigator.onLine, () => true);
+  const wasOnlineRef = useRef(isOnline);
   const recentTripsSnapshot = useSyncExternalStore(subscribeRecentTrips, getRecentTripsSnapshot, () => "[]");
   const lastTrip = useMemo(() => (JSON.parse(recentTripsSnapshot) as RecentTrip[])[0] ?? null, [recentTripsSnapshot]);
   // Pantallas de poca altura (p. ej. iPhone SE / teclado abierto): la barra A→B
@@ -546,13 +549,25 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
   const wantsNearbyRef = useRef(initialUrlState.wantsNearby);
 
   useEffect(() => {
-    if (polylineRoutes.length > 0) return;
+    const connectionWasRestored = isOnline && !wasOnlineRef.current;
+    wasOnlineRef.current = isOnline;
+    if (connectionWasRestored && isUsingCachedRoutes) {
+      setFetchAttempt((attempt) => attempt + 1);
+    }
+  }, [isOnline, isUsingCachedRoutes]);
+
+  useEffect(() => {
+    if (polylineRoutes.length > 0 && fetchAttempt === 0) return;
     let cancelled = false;
+    const controller = new AbortController();
     // Sin no-store: el navegador respeta el Cache-Control (max-age + SWR) de la
     // API, evitando re-descargar el payload de rutas en cada visita al mapa.
-    fetch("/api/rutas-polyline")
+    fetchRouteDataResponse({ signal: controller.signal })
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        if (!cancelled) {
+          setIsUsingCachedRoutes(res.headers.get(ROUTE_DATA_SOURCE_HEADER) === "cache");
+        }
         return res.json();
       })
       .then((data: ProductionRoute[]) => {
@@ -569,11 +584,16 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
       .catch((err: unknown) => {
         if (!cancelled) {
           console.error("[rutas-polyline] Failed to load:", err instanceof Error ? err.message : err);
-          setFetchError(true);
+          if (polylineRoutes.length === 0) {
+            setFetchError(true);
+          }
           setIsLoadingData(false);
         }
       });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
   // fetchAttempt triggers retry when user clicks "Reintentar"
   }, [polylineRoutes.length, fetchAttempt]);
 
@@ -2574,6 +2594,23 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
                 funcionando: selecciona una ruta para ver su recorrido guardado.
               </p>
             )}
+          </div>
+        )}
+
+        {isUsingCachedRoutes && (
+          <div
+            role="status"
+            aria-label="Estado de datos de rutas"
+            aria-live="polite"
+            className="pointer-events-none absolute inset-x-0 bottom-24 z-20 flex justify-center px-4 lg:bottom-4 lg:left-auto lg:right-4 lg:justify-end"
+          >
+            <div className="inline-flex items-center gap-2 rounded-full border border-amber-400/30 bg-slate-900/90 px-3 py-2 text-[12px] font-semibold text-amber-200 shadow-[0_8px_28px_rgba(0,0,0,0.35)] backdrop-blur-xl">
+              <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
+                <path d="M6 7.5h12M6 12h12M6 16.5h7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                <path d="M4 3.5h16a1 1 0 0 1 1 1v15a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-15a1 1 0 0 1 1-1Z" stroke="currentColor" strokeWidth="1.8" />
+              </svg>
+              {isOnline ? "Usando rutas guardadas" : "Rutas disponibles sin conexión"}
+            </div>
           </div>
         )}
 
