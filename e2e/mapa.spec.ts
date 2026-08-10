@@ -19,6 +19,24 @@ test("el flujo móvil permite buscar un origen manual sin desbordar la pantalla"
   expect(overflow).toBeLessThanOrEqual(1);
 });
 
+test("monta una sola interfaz del mapa al cambiar de tamaño", async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem("rutas-uru-onboarded", "1"));
+  await page.goto("/mapa");
+
+  const placeSearch = page.locator('input[aria-label="Buscar origen"], input[aria-label="Buscar destino"]');
+  await expect(placeSearch).toHaveCount(1);
+  await expect(page.getByRole("separator", { name: "Redimensionar panel lateral" })).toHaveCount(0);
+
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await expect(placeSearch).toHaveCount(1);
+  await expect(page.getByRole("separator", { name: "Redimensionar panel lateral" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Rutas disponibles" })).toHaveCount(1);
+
+  await page.setViewportSize({ width: 412, height: 915 });
+  await expect(placeSearch).toHaveCount(1);
+  await expect(page.getByRole("separator", { name: "Redimensionar panel lateral" })).toHaveCount(0);
+});
+
 test("negar la geolocalización conserva el flujo de origen manual", async ({ page }) => {
   await page.addInitScript(() => {
     Object.defineProperty(navigator, "geolocation", {

@@ -91,6 +91,13 @@ const EMPTY_TRANSFERS: TransferOption[] = [];
 
 const MAP_MODE_KEY = "rutas-map-mode";
 const MAP_MODE_EVENT = "urugo-map-mode-changed";
+const DESKTOP_LAYOUT_QUERY = "(min-width: 1024px)";
+const subscribeDesktopLayout = (callback: () => void) => {
+  const media = window.matchMedia(DESKTOP_LAYOUT_QUERY);
+  media.addEventListener("change", callback);
+  return () => media.removeEventListener("change", callback);
+};
+const getDesktopLayoutSnapshot = () => window.matchMedia(DESKTOP_LAYOUT_QUERY).matches;
 const subscribeOnline = (callback: () => void) => {
   window.addEventListener("online", callback);
   window.addEventListener("offline", callback);
@@ -527,6 +534,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     initialUrlState.destinationParam,
   );
   const routesMapMode = useSyncExternalStore<RoutesMapMode>(subscribeMapMode, getMapModeSnapshot, () => "all-visible");
+  const isDesktopLayout = useSyncExternalStore(subscribeDesktopLayout, getDesktopLayoutSnapshot, () => false);
   const isOnline = useSyncExternalStore(subscribeOnline, () => navigator.onLine, () => true);
   const wasOnlineRef = useRef(isOnline);
   const recentTripsSnapshot = useSyncExternalStore(subscribeRecentTrips, getRecentTripsSnapshot, () => "[]");
@@ -2340,6 +2348,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
           El usuario puede arrastrar el handle derecho entre 300px y 520px.
           En mobile: oculto (los controles van en el overlay flotante y el BottomSheet).
       ══════════════════════════════════════════════════════════════════════ */}
+      {isDesktopLayout && (
       <aside
         className={`relative z-30 hidden h-full shrink-0 flex-col border-r border-foreground/8 bg-ink-900/98 backdrop-blur-2xl lg:flex ${
           sidebarWidth == null ? "lg:w-[420px]" : ""
@@ -2454,12 +2463,14 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
           </p>
         </div>
       </aside>
+      )}
 
       {/* ══════════════════════════════════════════════════════════════════════
           DRAG HANDLE — solo visible en md+
           Barra vertical de 4px entre sidebar y mapa. El usuario arrastra para
           redimensionar el sidebar entre 300px y 520px.
       ══════════════════════════════════════════════════════════════════════ */}
+      {isDesktopLayout && (
       <div
         role="separator"
         aria-label="Redimensionar panel lateral"
@@ -2493,6 +2504,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
           ))}
         </div>
       </div>
+      )}
 
       {/* ══════════════════════════════════════════════════════════════════════
           MAPA — ocupa todo el espacio restante
@@ -2615,6 +2627,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
         )}
 
         {/* ── MOBILE: Top overlay (oculto en desktop) ── */}
+        {!isDesktopLayout && (
         <section className="pointer-events-none absolute inset-x-0 top-0 z-20 px-4 pt-safe-or-4 lg:hidden">
           {/* Scrim: degradado que separa los controles del mapa para que se lean limpios */}
           <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-72 bg-gradient-to-b from-black/45 via-black/20 to-transparent" aria-hidden="true" />
@@ -2675,6 +2688,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
             </div>
           ) : null}
         </section>
+        )}
 
         {isTripActive && tripSession ? (
           <TripModePanel
@@ -2790,6 +2804,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
         </div>
 
         {/* ── MOBILE ONLY: FAB row — Resultado (izq) + Rutas (der) ── */}
+        {!isDesktopLayout && (
         <div
           className={`absolute inset-x-4 z-30 items-end gap-2 lg:hidden ${isTripActive ? "hidden" : "flex"}`}
           style={{ bottom: "calc(1.5rem + env(safe-area-inset-bottom, 0px))" }}
@@ -2859,9 +2874,11 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
             </button>
           </div>
         </div>
+        )}
       </div>
 
       {/* ── MOBILE ONLY: BottomSheet con lista de rutas ── */}
+      {!isDesktopLayout && (
       <BottomSheet open={isSheetOpen} onOpenChange={setIsSheetOpen} title="Selecciona una ruta">
         <RouteList
           routes={listRoutes}
@@ -2889,8 +2906,10 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
           }}
         />
       </BottomSheet>
+      )}
 
       {/* ── MOBILE ONLY: Result sheet (full) ── */}
+      {!isDesktopLayout && (
       <BottomSheet
         open={resultSheetOpen}
         onOpenChange={setIsResultSheetOpen}
@@ -2910,6 +2929,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
           {renderRouteControls("mobile", false, true)}
         </div>
       </BottomSheet>
+      )}
 
       <OnboardingGate />
     </main>
