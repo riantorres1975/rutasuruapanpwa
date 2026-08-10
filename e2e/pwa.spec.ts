@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
 const STATIC_CACHE = "rutas-static-__BUILD_ID__";
 const DATA_CACHE = "rutas-data-v1";

@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
 test("el flujo móvil permite buscar un origen manual sin desbordar la pantalla", async ({ page, context }) => {
   await context.setGeolocation({ latitude: 19.4326, longitude: -99.1332 });

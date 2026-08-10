@@ -21,6 +21,7 @@ export default defineConfig({
   ],
   webServer: {
     command: isCI ? "npm run start -- --port 3100" : "npm run dev -- --port 3100",
+    env: { NEXT_E2E: "1" },
     url: "http://localhost:3100",
     reuseExistingServer: !isCI,
     timeout: 120_000,

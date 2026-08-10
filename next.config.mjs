@@ -56,6 +56,9 @@ const securityHeaders = [
 
 const nextConfig = {
   productionBrowserSourceMaps: false,
+  logging: {
+    browserToTerminal: process.env.NEXT_E2E === "1" ? false : "warn"
+  },
 
   async redirects() {
     return [
