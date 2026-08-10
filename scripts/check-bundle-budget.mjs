@@ -1,0 +1,24 @@
+import { readdir, stat } from "node:fs/promises";
+import path from "node:path";
+
+const MAP_PAGE_BUDGET_BYTES = 130_000;
+const mapChunkDirectory = path.join(process.cwd(), ".next", "static", "chunks", "app", "mapa");
+const chunkNames = await readdir(mapChunkDirectory);
+const pageChunkName = chunkNames.find((name) => /^page-[a-f0-9]+\.js$/.test(name));
+
+if (!pageChunkName) {
+  throw new Error("No se encontró el chunk de /mapa. Ejecuta npm run build antes de revisar el presupuesto.");
+}
+
+const pageChunkPath = path.join(mapChunkDirectory, pageChunkName);
+const { size } = await stat(pageChunkPath);
+
+if (size > MAP_PAGE_BUDGET_BYTES) {
+  throw new Error(
+    `El chunk inicial de /mapa mide ${size.toLocaleString("en-US")} bytes y supera el límite de ${MAP_PAGE_BUDGET_BYTES.toLocaleString("en-US")} bytes.`,
+  );
+}
+
+console.log(
+  `Bundle /mapa: ${size.toLocaleString("en-US")} / ${MAP_PAGE_BUDGET_BYTES.toLocaleString("en-US")} bytes.`,
+);

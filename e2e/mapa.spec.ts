@@ -42,6 +42,25 @@ test("monta una sola interfaz del mapa al cambiar de tamaño", async ({ page }) 
   await expect(routeSheet.getByRole("heading", { name: "Rutas disponibles" })).toBeVisible();
 });
 
+test("respeta ahorro de datos hasta que el usuario activa el mapa", async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem("rutas-uru-onboarded", "1");
+    Object.defineProperty(navigator, "connection", {
+      configurable: true,
+      value: { downlink: 10, effectiveType: "4g", saveData: true },
+    });
+  });
+  await page.goto("/mapa");
+
+  const activateMap = page.getByRole("button", { name: "Activar mapa interactivo" });
+  await expect(activateMap).toBeVisible();
+  await page.waitForTimeout(3500);
+  await expect(activateMap).toBeVisible();
+
+  await activateMap.click();
+  await expect(activateMap).toHaveCount(0);
+});
+
 test("negar la geolocalización conserva el flujo de origen manual", async ({ page }) => {
   await page.addInitScript(() => {
     Object.defineProperty(navigator, "geolocation", {

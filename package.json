@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "check": "npm run typecheck && npm run lint && npm run test && npm run build"
+    "bundle:check": "node scripts/check-bundle-budget.mjs",
+    "check": "npm run typecheck && npm run lint && npm run test && npm run build && npm run bundle:check"
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",

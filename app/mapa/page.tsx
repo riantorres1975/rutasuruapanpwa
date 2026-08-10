@@ -31,6 +31,11 @@ import {
 import { buildSharedRouteSegment } from "@/lib/shared-route";
 import { fetchRouteDataResponse, ROUTE_DATA_SOURCE_HEADER } from "@/lib/route-data-client";
 import { haversineMeters } from "@/lib/geo";
+import {
+  getMapAutoLoadDelay,
+  shouldPreloadMap,
+  type MapNetworkInformation,
+} from "@/lib/map-load-policy";
 import type { PolylineRoute } from "@/lib/routeMatcher";
 import type {
   RouteCalculationResult,
@@ -58,11 +63,14 @@ import {
 const AVG_TRIP_SPEED_KMH = 18;
 const BACKGROUND_SIMPLIFY_TOLERANCE = 0.00008;
 const BACKGROUND_MAX_POINTS = 180;
-const MOBILE_MAP_BOOT_DELAY_MS = 3200;
 // Destinos frecuentes para acceso rápido bajo el buscador (todos resuelven localmente)
 const DESTINO_CHIPS = ["Centro", "Hospital Regional", "Plaza Ágora", "Central"] as const;
 
-const MapView = dynamic(() => import("@/components/Map"), {
+const loadMapView = () => import("@/components/Map");
+const preloadMapView = () => {
+  void loadMapView().catch(() => undefined);
+};
+const MapView = dynamic(loadMapView, {
   ssr: false,
   loading: () => <div className="h-full w-full animate-pulse bg-ink-900" />
 });
@@ -104,6 +112,8 @@ const subscribeDesktopLayout = (callback: () => void) => {
   return () => media.removeEventListener("change", callback);
 };
 const getDesktopLayoutSnapshot = () => window.matchMedia(DESKTOP_LAYOUT_QUERY).matches;
+const getNetworkInformation = () =>
+  (navigator as Navigator & { connection?: MapNetworkInformation }).connection;
 const subscribeOnline = (callback: () => void) => {
   window.addEventListener("online", callback);
   window.addEventListener("offline", callback);
@@ -696,27 +706,44 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     }
   }, [routesMapMode]);
 
+  const activateMap = useCallback(() => {
+    preloadMapView();
+    setShouldLoadMap(true);
+  }, []);
 
   useEffect(() => {
     if (isLoadingData || fetchError || shouldLoadMap) {
       return;
     }
 
-    const loadMap = () => setShouldLoadMap(true);
     const isMobile = window.matchMedia("(max-width: 767px)").matches;
     const hasSharedState = window.location.search.length > 0;
-    const delay = hasSharedState ? 0 : isMobile ? MOBILE_MAP_BOOT_DELAY_MS : 250;
-    const timer = window.setTimeout(loadMap, delay);
+    const connection = getNetworkInformation();
+    const policy = { connection, hasSharedState, isMobile, isOnline };
+    const delay = getMapAutoLoadDelay(policy);
+    const timer = delay === null ? undefined : window.setTimeout(activateMap, delay);
+    let idleCallback: number | undefined;
+    let preloadTimer: number | undefined;
 
-    window.addEventListener("pointerdown", loadMap, { once: true, passive: true });
-    window.addEventListener("keydown", loadMap, { once: true });
+    if (delay !== 0 && shouldPreloadMap(policy)) {
+      if (typeof window.requestIdleCallback === "function") {
+        idleCallback = window.requestIdleCallback(preloadMapView, { timeout: 1500 });
+      } else {
+        preloadTimer = window.setTimeout(preloadMapView, 500);
+      }
+    }
+
+    window.addEventListener("pointerdown", activateMap, { once: true, passive: true });
+    window.addEventListener("keydown", activateMap, { once: true });
 
     return () => {
-      window.clearTimeout(timer);
-      window.removeEventListener("pointerdown", loadMap);
-      window.removeEventListener("keydown", loadMap);
+      if (timer !== undefined) window.clearTimeout(timer);
+      if (idleCallback !== undefined) window.cancelIdleCallback(idleCallback);
+      if (preloadTimer !== undefined) window.clearTimeout(preloadTimer);
+      window.removeEventListener("pointerdown", activateMap);
+      window.removeEventListener("keydown", activateMap);
     };
-  }, [fetchError, isLoadingData, shouldLoadMap]);
+  }, [activateMap, fetchError, isLoadingData, isOnline, shouldLoadMap]);
 
   const resultSheetOpen = flowStep === 3 && isResultSheetOpen;
 
@@ -2524,11 +2551,11 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
             role="button"
             tabIndex={0}
             aria-label={isLoadingData ? "Cargando rutas" : "Activar mapa interactivo"}
-            onClick={() => setShouldLoadMap(true)}
+            onClick={activateMap}
             onKeyDown={(event) => {
               if (event.key === "Enter" || event.key === " ") {
                 event.preventDefault();
-                setShouldLoadMap(true);
+                activateMap();
               }
             }}
           >
@@ -2547,8 +2574,10 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
             </div>
             <div className="absolute inset-0 grid place-items-center">
               <div className="flex items-center gap-2 rounded-full border border-foreground/10 bg-ink-900/90 px-4 py-2 text-sm font-semibold text-foreground/75 shadow-soft backdrop-blur-xl">
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-lima/60 border-t-transparent" aria-hidden="true" />
-                {isLoadingData ? "Cargando rutas..." : "Preparando mapa interactivo..."}
+                {isLoadingData ? (
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-lima/60 border-t-transparent" aria-hidden="true" />
+                ) : null}
+                {isLoadingData ? "Cargando rutas..." : "Activar mapa interactivo"}
               </div>
             </div>
           </div>
