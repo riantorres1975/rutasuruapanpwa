@@ -14,10 +14,6 @@ import ChatBotLauncher from "@/components/ChatBotLauncher";
 import NearbyToast from "@/components/NearbyToast";
 import OnboardingGate from "@/components/OnboardingGate";
 import PlaceSearch from "@/components/PlaceSearch";
-import RouteList from "@/components/RouteList";
-import RoutePreviewSVG from "@/components/RoutePreviewSVG";
-import RouteSchedule from "@/components/RouteSchedule";
-import TripModePanel from "@/components/TripModePanel";
 import { geocodePlace, type PlaceResult } from "@/lib/geocode";
 import { useShareRoute } from "@/hooks/useShareRoute";
 import { useFavoriteRoutes } from "@/hooks/useFavoriteRoutes";
@@ -70,6 +66,16 @@ const MapView = dynamic(() => import("@/components/Map"), {
   ssr: false,
   loading: () => <div className="h-full w-full animate-pulse bg-ink-900" />
 });
+const RouteList = dynamic(() => import("@/components/RouteList"), {
+  loading: () => (
+    <div className="py-8 text-center text-sm text-foreground/50" role="status">
+      Cargando rutas...
+    </div>
+  ),
+});
+const RoutePreviewSVG = dynamic(() => import("@/components/RoutePreviewSVG"));
+const RouteSchedule = dynamic(() => import("@/components/RouteSchedule"));
+const TripModePanel = dynamic(() => import("@/components/TripModePanel"));
 
 type ActivePoint = "origin" | "destination" | null;
 type FlowStep = 1 | 2 | 3;

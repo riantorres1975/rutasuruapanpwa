@@ -35,6 +35,11 @@ test("monta una sola interfaz del mapa al cambiar de tamaño", async ({ page }) 
   await page.setViewportSize({ width: 412, height: 915 });
   await expect(placeSearch).toHaveCount(1);
   await expect(page.getByRole("separator", { name: "Redimensionar panel lateral" })).toHaveCount(0);
+
+  await page.locator('button[aria-label^="Rutas "]:visible').click();
+  const routeSheet = page.getByRole("dialog", { name: "Selecciona una ruta" });
+  await expect(routeSheet).toBeVisible();
+  await expect(routeSheet.getByRole("heading", { name: "Rutas disponibles" })).toBeVisible();
 });
 
 test("negar la geolocalización conserva el flujo de origen manual", async ({ page }) => {
