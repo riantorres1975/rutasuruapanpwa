@@ -11,10 +11,12 @@ const SIDEBAR_MAX = 520;        // px máximo al arrastrar
 import { track } from "@vercel/analytics";
 import BottomSheet from "@/components/BottomSheet";
 import ChatBotLauncher from "@/components/ChatBotLauncher";
+import ActiveRouteSummary from "@/components/ActiveRouteSummary";
 import NearbyToast from "@/components/NearbyToast";
 import OnboardingGate from "@/components/OnboardingGate";
 import { DesktopMapSidebar, MobileMapControls } from "@/components/MapResponsiveControls";
 import RoutePlannerSearch from "@/components/RoutePlannerSearch";
+import RoutePlannerPoints from "@/components/RoutePlannerPoints";
 import {
   DirectRouteResult,
   EmptyRouteResult,
@@ -1133,217 +1135,34 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
           onRepeatTrip={repeatTrip}
         />
 
-        {/* A→B (control manual, secundario). En pantallas muy bajas se colapsa
-            tras un resumen tocable para liberar espacio de mapa. */}
-        {isMobile && isShortScreen && !abExpanded ? (
-          <button
-            type="button"
-            onClick={() => setAbExpanded(true)}
-            className="ov-panel flex w-full items-center gap-2 rounded-2xl border px-3 py-2.5 shadow-soft backdrop-blur-xl transition active:scale-[0.99]"
-            aria-expanded={false}
-            aria-label="Ajustar origen y destino manualmente"
-          >
-            <span className="flex items-center gap-1" aria-hidden="true">
-              <span className={`h-2.5 w-2.5 rounded-full ${originPoint ? "bg-lima" : "bg-foreground/25"}`} />
-              <svg viewBox="0 0 24 24" fill="none" className="ov-text-muted h-3 w-3" aria-hidden="true">
-                <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              <span className={`h-2.5 w-2.5 rounded-full ${destinationPoint ? "bg-lima" : "bg-foreground/25"}`} />
-            </span>
-            <span className="ov-text min-w-0 flex-1 truncate text-left text-[12px] font-semibold">
-              {originPoint && destinationPoint
-                ? "Origen y destino listos"
-                : originPoint
-                  ? "Ajustar destino manualmente"
-                  : "Ajustar origen y destino"}
-            </span>
-            <svg viewBox="0 0 24 24" fill="none" className="ov-text-muted h-4 w-4 shrink-0" aria-hidden="true">
-              <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-        ) : (
-        <div className="ov-panel w-full rounded-2xl border p-1.5 shadow-soft backdrop-blur-xl">
-          <div className="flex items-center gap-1.5">
-            {/* Origin button */}
-            <button
-              type="button"
-              onClick={() => {
-                setActivePoint("origin");
-                setShowHint(true);
-              }}
-              className={`inline-flex h-10 min-w-0 flex-1 items-center gap-1.5 rounded-xl border px-3 text-[13px] font-semibold transition active:scale-[0.97] ${
-                originPoint
-                  ? "border-lima/50 bg-lima/15 text-lima"
-                  : activePoint === "origin"
-                    ? "ring-pulse-active border-lima/60 bg-lima/10 text-lima"
-                    : "ov-pill ov-border ov-text-muted"
-              }`}
-              aria-label={
-                manualOrigin
-                  ? "Origen ajustado manualmente, toca para cambiar"
-                  : geoStatus === "outside"
-                    ? "Ubicación fuera de Uruapan, toca el mapa para marcar el origen manualmente"
-                    : geoAccuracyWarn
-                      ? "GPS impreciso, toca el mapa para fijar tu origen manualmente"
-                      : userLocation
-                        ? "Usando tu ubicación actual, toca para ajustar"
-                        : "Toca para marcar punto de origen"
-              }
-            >
-              <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0" aria-hidden="true">
-                <path d="M12 21s6-5.7 6-11a6 6 0 1 0-12 0c0 5.3 6 11 6 11Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                <circle cx="12" cy="10" r="2" fill="currentColor" />
-              </svg>
-              <span className="min-w-0 flex-1 truncate">
-                {manualOrigin
-                  ? "Origen ajustado"
-                  : geoStatus === "outside"
-                    ? "Origen manual"
-                    : geoAccuracyWarn
-                      ? "GPS impreciso"
-                      : userLocation
-                        ? "Mi ubicación"
-                        : "Origen"}
-              </span>
-              {originPoint && !geoAccuracyWarn && (geoStatus !== "outside" || manualOrigin) && (
-                <svg viewBox="0 0 24 24" fill="none" className="ml-auto h-3.5 w-3.5 shrink-0 text-lima" aria-hidden="true">
-                  <path d="M5 12l5 5L20 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              )}
-              {(geoAccuracyWarn || geoStatus === "outside") && !manualOrigin && (
-                <span className="ml-auto h-2 w-2 shrink-0 rounded-full bg-amber-400" aria-hidden="true" />
-              )}
-            </button>
-
-            {/* Separator */}
-            <svg viewBox="0 0 24 24" fill="none" className="ov-text-muted h-4 w-4 shrink-0" aria-hidden="true">
-              <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-
-            {/* Destination button */}
-            <button
-              type="button"
-              onClick={() => {
-                setActivePoint("destination");
-                setShowHint(true);
-              }}
-              disabled={!originPoint}
-              className={`inline-flex h-10 min-w-0 flex-1 items-center gap-1.5 rounded-xl border px-3 text-[13px] font-semibold transition active:scale-[0.97] disabled:opacity-40 ${
-                destinationPoint
-                  ? "border-lima/50 bg-lima/15 text-lima"
-                  : activePoint === "destination"
-                    ? "ring-pulse-active border-lima/60 bg-lima/10 text-lima"
-                    : "ov-pill ov-border ov-text-muted"
-              }`}
-              aria-label={destinationPoint ? "Destino marcado, toca para cambiar" : "Toca el mapa para marcar tu destino"}
-            >
-              <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0" aria-hidden="true">
-                <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.8" />
-                <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.5" />
-              </svg>
-              <span className="min-w-0 flex-1 truncate">{destinationPoint ? "Destino marcado" : "Destino"}</span>
-              {destinationPoint && (
-                <svg viewBox="0 0 24 24" fill="none" className="ml-auto h-3.5 w-3.5 shrink-0 text-lima" aria-hidden="true">
-                  <path d="M5 12l5 5L20 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              )}
-            </button>
-
-            {/* Reset */}
-            {(originPoint || destinationPoint) && (
-              <button
-                type="button"
-                onClick={() => {
-                  setSharedRouteSegment(null);
-                  setManualOrigin(null);
-                  setDestinationPoint(null);
-                  setActivePoint(userLocation ? "destination" : "origin");
-                  setShowHint(true);
-                }}
-                className="ov-pill ov-border ov-text-muted inline-flex h-10 items-center rounded-xl border px-2.5 text-[12px] font-semibold transition hover:border-red-400/40 hover:text-red-400 active:scale-[0.97]"
-                aria-label="Reiniciar puntos A y B"
-              >
-                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
-                  <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                  <path d="M3 3v5h5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
-            )}
-
-            {/* Colapsar de nuevo (solo en pantallas bajas, cuando está expandido) */}
-            {isMobile && isShortScreen && abExpanded && (
-              <button
-                type="button"
-                onClick={() => setAbExpanded(false)}
-                className="ov-pill ov-border ov-text-muted inline-flex h-10 w-9 shrink-0 items-center justify-center rounded-xl border transition hover:text-lima active:scale-[0.97]"
-                aria-label="Colapsar origen y destino"
-              >
-                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
-                  <path d="M6 15l6-6 6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
-            )}
-          </div>
-        </div>
-        )}
-
-        {/* Context action — pasos 1, 2, y re-edición de origen desde paso 3 */}
-        {(flowStep === 1 || flowStep === 2 || (flowStep === 3 && activePoint !== null)) && (
-          <div className="w-full">
-            <div className="ov-panel flex items-center gap-1.5 rounded-2xl border px-3 py-2 shadow-[0_2px_12px_rgba(0,0,0,0.15)] backdrop-blur-xl">
-              <span className="relative flex h-2.5 w-2.5 shrink-0" aria-hidden="true">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-lima/60 opacity-75" />
-                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-lima" />
-              </span>
-              <p className="ov-text flex-1 text-[12px] font-medium leading-snug">
-                {activePoint === "origin" && destinationPoint
-                  ? <><span>Toca el mapa para mover tu </span><span className="font-bold text-lima">origen</span></>
-                  : activePoint === "destination" && flowStep === 3
-                    ? <><span>Toca el mapa para mover tu </span><span className="font-bold text-lima">destino</span></>
-                    : flowStep === 1
-                      ? (geoStatus === "locating"
-                          ? "Obteniendo tu ubicación..."
-                          : geoStatus === "outside"
-                            ? <><span>Estás fuera de Uruapan. Busca tu </span><span className="font-bold text-lima">origen manualmente</span></>
-                            : geoStatus === "inaccurate"
-                              ? <><span>GPS impreciso. Busca tu </span><span className="font-bold text-lima">origen</span></>
-                              : geoStatus === "error"
-                                ? <><span>Busca o marca tu </span><span className="font-bold text-lima">origen</span></>
-                              : <><span>Usando tu </span><span className="font-bold text-lima">ubicación actual</span></>)
-                      : <><span>Busca arriba o </span><span className="font-bold text-lima">toca el mapa</span></>}
-              </p>
-            </div>
-          </div>
-        )}
-
-        {requestedDestination && flowStep !== 3 && (
-          <div className="ov-panel flex w-full items-start gap-2 rounded-2xl border px-3.5 py-3 text-left shadow-[0_2px_12px_rgba(0,0,0,0.15)] backdrop-blur-xl">
-            <svg viewBox="0 0 24 24" fill="none" className="mt-0.5 h-4 w-4 shrink-0 text-lima" aria-hidden="true">
-              <path d="M12 21s6-5.7 6-11a6 6 0 1 0-12 0c0 5.3 6 11 6 11Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-              <circle cx="12" cy="10" r="2" fill="currentColor" />
-            </svg>
-            <p className="ov-text-muted min-w-0 flex-1 text-[12px] leading-snug">
-              Llegaste buscando <span className="font-bold text-lima">{requestedDestination}</span>.{" "}
-              {userLocation
-                ? "Usando tu ubicación actual como origen, calculando tu ruta..."
-                : geoStatus === "outside"
-                  ? "Estás fuera de Uruapan. Busca o marca manualmente un origen dentro de la ciudad."
-                  : destinationPoint
-                    ? "Toca el mapa donde estás para marcar tu origen."
-                    : "Toca el mapa para marcar tu origen y luego la zona de destino."}
-            </p>
-            <button
-              type="button"
-              onClick={() => setRequestedDestination(null)}
-              className="ov-pill ov-text-muted grid h-7 w-7 shrink-0 place-items-center rounded-lg transition hover:opacity-80 active:scale-95"
-              aria-label="Quitar destino sugerido"
-            >
-              <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
-                <path d="M18 6 6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              </svg>
-            </button>
-          </div>
-        )}
+        <RoutePlannerPoints
+          abExpanded={abExpanded}
+          activePoint={activePoint}
+          destinationPoint={destinationPoint}
+          flowStep={flowStep}
+          geoAccuracyWarning={geoAccuracyWarn}
+          geoStatus={geoStatus}
+          isMobile={isMobile}
+          isShortScreen={isShortScreen}
+          manualOrigin={manualOrigin}
+          originPoint={originPoint}
+          requestedDestination={requestedDestination}
+          userLocation={userLocation}
+          onCollapse={() => setAbExpanded(false)}
+          onDismissRequestedDestination={() => setRequestedDestination(null)}
+          onExpand={() => setAbExpanded(true)}
+          onReset={() => {
+            setSharedRouteSegment(null);
+            setManualOrigin(null);
+            setDestinationPoint(null);
+            setActivePoint(userLocation ? "destination" : "origin");
+            setShowHint(true);
+          }}
+          onSelectPoint={(point) => {
+            setActivePoint(point);
+            setShowHint(true);
+          }}
+        />
         </>
         )}
 
@@ -1441,97 +1260,43 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
               />
             )}
 
-            {/* Ruta activa / transbordo activo */}
-            {(selectedRoute || showTeleferico || selectedTransfer) && (
-              <div className="ov-border flex items-center gap-2 border-t px-4 py-2.5">
-                {selectedTransfer ? (
-                  <>
-                    <span className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden">
-                      <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-blue-400" aria-hidden="true" />
-                      <span className="ov-text-muted truncate text-[12px] font-medium">{formatRouteLabel(selectedTransfer.routeAName)}</span>
-                      <span className="shrink-0 text-[10px] text-avocado-400 font-bold">→</span>
-                      <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-emerald-400" aria-hidden="true" />
-                      <span className="ov-text-muted truncate text-[12px] font-medium">{formatRouteLabel(selectedTransfer.routeBName)}</span>
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => shareRoute(`${formatRouteLabel(selectedTransfer.routeAName)} → ${formatRouteLabel(selectedTransfer.routeBName)}`, buildShareUrl({
-                        routeName: `${selectedTransfer.routeAName} → ${selectedTransfer.routeBName}`,
-                        origin: originPoint,
-                        destination: destinationPoint,
-                        transfer: selectedTransfer
-                      }))}
-                      className="ov-pill ov-text-muted grid h-9 w-9 shrink-0 place-items-center rounded-lg transition hover:opacity-80 active:scale-95"
-                      aria-label="Compartir transbordo"
-                    >
-                      <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
-                        <path d="M8.59 13.51l6.83 3.98m-.01-10.98-6.82 3.98M21 5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm0 14a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM3 12a3 3 0 1 1 6 0 3 3 0 0 1-6 0Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleClearSelection}
-                      className="ov-pill ov-border ov-text-muted h-9 shrink-0 rounded-lg border px-3 text-[11px] font-semibold transition active:scale-[0.97]"
-                    >
-                      Limpiar
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: selectedRoute?.color ?? "#14b8a6" }} aria-hidden="true" />
-                    <span className="ov-text-muted min-w-0 flex-1 truncate text-[12px] font-medium">
-                      {selectedRoute ? formatRouteLabel(selectedRoute.name, selectedRoute.name) : "Teleférico Uruapan"}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => shareRoute(
-                        selectedRoute ? formatRouteLabel(selectedRoute.name, selectedRoute.name) : "Teleférico",
-                        buildShareUrl({
-                          routeId: selectedRoute?.id ?? null,
-                          routeName: selectedRoute?.name ?? "Teleférico Uruapan",
-                          origin: originPoint,
-                          destination: destinationPoint,
-                          segmentStartIndex: selectedSuggestion?.indexA,
-                          segmentEndIndex: selectedSuggestion?.indexB,
-                          showTeleferico: !selectedRoute
-                        })
-                      )}
-                      className="ov-pill ov-text-muted grid h-9 w-9 shrink-0 place-items-center rounded-lg transition hover:opacity-80 active:scale-95"
-                      aria-label={`Compartir ${selectedRoute ? formatRouteLabel(selectedRoute.name, selectedRoute.name) : "Teleférico"}`}
-                    >
-                      <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
-                        <path d="M8.59 13.51l6.83 3.98m-.01-10.98-6.82 3.98M21 5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm0 14a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM3 12a3 3 0 1 1 6 0 3 3 0 0 1-6 0Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleClearSelection}
-                      className="ov-pill ov-border ov-text-muted h-9 shrink-0 rounded-lg border px-3 text-[11px] font-semibold transition active:scale-[0.97]"
-                    >
-                      Limpiar
-                    </button>
-                  </>
-                )}
-              </div>
-            )}
+            <ActiveRouteSummary
+              instructions={routeTextSummary}
+              routeColor={selectedRoute?.color ?? null}
+              routeName={selectedRoute?.name ?? null}
+              showTeleferico={showTeleferico}
+              transfer={selectedTransfer}
+              onClear={handleClearSelection}
+              onShare={() => {
+                if (selectedTransfer) {
+                  void shareRoute(
+                    `${formatRouteLabel(selectedTransfer.routeAName)} → ${formatRouteLabel(selectedTransfer.routeBName)}`,
+                    buildShareUrl({
+                      routeName: `${selectedTransfer.routeAName} → ${selectedTransfer.routeBName}`,
+                      origin: originPoint,
+                      destination: destinationPoint,
+                      transfer: selectedTransfer,
+                    }),
+                  );
+                  return;
+                }
 
-            {selectedRoute && (
-              <RouteSchedule routeName={selectedRoute.name} />
-            )}
-
-            {routeTextSummary && (
-              <section className="ov-border border-t px-4 py-3" aria-label={routeTextSummary.title}>
-                <h2 className="ov-text-muted text-[11px] font-bold uppercase tracking-[0.18em]">{routeTextSummary.title}</h2>
-                <ol className="ov-text mt-2 space-y-1.5 text-[12px] leading-5">
-                  {routeTextSummary.items.map((item) => (
-                    <li key={item} className="flex gap-2">
-                      <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-lima" aria-hidden="true" />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ol>
-              </section>
-            )}
+                void shareRoute(
+                  selectedRoute ? formatRouteLabel(selectedRoute.name, selectedRoute.name) : "Teleférico",
+                  buildShareUrl({
+                    routeId: selectedRoute?.id ?? null,
+                    routeName: selectedRoute?.name ?? "Teleférico Uruapan",
+                    origin: originPoint,
+                    destination: destinationPoint,
+                    segmentStartIndex: selectedSuggestion?.indexA,
+                    segmentEndIndex: selectedSuggestion?.indexB,
+                    showTeleferico: !selectedRoute,
+                  }),
+                );
+              }}
+            >
+              {selectedRoute && <RouteSchedule routeName={selectedRoute.name} />}
+            </ActiveRouteSummary>
           </div>
         )}
       </>
