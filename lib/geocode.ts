@@ -19,6 +19,8 @@ export const URUAPAN_BBOX: [number, number, number, number] = [-102.13, 19.34, -
 // Centro real de la ciudad (promedio del bbox de datos)
 export const URUAPAN_CENTER: Coordinates = [-102.04487, 19.42068];
 
+const MAPBOX_REQUEST_TIMEOUT_MS = 6000;
+
 export type PlaceResult = {
   /** [lng, lat] */
   center: Coordinates;
@@ -132,9 +134,18 @@ export async function geocodeMapbox(
     bbox: URUAPAN_BBOX.join(","),
   });
 
+  const controller = new AbortController();
+  const abortFromCaller = () => controller.abort(options.signal?.reason);
+  if (options.signal?.aborted) {
+    abortFromCaller();
+  } else {
+    options.signal?.addEventListener("abort", abortFromCaller, { once: true });
+  }
+  const timeoutId = setTimeout(() => controller.abort(), MAPBOX_REQUEST_TIMEOUT_MS);
+
   try {
     const res = await fetch(`https://api.mapbox.com/search/geocode/v6/forward?${params.toString()}`, {
-      signal: options.signal,
+      signal: controller.signal,
     });
     if (!res.ok) return [];
     const data = await res.json();
@@ -159,6 +170,9 @@ export async function geocodeMapbox(
   } catch {
     // Abort o red caída: degradar silenciosamente al índice local.
     return [];
+  } finally {
+    clearTimeout(timeoutId);
+    options.signal?.removeEventListener("abort", abortFromCaller);
   }
 }
 
