@@ -92,6 +92,12 @@ test("un enlace compartido hidrata origen y destino sin mostrar el paso inicial"
   await expect(page.locator('button[aria-label="Destino marcado, toca para cambiar"]:visible')).toBeVisible();
   await expect(page.getByText("PASO 1 DE 3", { exact: true })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Ver resultado de ruta" })).not.toContainText("Buscando...");
+
+  const directResult = page.locator('[role="dialog"]:visible').filter({ hasText: "RUTA RECOMENDADA" });
+  await expect(directResult).toBeVisible();
+  await expect(directResult.getByRole("button", { name: "Cambiar punto de origen" })).toBeVisible();
+  await expect(directResult.getByRole("button", { name: "Cambiar destino" })).toBeVisible();
+  expect(await directResult.evaluate((element) => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1);
 });
 
 test("un viaje en Teleférico continúa a pie desde la estación", async ({ page, context }) => {

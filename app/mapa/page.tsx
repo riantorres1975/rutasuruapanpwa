@@ -15,6 +15,12 @@ import NearbyToast from "@/components/NearbyToast";
 import OnboardingGate from "@/components/OnboardingGate";
 import { DesktopMapSidebar, MobileMapControls } from "@/components/MapResponsiveControls";
 import RoutePlannerSearch from "@/components/RoutePlannerSearch";
+import {
+  DirectRouteResult,
+  EmptyRouteResult,
+  SelectedTransferResult,
+  TransferOptionsResult,
+} from "@/components/RoutePlannerResults";
 import TripOverlays from "@/components/TripOverlays";
 import { geocodePlace, type PlaceResult } from "@/lib/geocode";
 import { useShareRoute } from "@/hooks/useShareRoute";
@@ -1355,335 +1361,84 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
               </div>
             ) : bestSuggestion ? (
               <>
-              <div className="px-4 py-3">
-                <p className="text-[10px] font-bold tracking-[2px] text-lima">RUTA RECOMENDADA</p>
-                <p className="ov-text mt-0.5 truncate font-display text-[17px] font-bold leading-tight">
-                  {formatRouteLabel(bestSuggestion.ruta)}
-                </p>
-                <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                  <span className="inline-flex items-center gap-1 rounded-lg border border-lima/25 bg-lima/10 px-2.5 py-1 text-[12px] font-semibold text-lima">
-                    <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3" aria-hidden="true">
-                      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
-                      <path d="M12 7v5l3 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                    </svg>
-                    {bestSuggestionEta} min aprox
-                  </span>
-                  {bestSuggestionEta !== null && (
-                    <span className="ov-pill ov-border ov-text-muted inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-[12px] font-medium">
-                      <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3" aria-hidden="true">
-                        <path d="M13 5a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM9.5 22l1.5-5-2-2 1-6 3.5-1.5L16 10l3 1M9 9l-3 1.5L5 14m5.5 3L8 22" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                      ~{bestSuggestion.estimatedMinutes} min puerta a puerta
-                    </span>
-                  )}
-                  <span className="ov-pill ov-border ov-text-muted inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-[12px] font-medium">
-                    {getJourneyFareSummary([bestSuggestion.ruta]).badge}
-                  </span>
-                  {suggestions.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => { if (isMobile) { setIsResultSheetOpen(false); setTimeout(() => setIsSheetOpen(true), 50); } }}
-                      className={`ov-pill ov-border ov-text-muted inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-[12px] font-medium transition active:scale-[0.97] hover:border-lima/40 hover:text-lima ${isMobile ? "cursor-pointer" : "cursor-default"}`}
-                    >
-                      <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3" aria-hidden="true">
-                        <path d="M9 20l-5.447-2.724A1 1 0 0 1 3 16.382V5.618a1 1 0 0 1 1.447-.894L9 7m0 13V7m0 13 6-3M9 7l6-3m6 17V4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                      +{suggestions.length - 1} alternativa{suggestions.length > 2 ? "s" : ""}
-                    </button>
-                  )}
-                </div>
-                <div className="mt-3 flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => { setActivePoint("origin"); setShowHint(true); if (isMobile) setIsResultSheetOpen(false); }}
-                    className="ov-pill ov-border ov-text-muted inline-flex h-10 flex-1 items-center justify-center gap-1 rounded-xl border text-[12px] font-semibold transition active:scale-[0.97]"
-                    aria-label="Cambiar punto de origen"
-                  >
-                    <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 shrink-0" aria-hidden="true">
-                      <path d="M12 21s6-5.7 6-11a6 6 0 1 0-12 0c0 5.3 6 11 6 11Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                      <circle cx="12" cy="10" r="2" fill="currentColor" />
-                    </svg>
-                    Origen
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { setActivePoint("destination"); setShowHint(true); if (isMobile) setIsResultSheetOpen(false); }}
-                    className="ov-pill ov-border ov-text-muted inline-flex h-10 flex-1 items-center justify-center gap-1 rounded-xl border text-[12px] font-semibold transition active:scale-[0.97]"
-                    aria-label="Cambiar destino"
-                  >
-                    <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 shrink-0" aria-hidden="true">
-                      <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.8" />
-                      <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.5" />
-                    </svg>
-                    Destino
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => shareRoute(formatRouteLabel(bestSuggestion.ruta), buildShareUrl({
+                <DirectRouteResult
+                  alternatives={suggestions.slice(1)}
+                  feedbackGiven={feedbackGiven}
+                  isMobile={isMobile}
+                  isTripActive={isTripActive}
+                  route={bestSuggestion}
+                  routeEta={bestSuggestionEta}
+                  onEditDestination={() => {
+                    setActivePoint("destination");
+                    setShowHint(true);
+                    if (isMobile) setIsResultSheetOpen(false);
+                  }}
+                  onEditOrigin={() => {
+                    setActivePoint("origin");
+                    setShowHint(true);
+                    if (isMobile) setIsResultSheetOpen(false);
+                  }}
+                  onFeedback={handleRouteFeedback}
+                  onPromote={promoteSuggestion}
+                  onShare={() => shareRoute(
+                    formatRouteLabel(bestSuggestion.ruta),
+                    buildShareUrl({
                       routeId: bestSuggestion.routeId,
                       routeName: bestSuggestion.ruta,
                       origin: originPoint,
                       destination: destinationPoint,
                       segmentStartIndex: bestSuggestion.indexA,
-                      segmentEndIndex: bestSuggestion.indexB
-                    }))}
-                    className="ov-pill ov-border ov-text-muted inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition active:scale-[0.97]"
-                    aria-label={`Compartir ruta ${formatRouteLabel(bestSuggestion.ruta)}`}
-                  >
-                    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
-                      <path d="M8.59 13.51l6.83 3.98m-.01-10.98-6.82 3.98M21 5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm0 14a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM3 12a3 3 0 1 1 6 0 3 3 0 0 1-6 0Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowHint(false);
-                      setSharedRouteSegment(bestSuggestion.segment);
-                      setSharedSegmentColor(bestSuggestion.routeColor ?? null);
-                      setSelectedRouteId(null);
-                      if (isMobile) setIsResultSheetOpen(false);
-                    }}
-                    className="inline-flex h-10 flex-[2] items-center justify-center gap-1.5 rounded-xl bg-verde text-[12px] font-bold text-ink-900 shadow-[0_2px_12px_rgba(232,93,47,0.35)] transition active:scale-[0.97]"
-                    aria-label={`Ver ${formatRouteLabel(bestSuggestion.ruta)} en el mapa`}
-                  >
-                    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
-                      <path d="M9 20l-5.447-2.724A1 1 0 0 1 3 16.382V5.618a1 1 0 0 1 1.447-.894L9 7m0 13V7m0 13 6-3M9 7l6-3m6 17V4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                    Ver en mapa
-                  </button>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={isTripActive ? handleStopTrip : handleStartTrip}
-                  className={`mt-2 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl text-[12px] font-bold transition active:scale-[0.98] ${
-                    isTripActive
-                      ? "ov-pill ov-border ov-text border"
-                      : "bg-lima text-ink-900 shadow-[0_4px_16px_rgba(181,239,48,0.22)]"
-                  }`}
-                  aria-label={isTripActive ? "Finalizar viaje" : `Iniciar viaje en ${formatRouteLabel(bestSuggestion.ruta)}`}
-                >
-                  {isTripActive ? (
-                    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
-                      <path d="M7 7l10 10M17 7 7 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                    </svg>
-                  ) : (
-                    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
-                      <path d="m9 7 8 5-8 5V7Z" fill="currentColor" />
-                      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.6" />
-                    </svg>
+                      segmentEndIndex: bestSuggestion.indexB,
+                    }),
                   )}
-                  {isTripActive ? "Finalizar viaje" : "Iniciar viaje"}
-                </button>
-
-                {/* Comparador de alternativas: tap para promover a recomendada */}
-                {suggestions.length > 1 && (
-                  <div className="mt-3 space-y-1.5">
-                    <p className="ov-text-muted text-[10px] font-bold uppercase tracking-widest">Alternativas</p>
-                    {suggestions.slice(1, 4).map((alt) => {
-                      const altEta = alt.estimatedMinutes;
-                      const altWalk = Math.round(alt.distanciaA + alt.distanciaB);
-                      const bestWalk = Math.round(bestSuggestion.distanciaA + bestSuggestion.distanciaB);
-                      const lessWalk = altWalk < bestWalk;
-                      const faster = altEta < bestSuggestion.estimatedMinutes;
-                      return (
-                        <button
-                          key={alt.routeId}
-                          type="button"
-                          onClick={() => promoteSuggestion(alt.routeId)}
-                          className="ov-pill ov-border flex w-full items-center gap-2 rounded-xl border px-2.5 py-2 text-left transition active:scale-[0.99] hover:border-lima/40"
-                          aria-label={`Usar ${formatRouteLabel(alt.ruta)} como ruta recomendada`}
-                        >
-                          <span
-                            className="h-2.5 w-2.5 shrink-0 rounded-full"
-                            style={{ backgroundColor: alt.routeColor ?? "#6aab48" }}
-                            aria-hidden="true"
-                          />
-                          <span className="ov-text min-w-0 flex-1 truncate text-[12px] font-semibold">
-                            {formatRouteLabel(alt.ruta)}
-                          </span>
-                          {lessWalk && (
-                            <span className="shrink-0 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-emerald-400">
-                              Menos caminata
-                            </span>
-                          )}
-                          {!lessWalk && faster && (
-                            <span className="shrink-0 rounded-full bg-sky-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-sky-400">
-                              Más rápida
-                            </span>
-                          )}
-                          <span className="ov-text-muted shrink-0 text-[11px]">
-                            {altEta} min · {altWalk} m a pie
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {/* Feedback rápido: alimenta Analytics para mejorar los datos */}
-                <div className="ov-border mt-3 flex min-h-8 items-center justify-between gap-2 border-t pt-2">
-                  {feedbackGiven ? (
-                    <p className="ov-text-muted text-[11px]">¡Gracias! Tu opinión ayuda a mejorar las rutas.</p>
-                  ) : (
-                    <>
-                      <p className="ov-text-muted text-[11px]">¿Te sirvió esta ruta?</p>
-                      <div className="flex gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => handleRouteFeedback("si")}
-                          className="ov-pill ov-border ov-text-muted inline-flex h-8 items-center gap-1 rounded-full border px-3 text-[11px] font-semibold transition active:scale-[0.96] hover:border-emerald-400/50 hover:text-emerald-400"
-                        >
-                          <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3" aria-hidden="true">
-                            <path d="M7 11v9m0-9 3.4-6.8A2 2 0 0 1 14 5v4h4.4a2 2 0 0 1 2 2.4l-1.2 6A2 2 0 0 1 17.2 19H7m0-8H4v9h3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
-                          Sí
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleRouteFeedback("no")}
-                          className="ov-pill ov-border ov-text-muted inline-flex h-8 items-center gap-1 rounded-full px-3 text-[11px] font-semibold transition active:scale-[0.96] hover:border-red-400/50 hover:text-red-400 border"
-                        >
-                          <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3 rotate-180" aria-hidden="true">
-                            <path d="M7 11v9m0-9 3.4-6.8A2 2 0 0 1 14 5v4h4.4a2 2 0 0 1 2 2.4l-1.2 6A2 2 0 0 1 17.2 19H7m0-8H4v9h3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
-                          No
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-              <RouteSchedule routeName={bestSuggestion.ruta} />
+                  onShowAlternatives={() => {
+                    if (!isMobile) return;
+                    setIsResultSheetOpen(false);
+                    window.setTimeout(() => setIsSheetOpen(true), 50);
+                  }}
+                  onToggleTrip={isTripActive ? handleStopTrip : handleStartTrip}
+                  onViewMap={() => {
+                    setShowHint(false);
+                    setSharedRouteSegment(bestSuggestion.segment);
+                    setSharedSegmentColor(bestSuggestion.routeColor ?? null);
+                    setSelectedRouteId(null);
+                    if (isMobile) setIsResultSheetOpen(false);
+                  }}
+                />
+                <RouteSchedule routeName={bestSuggestion.ruta} />
               </>
             ) : selectedTransfer ? (
-              <div className="px-4 py-3">
-                <p className="text-[10px] font-bold tracking-[2px] text-avocado-400">TRANSBORDO SELECCIONADO</p>
-                <div className="mt-2 flex items-center gap-2">
-                  <span className="ov-text flex-1 truncate text-[13px] font-semibold">{selectedTransfer.routeAName}</span>
-                  <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0 text-avocado-400" aria-hidden="true">
-                    <path d="M8 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3M16 3h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3M12 8v8M9 11l3-3 3 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  <span className="ov-text flex-1 truncate text-[13px] font-semibold">{selectedTransfer.routeBName}</span>
-                </div>
-                <p className="ov-text-muted mt-1 text-[11px]">
-                  Camina ~{Math.round(selectedTransfer.walkMeters)} m en el punto de transbordo
-                  <span className="mx-1.5 opacity-40">·</span>
-                  {getJourneyFareSummary([
-                    selectedTransfer.routeAName,
-                    selectedTransfer.routeBName,
-                  ]).badge}
-                </p>
-                <button
-                  type="button"
-                  onClick={isTripActive ? handleStopTrip : handleStartTrip}
-                  className={`mt-3 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl text-[12px] font-bold transition active:scale-[0.98] ${
-                    isTripActive
-                      ? "ov-pill ov-border ov-text border"
-                      : "bg-lima text-ink-900 shadow-[0_4px_16px_rgba(181,239,48,0.22)]"
-                  }`}
-                  aria-label={isTripActive ? "Finalizar viaje" : "Iniciar viaje con transbordo"}
-                >
-                  {isTripActive ? (
-                    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
-                      <path d="M7 7l10 10M17 7 7 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                    </svg>
-                  ) : (
-                    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
-                      <path d="m9 7 8 5-8 5V7Z" fill="currentColor" />
-                      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.6" />
-                    </svg>
-                  )}
-                  {isTripActive ? "Finalizar viaje" : "Iniciar viaje"}
-                </button>
-                <div className="mt-3 grid grid-cols-[1fr_auto] gap-2">
-<button
-                      type="button"
-                      onClick={handleClearSelection}
-                      className="ov-pill ov-border ov-text-muted h-9 shrink-0 rounded-lg border px-3 text-[11px] font-semibold transition active:scale-[0.97]"
-                      aria-label="Limpiar ruta seleccionada"
-                    >
-                      Limpiar
-                    </button>
-                  <button
-                    type="button"
-                    onClick={() => shareRoute(`${formatRouteLabel(selectedTransfer.routeAName)} → ${formatRouteLabel(selectedTransfer.routeBName)}`, buildShareUrl({
-                      routeName: `${selectedTransfer.routeAName} → ${selectedTransfer.routeBName}`,
-                      origin: originPoint,
-                      destination: destinationPoint,
-                      transfer: selectedTransfer
-                    }))}
-                    className="ov-pill ov-border ov-text-muted inline-flex h-10 w-10 items-center justify-center rounded-xl border transition active:scale-[0.97]"
-                    aria-label="Compartir transbordo"
-                  >
-                    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
-                      <path d="M8.59 13.51l6.83 3.98m-.01-10.98-6.82 3.98M21 5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm0 14a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM3 12a3 3 0 1 1 6 0 3 3 0 0 1-6 0Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
+              <SelectedTransferResult
+                isTripActive={isTripActive}
+                transfer={selectedTransfer}
+                onClear={handleClearSelection}
+                onShare={() => shareRoute(
+                  `${formatRouteLabel(selectedTransfer.routeAName)} → ${formatRouteLabel(selectedTransfer.routeBName)}`,
+                  buildShareUrl({
+                    routeName: `${selectedTransfer.routeAName} → ${selectedTransfer.routeBName}`,
+                    origin: originPoint,
+                    destination: destinationPoint,
+                    transfer: selectedTransfer,
+                  }),
+                )}
+                onToggleTrip={isTripActive ? handleStopTrip : handleStartTrip}
+              />
             ) : transfers.length > 0 ? (
-              <div className="px-4 py-3">
-                <p className="text-[10px] font-bold tracking-[2px] text-avocado-400">CON TRANSBORDO</p>
-                <p className="ov-text-muted mt-0.5 text-[12px]">No hay ruta directa. Opciones con cambio de ruta:</p>
-                <ul className="mt-2 max-h-[200px] space-y-1.5 overflow-y-auto">
-                  {transfers.map((t) => (
-                    <li key={`${t.routeAId}-${t.routeBId}`}>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedTransfer(t)}
-                        aria-label={`Seleccionar transbordo de ${t.routeAName} a ${t.routeBName}`}
-                        className="flex w-full items-center gap-2 rounded-xl border border-avocado-400/20 bg-avocado-400/8 px-3 py-2 text-left transition active:scale-[0.99] hover:bg-avocado-400/12"
-                      >
-                        <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0 text-avocado-400" aria-hidden="true">
-                          <path d="M8 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3M16 3h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3M12 8v8M9 11l3-3 3 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                        <span className="min-w-0 flex-1">
-                          <span className="ov-text block truncate text-[12px] font-semibold">
-                            {t.routeAName}
-                          </span>
-                          <span className="ov-text-muted block truncate text-[11px]">
-                            → transbordo → {t.routeBName}
-                          </span>
-                        </span>
-                        <span className="shrink-0 rounded-full bg-avocado-400/15 px-2 py-0.5 text-[10px] font-semibold text-avocado-600">
-                          ~{Math.round(t.walkMeters)}m
-                        </span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-                <button
-                  type="button"
-                  onClick={() => { setActivePoint("destination"); setShowHint(true); }}
-                  className="ov-pill ov-border ov-text-muted mt-3 inline-flex h-10 w-full items-center justify-center rounded-xl border text-[12px] font-semibold transition active:scale-[0.97]"
-                  aria-label="Mover destino para buscar otra ruta"
-                >
-                  Mover destino
-                </button>
-              </div>
+              <TransferOptionsResult
+                transfers={transfers}
+                onMoveDestination={() => {
+                  setActivePoint("destination");
+                  setShowHint(true);
+                }}
+                onSelect={setSelectedTransfer}
+              />
             ) : (
-              <div className="px-4 py-3">
-                <div className="flex items-start gap-3">
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-avocado-400/15">
-                    <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-avocado-400" aria-hidden="true">
-                      <path d="M12 8v4m0 4h.01M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                    </svg>
-                  </span>
-                  <div className="flex-1">
-                    <p className="ov-text text-[13px] font-semibold">Sin ruta directa</p>
-                    <p className="ov-text-muted mt-0.5 text-[12px] leading-snug">Ajusta alguno de los puntos e intenta de nuevo.</p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => { setActivePoint("destination"); setShowHint(true); }}
-                  className="ov-pill ov-border ov-text-muted mt-2 inline-flex h-10 w-full items-center justify-center rounded-xl border text-[12px] font-semibold transition active:scale-[0.97]"
-                  aria-label="Mover destino para buscar otra ruta"
-                >
-                  Mover destino
-                </button>
-              </div>
+              <EmptyRouteResult
+                onMoveDestination={() => {
+                  setActivePoint("destination");
+                  setShowHint(true);
+                }}
+              />
             )}
 
             {/* Ruta activa / transbordo activo */}
