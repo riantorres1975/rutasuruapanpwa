@@ -24,7 +24,7 @@
       "sizes": "780x1688",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "Directorio de rutas con búsqueda por colonia y destino"
+      "label": "Selector de rutas con búsqueda por colonia, destino y punto de referencia"
     },
     {
       "src": "/screenshots/mapa-wide.png",

@@ -5,6 +5,7 @@ const pages = [
   { name: "inicio", path: "/" },
   { name: "mapa", path: "/mapa" },
   { name: "horarios", path: "/horarios" },
+  { name: "guía de uso", path: "/guia" },
   { name: "reporte de errores", path: "/reportar-error" },
 ] as const;
 

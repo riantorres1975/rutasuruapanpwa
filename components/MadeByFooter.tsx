@@ -9,6 +9,7 @@ const REPO_URL = "https://github.com/riantorres1975/rutasuruapanpwa";
 const DONATION_URL = "https://www.paypal.com/paypalme/wh0code";
 
 const footerLinks = [
+  { label: "Guía de uso", href: "/guia" },
   { label: "Reportar error", href: "/reportar-error" },
   { label: "Privacidad", href: "/privacidad" }
 ] as const;

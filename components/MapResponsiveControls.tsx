@@ -1,9 +1,25 @@
 "use client";
 
 import type { ReactNode } from "react";
+import Link from "next/link";
 import ChatBotLauncher from "@/components/ChatBotLauncher";
 
 type RoutesMapMode = "all-visible" | "all-highlighted";
+
+function GuideButton({ variant }: { variant: "desktop" | "mobile" }) {
+  return (
+    <Link
+      href="/guia"
+      className={variant === "mobile"
+        ? "ov-panel pointer-events-auto inline-flex h-11 w-11 items-center justify-center rounded-xl border text-sm font-black shadow-[0_4px_16px_rgba(0,0,0,0.18)] backdrop-blur-xl transition hover:border-lima/40 hover:text-lima active:scale-[0.97]"
+        : "inline-flex h-10 w-10 items-center justify-center rounded-lg border border-foreground/12 bg-foreground/5 text-sm font-black text-foreground/50 transition hover:border-foreground/25 hover:text-foreground/80 active:scale-95"}
+      aria-label="Abrir guía de uso"
+      title="Guía de uso"
+    >
+      <span aria-hidden="true">?</span>
+    </Link>
+  );
+}
 
 function ModeButton({
   mode,
@@ -68,6 +84,7 @@ export function DesktopMapSidebar({
           </span>
         </div>
         <div className="relative flex items-center gap-2">
+          <GuideButton variant="desktop" />
           <ModeButton mode={routesMapMode} onToggle={onToggleMode} variant="desktop" />
           <ChatBotLauncher />
         </div>
@@ -141,6 +158,7 @@ export function MobileMapControls({
             })}
           </span>
         </div>
+        <GuideButton variant="mobile" />
         <ModeButton mode={routesMapMode} onToggle={onToggleMode} variant="mobile" />
       </div>
       {nearbyNotice}

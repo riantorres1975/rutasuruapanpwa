@@ -158,6 +158,7 @@ export default function LandingPage() {
           <Link href="/rutas" className="transition hover:opacity-75">Rutas</Link>
           <Link href="/horarios" className="transition hover:opacity-75">Horarios</Link>
           <Link href="/como-llegar" className="transition hover:opacity-75">Cómo llegar</Link>
+          <Link href="/guia" className="transition hover:opacity-75">Guía</Link>
         </div>
         <Link
           href="/mapa"
@@ -677,6 +678,7 @@ export default function LandingPage() {
             <Link href="/rutas" className="font-semibold transition hover:opacity-80" style={{ color: "var(--ink2)" }}>Rutas</Link>
             <Link href="/horarios" className="font-semibold transition hover:opacity-80" style={{ color: "var(--ink2)" }}>Horarios</Link>
             <Link href="/como-llegar" className="font-semibold transition hover:opacity-80" style={{ color: "var(--ink2)" }}>Cómo llegar</Link>
+            <Link href="/guia" className="font-semibold transition hover:opacity-80" style={{ color: "var(--ink2)" }}>Guía de uso</Link>
             <Link href="/blog" className="font-semibold transition hover:opacity-80" style={{ color: "var(--ink2)" }}>Blog</Link>
             <Link href="/reportar-error" className="font-semibold transition hover:opacity-80" style={{ color: "var(--ink2)" }}>Reportar error</Link>
             <Link href="/privacidad" className="font-semibold transition hover:opacity-80" style={{ color: "var(--ink2)" }}>Privacidad</Link>
