@@ -60,6 +60,8 @@ export default async function RoutePage({ params }: RoutePageProps) {
   const title = route.destination ? `${route.name}: ${route.destination}` : route.name;
   const directions = route.hasIda && route.hasVuelta ? "Ida y vuelta" : route.hasIda ? "Solo ida" : "Solo vuelta";
   const staticMapUrl = buildRouteStaticMapUrl(route.name, route.color);
+  const compactDesktopStaticMapUrl = buildRouteStaticMapUrl(route.name, route.color, 640, 560);
+  const desktopStaticMapUrl = buildRouteStaticMapUrl(route.name, route.color, 900, 560);
   const estimatedMinutes = route.distanceKm > 0 ? Math.round((route.distanceKm / 18) * 60) : null;
   const schedule = getSchedule(route.name);
   const frequencyLabel = schedule
@@ -166,11 +168,11 @@ export default async function RoutePage({ params }: RoutePageProps) {
         </Link>
       </nav>
 
-      <div className="px-5 pt-28 pb-28 sm:px-8 lg:px-10 lg:pb-8">
+      <div className="px-5 pb-28 pt-28 sm:px-8 lg:px-10 lg:pb-16 lg:pt-32">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
-        <div className="mx-auto max-w-3xl">
-          <div className="mb-4">
+        <div className="mx-auto max-w-7xl">
+          <div className="mb-5">
             <Link
               href="/rutas"
               className="text-xs font-semibold uppercase tracking-widest transition hover:opacity-80"
@@ -180,67 +182,99 @@ export default async function RoutePage({ params }: RoutePageProps) {
             </Link>
           </div>
           <article
-            className="overflow-hidden rounded-[2rem] border shadow-[0_20px_80px_rgba(0,0,0,0.35)]"
+            className="overflow-hidden rounded-[2rem] border shadow-[0_20px_80px_rgba(0,0,0,0.35)] lg:rounded-lg"
             style={{ borderColor: "rgba(140,200,80,0.12)", background: "rgba(20,28,16,0.8)" }}
           >
             <div className="h-2" style={{ backgroundColor: route.color }} />
 
-            {/* Route map preview */}
-            <div
-              className="w-full overflow-hidden"
-              style={{ borderBottom: "1px solid rgba(140,200,80,0.08)", lineHeight: 0 }}
-            >
-              {staticMapUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={staticMapUrl}
-                  alt={`Mapa del recorrido de la ${route.name} en Uruapan`}
-                  width={800}
-                  height={220}
-                  loading="lazy"
-                  style={{ width: "100%", height: "auto", display: "block" }}
-                />
-              ) : (
-                <div style={{ background: "rgba(0,0,0,0.3)" }}>
-                  <RoutePreviewFromData
-                    routeName={route.name}
-                    color={route.color}
-                    width={800}
-                    height={180}
-                    strokeWidth={3}
-                    className="w-full h-auto"
-                  />
+            <div className="lg:grid lg:grid-cols-[minmax(0,1.15fr)_minmax(390px,0.85fr)]">
+              {/* Route map preview */}
+              <div
+                className="w-full overflow-hidden lg:min-h-[440px]"
+                style={{
+                  borderBottom: "1px solid rgba(140,200,80,0.08)",
+                  background: "rgba(0,0,0,0.3)",
+                  lineHeight: 0,
+                }}
+              >
+                {staticMapUrl ? (
+                  <picture>
+                    {desktopStaticMapUrl && <source media="(min-width: 1280px)" srcSet={desktopStaticMapUrl} />}
+                    {compactDesktopStaticMapUrl && <source media="(min-width: 1024px)" srcSet={compactDesktopStaticMapUrl} />}
+                    <img
+                      src={staticMapUrl}
+                      alt={`Mapa del recorrido de la ${route.name} en Uruapan`}
+                      width={800}
+                      height={220}
+                      className="block h-auto w-full lg:h-full lg:min-h-[440px] lg:object-contain"
+                    />
+                  </picture>
+                ) : (
+                  <div className="flex h-full min-h-[180px] items-center lg:min-h-[440px]">
+                    <RoutePreviewFromData
+                      routeName={route.name}
+                      color={route.color}
+                      width={800}
+                      height={560}
+                      strokeWidth={3}
+                      className="h-auto w-full"
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-col justify-center p-6 md:p-8 lg:p-10 xl:p-12">
+                <p className="text-xs font-bold uppercase tracking-[0.24em]" style={{ color: "#b8e840" }}>
+                  Ruta de camión · Uruapan
+                </p>
+                <h1
+                  className="mt-3 font-serif text-4xl font-black leading-[1.02] tracking-tight md:text-5xl lg:text-[2.35rem] xl:text-[3.4rem]"
+                  style={{ color: "#e8f2d8" }}
+                >
+                  {title}
+                </h1>
+                <p className="mt-5 text-sm leading-7 lg:text-base" style={{ color: "#a8c888" }}>
+                  {route.destination
+                    ? `La ${route.name} conecta distintas zonas de Uruapan con ${route.destination}${route.distanceKm > 0 ? `, con un recorrido total de ${route.distanceKm} km` : ""}. Consulta el mapa para ver paradas y transbordos disponibles.`
+                    : `La ${route.name} recorre colonias de Uruapan${route.distanceKm > 0 ? ` en un trayecto de ${route.distanceKm} km` : ""}. Usa el mapa para encontrar la parada más cercana a tu origen y destino.`
+                  }
+                </p>
+                <div className="mt-8 hidden flex-wrap gap-3 lg:flex">
+                  <Link
+                    href={`/mapa?r=${encodeURIComponent(route.name)}`}
+                    className="inline-flex h-12 items-center justify-center gap-2 rounded-full px-6 text-sm font-black text-white transition hover:opacity-90"
+                    style={{ background: "#6aab48" }}
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
+                      <path d="M12 21s6-5.7 6-11a6 6 0 1 0-12 0c0 5.3 6 11 6 11Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      <circle cx="12" cy="10" r="2.2" fill="currentColor" />
+                    </svg>
+                    Ver esta ruta
+                  </Link>
+                  <Link
+                    href="/horarios"
+                    className="inline-flex h-12 items-center justify-center rounded-full border px-6 text-sm font-bold transition hover:bg-white/5"
+                    style={{ borderColor: "rgba(140,200,80,0.22)", color: "#e8f2d8" }}
+                  >
+                    Consultar horarios
+                  </Link>
                 </div>
-              )}
+              </div>
             </div>
 
-            <div className="p-6 md:p-8">
-              <p className="text-xs font-bold uppercase tracking-[0.24em]" style={{ color: "#b8e840" }}>
-                Ruta de camión · Uruapan
-              </p>
-              <h1
-                className="mt-3 font-serif text-4xl font-black tracking-tight md:text-5xl"
-                style={{ color: "#e8f2d8" }}
-              >
-                {title}
-              </h1>
-              <p className="mt-4 text-sm leading-7" style={{ color: "#a8c888" }}>
-                {route.destination
-                  ? `La ${route.name} conecta distintas zonas de Uruapan con ${route.destination}${route.distanceKm > 0 ? `, con un recorrido total de ${route.distanceKm} km` : ""}. Consulta el mapa para ver paradas y transbordos disponibles.`
-                  : `La ${route.name} recorre colonias de Uruapan${route.distanceKm > 0 ? ` en un trayecto de ${route.distanceKm} km` : ""}. Usa el mapa para encontrar la parada más cercana a tu origen y destino.`
-                }
-              </p>
-
-              <dl className="mt-8 grid grid-cols-2 gap-2.5 sm:grid-cols-4 sm:gap-3">
+            <dl
+              className="grid grid-cols-2 gap-2.5 border-t p-6 sm:grid-cols-3 sm:gap-3 md:p-8 lg:grid-cols-6 lg:gap-0 lg:p-0 lg:[&>div]:rounded-none lg:[&>div]:border-y-0 lg:[&>div]:border-l-0 lg:[&>div]:bg-transparent lg:[&>div]:px-6 lg:[&>div]:py-5 lg:[&>div:last-child]:border-r-0"
+              style={{ borderColor: "rgba(140,200,80,0.10)" }}
+            >
                 <div
-                  className="rounded-2xl border p-4"
+                  className="rounded-2xl border p-4 lg:border-r"
                   style={{ borderColor: "rgba(140,200,80,0.12)", background: "rgba(106,171,72,0.06)" }}
                 >
                   <dt className="text-xs font-bold uppercase tracking-widest" style={{ color: "#a8c888" }}>Destino</dt>
                   <dd className="mt-2 text-sm font-bold" style={{ color: "#e8f2d8" }}>{route.destination ?? "Ruta local"}</dd>
                 </div>
                 <div
-                  className="rounded-2xl border p-4"
+                  className="rounded-2xl border p-4 lg:border-r"
                   style={{ borderColor: "rgba(140,200,80,0.12)", background: "rgba(106,171,72,0.06)" }}
                 >
                   <dt className="text-xs font-bold uppercase tracking-widest" style={{ color: "#a8c888" }}>Tarifa</dt>
@@ -248,7 +282,7 @@ export default async function RoutePage({ params }: RoutePageProps) {
                 </div>
                 {route.distanceKm > 0 && (
                   <div
-                    className="rounded-2xl border p-4"
+                    className="rounded-2xl border p-4 lg:border-r"
                     style={{ borderColor: "rgba(140,200,80,0.12)", background: "rgba(106,171,72,0.06)" }}
                   >
                     <dt className="text-xs font-bold uppercase tracking-widest" style={{ color: "#a8c888" }}>Recorrido</dt>
@@ -256,7 +290,7 @@ export default async function RoutePage({ params }: RoutePageProps) {
                   </div>
                 )}
                 <div
-                  className="rounded-2xl border p-4"
+                  className="rounded-2xl border p-4 lg:border-r"
                   style={{ borderColor: "rgba(140,200,80,0.12)", background: "rgba(106,171,72,0.06)" }}
                 >
                   <dt className="text-xs font-bold uppercase tracking-widest" style={{ color: "#a8c888" }}>Sentido</dt>
@@ -264,7 +298,7 @@ export default async function RoutePage({ params }: RoutePageProps) {
                 </div>
                 {schedule && (
                   <div
-                    className="rounded-2xl border p-4"
+                    className="rounded-2xl border p-4 lg:border-r"
                     style={{ borderColor: "rgba(140,200,80,0.12)", background: "rgba(106,171,72,0.06)" }}
                   >
                     <dt className="text-xs font-bold uppercase tracking-widest" style={{ color: "#a8c888" }}>Horario</dt>
@@ -273,25 +307,28 @@ export default async function RoutePage({ params }: RoutePageProps) {
                 )}
                 {frequencyLabel && (
                   <div
-                    className="rounded-2xl border p-4"
+                    className="rounded-2xl border p-4 lg:border-r"
                     style={{ borderColor: "rgba(140,200,80,0.12)", background: "rgba(106,171,72,0.06)" }}
                   >
                     <dt className="text-xs font-bold uppercase tracking-widest" style={{ color: "#a8c888" }}>Frecuencia</dt>
                     <dd className="mt-2 text-sm font-bold" style={{ color: "#e8f2d8" }}>{frequencyLabel}</dd>
                   </div>
                 )}
-              </dl>
+            </dl>
+
+            <div className="p-6 md:p-8 lg:p-10 xl:p-12">
+              <div className="lg:grid lg:grid-cols-[minmax(0,1.2fr)_minmax(340px,0.8fr)] lg:gap-12">
 
               {route.landmarks.length > 0 && (
-                <section className="mt-8">
-                  <h2 className="font-serif text-xl font-black mb-4" style={{ color: "#e8f2d8" }}>
+                <section>
+                  <h2 className="mb-4 font-serif text-xl font-black lg:text-2xl" style={{ color: "#e8f2d8" }}>
                     Puntos de referencia en la ruta
                   </h2>
-                  <ul className="grid gap-2 sm:grid-cols-2">
+                  <ul className="grid gap-2 sm:grid-cols-2 lg:gap-3">
                     {route.landmarks.map((lm) => (
                       <li
                         key={lm}
-                        className="flex items-center gap-2 rounded-xl border px-4 py-3 text-sm"
+                        className="flex items-center gap-2 rounded-xl border px-4 py-3 text-sm lg:rounded-lg"
                         style={{ borderColor: "rgba(140,200,80,0.12)", background: "rgba(106,171,72,0.06)", color: "#e8f2d8" }}
                       >
                         <span style={{ color: "#6aab48" }}>▸</span> {lm}
@@ -316,10 +353,10 @@ export default async function RoutePage({ params }: RoutePageProps) {
               )}
 
               <section
-                className="mt-8 rounded-2xl border p-5"
-                style={{ borderColor: "rgba(184,232,64,0.2)", background: "rgba(184,232,64,0.06)" }}
+                className="mt-8 rounded-2xl border bg-[rgba(184,232,64,0.06)] p-5 lg:mt-0 lg:rounded-none lg:border-y-0 lg:border-r-0 lg:bg-transparent lg:pl-10"
+                style={{ borderColor: "rgba(184,232,64,0.2)" }}
               >
-                <h2 className="font-serif text-xl font-black" style={{ color: "#e8f2d8" }}>Cómo planear tu viaje</h2>
+                <h2 className="font-serif text-xl font-black lg:text-2xl" style={{ color: "#e8f2d8" }}>Cómo planear tu viaje</h2>
                 <p className="mt-3 text-sm leading-7" style={{ color: "#a8c888" }}>
                   Abre el mapa de UruGo y marca tu punto de origen y tu destino. El sistema calcula si la {route.name} cubre tu trayecto, qué tan lejos están las paradas y si necesitas caminar o hacer transbordo con otra ruta o el Teleférico de Uruapan.
                   {estimatedMinutes && ` El recorrido completo toma aproximadamente ${estimatedMinutes} minutos.`}
@@ -332,16 +369,17 @@ export default async function RoutePage({ params }: RoutePageProps) {
                   Recorrido verificado en campo · actualizado {DATA_LAST_UPDATED}
                 </p>
               </section>
+              </div>
 
-              <section className="mt-8">
-                <h2 className="font-serif text-xl font-black mb-5" style={{ color: "#e8f2d8" }}>
+              <section className="mt-10 border-t pt-9" style={{ borderColor: "rgba(140,200,80,0.10)" }}>
+                <h2 className="mb-5 font-serif text-xl font-black lg:text-2xl" style={{ color: "#e8f2d8" }}>
                   Preguntas frecuentes
                 </h2>
-                <div className="flex flex-col gap-4">
+                <div className="grid gap-4 lg:grid-cols-2">
                   {faqs.map((faq) => (
                     <div
                       key={faq.question}
-                      className="rounded-2xl border p-5"
+                      className="rounded-2xl border p-5 lg:rounded-lg"
                       style={{ borderColor: "rgba(140,200,80,0.10)", background: "rgba(20,28,16,0.6)" }}
                     >
                       <h3 className="text-sm font-bold mb-2" style={{ color: "#b8e840" }}>{faq.question}</h3>
@@ -351,7 +389,7 @@ export default async function RoutePage({ params }: RoutePageProps) {
                 </div>
               </section>
 
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <div className="mt-10 flex flex-col gap-3 border-t pt-8 sm:flex-row lg:justify-end" style={{ borderColor: "rgba(140,200,80,0.10)" }}>
                 <Link
                   href={`/mapa?r=${encodeURIComponent(route.name)}`}
                   className="inline-flex h-12 items-center justify-center rounded-full px-6 text-sm font-black text-white transition hover:opacity-90"
