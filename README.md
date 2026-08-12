@@ -10,13 +10,34 @@ UruGo es una aplicación web para consultar las rutas de transporte público de 
 
 ## Vista previa
 
-### Inicio
+<p align="center">
+  <img src="./public/readme/inicio-wide.webp" alt="Página de inicio de UruGo con buscador de destinos y vista del mapa" width="920">
+</p>
 
-![Página de inicio de UruGo](./public/readme/demoLandipageUruGO.gif)
+<p align="center"><sub>Busca un destino, compara alternativas y abre el recorrido directamente en el mapa.</sub></p>
 
-### Mapa de rutas
-
-![Mapa interactivo de UruGo](./public/readme/demoMapaUruGO.gif)
+<table>
+  <tr>
+    <th>Mapa interactivo</th>
+    <th>Selector de rutas</th>
+    <th>Resultado del viaje</th>
+  </tr>
+  <tr>
+    <td align="center"><img src="./public/readme/mapa-narrow.webp" alt="Mapa móvil de UruGo" width="260"></td>
+    <td align="center"><img src="./public/readme/rutas-narrow.webp" alt="Selector móvil de rutas de UruGo" width="260"></td>
+    <td align="center"><img src="./public/readme/resultado.webp" alt="Resultado de una búsqueda de viaje en UruGo" width="260"></td>
+  </tr>
+  <tr>
+    <th>Modo viaje</th>
+    <th>Horarios</th>
+    <th>Guía de uso</th>
+  </tr>
+  <tr>
+    <td align="center"><img src="./public/readme/modo-viaje.webp" alt="Seguimiento móvil de un viaje en UruGo" width="260"></td>
+    <td align="center"><img src="./public/readme/horarios.webp" alt="Horarios de las rutas de Uruapan" width="260"></td>
+    <td align="center"><img src="./public/readme/guia-narrow.webp" alt="Guía móvil de funciones de UruGo" width="260"></td>
+  </tr>
+</table>
 
 ## Qué ofrece
 
@@ -113,6 +134,7 @@ npm run build    # compilación de producción
 npm run start    # inicia la compilación de producción
 npm run lint     # revisión estática con ESLint
 npm test         # ejecuta la suite de Vitest
+npm run guide:screenshots # actualiza las capturas de la aplicación
 ```
 
 ## Estructura del proyecto

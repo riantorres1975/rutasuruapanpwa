@@ -10,13 +10,34 @@ UruGo is a web application for exploring public transport in Uruapan, Michoacán
 
 ## Preview
 
-### Home page
+<p align="center">
+  <img src="./public/readme/inicio-wide.webp" alt="UruGo home page with destination search and map preview" width="920">
+</p>
 
-![UruGo home page](./public/readme/demoLandipageUruGO.gif)
+<p align="center"><sub>Search for a destination, compare alternatives, and open the journey directly on the map.</sub></p>
 
-### Route map
-
-![UruGo interactive map](./public/readme/demoMapaUruGO.gif)
+<table>
+  <tr>
+    <th>Interactive map</th>
+    <th>Route selector</th>
+    <th>Journey result</th>
+  </tr>
+  <tr>
+    <td align="center"><img src="./public/readme/mapa-narrow.webp" alt="UruGo mobile map" width="260"></td>
+    <td align="center"><img src="./public/readme/rutas-narrow.webp" alt="UruGo mobile route selector" width="260"></td>
+    <td align="center"><img src="./public/readme/resultado.webp" alt="Journey search result in UruGo" width="260"></td>
+  </tr>
+  <tr>
+    <th>Trip mode</th>
+    <th>Schedules</th>
+    <th>User guide</th>
+  </tr>
+  <tr>
+    <td align="center"><img src="./public/readme/modo-viaje.webp" alt="Mobile trip tracking in UruGo" width="260"></td>
+    <td align="center"><img src="./public/readme/horarios.webp" alt="Uruapan route schedules" width="260"></td>
+    <td align="center"><img src="./public/readme/guia-narrow.webp" alt="UruGo mobile feature guide" width="260"></td>
+  </tr>
+</table>
 
 ## Main features
 
@@ -109,6 +130,7 @@ npm run build    # production build
 npm run start    # serve the production build
 npm run lint     # ESLint checks
 npm test         # Vitest suite
+npm run guide:screenshots # refresh application screenshots
 ```
 
 ## Project layout
