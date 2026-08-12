@@ -3,6 +3,7 @@ import Link from "next/link";
 import PageHeader from "@/components/PageHeader";
 import NotGovernmentNotice from "@/components/NotGovernmentNotice";
 import ForceDark from "@/components/ForceDark";
+import { FARES_2026 } from "@/lib/mobility-config";
 
 export const metadata: Metadata = {
   title: "Guía de transporte público para estudiantes en Uruapan",
@@ -76,7 +77,7 @@ const CARDS = [
   },
   {
     eyebrow: "Costo y pago",
-    title: "$11.00 MXN · tarjeta electrónica",
+    title: `${FARES_2026.urbanBus.price} MXN · tarjeta electrónica`,
     body: "La misma tarifa aplica para camión y Teleférico. Con la tarjeta electrónica de movilidad no necesitas efectivo, abordas más rápido y reduces el riesgo de asalto."
   }
 ] as const;

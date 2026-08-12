@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { FARES_2026 } from "@/lib/mobility-config";
+
+const BASE_FARE_MXN = Number(FARES_2026.urbanBus.price.replace(/[^0-9.]/g, ""));
 
 function AnimatedStat({
   target,
@@ -52,7 +55,7 @@ function AnimatedStat({
 const STATS = [
   { target: 40, label: "rutas de camión", color: "var(--lima)", prefix: "" },
   { target: 6, label: "estaciones Teleférico", color: "var(--ink)", prefix: "" },
-  { target: 11, label: "tarifa base 2026 MXN", color: "var(--ink)", prefix: "$" },
+  { target: BASE_FARE_MXN, label: "tarifa base 2026 MXN", color: "var(--ink)", prefix: "$" },
   { target: 0, label: "anuncios ni cuentas", color: "var(--ink)", prefix: "" },
 ] as const;
 

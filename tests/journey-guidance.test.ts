@@ -17,14 +17,14 @@ describe("journey guidance", () => {
   it("indica tarjeta para un viaje directo en Teleférico", () => {
     const fare = getJourneyFareSummary(["Teleférico Uruapan"]);
 
-    expect(fare).toMatchObject({ totalMxn: 11, badge: "$11 tarjeta" });
+    expect(fare).toMatchObject({ totalMxn: 12, badge: "$12 tarjeta" });
     expect(fare.detail).toContain("no acepta efectivo");
   });
 
   it("indica efectivo para un viaje directo en camión", () => {
     expect(getJourneyFareSummary(["Ruta 1"])).toMatchObject({
-      totalMxn: 11,
-      badge: "$11 efectivo",
+      totalMxn: 12,
+      badge: "$12 efectivo",
     });
   });
 
@@ -32,8 +32,8 @@ describe("journey guidance", () => {
     const fare = getJourneyFareSummary(["Ruta 1", "Teleférico Uruapan"]);
 
     expect(fare).toMatchObject({
-      totalMxn: 22,
-      badge: "$22 total (camión + Teleférico)",
+      totalMxn: 24,
+      badge: "$24 total (camión + Teleférico)",
     });
     expect(fare.detail).toContain("efectivo en el camión");
     expect(fare.detail).toContain("tarjeta de movilidad en el Teleférico");

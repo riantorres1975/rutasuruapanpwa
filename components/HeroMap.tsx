@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { URUAPAN_CENTER } from "@/lib/map";
+import { FARES_2026 } from "@/lib/mobility-config";
 
 const SUGGESTIONS = [
-  { kicker: "Ruta sugerida", title: "Camión + Teleférico", meta: "Costo estimado por abordaje: $11.00 MXN" },
+  { kicker: "Ruta sugerida", title: "Camión + Teleférico", meta: `Costo estimado por abordaje: ${FARES_2026.urbanBus.price} MXN` },
   { kicker: "Ruta popular", title: "Ruta 11 · Centro", meta: "La más consultada · ~14 min" },
   { kicker: "Conexión rápida", title: "Mercado ↔ Hospital", meta: "Combina urbano con Teleférico" },
   { kicker: "Turismo", title: "Parque Nacional", meta: "Llega caminando desde el Centro" }

@@ -1,8 +1,8 @@
 import { FARES_2026, TELEFERICO_URUAPAN } from "./mobility-config";
 
 const TELEFERICO_ROUTE_NAME = "Teleférico Uruapan";
-const BUS_FARE_MXN = parseFare(FARES_2026.urbanBus.price, 11);
-const TELEFERICO_FARE_MXN = parseFare(FARES_2026.teleferico.price, 11);
+const BUS_FARE_MXN = parseFare(FARES_2026.urbanBus.price, 12);
+const TELEFERICO_FARE_MXN = parseFare(FARES_2026.teleferico.price, 12);
 
 export type JourneyFareSummary = {
   totalMxn: number;

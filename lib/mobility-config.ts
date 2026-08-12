@@ -10,12 +10,12 @@ export const DATA_LAST_UPDATED = "junio 2026";
 export const FARES_2026 = {
   urbanBus: {
     label: "Camión urbano",
-    price: "$11.00",
+    price: "$12.00",
     payment: "La mayoría de las rutas urbanas se pagan en efectivo."
   },
   teleferico: {
     label: "Teleférico Uruapan",
-    price: "$11.00",
+    price: "$12.00",
     payment: "Solo acepta tarjeta electrónica de movilidad. No acepta efectivo."
   },
   mobilityCard: {
@@ -30,7 +30,7 @@ export const TELEFERICO_URUAPAN = {
   schemaName: "Teleférico Uruapan",
   color: "#00D4AA",
   hours: "05:00 a 23:00",
-  fare: "$11.00 MXN",  // mantener MXN aquí — se usa en texto narrativo
+  fare: "$12.00 MXN",  // mantener MXN aquí — se usa en texto narrativo
   payment: "Solo tarjeta electrónica de movilidad",
   frequency: "Cada 5 minutos",
   tripDuration: "~27 minutos de extremo a extremo",
@@ -85,11 +85,11 @@ export const LANDING_FAQS = [
   },
   {
     question: "¿Cuánto cuesta el teleférico en Uruapan?",
-    answer: "El viaje en el Teleférico de Uruapan cuesta $11.00 MXN y se paga con tarjeta electrónica de movilidad."
+    answer: "El viaje en el Teleférico de Uruapan cuesta $12.00 MXN y se paga con tarjeta electrónica de movilidad."
   },
   {
     question: "¿Cuánto cuesta el camión urbano en Uruapan?",
-    answer: "El pasaje de camión urbano en Uruapan cuesta $11.00 MXN. La mayoría de las rutas urbanas se pagan en efectivo."
+    answer: "El pasaje de camión urbano en Uruapan cuesta $12.00 MXN. La mayoría de las rutas urbanas se pagan en efectivo."
   },
   {
     question: "¿Se puede pagar en efectivo en el teleférico?",

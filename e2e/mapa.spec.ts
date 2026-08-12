@@ -115,8 +115,8 @@ test("un viaje en Teleférico continúa a pie desde la estación", async ({ page
   const resultButton = page.getByRole("button", { name: "Ver resultado de ruta" });
   await expect(resultButton).toContainText("Teleférico", { timeout: 10_000 });
 
-  const resultDialog = page.locator('[role="dialog"]:visible').filter({ hasText: "Teleférico" });
-  await expect(resultDialog).toContainText("$11 tarjeta");
+  const resultDialog = page.getByRole("dialog", { name: "Teleférico Uruapan", exact: true });
+  await expect(resultDialog).toContainText("$12 tarjeta");
   await expect(resultDialog).toContainText("estación Hospital Regional");
   await expect(resultDialog).toContainText("estación Boulevard Industrial / Plaza Agora");
   await expect(resultDialog).not.toContainText("haz la parada con la mano");

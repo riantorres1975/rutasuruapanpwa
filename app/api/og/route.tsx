@@ -1,5 +1,6 @@
 import { ImageResponse } from "next/og";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { FARES_2026 } from "@/lib/mobility-config";
 
 export async function GET(request: Request) {
   // Endpoint de cómputo (renderiza imágenes): máx 30 por IP/min para evitar abuso.
@@ -182,7 +183,7 @@ export async function GET(request: Request) {
               gap: 4,
               padding: "14px 28px"
             }}>
-              <div style={{ color: "#b8e840", fontSize: 28, fontWeight: 900 }}>$11</div>
+              <div style={{ color: "#b8e840", fontSize: 28, fontWeight: 900 }}>{FARES_2026.urbanBus.price.replace(/\.00$/, "")}</div>
               <div style={{ color: "rgba(232,242,216,0.4)", fontSize: 14, fontWeight: 600 }}>MXN</div>
             </div>
           </div>
