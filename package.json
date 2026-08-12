@@ -14,6 +14,11 @@
     "landmarks:apply": "node scripts/generate-landmarks.mjs --apply && node scripts/generate-landmark-index.mjs",
     "landmarks:index": "node scripts/generate-landmark-index.mjs",
     "guide:screenshots": "node scripts/capture-guide-screenshots.mjs",
+    "video:record": "node scripts/record-demo-video.mjs",
+    "video:studio": "remotion studio video/index.ts",
+    "video:render:wide": "remotion render video/index.ts UruGoDemoWide video/out/urugo-demo-horizontal.mp4 --codec=h264 --crf=18",
+    "video:render:vertical": "remotion render video/index.ts UruGoDemoVertical video/out/urugo-demo-vertical.mp4 --codec=h264 --crf=18",
+    "video:render": "npm run video:render:wide && npm run video:render:vertical",
     "bundle:check": "node scripts/check-bundle-budget.mjs",
     "check": "npm run typecheck && npm run lint && npm run test && npm run build && npm run bundle:check"
   },
@@ -29,6 +34,8 @@
   "devDependencies": {
     "@axe-core/playwright": "^4.12.1",
     "@playwright/test": "^1.62.1",
+    "@remotion/cli": "^4.0.509",
+    "@remotion/media": "^4.0.509",
     "@types/geojson": "^7946.0.16",
     "@types/node": "^22.20.1",
     "@types/react": "^19.2.18",
@@ -38,6 +45,7 @@
     "eslint-config-next": "^16.3.0",
     "playwright-core": "^1.62.1",
     "postcss": "8.5.26",
+    "remotion": "^4.0.509",
     "tailwindcss": "3.4.6",
     "typescript": "^5.9.3",
     "vitest": "^4.1.10"
