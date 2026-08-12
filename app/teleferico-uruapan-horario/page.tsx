@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import MadeByFooter from "@/components/MadeByFooter";
 import PageHeader from "@/components/PageHeader";
 import NotGovernmentNotice from "@/components/NotGovernmentNotice";
-import Logo from "@/components/Logo";
 import ForceDark from "@/components/ForceDark";
+import PublicFooter from "@/components/PublicFooter";
+import PublicHeader from "@/components/PublicHeader";
 import { FARES_2026, TELEFERICO_URUAPAN } from "@/lib/mobility-config";
 import { SITE_URL } from "@/lib/site-url";
 
@@ -95,23 +95,7 @@ export default function TelefericoHorarioPage() {
   return (
     <main style={{ background: "#0c110a", color: "#e8f2d8", minHeight: "100dvh" }}>
       <ForceDark />
-      <nav
-        className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-5 py-4"
-        style={{
-          background: "rgba(12,17,10,0.9)",
-          backdropFilter: "blur(20px)",
-          borderBottom: "1px solid rgba(140,200,80,0.08)",
-        }}
-      >
-        <Logo size={28} showName showSub />
-        <Link
-          href="/mapa"
-          className="inline-flex items-center gap-1.5 rounded-full px-5 py-2.5 text-sm font-semibold text-white"
-          style={{ background: "#6aab48" }}
-        >
-          Abrir mapa
-        </Link>
-      </nav>
+      <PublicHeader />
       <div className="greca-bg greca-bg-animated px-5 pt-28 pb-8 sm:px-8 lg:px-10">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
@@ -136,11 +120,11 @@ export default function TelefericoHorarioPage() {
             Abrir en el mapa →
           </Link>
           <Link
-            href="/#tarifas"
+            href="#estaciones"
             className="inline-flex h-12 items-center justify-center rounded-full border px-6 text-sm font-bold transition"
             style={{ borderColor: "rgba(140,200,80,0.15)", background: "rgba(106,171,72,0.06)", color: "#e8f2d8" }}
           >
-            Ver tarifas
+            Ver estaciones
           </Link>
         </div>
 
@@ -167,11 +151,26 @@ export default function TelefericoHorarioPage() {
         </section>
 
         {/* Estaciones */}
-        <section className="mt-12">
+        <section id="estaciones" className="mt-12 scroll-mt-24">
           <p className="text-purepecha text-sm">Yáuiri · estaciones</p>
           <h2 className="mt-2 font-serif text-3xl font-black md:text-4xl" style={{ color: "#e8f2d8" }}>
             Las <span className="italic" style={{ color: "#b8e840" }}>6 estaciones</span> de oriente a poniente.
           </h2>
+
+          <div className="mt-7 overflow-x-auto rounded-lg border border-[#00d4aa]/20 bg-[#071512] px-5 py-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <ol className="relative flex min-w-[760px] items-start justify-between gap-3" aria-label="Recorrido del Teleférico de oriente a poniente">
+              <span className="absolute left-10 right-10 top-5 h-1 rounded-full bg-[#00d4aa]/25" aria-hidden="true" />
+              {TELEFERICO_URUAPAN.stations.map((station, index) => (
+                <li key={station} className="relative z-10 flex w-28 flex-col items-center text-center">
+                  <span className="grid h-10 w-10 place-items-center rounded-full border-2 border-[#00d4aa] bg-[#071512] font-black text-[#00d4aa]">
+                    {index + 1}
+                  </span>
+                  <span className="mt-3 text-xs font-bold leading-4 text-[#e8f2d8]">{station}</span>
+                  <span className="mt-1 text-[10px] uppercase tracking-[0.16em] text-[#48a878]">E{index + 1}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
 
           <div className="mt-6 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             {TELEFERICO_URUAPAN.stations.map((station, index) => (
@@ -226,9 +225,9 @@ export default function TelefericoHorarioPage() {
           <NotGovernmentNotice variant="compact" />
         </div>
 
-        <MadeByFooter />
       </div>
       </div>
+      <PublicFooter />
     </main>
   );
 }

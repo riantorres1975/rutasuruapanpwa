@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import Logo from "@/components/Logo";
 import ForceDark from "@/components/ForceDark";
+import PublicFooter from "@/components/PublicFooter";
+import PublicHeader from "@/components/PublicHeader";
 import RoutePreviewFromData from "@/components/RoutePreviewFromData";
 import RutasFilter from "@/components/RutasFilter";
 import { getRouteSeoItems } from "@/lib/route-seo";
@@ -64,23 +65,7 @@ export default function RutasPage() {
       <ForceDark />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
-      <nav
-        className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-5 py-4"
-        style={{
-          background: "rgba(12,17,10,0.9)",
-          backdropFilter: "blur(20px)",
-          borderBottom: "1px solid rgba(140,200,80,0.08)",
-        }}
-      >
-        <Logo size={28} showName showSub />
-        <Link
-          href="/mapa"
-          className="inline-flex items-center gap-1.5 rounded-full px-5 py-2.5 text-sm font-semibold text-white"
-          style={{ background: "#6aab48" }}
-        >
-          Abrir mapa
-        </Link>
-      </nav>
+      <PublicHeader active="rutas" />
 
       <div className="greca-bg greca-bg-animated px-5 pt-28 pb-16 sm:px-8 lg:px-10">
         <div className="mx-auto max-w-5xl">
@@ -268,6 +253,7 @@ export default function RutasPage() {
 
         </div>
       </div>
+      <PublicFooter />
     </main>
   );
 }

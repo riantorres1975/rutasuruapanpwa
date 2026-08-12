@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import ForceDark from "@/components/ForceDark";
-import Logo from "@/components/Logo";
 import NotGovernmentNotice from "@/components/NotGovernmentNotice";
 import PageHeader from "@/components/PageHeader";
+import PublicFooter from "@/components/PublicFooter";
+import PublicHeader from "@/components/PublicHeader";
 import ReportBugForm from "@/components/ReportBugForm";
 
 export const metadata: Metadata = {
-  title: "Reportar error | UruGo",
+  title: "Reportar un error",
   description: "Reporta errores de rutas, mapa, ubicación o funcionamiento de UruGo.",
   alternates: {
     canonical: "https://www.urugo.app/reportar-error"
@@ -38,23 +38,7 @@ export default async function ReportErrorPage({ searchParams }: ReportErrorPageP
   return (
     <main style={{ background: "#0c110a", color: "#e8f2d8", minHeight: "100dvh" }}>
       <ForceDark />
-      <nav
-        className="fixed left-0 right-0 top-0 z-50 flex items-center justify-between px-5 py-4"
-        style={{
-          background: "rgba(12,17,10,0.9)",
-          backdropFilter: "blur(20px)",
-          borderBottom: "1px solid rgba(140,200,80,0.08)"
-        }}
-      >
-        <Logo size={28} showName showSub />
-        <Link
-          href="/mapa"
-          className="inline-flex items-center gap-1.5 rounded-full px-5 py-2.5 text-sm font-semibold text-ink-900"
-          style={{ background: "#6aab48" }}
-        >
-          Abrir mapa
-        </Link>
-      </nav>
+      <PublicHeader />
 
       <div className="greca-bg greca-bg-animated px-5 pb-10 pt-28 sm:px-8 lg:px-10">
         <div className="relative z-10 mx-auto max-w-5xl">
@@ -95,6 +79,7 @@ export default async function ReportErrorPage({ searchParams }: ReportErrorPageP
           </div>
         </div>
       </div>
+      <PublicFooter />
     </main>
   );
 }

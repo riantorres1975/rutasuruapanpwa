@@ -1,0 +1,98 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import Link from "next/link";
+
+type Place = {
+  slug: string;
+  label: string;
+  routeCount: number;
+  category: string;
+};
+
+const categories = ["Todos", "Salud", "Educación", "Compras", "Gobierno", "Recreación"];
+
+function normalize(value: string) {
+  return value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+export default function PlaceDirectory({ places }: { places: Place[] }) {
+  const [query, setQuery] = useState("");
+  const [category, setCategory] = useState("Todos");
+  const filtered = useMemo(() => {
+    const search = normalize(query.trim());
+    return places.filter((place) =>
+      (category === "Todos" || place.category === category) &&
+      (!search || normalize(place.label).includes(search))
+    );
+  }, [category, places, query]);
+
+  return (
+    <section className="mt-8">
+      <div className="sticky top-[72px] z-20 -mx-1 border-y border-white/[0.08] bg-[#0c110a]/95 px-1 py-4 backdrop-blur-xl">
+        <label className="relative block">
+          <span className="sr-only">Buscar hospital, escuela, plaza o lugar</span>
+          <svg viewBox="0 0 24 24" fill="none" className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#78965f]" aria-hidden="true">
+            <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.8" />
+            <path d="m20 20-3.5-3.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          </svg>
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Busca un hospital, escuela, plaza o colonia"
+            className="h-12 w-full rounded-lg border border-white/10 bg-[#111a0d] pl-12 pr-4 text-sm text-[#e8f2d8] outline-none placeholder:text-[#78965f] focus:border-[#b8e840]/50"
+          />
+        </label>
+        <div className="mt-3 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="Filtrar lugares por categoría">
+          {categories.map((item) => (
+            <button
+              key={item}
+              type="button"
+              onClick={() => setCategory(item)}
+              className="shrink-0 rounded-full border px-3 py-1.5 text-xs font-bold transition"
+              style={{
+                borderColor: category === item ? "#6aab48" : "rgba(140,200,80,0.14)",
+                background: category === item ? "rgba(106,171,72,0.18)" : "transparent",
+                color: category === item ? "#b8e840" : "#a8c888",
+              }}
+            >
+              {item}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <p className="my-4 text-xs font-semibold uppercase tracking-[0.18em] text-[#78965f]">
+        {filtered.length} {filtered.length === 1 ? "lugar" : "lugares"}
+      </p>
+      <div className="grid min-w-0 gap-3 md:grid-cols-2">
+        {filtered.map((place) => (
+          <Link
+            key={place.slug}
+            href={`/como-llegar/${place.slug}`}
+            className="group flex min-w-0 items-center gap-3 rounded-lg border border-white/[0.08] bg-[#111a0d] p-4 transition hover:border-[#6aab48]/40 hover:bg-[#141e10]"
+          >
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#6aab48]/10 text-[#b8e840]">
+              <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
+                <path d="M12 21s6-5.7 6-11a6 6 0 1 0-12 0c0 5.3 6 11 6 11Z" stroke="currentColor" strokeWidth="1.8" />
+                <circle cx="12" cy="10" r="2" fill="currentColor" />
+              </svg>
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block break-words font-serif text-base font-black text-[#e8f2d8]">{place.label}</span>
+              <span className="mt-1 block text-xs text-[#6aab48]">
+                {place.routeCount} {place.routeCount === 1 ? "ruta te deja" : "rutas te dejan"} cerca · {place.category}
+              </span>
+            </span>
+            <span className="shrink-0 text-[#b8e840] transition group-hover:translate-x-1" aria-hidden="true">→</span>
+          </Link>
+        ))}
+      </div>
+      {filtered.length === 0 && (
+        <div className="rounded-lg border border-white/[0.08] px-5 py-12 text-center text-sm text-[#a8c888]">
+          No encontramos ese lugar. Prueba con otro nombre o abre el mapa para marcarlo manualmente.
+        </div>
+      )}
+    </section>
+  );
+}

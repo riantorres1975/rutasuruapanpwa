@@ -2,12 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import PageHeader from "@/components/PageHeader";
 import NotGovernmentNotice from "@/components/NotGovernmentNotice";
-import Logo from "@/components/Logo";
 import ForceDark from "@/components/ForceDark";
+import PublicFooter from "@/components/PublicFooter";
+import PublicHeader from "@/components/PublicHeader";
 import { APP_BRAND } from "@/lib/mobility-config";
 
 export const metadata: Metadata = {
-  title: "Privacidad | UruGo",
+  title: "Aviso de privacidad",
   description: "Aviso de privacidad de UruGo sobre uso de ubicación, datos locales y soporte PWA.",
   alternates: {
     canonical: "https://www.urugo.app/privacidad"
@@ -43,23 +44,7 @@ export default function PrivacyPage() {
   return (
     <main style={{ background: "#0c110a", color: "#e8f2d8", minHeight: "100dvh" }}>
       <ForceDark />
-      <nav
-        className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-5 py-4"
-        style={{
-          background: "rgba(12,17,10,0.9)",
-          backdropFilter: "blur(20px)",
-          borderBottom: "1px solid rgba(140,200,80,0.08)",
-        }}
-      >
-        <Logo size={28} showName showSub />
-        <Link
-          href="/mapa"
-          className="inline-flex items-center gap-1.5 rounded-full px-5 py-2.5 text-sm font-semibold text-white"
-          style={{ background: "#6aab48" }}
-        >
-          Abrir mapa
-        </Link>
-      </nav>
+      <PublicHeader />
       <div className="greca-bg greca-bg-animated px-5 pt-28 pb-8 sm:px-8 lg:px-10">
       <div className="relative z-10 mx-auto max-w-3xl">
         <PageHeader
@@ -115,6 +100,7 @@ export default function PrivacyPage() {
         </div>
       </div>
       </div>
+      <PublicFooter />
     </main>
   );
 }

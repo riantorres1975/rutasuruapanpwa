@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import ForceDark from "@/components/ForceDark";
-import Logo from "@/components/Logo";
 import NotGovernmentNotice from "@/components/NotGovernmentNotice";
+import PublicFooter from "@/components/PublicFooter";
+import PublicHeader from "@/components/PublicHeader";
 import { FARES_2026 } from "@/lib/mobility-config";
 import { SITE_URL } from "@/lib/site-url";
 
@@ -167,18 +168,7 @@ export default function GuidePage() {
       <ForceDark />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(howToJsonLd) }} />
 
-      <nav className="fixed inset-x-0 top-0 z-50 flex h-[72px] items-center justify-between border-b border-white/10 bg-[#0c110a]/95 px-5 backdrop-blur-xl sm:px-8">
-        <Logo size={28} showName showSub />
-        <div className="flex items-center gap-2">
-          <Link href="/" className="hidden h-10 items-center px-3 text-sm font-semibold text-[#a8c888] transition hover:text-white sm:inline-flex">
-            Inicio
-          </Link>
-          <Link href="/mapa" className="inline-flex h-10 items-center gap-2 rounded-full bg-[#6aab48] px-4 text-sm font-bold text-[#0c110a] transition hover:bg-[#7abd55]">
-            <GuideIcon name="location" />
-            Abrir mapa
-          </Link>
-        </div>
-      </nav>
+      <PublicHeader active="guia" />
 
       <header className="relative flex min-h-[680px] items-end overflow-hidden border-b border-white/10 pt-[72px] md:min-h-[720px]">
         <Image
@@ -424,6 +414,7 @@ export default function GuidePage() {
           </div>
         </div>
       </section>
+      <PublicFooter />
     </main>
   );
 }

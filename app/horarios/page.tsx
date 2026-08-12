@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import Logo from "@/components/Logo";
 import ForceDark from "@/components/ForceDark";
+import PublicFooter from "@/components/PublicFooter";
+import PublicHeader from "@/components/PublicHeader";
 import { DATA_LAST_UPDATED, FARES_2026, TELEFERICO_URUAPAN } from "@/lib/mobility-config";
 import { getRouteSeoItems } from "@/lib/route-seo";
 import { getSchedule } from "@/lib/schedules";
@@ -88,24 +89,7 @@ export default function HorariosPage() {
       <ForceDark />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
-      <nav
-        className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between gap-3 px-4 py-4 sm:px-5"
-        style={{
-          background: "rgba(12,17,10,0.9)",
-          backdropFilter: "blur(20px)",
-          borderBottom: "1px solid rgba(140,200,80,0.08)",
-        }}
-      >
-        <Logo size={28} showName showSub />
-        <Link
-          href="/mapa"
-          className="inline-flex shrink-0 items-center justify-center rounded-full px-4 py-2.5 text-xs font-semibold text-ink-900 sm:px-5 sm:text-sm"
-          style={{ background: "#6aab48" }}
-        >
-          <span className="sm:hidden">Mapa</span>
-          <span className="hidden sm:inline">Abrir mapa</span>
-        </Link>
-      </nav>
+      <PublicHeader active="horarios" />
 
       <div className="px-5 pt-28 pb-16 sm:px-8 lg:px-10">
         <div className="mx-auto max-w-5xl">
@@ -328,6 +312,7 @@ export default function HorariosPage() {
           </div>
         </div>
       </div>
+      <PublicFooter />
     </main>
   );
 }
