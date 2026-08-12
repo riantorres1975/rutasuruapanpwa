@@ -28,12 +28,23 @@ UruGo es una aplicación web para consultar las rutas de transporte público de 
     <td align="center"><img src="./public/readme/resultado.webp" alt="Resultado de una búsqueda de viaje en UruGo" width="260"></td>
   </tr>
   <tr>
-    <th>Modo viaje</th>
+    <th>Modo viaje: camión</th>
+    <th>Modo viaje: Teleférico</th>
+    <th>Último tramo a pie</th>
+  </tr>
+  <tr>
+    <td align="center"><img src="./public/readme/modo-viaje.webp" alt="Seguimiento móvil de un viaje en camión" width="260"></td>
+    <td align="center"><img src="./public/readme/modo-viaje-teleferico.webp" alt="Seguimiento móvil de un viaje en Teleférico" width="260"></td>
+    <td align="center"><img src="./public/readme/modo-viaje-caminando.webp" alt="Seguimiento móvil del último tramo a pie" width="260"></td>
+  </tr>
+</table>
+
+<table>
+  <tr>
     <th>Horarios</th>
     <th>Guía de uso</th>
   </tr>
   <tr>
-    <td align="center"><img src="./public/readme/modo-viaje.webp" alt="Seguimiento móvil de un viaje en UruGo" width="260"></td>
     <td align="center"><img src="./public/readme/horarios.webp" alt="Horarios de las rutas de Uruapan" width="260"></td>
     <td align="center"><img src="./public/readme/guia-narrow.webp" alt="Guía móvil de funciones de UruGo" width="260"></td>
   </tr>

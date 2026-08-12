@@ -289,8 +289,8 @@ export default function GuidePage() {
       </section>
 
       <section id="modo-viaje" className="scroll-mt-36 border-b border-white/10 bg-[#10170d] px-5 py-16 sm:px-8 md:py-24">
-        <div className="mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-[minmax(0,1fr)_360px]">
-          <div>
+        <div className="mx-auto max-w-6xl">
+          <div className="max-w-4xl">
             <p className="text-sm font-bold uppercase text-[#a78bfa]">Modo viaje</p>
             <h2 className="mt-2 font-serif text-4xl font-black leading-tight md:text-5xl">Acompañamiento desde que subes hasta que bajas.</h2>
             <p className="mt-5 max-w-2xl text-base leading-8 text-[#a8c888]">Después de elegir una opción, toca <strong className="text-white">Iniciar viaje</strong>. La app sigue tu avance con el GPS sin obligarte a mantener el mapa centrado.</p>
@@ -310,7 +310,20 @@ export default function GuidePage() {
             </div>
             <p className="mt-6 border-l-2 border-[#a78bfa] pl-4 text-sm leading-7 text-[#d2dfc4]">Las referencias ayudan a orientarte, pero no son paradas oficiales. En el Teleférico, el cálculo de abordaje y bajada siempre usa estaciones.</p>
           </div>
-          <PhoneScreenshot src="/guide/modo-viaje.png" alt="Modo viaje de UruGo mostrando el camión sobre la ruta activa, una referencia próxima y el botón para finalizar" />
+          <div className="-mx-5 mt-12 overflow-x-auto px-5 pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:-mx-8 sm:px-8 lg:mx-0 lg:overflow-visible lg:px-0">
+            <div className="flex w-max snap-x snap-mandatory gap-5 lg:grid lg:w-full lg:grid-cols-3">
+              {[
+                ["En camión", "/guide/modo-viaje.png", "Modo viaje de UruGo mostrando el camión animado sobre una ruta urbana"],
+                ["En Teleférico", "/guide/modo-viaje-teleferico.png", "Modo viaje de UruGo mostrando la cabina animada sobre el recorrido del Teleférico"],
+                ["Último tramo a pie", "/guide/modo-viaje-caminando.png", "Modo viaje de UruGo mostrando el marcador peatonal durante la caminata al destino"],
+              ].map(([label, src, alt]) => (
+                <figure key={label} className="w-[78vw] max-w-[310px] shrink-0 snap-center lg:w-auto lg:max-w-none">
+                  <PhoneScreenshot src={src} alt={alt} />
+                  <figcaption className="mt-3 text-center text-xs font-bold uppercase text-[#d2dfc4]">{label}</figcaption>
+                </figure>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 

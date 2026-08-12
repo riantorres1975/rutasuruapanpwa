@@ -102,14 +102,14 @@ export default function TripOverlays({
           role="alert"
           className="pointer-events-none absolute inset-x-0 bottom-36 z-50 flex justify-center px-4"
         >
-          <div className="pointer-events-auto flex max-w-md items-start gap-2.5 rounded-2xl border border-lima/40 bg-slate-900/95 px-4 py-3 shadow-[0_12px_40px_rgba(0,0,0,0.5)] backdrop-blur-xl">
+          <div className="pointer-events-auto flex w-full min-w-0 max-w-md items-start gap-2.5 rounded-2xl border border-lima/40 bg-slate-900/95 px-4 py-3 shadow-[0_12px_40px_rgba(0,0,0,0.5)] backdrop-blur-xl">
             <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-lima/15">
               <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 text-lima" aria-hidden="true">
                 <path d="M12 8v4m0 4h.01" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
                 <path d="M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0Z" stroke="currentColor" strokeWidth="1.8" />
               </svg>
             </span>
-            <p className="flex-1 text-[13px] font-medium leading-5 text-slate-50">{alert}</p>
+            <p className="min-w-0 flex-1 text-[13px] font-medium leading-5 text-slate-50">{alert}</p>
             <button
               type="button"
               onClick={onDismissAlert}

@@ -10,11 +10,14 @@ test("la guía explica las funciones y carga sus capturas reales", async ({ page
   await expect(page.getByRole("heading", { name: "Planea tu viaje en cuatro pasos." })).toBeVisible();
 
   const screenshots = page.locator("main img");
-  await expect(screenshots).toHaveCount(5);
+  await expect(screenshots).toHaveCount(7);
+  await expect(page.getByAltText(/camión animado sobre una ruta urbana/i)).toBeVisible();
+  await expect(page.getByAltText(/cabina animada sobre el recorrido del Teleférico/i)).toBeVisible();
+  await expect(page.getByAltText(/marcador peatonal durante la caminata/i)).toBeVisible();
   await screenshots.last().scrollIntoViewIfNeeded();
   await expect.poll(() => screenshots.evaluateAll(
     (images) => images.filter((image) => (image as HTMLImageElement).naturalWidth > 0).length,
-  )).toBe(5);
+  )).toBe(7);
 
   const accountQuestion = page.locator("details summary").first();
   await accountQuestion.click();

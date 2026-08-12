@@ -28,12 +28,23 @@ UruGo is a web application for exploring public transport in Uruapan, Michoacán
     <td align="center"><img src="./public/readme/resultado.webp" alt="Journey search result in UruGo" width="260"></td>
   </tr>
   <tr>
-    <th>Trip mode</th>
+    <th>Trip mode: bus</th>
+    <th>Trip mode: cable car</th>
+    <th>Final walk</th>
+  </tr>
+  <tr>
+    <td align="center"><img src="./public/readme/modo-viaje.webp" alt="Mobile bus trip tracking in UruGo" width="260"></td>
+    <td align="center"><img src="./public/readme/modo-viaje-teleferico.webp" alt="Mobile cable car trip tracking in UruGo" width="260"></td>
+    <td align="center"><img src="./public/readme/modo-viaje-caminando.webp" alt="Mobile tracking during the final walk" width="260"></td>
+  </tr>
+</table>
+
+<table>
+  <tr>
     <th>Schedules</th>
     <th>User guide</th>
   </tr>
   <tr>
-    <td align="center"><img src="./public/readme/modo-viaje.webp" alt="Mobile trip tracking in UruGo" width="260"></td>
     <td align="center"><img src="./public/readme/horarios.webp" alt="Uruapan route schedules" width="260"></td>
     <td align="center"><img src="./public/readme/guia-narrow.webp" alt="UruGo mobile feature guide" width="260"></td>
   </tr>

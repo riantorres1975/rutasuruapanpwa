@@ -70,10 +70,31 @@ const startTrip = resultDialog.locator('button[aria-label^="Iniciar viaje en"]')
 if (await startTrip.isVisible().catch(() => false)) {
   await startTrip.click();
   await page.getByRole("region", { name: "Modo viaje" }).waitFor({ state: "visible" });
+  await page.locator(".trip-map-marker--bus").waitFor({ state: "visible" });
   await page.waitForTimeout(500);
   await capture(outputDir, "modo-viaje.png");
   await captureWebp(readmeScreenshotDir, "modo-viaje.webp");
 }
+
+await context.setGeolocation({ longitude: -102.02093, latitude: 19.396299 });
+await page.goto(
+  `${baseUrl}/mapa?a=-102.02093,19.396299&b=-102.0375379,19.4241787`,
+  { waitUntil: "domcontentloaded" },
+);
+const telefericoResult = page.getByRole("dialog", { name: "Teleférico Uruapan", exact: true });
+await telefericoResult.waitFor({ state: "visible", timeout: 15_000 });
+await telefericoResult.locator('button[aria-label^="Iniciar viaje en"]').click();
+await page.locator(".trip-map-marker--teleferico").waitFor({ state: "visible", timeout: 10_000 });
+await page.waitForTimeout(500);
+await capture(outputDir, "modo-viaje-teleferico.png");
+await captureWebp(readmeScreenshotDir, "modo-viaje-teleferico.webp");
+
+await context.setGeolocation({ longitude: -102.0375379, latitude: 19.4216787 });
+await page.locator(".trip-map-marker--walking").waitFor({ state: "visible", timeout: 10_000 });
+await page.getByRole("region", { name: "Modo viaje" }).getByText("ÚLTIMO TRAMO").waitFor({ state: "visible" });
+await page.waitForTimeout(500);
+await capture(outputDir, "modo-viaje-caminando.png");
+await captureWebp(readmeScreenshotDir, "modo-viaje-caminando.webp");
 
 await page.goto(`${baseUrl}/horarios`, { waitUntil: "domcontentloaded" });
 await page.getByRole("heading", { name: /Horarios de camiones/i }).waitFor({ state: "visible" });
