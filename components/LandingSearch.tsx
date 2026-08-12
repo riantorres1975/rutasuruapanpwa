@@ -204,7 +204,7 @@ export default function LandingSearch() {
         <ul
           id={listboxId}
           role="listbox"
-          className="absolute left-0 right-0 z-50 mt-2 max-h-72 overflow-y-auto overscroll-contain rounded-2xl border p-1.5 shadow-[0_20px_60px_rgba(0,0,0,0.5)] backdrop-blur-xl"
+          className="relative z-20 mt-2 max-h-72 w-full overflow-y-auto overscroll-contain rounded-2xl border p-1.5 shadow-[0_20px_60px_rgba(0,0,0,0.5)]"
           style={{ background: "var(--card, #141c10)", borderColor: "var(--ov-border)" }}
         >
           {savingSlot && (
