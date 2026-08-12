@@ -1421,7 +1421,7 @@ function MapComponent({
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !isMapReadyRef.current) return;
+    if (!map) return;
 
     if (!tripModeActive || !tripLocation || !tripJourney) {
       if (tripMarkerAnimationFrameRef.current !== null) {
