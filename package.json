@@ -10,6 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:e2e": "playwright test",
+    "landmarks:review": "node scripts/generate-landmarks.mjs",
+    "landmarks:apply": "node scripts/generate-landmarks.mjs --apply",
     "bundle:check": "node scripts/check-bundle-budget.mjs",
     "check": "npm run typecheck && npm run lint && npm run test && npm run build && npm run bundle:check"
   },

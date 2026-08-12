@@ -298,6 +298,20 @@ export default async function RoutePage({ params }: RoutePageProps) {
                       </li>
                     ))}
                   </ul>
+                  {route.name !== "Ruta 1 - San José" && (
+                    <p className="mt-3 text-[11px]" style={{ color: "#78965f" }}>
+                      Referencias con datos de{" "}
+                      <a
+                        href="https://www.openstreetmap.org/copyright"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="underline underline-offset-2 transition hover:opacity-80"
+                      >
+                        OpenStreetMap contributors
+                      </a>
+                      . Verifica el punto exacto antes de viajar.
+                    </p>
+                  )}
                 </section>
               )}
 

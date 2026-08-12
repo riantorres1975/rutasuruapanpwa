@@ -67,6 +67,18 @@ test("respeta ahorro de datos hasta que el usuario activa el mapa", async ({ pag
   await expect(activateMap).toHaveCount(0);
 });
 
+test("encuentra rutas por los nuevos puntos de referencia", async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem("rutas-uru-onboarded", "1"));
+  await page.goto("/mapa");
+
+  await page.locator('button[aria-label^="Rutas "]:visible').click();
+  const routeSheet = page.getByRole("dialog", { name: "Selecciona una ruta" });
+  await routeSheet.getByPlaceholder(/punto de referencia/i).fill("Galerias Metropolitana Uruapan");
+
+  await expect(routeSheet.getByText("Ruta 26", { exact: true })).toBeVisible();
+  await expect(routeSheet.getByText(/Pasa por: Galerías Metropolitana Uruapan/i)).toBeVisible();
+});
+
 test("negar la geolocalización conserva el flujo de origen manual", async ({ page }) => {
   await page.addInitScript(() => {
     Object.defineProperty(navigator, "geolocation", {

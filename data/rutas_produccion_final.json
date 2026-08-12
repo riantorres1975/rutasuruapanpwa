@@ -281,17 +281,83 @@
       ]
     ],
     "landmarks": [
-      { "name": "Unidad Deportiva", "point": [-102.03304, 19.42662] },
-      { "name": "Central de Autobuses", "point": [-102.04234, 19.42687] },
-      { "name": "UNID Uruapan", "point": [-102.04459, 19.42587] },
-      { "name": "Universidad Don Vasco", "point": [-102.04726, 19.42619] },
-      { "name": "IMSS Hospital General de Zona 8 Uruapan", "point": [-102.05550, 19.42768] },
-      { "name": "Centro", "point": [-102.06303, 19.42101] },
-      { "name": "Coppel Cupatitzio", "point": [-102.06297, 19.41967] },
-      { "name": "Parque Lineal Cupatitzio", "point": [-102.06401, 19.41528] },
-      { "name": "Bodega Aurrera Express, Palito Verde", "point": [-102.07071, 19.40384] },
-      { "name": "Fraccionamiento Viñedos", "point": [-102.07299, 19.40509] },
-      { "name": "ESFU 3", "point": [-102.07498, 19.40752] }
+      {
+        "name": "Unidad Deportiva",
+        "point": [
+          -102.03304,
+          19.42662
+        ]
+      },
+      {
+        "name": "Central de Autobuses",
+        "point": [
+          -102.04234,
+          19.42687
+        ]
+      },
+      {
+        "name": "UNID Uruapan",
+        "point": [
+          -102.04459,
+          19.42587
+        ]
+      },
+      {
+        "name": "Universidad Don Vasco",
+        "point": [
+          -102.04726,
+          19.42619
+        ]
+      },
+      {
+        "name": "IMSS Hospital General de Zona 8 Uruapan",
+        "point": [
+          -102.0555,
+          19.42768
+        ]
+      },
+      {
+        "name": "Centro",
+        "point": [
+          -102.06303,
+          19.42101
+        ]
+      },
+      {
+        "name": "Coppel Cupatitzio",
+        "point": [
+          -102.06297,
+          19.41967
+        ]
+      },
+      {
+        "name": "Parque Lineal Cupatitzio",
+        "point": [
+          -102.06401,
+          19.41528
+        ]
+      },
+      {
+        "name": "Bodega Aurrera Express, Palito Verde",
+        "point": [
+          -102.07071,
+          19.40384
+        ]
+      },
+      {
+        "name": "Fraccionamiento Viñedos",
+        "point": [
+          -102.07299,
+          19.40509
+        ]
+      },
+      {
+        "name": "ESFU 3",
+        "point": [
+          -102.07498,
+          19.40752
+        ]
+      }
     ]
   },
   {
@@ -532,17 +598,83 @@
       ]
     ],
     "landmarks": [
-      { "name": "Unidad Deportiva", "point": [-102.03304, 19.42662] },
-      { "name": "Central de Autobuses", "point": [-102.04234, 19.42687] },
-      { "name": "UNID Uruapan", "point": [-102.04459, 19.42587] },
-      { "name": "Universidad Don Vasco", "point": [-102.04726, 19.42619] },
-      { "name": "IMSS Hospital General de Zona 8 Uruapan", "point": [-102.05550, 19.42768] },
-      { "name": "Centro", "point": [-102.06303, 19.42101] },
-      { "name": "Coppel Cupatitzio", "point": [-102.06297, 19.41967] },
-      { "name": "Parque Lineal Cupatitzio", "point": [-102.06401, 19.41528] },
-      { "name": "Bodega Aurrera Express, Palito Verde", "point": [-102.07071, 19.40384] },
-      { "name": "Fraccionamiento Viñedos", "point": [-102.07299, 19.40509] },
-      { "name": "ESFU 3", "point": [-102.07498, 19.40752] }
+      {
+        "name": "Unidad Deportiva",
+        "point": [
+          -102.03304,
+          19.42662
+        ]
+      },
+      {
+        "name": "Central de Autobuses",
+        "point": [
+          -102.04234,
+          19.42687
+        ]
+      },
+      {
+        "name": "UNID Uruapan",
+        "point": [
+          -102.04459,
+          19.42587
+        ]
+      },
+      {
+        "name": "Universidad Don Vasco",
+        "point": [
+          -102.04726,
+          19.42619
+        ]
+      },
+      {
+        "name": "IMSS Hospital General de Zona 8 Uruapan",
+        "point": [
+          -102.0555,
+          19.42768
+        ]
+      },
+      {
+        "name": "Centro",
+        "point": [
+          -102.06303,
+          19.42101
+        ]
+      },
+      {
+        "name": "Coppel Cupatitzio",
+        "point": [
+          -102.06297,
+          19.41967
+        ]
+      },
+      {
+        "name": "Parque Lineal Cupatitzio",
+        "point": [
+          -102.06401,
+          19.41528
+        ]
+      },
+      {
+        "name": "Bodega Aurrera Express, Palito Verde",
+        "point": [
+          -102.07071,
+          19.40384
+        ]
+      },
+      {
+        "name": "Fraccionamiento Viñedos",
+        "point": [
+          -102.07299,
+          19.40509
+        ]
+      },
+      {
+        "name": "ESFU 3",
+        "point": [
+          -102.07498,
+          19.40752
+        ]
+      }
     ]
   },
   {
@@ -782,7 +914,64 @@
         19.42699
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Escuela Secundaria Federal Urbana No. 3",
+        "point": [
+          -102.0754839,
+          19.4076314
+        ]
+      },
+      {
+        "name": "Monumento al Padre Ochoa",
+        "point": [
+          -102.0663825,
+          19.4052259
+        ]
+      },
+      {
+        "name": "Merza",
+        "point": [
+          -102.0658662,
+          19.4117575
+        ]
+      },
+      {
+        "name": "Mercado de Antojitos",
+        "point": [
+          -102.0618494,
+          19.4216059
+        ]
+      },
+      {
+        "name": "Mercado Colonial La Charanda",
+        "point": [
+          -102.0597714,
+          19.4281755
+        ]
+      },
+      {
+        "name": "IMSS Hospital General de Zona No. 8 Uruapan",
+        "point": [
+          -102.0558556,
+          19.4272637
+        ]
+      },
+      {
+        "name": "Universidad Don Vasco",
+        "point": [
+          -102.0470596,
+          19.4271143
+        ]
+      },
+      {
+        "name": "Central Camionera de Uruapan",
+        "point": [
+          -102.0422135,
+          19.427425
+        ]
+      }
+    ]
   },
   {
     "id": 4,
@@ -1001,7 +1190,64 @@
         19.4064
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Central Camionera de Uruapan",
+        "point": [
+          -102.0422135,
+          19.427425
+        ]
+      },
+      {
+        "name": "Universidad Don Vasco",
+        "point": [
+          -102.0470596,
+          19.4271143
+        ]
+      },
+      {
+        "name": "IMSS Hospital General de Zona No. 8 Uruapan",
+        "point": [
+          -102.0558556,
+          19.4272637
+        ]
+      },
+      {
+        "name": "Mercado Colonial La Charanda",
+        "point": [
+          -102.0597714,
+          19.4281755
+        ]
+      },
+      {
+        "name": "Merza",
+        "point": [
+          -102.0645251,
+          19.4227026
+        ]
+      },
+      {
+        "name": "Coppel",
+        "point": [
+          -102.06328,
+          19.4187303
+        ]
+      },
+      {
+        "name": "Monumento al Padre Ochoa",
+        "point": [
+          -102.0663825,
+          19.4052259
+        ]
+      },
+      {
+        "name": "Escuela Secundaria Federal Urbana No. 3",
+        "point": [
+          -102.0754839,
+          19.4076314
+        ]
+      }
+    ]
   },
   {
     "id": 5,
@@ -1292,7 +1538,64 @@
         19.38198
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Coppel",
+        "point": [
+          -102.034753,
+          19.4159286
+        ]
+      },
+      {
+        "name": "Colegio Nelson Mandela Primera",
+        "point": [
+          -102.0409334,
+          19.4205442
+        ]
+      },
+      {
+        "name": "Jardín Rotario",
+        "point": [
+          -102.0461009,
+          19.4173087
+        ]
+      },
+      {
+        "name": "Taller Escuela de Artes Plásticas y Artesanías MAPECO",
+        "point": [
+          -102.0469426,
+          19.4089166
+        ]
+      },
+      {
+        "name": "INIFAP Campo Experimental Uruapan",
+        "point": [
+          -102.0521018,
+          19.4070152
+        ]
+      },
+      {
+        "name": "Glorieta del Cacahuate",
+        "point": [
+          -102.0557007,
+          19.4043487
+        ]
+      },
+      {
+        "name": "Paseo Lázaro Cárdenas",
+        "point": [
+          -102.0562636,
+          19.398809
+        ]
+      },
+      {
+        "name": "Universidad Michoacana de San Nicolás de Hidalgo",
+        "point": [
+          -102.0584633,
+          19.3951469
+        ]
+      }
+    ]
   },
   {
     "id": 6,
@@ -1539,7 +1842,57 @@
         19.40227
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Universidad Michoacana de San Nicolás de Hidalgo",
+        "point": [
+          -102.0584633,
+          19.3951469
+        ]
+      },
+      {
+        "name": "Paseo Lázaro Cárdenas",
+        "point": [
+          -102.0562636,
+          19.398809
+        ]
+      },
+      {
+        "name": "Coppel",
+        "point": [
+          -102.0537978,
+          19.4058526
+        ]
+      },
+      {
+        "name": "Taller Escuela de Artes Plásticas y Artesanías MAPECO",
+        "point": [
+          -102.0469426,
+          19.4089166
+        ]
+      },
+      {
+        "name": "Jardín Rotario",
+        "point": [
+          -102.0461009,
+          19.4173087
+        ]
+      },
+      {
+        "name": "Skatepark",
+        "point": [
+          -102.0367268,
+          19.4161134
+        ]
+      },
+      {
+        "name": "Colegio Hidalgo de Michoacán",
+        "point": [
+          -102.0322246,
+          19.4152532
+        ]
+      }
+    ]
   },
   {
     "id": 7,
@@ -1738,7 +2091,64 @@
         19.37256
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Coppel",
+        "point": [
+          -102.034753,
+          19.4159286
+        ]
+      },
+      {
+        "name": "Colegio Nelson Mandela Primera",
+        "point": [
+          -102.0409334,
+          19.4205442
+        ]
+      },
+      {
+        "name": "Jardín Rotario",
+        "point": [
+          -102.0461009,
+          19.4173087
+        ]
+      },
+      {
+        "name": "Templo del Espíritu Santo",
+        "point": [
+          -102.048864,
+          19.4078281
+        ]
+      },
+      {
+        "name": "Glorieta del Cacahuate",
+        "point": [
+          -102.0557007,
+          19.4043487
+        ]
+      },
+      {
+        "name": "Paseo Lázaro Cárdenas",
+        "point": [
+          -102.0562636,
+          19.398809
+        ]
+      },
+      {
+        "name": "Protección Civil",
+        "point": [
+          -102.057972,
+          19.392143
+        ]
+      },
+      {
+        "name": "Soriana",
+        "point": [
+          -102.0578555,
+          19.3828968
+        ]
+      }
+    ]
   },
   {
     "id": 8,
@@ -1929,7 +2339,64 @@
         19.40228
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Soriana",
+        "point": [
+          -102.0578555,
+          19.3828968
+        ]
+      },
+      {
+        "name": "Protección Civil",
+        "point": [
+          -102.057972,
+          19.392143
+        ]
+      },
+      {
+        "name": "Paseo Lázaro Cárdenas",
+        "point": [
+          -102.0562636,
+          19.398809
+        ]
+      },
+      {
+        "name": "Coppel",
+        "point": [
+          -102.0537978,
+          19.4058526
+        ]
+      },
+      {
+        "name": "Taller Escuela de Artes Plásticas y Artesanías MAPECO",
+        "point": [
+          -102.0469426,
+          19.4089166
+        ]
+      },
+      {
+        "name": "Jardín Rotario",
+        "point": [
+          -102.0461009,
+          19.4173087
+        ]
+      },
+      {
+        "name": "Skatepark",
+        "point": [
+          -102.0367268,
+          19.4161134
+        ]
+      },
+      {
+        "name": "Colegio Hidalgo de Michoacán",
+        "point": [
+          -102.0322246,
+          19.4152532
+        ]
+      }
+    ]
   },
   {
     "id": 9,
@@ -2076,7 +2543,64 @@
         19.40701
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Protección Civil",
+        "point": [
+          -102.057972,
+          19.392143
+        ]
+      },
+      {
+        "name": "La Comer",
+        "point": [
+          -102.0548694,
+          19.4009376
+        ]
+      },
+      {
+        "name": "Hospital Fray Juan de San Miguel",
+        "point": [
+          -102.0534,
+          19.4119431
+        ]
+      },
+      {
+        "name": "Estadio de Béisbol Héroe de Nacozari",
+        "point": [
+          -102.0499547,
+          19.4146164
+        ]
+      },
+      {
+        "name": "Coppel",
+        "point": [
+          -102.0629177,
+          19.4197487
+        ]
+      },
+      {
+        "name": "Merza",
+        "point": [
+          -102.0658662,
+          19.4117575
+        ]
+      },
+      {
+        "name": "Monumento al Padre Ochoa",
+        "point": [
+          -102.0663825,
+          19.4052259
+        ]
+      },
+      {
+        "name": "Área recreativa de San Juan Evangelista",
+        "point": [
+          -102.0735844,
+          19.4080737
+        ]
+      }
+    ]
   },
   {
     "id": 10,
@@ -2271,7 +2795,64 @@
         19.38776
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Área recreativa de San Juan Evangelista",
+        "point": [
+          -102.0735844,
+          19.4080737
+        ]
+      },
+      {
+        "name": "Monumento al Padre Ochoa",
+        "point": [
+          -102.0663825,
+          19.4052259
+        ]
+      },
+      {
+        "name": "Merza",
+        "point": [
+          -102.0658662,
+          19.4117575
+        ]
+      },
+      {
+        "name": "Mercado de Antojitos",
+        "point": [
+          -102.0618494,
+          19.4216059
+        ]
+      },
+      {
+        "name": "Estadio de Béisbol Héroe de Nacozari",
+        "point": [
+          -102.0499547,
+          19.4146164
+        ]
+      },
+      {
+        "name": "Hospital Fray Juan de San Miguel",
+        "point": [
+          -102.0534,
+          19.4119431
+        ]
+      },
+      {
+        "name": "Coppel",
+        "point": [
+          -102.0537978,
+          19.4058526
+        ]
+      },
+      {
+        "name": "Protección Civil",
+        "point": [
+          -102.057972,
+          19.392143
+        ]
+      }
+    ]
   },
   {
     "id": 11,
@@ -2466,7 +3047,64 @@
         19.43316
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Protección Civil",
+        "point": [
+          -102.057972,
+          19.392143
+        ]
+      },
+      {
+        "name": "Paseo Lázaro Cárdenas",
+        "point": [
+          -102.0562636,
+          19.398809
+        ]
+      },
+      {
+        "name": "Coppel",
+        "point": [
+          -102.0537978,
+          19.4058526
+        ]
+      },
+      {
+        "name": "Hospital Fray Juan de San Miguel",
+        "point": [
+          -102.0534,
+          19.4119431
+        ]
+      },
+      {
+        "name": "Mercado de Antojitos",
+        "point": [
+          -102.0618494,
+          19.4216059
+        ]
+      },
+      {
+        "name": "Plaza de la Ranita",
+        "point": [
+          -102.0632288,
+          19.4222969
+        ]
+      },
+      {
+        "name": "Mercado Colonial La Charanda",
+        "point": [
+          -102.0597714,
+          19.4281755
+        ]
+      },
+      {
+        "name": "Mural de los Orígenes de Uruapan",
+        "point": [
+          -102.0747918,
+          19.4333208
+        ]
+      }
+    ]
   },
   {
     "id": 12,
@@ -2669,7 +3307,64 @@
         19.38735
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Mural de los Orígenes de Uruapan",
+        "point": [
+          -102.0747918,
+          19.4333208
+        ]
+      },
+      {
+        "name": "Casa Más Chiquita del Mundo",
+        "point": [
+          -102.0660477,
+          19.4254706
+        ]
+      },
+      {
+        "name": "Merza",
+        "point": [
+          -102.0645251,
+          19.4227026
+        ]
+      },
+      {
+        "name": "Mercado de Antojitos",
+        "point": [
+          -102.0618494,
+          19.4216059
+        ]
+      },
+      {
+        "name": "Hospital Fray Juan de San Miguel",
+        "point": [
+          -102.0534,
+          19.4119431
+        ]
+      },
+      {
+        "name": "Coppel",
+        "point": [
+          -102.0537978,
+          19.4058526
+        ]
+      },
+      {
+        "name": "Paseo Lázaro Cárdenas",
+        "point": [
+          -102.0562636,
+          19.398809
+        ]
+      },
+      {
+        "name": "Protección Civil",
+        "point": [
+          -102.057972,
+          19.392143
+        ]
+      }
+    ]
   },
   {
     "id": 13,
@@ -2800,7 +3495,57 @@
         19.41875
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Jefatura de Tenencia",
+        "point": [
+          -102.005574,
+          19.4294703
+        ]
+      },
+      {
+        "name": "Acceso Caltzontzin",
+        "point": [
+          -102.0104354,
+          19.4241514
+        ]
+      },
+      {
+        "name": "Estadio Hermanos López Rayón",
+        "point": [
+          -102.0337435,
+          19.4240083
+        ]
+      },
+      {
+        "name": "Colegio Nelson Mandela Primera",
+        "point": [
+          -102.0409334,
+          19.4205442
+        ]
+      },
+      {
+        "name": "Módulo INE",
+        "point": [
+          -102.0504371,
+          19.4186127
+        ]
+      },
+      {
+        "name": "Parroquia de Cristo Rey",
+        "point": [
+          -102.0544479,
+          19.4181948
+        ]
+      },
+      {
+        "name": "Coppel",
+        "point": [
+          -102.0629177,
+          19.4197487
+        ]
+      }
+    ]
   },
   {
     "id": 14,
@@ -2923,7 +3668,57 @@
         19.42994
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Coppel",
+        "point": [
+          -102.06328,
+          19.4187303
+        ]
+      },
+      {
+        "name": "Parroquia de Cristo Rey",
+        "point": [
+          -102.0544479,
+          19.4181948
+        ]
+      },
+      {
+        "name": "Monumento a Lázaro Cárdenas",
+        "point": [
+          -102.0506518,
+          19.4179886
+        ]
+      },
+      {
+        "name": "Jardín Rotario",
+        "point": [
+          -102.0461009,
+          19.4173087
+        ]
+      },
+      {
+        "name": "Colegio Nelson Mandela Primera",
+        "point": [
+          -102.0409334,
+          19.4205442
+        ]
+      },
+      {
+        "name": "Acceso Caltzontzin",
+        "point": [
+          -102.0104354,
+          19.4241514
+        ]
+      },
+      {
+        "name": "Jefatura de Tenencia",
+        "point": [
+          -102.005574,
+          19.4294703
+        ]
+      }
+    ]
   },
   {
     "id": 15,
@@ -3226,7 +4021,64 @@
         19.43178
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "IMSS UMF 76 Uruapan",
+        "point": [
+          -102.0043841,
+          19.4195067
+        ]
+      },
+      {
+        "name": "Acceso Caltzontzin",
+        "point": [
+          -102.0104354,
+          19.4241514
+        ]
+      },
+      {
+        "name": "Coppel",
+        "point": [
+          -102.0254648,
+          19.4270523
+        ]
+      },
+      {
+        "name": "H. Cuerpo de Rescate y Salvamento Michoacán",
+        "point": [
+          -102.0313273,
+          19.4292638
+        ]
+      },
+      {
+        "name": "Central Camionera de Uruapan",
+        "point": [
+          -102.0422135,
+          19.427425
+        ]
+      },
+      {
+        "name": "Universidad Don Vasco",
+        "point": [
+          -102.0470596,
+          19.4271143
+        ]
+      },
+      {
+        "name": "IMSS Hospital General de Zona No. 8 Uruapan",
+        "point": [
+          -102.0558556,
+          19.4272637
+        ]
+      },
+      {
+        "name": "Mercado Zona Poniente",
+        "point": [
+          -102.0767259,
+          19.4305966
+        ]
+      }
+    ]
   },
   {
     "id": 16,
@@ -3505,7 +4357,64 @@
         19.41577
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Mercado Zona Poniente",
+        "point": [
+          -102.0767259,
+          19.4305966
+        ]
+      },
+      {
+        "name": "Mercado Colonial La Charanda",
+        "point": [
+          -102.0597714,
+          19.4281755
+        ]
+      },
+      {
+        "name": "IMSS Hospital General de Zona No. 8 Uruapan",
+        "point": [
+          -102.0558556,
+          19.4272637
+        ]
+      },
+      {
+        "name": "Universidad Don Vasco",
+        "point": [
+          -102.0470596,
+          19.4271143
+        ]
+      },
+      {
+        "name": "Central Camionera de Uruapan",
+        "point": [
+          -102.0422135,
+          19.427425
+        ]
+      },
+      {
+        "name": "H. Cuerpo de Rescate y Salvamento Michoacán",
+        "point": [
+          -102.0313273,
+          19.4292638
+        ]
+      },
+      {
+        "name": "Coppel",
+        "point": [
+          -102.0254648,
+          19.4270523
+        ]
+      },
+      {
+        "name": "IMSS UMF 76 Uruapan",
+        "point": [
+          -102.0043841,
+          19.4195067
+        ]
+      }
+    ]
   },
   {
     "id": 17,
@@ -3668,7 +4577,57 @@
         19.42111
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "IMSS UMF 76 Uruapan",
+        "point": [
+          -102.0043841,
+          19.4195067
+        ]
+      },
+      {
+        "name": "Acceso Caltzontzin",
+        "point": [
+          -102.0104354,
+          19.4241514
+        ]
+      },
+      {
+        "name": "Estadio Hermanos López Rayón",
+        "point": [
+          -102.0337435,
+          19.4240083
+        ]
+      },
+      {
+        "name": "Colegio Nelson Mandela Primera",
+        "point": [
+          -102.0409334,
+          19.4205442
+        ]
+      },
+      {
+        "name": "Módulo INE",
+        "point": [
+          -102.0504371,
+          19.4186127
+        ]
+      },
+      {
+        "name": "Mercado de Antojitos",
+        "point": [
+          -102.0618494,
+          19.4216059
+        ]
+      },
+      {
+        "name": "Merza",
+        "point": [
+          -102.0645251,
+          19.4227026
+        ]
+      }
+    ]
   },
   {
     "id": 18,
@@ -3815,7 +4774,57 @@
         19.41577
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Mercado de Antojitos",
+        "point": [
+          -102.0618494,
+          19.4216059
+        ]
+      },
+      {
+        "name": "Parroquia de Cristo Rey",
+        "point": [
+          -102.0544479,
+          19.4181948
+        ]
+      },
+      {
+        "name": "Monumento a Lázaro Cárdenas",
+        "point": [
+          -102.0506518,
+          19.4179886
+        ]
+      },
+      {
+        "name": "Jardín Rotario",
+        "point": [
+          -102.0461009,
+          19.4173087
+        ]
+      },
+      {
+        "name": "Colegio Nelson Mandela Primera",
+        "point": [
+          -102.0409334,
+          19.4205442
+        ]
+      },
+      {
+        "name": "Acceso Caltzontzin",
+        "point": [
+          -102.0104354,
+          19.4241514
+        ]
+      },
+      {
+        "name": "IMSS UMF 76 Uruapan",
+        "point": [
+          -102.0043841,
+          19.4195067
+        ]
+      }
+    ]
   },
   {
     "id": 19,
@@ -4218,7 +5227,64 @@
         19.43279
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Primaria Francisco Villa",
+        "point": [
+          -102.018691,
+          19.3885015
+        ]
+      },
+      {
+        "name": "Hospital General Regional \"Dr. Pedro Daniel Martínez\"",
+        "point": [
+          -102.0225319,
+          19.3908775
+        ]
+      },
+      {
+        "name": "Coppel",
+        "point": [
+          -102.034753,
+          19.4159286
+        ]
+      },
+      {
+        "name": "Colegio Nelson Mandela Primera",
+        "point": [
+          -102.0409334,
+          19.4205442
+        ]
+      },
+      {
+        "name": "Mercado de Antojitos",
+        "point": [
+          -102.0618494,
+          19.4216059
+        ]
+      },
+      {
+        "name": "Casa Más Chiquita del Mundo",
+        "point": [
+          -102.0660477,
+          19.4254706
+        ]
+      },
+      {
+        "name": "Hospital Civil",
+        "point": [
+          -102.071614,
+          19.4260638
+        ]
+      },
+      {
+        "name": "Mural de los Orígenes de Uruapan",
+        "point": [
+          -102.0747918,
+          19.4333208
+        ]
+      }
+    ]
   },
   {
     "id": 20,
@@ -4593,7 +5659,64 @@
         19.38527
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Mural de los Orígenes de Uruapan",
+        "point": [
+          -102.0747918,
+          19.4333208
+        ]
+      },
+      {
+        "name": "Hospital Civil",
+        "point": [
+          -102.071614,
+          19.4260638
+        ]
+      },
+      {
+        "name": "Mercado de Antojitos",
+        "point": [
+          -102.0618494,
+          19.4216059
+        ]
+      },
+      {
+        "name": "Monumento a Lázaro Cárdenas",
+        "point": [
+          -102.0506518,
+          19.4179886
+        ]
+      },
+      {
+        "name": "Jardín Rotario",
+        "point": [
+          -102.0461009,
+          19.4173087
+        ]
+      },
+      {
+        "name": "Coppel",
+        "point": [
+          -102.034753,
+          19.4159286
+        ]
+      },
+      {
+        "name": "Hospital General Regional \"Dr. Pedro Daniel Martínez\"",
+        "point": [
+          -102.0225319,
+          19.3908775
+        ]
+      },
+      {
+        "name": "Primaria Francisco Villa",
+        "point": [
+          -102.018691,
+          19.3885015
+        ]
+      }
+    ]
   },
   {
     "id": 21,
@@ -4820,7 +5943,71 @@
         19.36668
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Central Camionera de Uruapan",
+        "point": [
+          -102.0422135,
+          19.427425
+        ]
+      },
+      {
+        "name": "Universidad Don Vasco",
+        "point": [
+          -102.0470596,
+          19.4271143
+        ]
+      },
+      {
+        "name": "IMSS Hospital General de Zona No. 8 Uruapan",
+        "point": [
+          -102.0558556,
+          19.4272637
+        ]
+      },
+      {
+        "name": "Plaza Juárez",
+        "point": [
+          -102.0613193,
+          19.4286843
+        ]
+      },
+      {
+        "name": "Mercado de Antojitos",
+        "point": [
+          -102.0618494,
+          19.4216059
+        ]
+      },
+      {
+        "name": "Hospital Fray Juan de San Miguel",
+        "point": [
+          -102.0534,
+          19.4119431
+        ]
+      },
+      {
+        "name": "Coppel",
+        "point": [
+          -102.0537978,
+          19.4058526
+        ]
+      },
+      {
+        "name": "Protección Civil",
+        "point": [
+          -102.057972,
+          19.392143
+        ]
+      },
+      {
+        "name": "Soriana",
+        "point": [
+          -102.0578555,
+          19.3828968
+        ]
+      }
+    ]
   },
   {
     "id": 22,
@@ -5039,7 +6226,64 @@
         19.42798
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Soriana",
+        "point": [
+          -102.0578555,
+          19.3828968
+        ]
+      },
+      {
+        "name": "Protección Civil",
+        "point": [
+          -102.057972,
+          19.392143
+        ]
+      },
+      {
+        "name": "Coppel",
+        "point": [
+          -102.0537978,
+          19.4058526
+        ]
+      },
+      {
+        "name": "Hospital Fray Juan de San Miguel",
+        "point": [
+          -102.0534,
+          19.4119431
+        ]
+      },
+      {
+        "name": "Estadio de Béisbol Héroe de Nacozari",
+        "point": [
+          -102.0499547,
+          19.4146164
+        ]
+      },
+      {
+        "name": "Presidencia Municipal de Uruapan",
+        "point": [
+          -102.0474851,
+          19.4217269
+        ]
+      },
+      {
+        "name": "Universidad Don Vasco",
+        "point": [
+          -102.0470596,
+          19.4271143
+        ]
+      },
+      {
+        "name": "Central Camionera de Uruapan",
+        "point": [
+          -102.0422135,
+          19.427425
+        ]
+      }
+    ]
   },
   {
     "id": 23,
@@ -5326,7 +6570,64 @@
         19.42946
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Merza",
+        "point": [
+          -102.0429671,
+          19.3794185
+        ]
+      },
+      {
+        "name": "Soriana",
+        "point": [
+          -102.0578555,
+          19.3828968
+        ]
+      },
+      {
+        "name": "Protección Civil",
+        "point": [
+          -102.057972,
+          19.392143
+        ]
+      },
+      {
+        "name": "Coppel",
+        "point": [
+          -102.0537978,
+          19.4058526
+        ]
+      },
+      {
+        "name": "Hospital Fray Juan de San Miguel",
+        "point": [
+          -102.0534,
+          19.4119431
+        ]
+      },
+      {
+        "name": "Presidencia Municipal de Uruapan",
+        "point": [
+          -102.0474851,
+          19.4217269
+        ]
+      },
+      {
+        "name": "IMSS Hospital General de Zona No. 8 Uruapan",
+        "point": [
+          -102.0558556,
+          19.4272637
+        ]
+      },
+      {
+        "name": "Plaza Juárez",
+        "point": [
+          -102.0613193,
+          19.4286843
+        ]
+      }
+    ]
   },
   {
     "id": 24,
@@ -5613,7 +6914,64 @@
         19.38194
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Mercado Colonial La Charanda",
+        "point": [
+          -102.0597714,
+          19.4281755
+        ]
+      },
+      {
+        "name": "IMSS Hospital General de Zona No. 8 Uruapan",
+        "point": [
+          -102.0558556,
+          19.4272637
+        ]
+      },
+      {
+        "name": "Presidencia Municipal de Uruapan",
+        "point": [
+          -102.0474851,
+          19.4217269
+        ]
+      },
+      {
+        "name": "Hospital Fray Juan de San Miguel",
+        "point": [
+          -102.0534,
+          19.4119431
+        ]
+      },
+      {
+        "name": "Coppel",
+        "point": [
+          -102.0537978,
+          19.4058526
+        ]
+      },
+      {
+        "name": "Protección Civil",
+        "point": [
+          -102.057972,
+          19.392143
+        ]
+      },
+      {
+        "name": "Soriana",
+        "point": [
+          -102.0578555,
+          19.3828968
+        ]
+      },
+      {
+        "name": "Merza",
+        "point": [
+          -102.0429671,
+          19.3794185
+        ]
+      }
+    ]
   },
   {
     "id": 25,
@@ -5824,7 +7182,57 @@
         19.42133
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "H. Cuerpo de Rescate y Salvamento Michoacán",
+        "point": [
+          -102.0313273,
+          19.4292638
+        ]
+      },
+      {
+        "name": "Central Camionera de Uruapan",
+        "point": [
+          -102.0422135,
+          19.427425
+        ]
+      },
+      {
+        "name": "Universidad Don Vasco",
+        "point": [
+          -102.0470596,
+          19.4271143
+        ]
+      },
+      {
+        "name": "IMSS Hospital General de Zona No. 8 Uruapan",
+        "point": [
+          -102.0558556,
+          19.4272637
+        ]
+      },
+      {
+        "name": "Mercado Colonial La Charanda",
+        "point": [
+          -102.0597714,
+          19.4281755
+        ]
+      },
+      {
+        "name": "Templo de San Miguel Arcángel",
+        "point": [
+          -102.0619289,
+          19.4258894
+        ]
+      },
+      {
+        "name": "Merza",
+        "point": [
+          -102.0645251,
+          19.4227026
+        ]
+      }
+    ]
   },
   {
     "id": 26,
@@ -6063,7 +7471,64 @@
         19.43019
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Merza",
+        "point": [
+          -102.0645251,
+          19.4227026
+        ]
+      },
+      {
+        "name": "Mercado de Antojitos",
+        "point": [
+          -102.0618494,
+          19.4216059
+        ]
+      },
+      {
+        "name": "Parroquia de Cristo Rey",
+        "point": [
+          -102.0544479,
+          19.4181948
+        ]
+      },
+      {
+        "name": "Monumento a Lázaro Cárdenas",
+        "point": [
+          -102.0506518,
+          19.4179886
+        ]
+      },
+      {
+        "name": "Presidencia Municipal de Uruapan",
+        "point": [
+          -102.0474851,
+          19.4217269
+        ]
+      },
+      {
+        "name": "Universidad Don Vasco",
+        "point": [
+          -102.0470596,
+          19.4271143
+        ]
+      },
+      {
+        "name": "Central Camionera de Uruapan",
+        "point": [
+          -102.0422135,
+          19.427425
+        ]
+      },
+      {
+        "name": "H. Cuerpo de Rescate y Salvamento Michoacán",
+        "point": [
+          -102.0313273,
+          19.4292638
+        ]
+      }
+    ]
   },
   {
     "id": 27,
@@ -6298,7 +7763,57 @@
         19.42094
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Paraíso Villa",
+        "point": [
+          -102.018429,
+          19.4198292
+        ]
+      },
+      {
+        "name": "Colegio Hidalgo de Michoacán",
+        "point": [
+          -102.0322246,
+          19.4152532
+        ]
+      },
+      {
+        "name": "Skatepark",
+        "point": [
+          -102.0367268,
+          19.4161134
+        ]
+      },
+      {
+        "name": "Colegio Nelson Mandela Primera",
+        "point": [
+          -102.0409334,
+          19.4205442
+        ]
+      },
+      {
+        "name": "Módulo INE",
+        "point": [
+          -102.0504371,
+          19.4186127
+        ]
+      },
+      {
+        "name": "Parroquia de Cristo Rey",
+        "point": [
+          -102.0544479,
+          19.4181948
+        ]
+      },
+      {
+        "name": "Coppel",
+        "point": [
+          -102.0629177,
+          19.4197487
+        ]
+      }
+    ]
   },
   {
     "id": 28,
@@ -6525,7 +8040,64 @@
         19.4136
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Mercado de Antojitos",
+        "point": [
+          -102.0618494,
+          19.4216059
+        ]
+      },
+      {
+        "name": "Parroquia de Cristo Rey",
+        "point": [
+          -102.0544479,
+          19.4181948
+        ]
+      },
+      {
+        "name": "Monumento a Lázaro Cárdenas",
+        "point": [
+          -102.0506518,
+          19.4179886
+        ]
+      },
+      {
+        "name": "Jardín Rotario",
+        "point": [
+          -102.0461009,
+          19.4173087
+        ]
+      },
+      {
+        "name": "Centro de Espectáculos 'La Macarena'",
+        "point": [
+          -102.0427969,
+          19.4161479
+        ]
+      },
+      {
+        "name": "Bodega Aurrera",
+        "point": [
+          -102.03529,
+          19.4148636
+        ]
+      },
+      {
+        "name": "Colegio Hidalgo de Michoacán",
+        "point": [
+          -102.0322246,
+          19.4152532
+        ]
+      },
+      {
+        "name": "Paraíso Villa",
+        "point": [
+          -102.018429,
+          19.4198292
+        ]
+      }
+    ]
   },
   {
     "id": 29,
@@ -6664,7 +8236,64 @@
         19.41871
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Seguridad Pública, Tránsito y Vialidad Municipal",
+        "point": [
+          -102.0460906,
+          19.3952511
+        ]
+      },
+      {
+        "name": "Merza",
+        "point": [
+          -102.0479785,
+          19.3989704
+        ]
+      },
+      {
+        "name": "Plaza Estambul",
+        "point": [
+          -102.0508255,
+          19.3959361
+        ]
+      },
+      {
+        "name": "Paseo Lázaro Cárdenas",
+        "point": [
+          -102.0562636,
+          19.398809
+        ]
+      },
+      {
+        "name": "La Comer",
+        "point": [
+          -102.0548694,
+          19.4009376
+        ]
+      },
+      {
+        "name": "Hospital Fray Juan de San Miguel",
+        "point": [
+          -102.0534,
+          19.4119431
+        ]
+      },
+      {
+        "name": "Estadio de Béisbol Héroe de Nacozari",
+        "point": [
+          -102.0499547,
+          19.4146164
+        ]
+      },
+      {
+        "name": "Coppel",
+        "point": [
+          -102.0629177,
+          19.4197487
+        ]
+      }
+    ]
   },
   {
     "id": 30,
@@ -6819,7 +8448,64 @@
         19.39268
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Coppel",
+        "point": [
+          -102.06328,
+          19.4187303
+        ]
+      },
+      {
+        "name": "Estadio de Béisbol Héroe de Nacozari",
+        "point": [
+          -102.0499547,
+          19.4146164
+        ]
+      },
+      {
+        "name": "Hospital Fray Juan de San Miguel",
+        "point": [
+          -102.0534,
+          19.4119431
+        ]
+      },
+      {
+        "name": "La Comer",
+        "point": [
+          -102.0548694,
+          19.4009376
+        ]
+      },
+      {
+        "name": "Paseo Lázaro Cárdenas",
+        "point": [
+          -102.0562636,
+          19.398809
+        ]
+      },
+      {
+        "name": "Plaza Estambul",
+        "point": [
+          -102.0508255,
+          19.3959361
+        ]
+      },
+      {
+        "name": "Merza",
+        "point": [
+          -102.0479785,
+          19.3989704
+        ]
+      },
+      {
+        "name": "Seguridad Pública, Tránsito y Vialidad Municipal",
+        "point": [
+          -102.0460906,
+          19.3952511
+        ]
+      }
+    ]
   },
   {
     "id": 31,
@@ -7070,7 +8756,57 @@
         19.42103
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Escuela Secundaria Federal Urbana No. 4",
+        "point": [
+          -102.0561877,
+          19.3916281
+        ]
+      },
+      {
+        "name": "Universidad Michoacana de San Nicolás de Hidalgo",
+        "point": [
+          -102.0584633,
+          19.3951469
+        ]
+      },
+      {
+        "name": "La Comer",
+        "point": [
+          -102.0548694,
+          19.4009376
+        ]
+      },
+      {
+        "name": "Colegio Casa del Niño",
+        "point": [
+          -102.0652472,
+          19.4056192
+        ]
+      },
+      {
+        "name": "Merza",
+        "point": [
+          -102.0658662,
+          19.4117575
+        ]
+      },
+      {
+        "name": "CENDI",
+        "point": [
+          -102.0657025,
+          19.4158116
+        ]
+      },
+      {
+        "name": "Coppel",
+        "point": [
+          -102.06328,
+          19.4187303
+        ]
+      }
+    ]
   },
   {
     "id": 32,
@@ -7309,7 +9045,64 @@
         19.39299
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "CENDI",
+        "point": [
+          -102.0657025,
+          19.4158116
+        ]
+      },
+      {
+        "name": "Plaza de la Ranita",
+        "point": [
+          -102.0632288,
+          19.4222969
+        ]
+      },
+      {
+        "name": "Coppel",
+        "point": [
+          -102.06328,
+          19.4187303
+        ]
+      },
+      {
+        "name": "Merza",
+        "point": [
+          -102.0658662,
+          19.4117575
+        ]
+      },
+      {
+        "name": "Colegio Casa del Niño",
+        "point": [
+          -102.0652472,
+          19.4056192
+        ]
+      },
+      {
+        "name": "La Comer",
+        "point": [
+          -102.0548694,
+          19.4009376
+        ]
+      },
+      {
+        "name": "Universidad Michoacana de San Nicolás de Hidalgo",
+        "point": [
+          -102.0584633,
+          19.3951469
+        ]
+      },
+      {
+        "name": "Plaza Paquistán",
+        "point": [
+          -102.0511333,
+          19.3953001
+        ]
+      }
+    ]
   },
   {
     "id": 33,
@@ -7504,7 +9297,64 @@
         19.42704
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Plaza Paquistán",
+        "point": [
+          -102.0511333,
+          19.3953001
+        ]
+      },
+      {
+        "name": "Universidad Michoacana de San Nicolás de Hidalgo",
+        "point": [
+          -102.0584633,
+          19.3951469
+        ]
+      },
+      {
+        "name": "Castillo",
+        "point": [
+          -102.058541,
+          19.4092848
+        ]
+      },
+      {
+        "name": "Merza",
+        "point": [
+          -102.0573985,
+          19.4129945
+        ]
+      },
+      {
+        "name": "IMSS Hospital General de Zona No. 8 Uruapan",
+        "point": [
+          -102.0558556,
+          19.4272637
+        ]
+      },
+      {
+        "name": "Universidad Don Vasco",
+        "point": [
+          -102.0470596,
+          19.4271143
+        ]
+      },
+      {
+        "name": "Central Camionera de Uruapan",
+        "point": [
+          -102.0422135,
+          19.427425
+        ]
+      },
+      {
+        "name": "H. Cuerpo de Rescate y Salvamento Michoacán",
+        "point": [
+          -102.0313273,
+          19.4292638
+        ]
+      }
+    ]
   },
   {
     "id": 34,
@@ -7703,7 +9553,64 @@
         19.39256
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "H. Cuerpo de Rescate y Salvamento Michoacán",
+        "point": [
+          -102.0313273,
+          19.4292638
+        ]
+      },
+      {
+        "name": "Central Camionera de Uruapan",
+        "point": [
+          -102.0422135,
+          19.427425
+        ]
+      },
+      {
+        "name": "Universidad Don Vasco",
+        "point": [
+          -102.0470596,
+          19.4271143
+        ]
+      },
+      {
+        "name": "Merza",
+        "point": [
+          -102.0573985,
+          19.4129945
+        ]
+      },
+      {
+        "name": "Castillo",
+        "point": [
+          -102.058541,
+          19.4092848
+        ]
+      },
+      {
+        "name": "La Comer",
+        "point": [
+          -102.0548694,
+          19.4009376
+        ]
+      },
+      {
+        "name": "Universidad Michoacana de San Nicolás de Hidalgo",
+        "point": [
+          -102.0584633,
+          19.3951469
+        ]
+      },
+      {
+        "name": "Plaza Paquistán",
+        "point": [
+          -102.0511333,
+          19.3953001
+        ]
+      }
+    ]
   },
   {
     "id": 35,
@@ -7882,7 +9789,64 @@
         19.43353
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Templo de la Santísima Trinidad",
+        "point": [
+          -102.0498566,
+          19.3958829
+        ]
+      },
+      {
+        "name": "Plaza Paquistán",
+        "point": [
+          -102.0511333,
+          19.3953001
+        ]
+      },
+      {
+        "name": "Universidad Michoacana de San Nicolás de Hidalgo",
+        "point": [
+          -102.0584633,
+          19.3951469
+        ]
+      },
+      {
+        "name": "Paseo Lázaro Cárdenas",
+        "point": [
+          -102.0562636,
+          19.398809
+        ]
+      },
+      {
+        "name": "Castillo",
+        "point": [
+          -102.058541,
+          19.4092848
+        ]
+      },
+      {
+        "name": "Merza",
+        "point": [
+          -102.0573985,
+          19.4129945
+        ]
+      },
+      {
+        "name": "Parroquia de Cristo Rey",
+        "point": [
+          -102.0544479,
+          19.4181948
+        ]
+      },
+      {
+        "name": "IMSS Hospital General de Zona No. 8 Uruapan",
+        "point": [
+          -102.0558556,
+          19.4272637
+        ]
+      }
+    ]
   },
   {
     "id": 36,
@@ -8097,7 +10061,64 @@
         19.39256
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "IMSS Hospital General de Zona No. 8 Uruapan",
+        "point": [
+          -102.0558556,
+          19.4272637
+        ]
+      },
+      {
+        "name": "Primaria Manuel Ocaranza",
+        "point": [
+          -102.0521203,
+          19.4223001
+        ]
+      },
+      {
+        "name": "Parroquia de Cristo Rey",
+        "point": [
+          -102.0544479,
+          19.4181948
+        ]
+      },
+      {
+        "name": "Merza",
+        "point": [
+          -102.0573985,
+          19.4129945
+        ]
+      },
+      {
+        "name": "Castillo",
+        "point": [
+          -102.058541,
+          19.4092848
+        ]
+      },
+      {
+        "name": "Paseo Lázaro Cárdenas",
+        "point": [
+          -102.0562636,
+          19.398809
+        ]
+      },
+      {
+        "name": "Universidad Michoacana de San Nicolás de Hidalgo",
+        "point": [
+          -102.0584633,
+          19.3951469
+        ]
+      },
+      {
+        "name": "Plaza Paquistán",
+        "point": [
+          -102.0511333,
+          19.3953001
+        ]
+      }
+    ]
   },
   {
     "id": 37,
@@ -8356,7 +10377,64 @@
         19.42098
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Hospital General Regional \"Dr. Pedro Daniel Martínez\"",
+        "point": [
+          -102.0225319,
+          19.3908775
+        ]
+      },
+      {
+        "name": "Mercado de Abastos",
+        "point": [
+          -102.0442867,
+          19.3812403
+        ]
+      },
+      {
+        "name": "Soriana",
+        "point": [
+          -102.0578555,
+          19.3828968
+        ]
+      },
+      {
+        "name": "Protección Civil",
+        "point": [
+          -102.057972,
+          19.392143
+        ]
+      },
+      {
+        "name": "La Comer",
+        "point": [
+          -102.0548694,
+          19.4009376
+        ]
+      },
+      {
+        "name": "Castillo",
+        "point": [
+          -102.058541,
+          19.4092848
+        ]
+      },
+      {
+        "name": "Merza",
+        "point": [
+          -102.0573985,
+          19.4129945
+        ]
+      },
+      {
+        "name": "Coppel",
+        "point": [
+          -102.0629177,
+          19.4197487
+        ]
+      }
+    ]
   },
   {
     "id": 38,
@@ -8631,7 +10709,64 @@
         19.38463
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Mercado de Antojitos",
+        "point": [
+          -102.0618494,
+          19.4216059
+        ]
+      },
+      {
+        "name": "Merza",
+        "point": [
+          -102.0573985,
+          19.4129945
+        ]
+      },
+      {
+        "name": "Castillo",
+        "point": [
+          -102.058541,
+          19.4092848
+        ]
+      },
+      {
+        "name": "La Comer",
+        "point": [
+          -102.0548694,
+          19.4009376
+        ]
+      },
+      {
+        "name": "Protección Civil",
+        "point": [
+          -102.057972,
+          19.392143
+        ]
+      },
+      {
+        "name": "Soriana",
+        "point": [
+          -102.0578555,
+          19.3828968
+        ]
+      },
+      {
+        "name": "Mercado de Abastos",
+        "point": [
+          -102.0442867,
+          19.3812403
+        ]
+      },
+      {
+        "name": "Hospital General Regional \"Dr. Pedro Daniel Martínez\"",
+        "point": [
+          -102.0225319,
+          19.3908775
+        ]
+      }
+    ]
   },
   {
     "id": 39,
@@ -8950,7 +11085,64 @@
         19.43197
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Unidad Médica Familiar 76",
+        "point": [
+          -102.0090912,
+          19.4079085
+        ]
+      },
+      {
+        "name": "Coppel",
+        "point": [
+          -102.034753,
+          19.4159286
+        ]
+      },
+      {
+        "name": "Colegio Nelson Mandela Primera",
+        "point": [
+          -102.0409334,
+          19.4205442
+        ]
+      },
+      {
+        "name": "Módulo INE",
+        "point": [
+          -102.0504371,
+          19.4186127
+        ]
+      },
+      {
+        "name": "Mercado de Antojitos",
+        "point": [
+          -102.0618494,
+          19.4216059
+        ]
+      },
+      {
+        "name": "Casa Más Chiquita del Mundo",
+        "point": [
+          -102.0660477,
+          19.4254706
+        ]
+      },
+      {
+        "name": "Hospital Civil",
+        "point": [
+          -102.071614,
+          19.4260638
+        ]
+      },
+      {
+        "name": "Mercado Zona Poniente",
+        "point": [
+          -102.0767259,
+          19.4305966
+        ]
+      }
+    ]
   },
   {
     "id": 40,
@@ -9241,7 +11433,64 @@
         19.40791
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Mercado Zona Poniente",
+        "point": [
+          -102.0767259,
+          19.4305966
+        ]
+      },
+      {
+        "name": "Hospital Civil",
+        "point": [
+          -102.071614,
+          19.4260638
+        ]
+      },
+      {
+        "name": "Casa Más Chiquita del Mundo",
+        "point": [
+          -102.0660477,
+          19.4254706
+        ]
+      },
+      {
+        "name": "Primaria Manuel Ocaranza",
+        "point": [
+          -102.0521203,
+          19.4223001
+        ]
+      },
+      {
+        "name": "Monumento a Lázaro Cárdenas",
+        "point": [
+          -102.0506518,
+          19.4179886
+        ]
+      },
+      {
+        "name": "Jardín Rotario",
+        "point": [
+          -102.0461009,
+          19.4173087
+        ]
+      },
+      {
+        "name": "Coppel",
+        "point": [
+          -102.034753,
+          19.4159286
+        ]
+      },
+      {
+        "name": "Unidad Médica Familiar 76",
+        "point": [
+          -102.0090912,
+          19.4079085
+        ]
+      }
+    ]
   },
   {
     "id": 41,
@@ -9628,7 +11877,64 @@
         19.43178
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Monumento a Zapata",
+        "point": [
+          -102.0545503,
+          19.3708535
+        ]
+      },
+      {
+        "name": "Soriana",
+        "point": [
+          -102.0578555,
+          19.3828968
+        ]
+      },
+      {
+        "name": "Protección Civil",
+        "point": [
+          -102.057972,
+          19.392143
+        ]
+      },
+      {
+        "name": "Monumento al Padre Ochoa",
+        "point": [
+          -102.0663825,
+          19.4052259
+        ]
+      },
+      {
+        "name": "Merza",
+        "point": [
+          -102.0658662,
+          19.4117575
+        ]
+      },
+      {
+        "name": "Coppel",
+        "point": [
+          -102.06328,
+          19.4187303
+        ]
+      },
+      {
+        "name": "Hospital Civil",
+        "point": [
+          -102.071614,
+          19.4260638
+        ]
+      },
+      {
+        "name": "Mercado Zona Poniente",
+        "point": [
+          -102.0767259,
+          19.4305966
+        ]
+      }
+    ]
   },
   {
     "id": 42,
@@ -9967,7 +12273,64 @@
         19.37442
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Mercado Zona Poniente",
+        "point": [
+          -102.0767259,
+          19.4305966
+        ]
+      },
+      {
+        "name": "Hospital Civil",
+        "point": [
+          -102.071614,
+          19.4260638
+        ]
+      },
+      {
+        "name": "Coppel",
+        "point": [
+          -102.06328,
+          19.4187303
+        ]
+      },
+      {
+        "name": "Merza",
+        "point": [
+          -102.0658662,
+          19.4117575
+        ]
+      },
+      {
+        "name": "Monumento al Padre Ochoa",
+        "point": [
+          -102.0663825,
+          19.4052259
+        ]
+      },
+      {
+        "name": "Protección Civil",
+        "point": [
+          -102.057972,
+          19.392143
+        ]
+      },
+      {
+        "name": "Soriana",
+        "point": [
+          -102.0578555,
+          19.3828968
+        ]
+      },
+      {
+        "name": "Monumento a Zapata",
+        "point": [
+          -102.0545503,
+          19.3708535
+        ]
+      }
+    ]
   },
   {
     "id": 43,
@@ -10198,7 +12561,64 @@
         19.42141
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Parque del Templo",
+        "point": [
+          -102.038517,
+          19.4120306
+        ]
+      },
+      {
+        "name": "CECATI 117",
+        "point": [
+          -102.0429581,
+          19.406388
+        ]
+      },
+      {
+        "name": "Hospital Fray Juan de San Miguel",
+        "point": [
+          -102.0534,
+          19.4119431
+        ]
+      },
+      {
+        "name": "Merza",
+        "point": [
+          -102.0573985,
+          19.4129945
+        ]
+      },
+      {
+        "name": "Mercado de Antojitos",
+        "point": [
+          -102.0618494,
+          19.4216059
+        ]
+      },
+      {
+        "name": "Casa Más Chiquita del Mundo",
+        "point": [
+          -102.0660477,
+          19.4254706
+        ]
+      },
+      {
+        "name": "Hospital Civil",
+        "point": [
+          -102.071614,
+          19.4260638
+        ]
+      },
+      {
+        "name": "Mercado Zona Poniente",
+        "point": [
+          -102.0767259,
+          19.4305966
+        ]
+      }
+    ]
   },
   {
     "id": 44,
@@ -10409,7 +12829,64 @@
         19.41151
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Mercado Zona Poniente",
+        "point": [
+          -102.0767259,
+          19.4305966
+        ]
+      },
+      {
+        "name": "Hospital Civil",
+        "point": [
+          -102.071614,
+          19.4260638
+        ]
+      },
+      {
+        "name": "Barrio de Santiago",
+        "point": [
+          -102.0707626,
+          19.4233862
+        ]
+      },
+      {
+        "name": "Coppel",
+        "point": [
+          -102.06328,
+          19.4187303
+        ]
+      },
+      {
+        "name": "Merza",
+        "point": [
+          -102.0573985,
+          19.4129945
+        ]
+      },
+      {
+        "name": "Hospital El Ángel",
+        "point": [
+          -102.056462,
+          19.4084122
+        ]
+      },
+      {
+        "name": "CECATI 117",
+        "point": [
+          -102.0429581,
+          19.406388
+        ]
+      },
+      {
+        "name": "Parque del Templo",
+        "point": [
+          -102.038517,
+          19.4120306
+        ]
+      }
+    ]
   },
   {
     "id": 45,
@@ -10588,7 +13065,64 @@
         19.42227
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "IMSS Hospital General de Zona No. 8 Uruapan",
+        "point": [
+          -102.0558556,
+          19.4272637
+        ]
+      },
+      {
+        "name": "Mercado Colonial La Charanda",
+        "point": [
+          -102.0597714,
+          19.4281755
+        ]
+      },
+      {
+        "name": "Merza",
+        "point": [
+          -102.0645251,
+          19.4227026
+        ]
+      },
+      {
+        "name": "Pérgola Municipal",
+        "point": [
+          -102.0633039,
+          19.421018
+        ]
+      },
+      {
+        "name": "Coppel",
+        "point": [
+          -102.06328,
+          19.4187303
+        ]
+      },
+      {
+        "name": "Parque Lineal Cupatitzio",
+        "point": [
+          -102.0639806,
+          19.4152693
+        ]
+      },
+      {
+        "name": "Escuela Primaria Mártires Uruapan",
+        "point": [
+          -102.0663554,
+          19.4150387
+        ]
+      },
+      {
+        "name": "Capilla de San Pedro",
+        "point": [
+          -102.0701515,
+          19.4164494
+        ]
+      }
+    ]
   },
   {
     "id": 46,
@@ -10751,7 +13285,43 @@
         19.43521
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Capilla de San Pedro",
+        "point": [
+          -102.0701515,
+          19.4164494
+        ]
+      },
+      {
+        "name": "Escuela Primaria Mártires Uruapan",
+        "point": [
+          -102.0663554,
+          19.4150387
+        ]
+      },
+      {
+        "name": "Mercado de Antojitos",
+        "point": [
+          -102.0618494,
+          19.4216059
+        ]
+      },
+      {
+        "name": "Parroquia de Cristo Rey",
+        "point": [
+          -102.0544479,
+          19.4181948
+        ]
+      },
+      {
+        "name": "IMSS Hospital General de Zona No. 8 Uruapan",
+        "point": [
+          -102.0558556,
+          19.4272637
+        ]
+      }
+    ]
   },
   {
     "id": 47,
@@ -10918,7 +13488,50 @@
         19.41367
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Primaria Manuel Ocaranza",
+        "point": [
+          -102.0521203,
+          19.4223001
+        ]
+      },
+      {
+        "name": "INFONAVIT",
+        "point": [
+          -102.0515678,
+          19.4172932
+        ]
+      },
+      {
+        "name": "Parroquia de Cristo Rey",
+        "point": [
+          -102.0544479,
+          19.4181948
+        ]
+      },
+      {
+        "name": "Coppel",
+        "point": [
+          -102.0629177,
+          19.4197487
+        ]
+      },
+      {
+        "name": "Parque Lineal Cupatitzio",
+        "point": [
+          -102.0639806,
+          19.4152693
+        ]
+      },
+      {
+        "name": "Merza",
+        "point": [
+          -102.0658662,
+          19.4117575
+        ]
+      }
+    ]
   },
   {
     "id": 48,
@@ -11061,7 +13674,43 @@
         19.43349
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Merza",
+        "point": [
+          -102.0658662,
+          19.4117575
+        ]
+      },
+      {
+        "name": "CENDI",
+        "point": [
+          -102.0657025,
+          19.4158116
+        ]
+      },
+      {
+        "name": "Mercado de Antojitos",
+        "point": [
+          -102.0618494,
+          19.4216059
+        ]
+      },
+      {
+        "name": "Parroquia de Cristo Rey",
+        "point": [
+          -102.0544479,
+          19.4181948
+        ]
+      },
+      {
+        "name": "Primaria Manuel Ocaranza",
+        "point": [
+          -102.0521203,
+          19.4223001
+        ]
+      }
+    ]
   },
   {
     "id": 49,
@@ -11280,7 +13929,64 @@
         19.43247
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Jucutacato",
+        "point": [
+          -102.0796053,
+          19.3773941
+        ]
+      },
+      {
+        "name": "Subprocuraduría Regional de Uruapan PGJ",
+        "point": [
+          -102.0690661,
+          19.4000732
+        ]
+      },
+      {
+        "name": "Monumento al Padre Ochoa",
+        "point": [
+          -102.0663825,
+          19.4052259
+        ]
+      },
+      {
+        "name": "Parque Lineal Cupatitzio",
+        "point": [
+          -102.0639806,
+          19.4152693
+        ]
+      },
+      {
+        "name": "Bomberos",
+        "point": [
+          -102.0627479,
+          19.4183634
+        ]
+      },
+      {
+        "name": "Mercado de Antojitos",
+        "point": [
+          -102.0618494,
+          19.4216059
+        ]
+      },
+      {
+        "name": "Plaza de la Ranita",
+        "point": [
+          -102.0632288,
+          19.4222969
+        ]
+      },
+      {
+        "name": "Mercado Colonial La Charanda",
+        "point": [
+          -102.0597714,
+          19.4281755
+        ]
+      }
+    ]
   },
   {
     "id": 50,
@@ -11455,7 +14161,57 @@
         19.37654
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Mercado de Antojitos",
+        "point": [
+          -102.0618494,
+          19.4216059
+        ]
+      },
+      {
+        "name": "Coppel",
+        "point": [
+          -102.0629177,
+          19.4197487
+        ]
+      },
+      {
+        "name": "Parque Lineal Cupatitzio",
+        "point": [
+          -102.0639806,
+          19.4152693
+        ]
+      },
+      {
+        "name": "Merza",
+        "point": [
+          -102.0658662,
+          19.4117575
+        ]
+      },
+      {
+        "name": "Monumento al Padre Ochoa",
+        "point": [
+          -102.0663825,
+          19.4052259
+        ]
+      },
+      {
+        "name": "Subprocuraduría Regional de Uruapan PGJ",
+        "point": [
+          -102.0690661,
+          19.4000732
+        ]
+      },
+      {
+        "name": "Jucutacato",
+        "point": [
+          -102.0796053,
+          19.3773941
+        ]
+      }
+    ]
   },
   {
     "id": 51,
@@ -11802,7 +14558,64 @@
         19.43316
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Hospital General Regional \"Dr. Pedro Daniel Martínez\"",
+        "point": [
+          -102.0225319,
+          19.3908775
+        ]
+      },
+      {
+        "name": "Coppel",
+        "point": [
+          -102.034753,
+          19.4159286
+        ]
+      },
+      {
+        "name": "Colegio Nelson Mandela Primera",
+        "point": [
+          -102.0409334,
+          19.4205442
+        ]
+      },
+      {
+        "name": "Módulo INE",
+        "point": [
+          -102.0504371,
+          19.4186127
+        ]
+      },
+      {
+        "name": "Mercado de Antojitos",
+        "point": [
+          -102.0618494,
+          19.4216059
+        ]
+      },
+      {
+        "name": "Casa Más Chiquita del Mundo",
+        "point": [
+          -102.0660477,
+          19.4254706
+        ]
+      },
+      {
+        "name": "Hospital Civil",
+        "point": [
+          -102.071614,
+          19.4260638
+        ]
+      },
+      {
+        "name": "Mural de los Orígenes de Uruapan",
+        "point": [
+          -102.0747918,
+          19.4333208
+        ]
+      }
+    ]
   },
   {
     "id": 52,
@@ -12173,7 +14986,64 @@
         19.38463
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Mural de los Orígenes de Uruapan",
+        "point": [
+          -102.0747918,
+          19.4333208
+        ]
+      },
+      {
+        "name": "Hospital Civil",
+        "point": [
+          -102.071614,
+          19.4260638
+        ]
+      },
+      {
+        "name": "Casa Más Chiquita del Mundo",
+        "point": [
+          -102.0660477,
+          19.4254706
+        ]
+      },
+      {
+        "name": "Monumento a Lázaro Cárdenas",
+        "point": [
+          -102.0506518,
+          19.4179886
+        ]
+      },
+      {
+        "name": "Jardín Rotario",
+        "point": [
+          -102.0461009,
+          19.4173087
+        ]
+      },
+      {
+        "name": "Coppel",
+        "point": [
+          -102.034753,
+          19.4159286
+        ]
+      },
+      {
+        "name": "Hospital General Regional \"Dr. Pedro Daniel Martínez\"",
+        "point": [
+          -102.0225319,
+          19.3908775
+        ]
+      },
+      {
+        "name": "Primaria Francisco Villa",
+        "point": [
+          -102.018691,
+          19.3885015
+        ]
+      }
+    ]
   },
   {
     "id": 53,
@@ -12448,7 +15318,57 @@
         19.42207
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Hospital General Regional \"Dr. Pedro Daniel Martínez\"",
+        "point": [
+          -102.0225319,
+          19.3908775
+        ]
+      },
+      {
+        "name": "Galerías Metropolitana Uruapan",
+        "point": [
+          -102.0262455,
+          19.4256922
+        ]
+      },
+      {
+        "name": "H. Cuerpo de Rescate y Salvamento Michoacán",
+        "point": [
+          -102.0313273,
+          19.4292638
+        ]
+      },
+      {
+        "name": "Central Camionera de Uruapan",
+        "point": [
+          -102.0422135,
+          19.427425
+        ]
+      },
+      {
+        "name": "Universidad Don Vasco",
+        "point": [
+          -102.0470596,
+          19.4271143
+        ]
+      },
+      {
+        "name": "IMSS Hospital General de Zona No. 8 Uruapan",
+        "point": [
+          -102.0558556,
+          19.4272637
+        ]
+      },
+      {
+        "name": "Mercado de Antojitos",
+        "point": [
+          -102.0618494,
+          19.4216059
+        ]
+      }
+    ]
   },
   {
     "id": 54,
@@ -12639,7 +15559,64 @@
         19.39103
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Mercado de Antojitos",
+        "point": [
+          -102.0618494,
+          19.4216059
+        ]
+      },
+      {
+        "name": "Mercado Colonial La Charanda",
+        "point": [
+          -102.0597714,
+          19.4281755
+        ]
+      },
+      {
+        "name": "IMSS Hospital General de Zona No. 8 Uruapan",
+        "point": [
+          -102.0558556,
+          19.4272637
+        ]
+      },
+      {
+        "name": "Universidad Don Vasco",
+        "point": [
+          -102.0470596,
+          19.4271143
+        ]
+      },
+      {
+        "name": "Central Camionera de Uruapan",
+        "point": [
+          -102.0422135,
+          19.427425
+        ]
+      },
+      {
+        "name": "H. Cuerpo de Rescate y Salvamento Michoacán",
+        "point": [
+          -102.0313273,
+          19.4292638
+        ]
+      },
+      {
+        "name": "Coppel",
+        "point": [
+          -102.0254648,
+          19.4270523
+        ]
+      },
+      {
+        "name": "Hospital General Regional \"Dr. Pedro Daniel Martínez\"",
+        "point": [
+          -102.0225319,
+          19.3908775
+        ]
+      }
+    ]
   },
   {
     "id": 55,
@@ -12970,7 +15947,64 @@
         19.47469
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Escuela Secundaria Federal de Uruapan No. 1",
+        "point": [
+          -102.0444411,
+          19.4306917
+        ]
+      },
+      {
+        "name": "Universidad Don Vasco",
+        "point": [
+          -102.0470596,
+          19.4271143
+        ]
+      },
+      {
+        "name": "Primaria Manuel Ocaranza",
+        "point": [
+          -102.0521203,
+          19.4223001
+        ]
+      },
+      {
+        "name": "Mercado de Antojitos",
+        "point": [
+          -102.0618494,
+          19.4216059
+        ]
+      },
+      {
+        "name": "Casa Más Chiquita del Mundo",
+        "point": [
+          -102.0660477,
+          19.4254706
+        ]
+      },
+      {
+        "name": "Hospital Civil",
+        "point": [
+          -102.071614,
+          19.4260638
+        ]
+      },
+      {
+        "name": "Mural de los Orígenes de Uruapan",
+        "point": [
+          -102.0747918,
+          19.4333208
+        ]
+      },
+      {
+        "name": "CETIS 27",
+        "point": [
+          -102.0742929,
+          19.4740214
+        ]
+      }
+    ]
   },
   {
     "id": 56,
@@ -13269,7 +16303,64 @@
         19.43084
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "CETIS 27",
+        "point": [
+          -102.0742929,
+          19.4740214
+        ]
+      },
+      {
+        "name": "Mural de los Orígenes de Uruapan",
+        "point": [
+          -102.0747918,
+          19.4333208
+        ]
+      },
+      {
+        "name": "Hospital Civil",
+        "point": [
+          -102.071614,
+          19.4260638
+        ]
+      },
+      {
+        "name": "Foro Cultural La Morada",
+        "point": [
+          -102.0665395,
+          19.4230362
+        ]
+      },
+      {
+        "name": "Mercado de Antojitos",
+        "point": [
+          -102.0618494,
+          19.4216059
+        ]
+      },
+      {
+        "name": "IMSS Hospital General de Zona No. 8 Uruapan",
+        "point": [
+          -102.0558556,
+          19.4272637
+        ]
+      },
+      {
+        "name": "Universidad Don Vasco",
+        "point": [
+          -102.0470596,
+          19.4271143
+        ]
+      },
+      {
+        "name": "Escuela Secundaria Federal de Uruapan No. 1",
+        "point": [
+          -102.0444411,
+          19.4306917
+        ]
+      }
+    ]
   },
   {
     "id": 57,
@@ -13624,7 +16715,64 @@
         19.43178
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Coppel",
+        "point": [
+          -102.034753,
+          19.4159286
+        ]
+      },
+      {
+        "name": "Colegio Nelson Mandela Primera",
+        "point": [
+          -102.0409334,
+          19.4205442
+        ]
+      },
+      {
+        "name": "Módulo INE",
+        "point": [
+          -102.0504371,
+          19.4186127
+        ]
+      },
+      {
+        "name": "Parroquia de Cristo Rey",
+        "point": [
+          -102.0544479,
+          19.4181948
+        ]
+      },
+      {
+        "name": "Mercado de Antojitos",
+        "point": [
+          -102.0618494,
+          19.4216059
+        ]
+      },
+      {
+        "name": "Casa Más Chiquita del Mundo",
+        "point": [
+          -102.0660477,
+          19.4254706
+        ]
+      },
+      {
+        "name": "Hospital Civil",
+        "point": [
+          -102.071614,
+          19.4260638
+        ]
+      },
+      {
+        "name": "Mercado Zona Poniente",
+        "point": [
+          -102.0767259,
+          19.4305966
+        ]
+      }
+    ]
   },
   {
     "id": 58,
@@ -13975,7 +17123,57 @@
         19.38193
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Mercado Zona Poniente",
+        "point": [
+          -102.0767259,
+          19.4305966
+        ]
+      },
+      {
+        "name": "Hospital Civil",
+        "point": [
+          -102.071614,
+          19.4260638
+        ]
+      },
+      {
+        "name": "Casa Más Chiquita del Mundo",
+        "point": [
+          -102.0660477,
+          19.4254706
+        ]
+      },
+      {
+        "name": "Primaria Manuel Ocaranza",
+        "point": [
+          -102.0521203,
+          19.4223001
+        ]
+      },
+      {
+        "name": "Monumento a Lázaro Cárdenas",
+        "point": [
+          -102.0506518,
+          19.4179886
+        ]
+      },
+      {
+        "name": "Jardín Rotario",
+        "point": [
+          -102.0461009,
+          19.4173087
+        ]
+      },
+      {
+        "name": "Coppel",
+        "point": [
+          -102.034753,
+          19.4159286
+        ]
+      }
+    ]
   },
   {
     "id": 59,
@@ -14274,7 +17472,64 @@
         19.43749
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "CECATI 117",
+        "point": [
+          -102.0429581,
+          19.406388
+        ]
+      },
+      {
+        "name": "Colegio Nelson Mandela Primera",
+        "point": [
+          -102.0409334,
+          19.4205442
+        ]
+      },
+      {
+        "name": "Módulo INE",
+        "point": [
+          -102.0504371,
+          19.4186127
+        ]
+      },
+      {
+        "name": "Mercado de Antojitos",
+        "point": [
+          -102.0618494,
+          19.4216059
+        ]
+      },
+      {
+        "name": "Casa Más Chiquita del Mundo",
+        "point": [
+          -102.0660477,
+          19.4254706
+        ]
+      },
+      {
+        "name": "Hospital Civil",
+        "point": [
+          -102.071614,
+          19.4260638
+        ]
+      },
+      {
+        "name": "Mercado Zona Poniente",
+        "point": [
+          -102.0767259,
+          19.4305966
+        ]
+      },
+      {
+        "name": "Profesor Genaro Vázquez Rojas",
+        "point": [
+          -102.0865471,
+          19.4366131
+        ]
+      }
+    ]
   },
   {
     "id": 60,
@@ -14585,7 +17840,64 @@
         19.40579
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Profesor Genaro Vázquez Rojas",
+        "point": [
+          -102.0865471,
+          19.4366131
+        ]
+      },
+      {
+        "name": "Mercado Zona Poniente",
+        "point": [
+          -102.0767259,
+          19.4305966
+        ]
+      },
+      {
+        "name": "Hospital Civil",
+        "point": [
+          -102.071614,
+          19.4260638
+        ]
+      },
+      {
+        "name": "Casa Más Chiquita del Mundo",
+        "point": [
+          -102.0660477,
+          19.4254706
+        ]
+      },
+      {
+        "name": "Monumento a Lázaro Cárdenas",
+        "point": [
+          -102.0506518,
+          19.4179886
+        ]
+      },
+      {
+        "name": "Jardín Rotario",
+        "point": [
+          -102.0461009,
+          19.4173087
+        ]
+      },
+      {
+        "name": "Escuela Secundaria Federal Urbana No. 2",
+        "point": [
+          -102.046162,
+          19.4096274
+        ]
+      },
+      {
+        "name": "CECATI 117",
+        "point": [
+          -102.0429581,
+          19.406388
+        ]
+      }
+    ]
   },
   {
     "id": 61,
@@ -14812,7 +18124,64 @@
         19.44154
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Monumento al Padre Ochoa",
+        "point": [
+          -102.0663825,
+          19.4052259
+        ]
+      },
+      {
+        "name": "Merza",
+        "point": [
+          -102.0658662,
+          19.4117575
+        ]
+      },
+      {
+        "name": "Mercado de Antojitos",
+        "point": [
+          -102.0618494,
+          19.4216059
+        ]
+      },
+      {
+        "name": "Mercado Colonial La Charanda",
+        "point": [
+          -102.0597714,
+          19.4281755
+        ]
+      },
+      {
+        "name": "IMSS Hospital General de Zona No. 8 Uruapan",
+        "point": [
+          -102.0558556,
+          19.4272637
+        ]
+      },
+      {
+        "name": "Universidad Don Vasco",
+        "point": [
+          -102.0470596,
+          19.4271143
+        ]
+      },
+      {
+        "name": "Central Camionera de Uruapan",
+        "point": [
+          -102.0422135,
+          19.427425
+        ]
+      },
+      {
+        "name": "H. Cuerpo de Rescate y Salvamento Michoacán",
+        "point": [
+          -102.0313273,
+          19.4292638
+        ]
+      }
+    ]
   },
   {
     "id": 62,
@@ -15043,7 +18412,64 @@
         19.40746
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "H. Cuerpo de Rescate y Salvamento Michoacán",
+        "point": [
+          -102.0313273,
+          19.4292638
+        ]
+      },
+      {
+        "name": "Central Camionera de Uruapan",
+        "point": [
+          -102.0422135,
+          19.427425
+        ]
+      },
+      {
+        "name": "Universidad Don Vasco",
+        "point": [
+          -102.0470596,
+          19.4271143
+        ]
+      },
+      {
+        "name": "IMSS Hospital General de Zona No. 8 Uruapan",
+        "point": [
+          -102.0558556,
+          19.4272637
+        ]
+      },
+      {
+        "name": "Mercado Colonial La Charanda",
+        "point": [
+          -102.0597714,
+          19.4281755
+        ]
+      },
+      {
+        "name": "Merza",
+        "point": [
+          -102.0645251,
+          19.4227026
+        ]
+      },
+      {
+        "name": "Coppel",
+        "point": [
+          -102.06328,
+          19.4187303
+        ]
+      },
+      {
+        "name": "Monumento al Padre Ochoa",
+        "point": [
+          -102.0663825,
+          19.4052259
+        ]
+      }
+    ]
   },
   {
     "id": 63,
@@ -15246,7 +18672,64 @@
         19.40046
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Parque del Templo",
+        "point": [
+          -102.038517,
+          19.4120306
+        ]
+      },
+      {
+        "name": "Centro de Espectáculos 'La Macarena'",
+        "point": [
+          -102.0427969,
+          19.4161479
+        ]
+      },
+      {
+        "name": "Módulo INE",
+        "point": [
+          -102.0504371,
+          19.4186127
+        ]
+      },
+      {
+        "name": "Coppel",
+        "point": [
+          -102.0629177,
+          19.4197487
+        ]
+      },
+      {
+        "name": "Parque Lineal Cupatitzio",
+        "point": [
+          -102.0639806,
+          19.4152693
+        ]
+      },
+      {
+        "name": "Merza",
+        "point": [
+          -102.0658662,
+          19.4117575
+        ]
+      },
+      {
+        "name": "Monumento al Padre Ochoa",
+        "point": [
+          -102.0663825,
+          19.4052259
+        ]
+      },
+      {
+        "name": "Subprocuraduría Regional de Uruapan PGJ",
+        "point": [
+          -102.0690661,
+          19.4000732
+        ]
+      }
+    ]
   },
   {
     "id": 64,
@@ -15429,7 +18912,64 @@
         19.41151
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Monumento al Padre Ochoa",
+        "point": [
+          -102.0663825,
+          19.4052259
+        ]
+      },
+      {
+        "name": "Merza",
+        "point": [
+          -102.0658662,
+          19.4117575
+        ]
+      },
+      {
+        "name": "CENDI",
+        "point": [
+          -102.0657025,
+          19.4158116
+        ]
+      },
+      {
+        "name": "Mercado de Antojitos",
+        "point": [
+          -102.0618494,
+          19.4216059
+        ]
+      },
+      {
+        "name": "Monumento a Lázaro Cárdenas",
+        "point": [
+          -102.0506518,
+          19.4179886
+        ]
+      },
+      {
+        "name": "Jardín Rotario",
+        "point": [
+          -102.0461009,
+          19.4173087
+        ]
+      },
+      {
+        "name": "Centro de Espectáculos 'La Macarena'",
+        "point": [
+          -102.0427969,
+          19.4161479
+        ]
+      },
+      {
+        "name": "Parque del Templo",
+        "point": [
+          -102.038517,
+          19.4120306
+        ]
+      }
+    ]
   },
   {
     "id": 65,
@@ -15712,7 +19252,64 @@
         19.42704
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Jucutacato",
+        "point": [
+          -102.0796053,
+          19.3773941
+        ]
+      },
+      {
+        "name": "Monumento al Padre Ochoa",
+        "point": [
+          -102.0663825,
+          19.4052259
+        ]
+      },
+      {
+        "name": "Parque Lineal Cupatitzio",
+        "point": [
+          -102.0639806,
+          19.4152693
+        ]
+      },
+      {
+        "name": "Hospital Fray Juan de San Miguel",
+        "point": [
+          -102.0534,
+          19.4119431
+        ]
+      },
+      {
+        "name": "Monumento a Lázaro Cárdenas",
+        "point": [
+          -102.0506518,
+          19.4179886
+        ]
+      },
+      {
+        "name": "Presidencia Municipal de Uruapan",
+        "point": [
+          -102.0474851,
+          19.4217269
+        ]
+      },
+      {
+        "name": "Universidad Don Vasco",
+        "point": [
+          -102.0470596,
+          19.4271143
+        ]
+      },
+      {
+        "name": "Central Camionera de Uruapan",
+        "point": [
+          -102.0422135,
+          19.427425
+        ]
+      }
+    ]
   },
   {
     "id": 66,
@@ -15991,7 +19588,64 @@
         19.37693
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Central Camionera de Uruapan",
+        "point": [
+          -102.0422135,
+          19.427425
+        ]
+      },
+      {
+        "name": "Universidad Don Vasco",
+        "point": [
+          -102.0470596,
+          19.4271143
+        ]
+      },
+      {
+        "name": "Presidencia Municipal de Uruapan",
+        "point": [
+          -102.0474851,
+          19.4217269
+        ]
+      },
+      {
+        "name": "Módulo INE",
+        "point": [
+          -102.0504371,
+          19.4186127
+        ]
+      },
+      {
+        "name": "Hospital Fray Juan de San Miguel",
+        "point": [
+          -102.0534,
+          19.4119431
+        ]
+      },
+      {
+        "name": "Merza",
+        "point": [
+          -102.0658662,
+          19.4117575
+        ]
+      },
+      {
+        "name": "Monumento al Padre Ochoa",
+        "point": [
+          -102.0663825,
+          19.4052259
+        ]
+      },
+      {
+        "name": "Jucutacato",
+        "point": [
+          -102.0796053,
+          19.3773941
+        ]
+      }
+    ]
   },
   {
     "id": 67,
@@ -16366,7 +20020,71 @@
         19.42879
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Mercado de Abastos",
+        "point": [
+          -102.0442867,
+          19.3812403
+        ]
+      },
+      {
+        "name": "Hospital General Regional \"Dr. Pedro Daniel Martínez\"",
+        "point": [
+          -102.0225319,
+          19.3908775
+        ]
+      },
+      {
+        "name": "Unidad Médica Familiar 76",
+        "point": [
+          -102.0090912,
+          19.4079085
+        ]
+      },
+      {
+        "name": "Estadio Hermanos López Rayón",
+        "point": [
+          -102.0337435,
+          19.4240083
+        ]
+      },
+      {
+        "name": "Walmart",
+        "point": [
+          -102.0378227,
+          19.4245837
+        ]
+      },
+      {
+        "name": "Central Camionera de Uruapan",
+        "point": [
+          -102.0422135,
+          19.427425
+        ]
+      },
+      {
+        "name": "Universidad Don Vasco",
+        "point": [
+          -102.0470596,
+          19.4271143
+        ]
+      },
+      {
+        "name": "IMSS Hospital General de Zona No. 8 Uruapan",
+        "point": [
+          -102.0558556,
+          19.4272637
+        ]
+      },
+      {
+        "name": "Plaza Juárez",
+        "point": [
+          -102.0613193,
+          19.4286843
+        ]
+      }
+    ]
   },
   {
     "id": 68,
@@ -16721,7 +20439,64 @@
         19.37259
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Mercado Colonial La Charanda",
+        "point": [
+          -102.0597714,
+          19.4281755
+        ]
+      },
+      {
+        "name": "IMSS Hospital General de Zona No. 8 Uruapan",
+        "point": [
+          -102.0558556,
+          19.4272637
+        ]
+      },
+      {
+        "name": "Universidad Don Vasco",
+        "point": [
+          -102.0470596,
+          19.4271143
+        ]
+      },
+      {
+        "name": "Central Camionera de Uruapan",
+        "point": [
+          -102.0422135,
+          19.427425
+        ]
+      },
+      {
+        "name": "Walmart",
+        "point": [
+          -102.0378227,
+          19.4245837
+        ]
+      },
+      {
+        "name": "Unidad Médica Familiar 76",
+        "point": [
+          -102.0090912,
+          19.4079085
+        ]
+      },
+      {
+        "name": "Hospital General Regional \"Dr. Pedro Daniel Martínez\"",
+        "point": [
+          -102.0225319,
+          19.3908775
+        ]
+      },
+      {
+        "name": "Mercado de Abastos",
+        "point": [
+          -102.0442867,
+          19.3812403
+        ]
+      }
+    ]
   },
   {
     "id": 69,
@@ -17044,7 +20819,64 @@
         19.37257
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Escuela Secundaria Federal de Uruapan No. 1",
+        "point": [
+          -102.0444411,
+          19.4306917
+        ]
+      },
+      {
+        "name": "Universidad Don Vasco",
+        "point": [
+          -102.0470596,
+          19.4271143
+        ]
+      },
+      {
+        "name": "Central Camionera de Uruapan",
+        "point": [
+          -102.0422135,
+          19.427425
+        ]
+      },
+      {
+        "name": "Walmart",
+        "point": [
+          -102.0378227,
+          19.4245837
+        ]
+      },
+      {
+        "name": "Coppel",
+        "point": [
+          -102.034753,
+          19.4159286
+        ]
+      },
+      {
+        "name": "CECATI 117",
+        "point": [
+          -102.0429581,
+          19.406388
+        ]
+      },
+      {
+        "name": "Merza",
+        "point": [
+          -102.0479785,
+          19.3989704
+        ]
+      },
+      {
+        "name": "Soriana",
+        "point": [
+          -102.0578555,
+          19.3828968
+        ]
+      }
+    ]
   },
   {
     "id": 70,
@@ -17327,7 +21159,64 @@
         19.43084
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Monumento a Zapata",
+        "point": [
+          -102.0545503,
+          19.3708535
+        ]
+      },
+      {
+        "name": "Soriana",
+        "point": [
+          -102.0578555,
+          19.3828968
+        ]
+      },
+      {
+        "name": "Merza",
+        "point": [
+          -102.0479785,
+          19.3989704
+        ]
+      },
+      {
+        "name": "CECATI 117",
+        "point": [
+          -102.0429581,
+          19.406388
+        ]
+      },
+      {
+        "name": "Coppel",
+        "point": [
+          -102.034753,
+          19.4159286
+        ]
+      },
+      {
+        "name": "Walmart",
+        "point": [
+          -102.0378227,
+          19.4245837
+        ]
+      },
+      {
+        "name": "Central Camionera de Uruapan",
+        "point": [
+          -102.0422135,
+          19.427425
+        ]
+      },
+      {
+        "name": "Escuela Secundaria Federal de Uruapan No. 1",
+        "point": [
+          -102.0444411,
+          19.4306917
+        ]
+      }
+    ]
   },
   {
     "id": 71,
@@ -17562,7 +21451,64 @@
         19.42537
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Escuela Secundaria Técnica Número 30",
+        "point": [
+          -102.0413191,
+          19.4032447
+        ]
+      },
+      {
+        "name": "CECATI 117",
+        "point": [
+          -102.0429581,
+          19.406388
+        ]
+      },
+      {
+        "name": "Jardín Rotario",
+        "point": [
+          -102.0461009,
+          19.4173087
+        ]
+      },
+      {
+        "name": "Módulo INE",
+        "point": [
+          -102.0504371,
+          19.4186127
+        ]
+      },
+      {
+        "name": "Mercado de Antojitos",
+        "point": [
+          -102.0618494,
+          19.4216059
+        ]
+      },
+      {
+        "name": "Mercado Colonial La Charanda",
+        "point": [
+          -102.0597714,
+          19.4281755
+        ]
+      },
+      {
+        "name": "Mercado Zona Poniente",
+        "point": [
+          -102.0767259,
+          19.4305966
+        ]
+      },
+      {
+        "name": "Escuela Secundaria Técnica No. 66",
+        "point": [
+          -102.0848993,
+          19.4270764
+        ]
+      }
+    ]
   },
   {
     "id": 72,
@@ -17845,7 +21791,64 @@
         19.40197
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Escuela Secundaria Técnica No. 66",
+        "point": [
+          -102.0848993,
+          19.4270764
+        ]
+      },
+      {
+        "name": "Mercado Zona Poniente",
+        "point": [
+          -102.0767259,
+          19.4305966
+        ]
+      },
+      {
+        "name": "Mural de los Orígenes de Uruapan",
+        "point": [
+          -102.0747918,
+          19.4333208
+        ]
+      },
+      {
+        "name": "Casa Más Chiquita del Mundo",
+        "point": [
+          -102.0660477,
+          19.4254706
+        ]
+      },
+      {
+        "name": "Monumento a Lázaro Cárdenas",
+        "point": [
+          -102.0506518,
+          19.4179886
+        ]
+      },
+      {
+        "name": "Hospital Fray Juan de San Miguel",
+        "point": [
+          -102.0534,
+          19.4119431
+        ]
+      },
+      {
+        "name": "CECATI 117",
+        "point": [
+          -102.0429581,
+          19.406388
+        ]
+      },
+      {
+        "name": "Escuela Secundaria Técnica Número 30",
+        "point": [
+          -102.0413191,
+          19.4032447
+        ]
+      }
+    ]
   },
   {
     "id": 73,
@@ -18052,7 +22055,64 @@
         19.4209
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Capilla del Niño Jesús",
+        "point": [
+          -102.0417247,
+          19.3770914
+        ]
+      },
+      {
+        "name": "Mercado de Abastos",
+        "point": [
+          -102.0442867,
+          19.3812403
+        ]
+      },
+      {
+        "name": "Elektra",
+        "point": [
+          -102.0261909,
+          19.4249294
+        ]
+      },
+      {
+        "name": "Estadio Hermanos López Rayón",
+        "point": [
+          -102.0337435,
+          19.4240083
+        ]
+      },
+      {
+        "name": "Colegio Nelson Mandela Primera",
+        "point": [
+          -102.0409334,
+          19.4205442
+        ]
+      },
+      {
+        "name": "Módulo INE",
+        "point": [
+          -102.0504371,
+          19.4186127
+        ]
+      },
+      {
+        "name": "Parroquia de Cristo Rey",
+        "point": [
+          -102.0544479,
+          19.4181948
+        ]
+      },
+      {
+        "name": "Coppel",
+        "point": [
+          -102.0629177,
+          19.4197487
+        ]
+      }
+    ]
   },
   {
     "id": 74,
@@ -18215,7 +22275,57 @@
         19.37447
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Mercado de Antojitos",
+        "point": [
+          -102.0618494,
+          19.4216059
+        ]
+      },
+      {
+        "name": "Monumento a Lázaro Cárdenas",
+        "point": [
+          -102.0506518,
+          19.4179886
+        ]
+      },
+      {
+        "name": "Jardín Rotario",
+        "point": [
+          -102.0461009,
+          19.4173087
+        ]
+      },
+      {
+        "name": "Colegio Nelson Mandela Primera",
+        "point": [
+          -102.0409334,
+          19.4205442
+        ]
+      },
+      {
+        "name": "Josefa Ortiz de Domínguez",
+        "point": [
+          -102.0342047,
+          19.4226957
+        ]
+      },
+      {
+        "name": "Mercado de Abastos",
+        "point": [
+          -102.0442867,
+          19.3812403
+        ]
+      },
+      {
+        "name": "Capilla del Niño Jesús",
+        "point": [
+          -102.0417247,
+          19.3770914
+        ]
+      }
+    ]
   },
   {
     "id": 75,
@@ -18566,7 +22676,64 @@
         19.44491
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Colegio Casa del Niño",
+        "point": [
+          -102.0652472,
+          19.4056192
+        ]
+      },
+      {
+        "name": "Coppel",
+        "point": [
+          -102.0629177,
+          19.4197487
+        ]
+      },
+      {
+        "name": "Mercado de Antojitos",
+        "point": [
+          -102.0618494,
+          19.4216059
+        ]
+      },
+      {
+        "name": "Presidencia Municipal de Uruapan",
+        "point": [
+          -102.0474851,
+          19.4217269
+        ]
+      },
+      {
+        "name": "Universidad Don Vasco",
+        "point": [
+          -102.0470596,
+          19.4271143
+        ]
+      },
+      {
+        "name": "Central Camionera de Uruapan",
+        "point": [
+          -102.0422135,
+          19.427425
+        ]
+      },
+      {
+        "name": "H. Cuerpo de Rescate y Salvamento Michoacán",
+        "point": [
+          -102.0313273,
+          19.4292638
+        ]
+      },
+      {
+        "name": "Toreo El Bajo",
+        "point": [
+          -102.0042996,
+          19.4458941
+        ]
+      }
+    ]
   },
   {
     "id": 76,
@@ -18897,7 +23064,64 @@
         19.39867
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Toreo El Bajo",
+        "point": [
+          -102.0042996,
+          19.4458941
+        ]
+      },
+      {
+        "name": "H. Cuerpo de Rescate y Salvamento Michoacán",
+        "point": [
+          -102.0313273,
+          19.4292638
+        ]
+      },
+      {
+        "name": "Central Camionera de Uruapan",
+        "point": [
+          -102.0422135,
+          19.427425
+        ]
+      },
+      {
+        "name": "Universidad Don Vasco",
+        "point": [
+          -102.0470596,
+          19.4271143
+        ]
+      },
+      {
+        "name": "Presidencia Municipal de Uruapan",
+        "point": [
+          -102.0474851,
+          19.4217269
+        ]
+      },
+      {
+        "name": "Coppel",
+        "point": [
+          -102.0629177,
+          19.4197487
+        ]
+      },
+      {
+        "name": "Merza",
+        "point": [
+          -102.0658662,
+          19.4117575
+        ]
+      },
+      {
+        "name": "Colegio Casa del Niño",
+        "point": [
+          -102.0652472,
+          19.4056192
+        ]
+      }
+    ]
   },
   {
     "id": 77,
@@ -19176,7 +23400,64 @@
         19.43316
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Coppel",
+        "point": [
+          -102.034753,
+          19.4159286
+        ]
+      },
+      {
+        "name": "Colegio Nelson Mandela Primera",
+        "point": [
+          -102.0409334,
+          19.4205442
+        ]
+      },
+      {
+        "name": "Módulo INE",
+        "point": [
+          -102.0504371,
+          19.4186127
+        ]
+      },
+      {
+        "name": "Parroquia de Cristo Rey",
+        "point": [
+          -102.0544479,
+          19.4181948
+        ]
+      },
+      {
+        "name": "Mercado de Antojitos",
+        "point": [
+          -102.0618494,
+          19.4216059
+        ]
+      },
+      {
+        "name": "Casa Más Chiquita del Mundo",
+        "point": [
+          -102.0660477,
+          19.4254706
+        ]
+      },
+      {
+        "name": "Hospital Civil",
+        "point": [
+          -102.071614,
+          19.4260638
+        ]
+      },
+      {
+        "name": "Mural de los Orígenes de Uruapan",
+        "point": [
+          -102.0747918,
+          19.4333208
+        ]
+      }
+    ]
   },
   {
     "id": 78,
@@ -19455,7 +23736,64 @@
         19.39832
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Mural de los Orígenes de Uruapan",
+        "point": [
+          -102.0747918,
+          19.4333208
+        ]
+      },
+      {
+        "name": "Mansión del Cupatitzio",
+        "point": [
+          -102.074191,
+          19.429717
+        ]
+      },
+      {
+        "name": "Hospital Civil",
+        "point": [
+          -102.071614,
+          19.4260638
+        ]
+      },
+      {
+        "name": "Casa Más Chiquita del Mundo",
+        "point": [
+          -102.0660477,
+          19.4254706
+        ]
+      },
+      {
+        "name": "Monumento a Lázaro Cárdenas",
+        "point": [
+          -102.0506518,
+          19.4179886
+        ]
+      },
+      {
+        "name": "Jardín Rotario",
+        "point": [
+          -102.0461009,
+          19.4173087
+        ]
+      },
+      {
+        "name": "Coppel",
+        "point": [
+          -102.034753,
+          19.4159286
+        ]
+      },
+      {
+        "name": "Colegio de Bachilleres Uruapan",
+        "point": [
+          -102.031135,
+          19.4171769
+        ]
+      }
+    ]
   },
   {
     "id": 79,
@@ -19986,7 +24324,64 @@
         19.42013
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "Mercado Zona Poniente",
+        "point": [
+          -102.0767259,
+          19.4305966
+        ]
+      },
+      {
+        "name": "Área recreativa de San Juan Evangelista",
+        "point": [
+          -102.0735844,
+          19.4080737
+        ]
+      },
+      {
+        "name": "Subprocuraduría Regional de Uruapan PGJ",
+        "point": [
+          -102.0690661,
+          19.4000732
+        ]
+      },
+      {
+        "name": "Universidad Michoacana de San Nicolás de Hidalgo",
+        "point": [
+          -102.0584633,
+          19.3951469
+        ]
+      },
+      {
+        "name": "Plaza Paquistán",
+        "point": [
+          -102.0511333,
+          19.3953001
+        ]
+      },
+      {
+        "name": "Colegio Nelson Mandela Primera",
+        "point": [
+          -102.0409334,
+          19.4205442
+        ]
+      },
+      {
+        "name": "Acceso Caltzontzin",
+        "point": [
+          -102.0104354,
+          19.4241514
+        ]
+      },
+      {
+        "name": "IMSS UMF 76 Uruapan",
+        "point": [
+          -102.0043841,
+          19.4195067
+        ]
+      }
+    ]
   },
   {
     "id": 80,
@@ -20453,7 +24848,64 @@
         19.43299
       ]
     ],
-    "landmarks": []
+    "landmarks": [
+      {
+        "name": "IMSS UMF 76 Uruapan",
+        "point": [
+          -102.0043841,
+          19.4195067
+        ]
+      },
+      {
+        "name": "Acceso Caltzontzin",
+        "point": [
+          -102.0104354,
+          19.4241514
+        ]
+      },
+      {
+        "name": "Estadio Hermanos López Rayón",
+        "point": [
+          -102.0337435,
+          19.4240083
+        ]
+      },
+      {
+        "name": "Colegio Nelson Mandela Primera",
+        "point": [
+          -102.0409334,
+          19.4205442
+        ]
+      },
+      {
+        "name": "Plaza Paquistán",
+        "point": [
+          -102.0511333,
+          19.3953001
+        ]
+      },
+      {
+        "name": "Universidad Michoacana de San Nicolás de Hidalgo",
+        "point": [
+          -102.0584633,
+          19.3951469
+        ]
+      },
+      {
+        "name": "Área recreativa de San Juan Evangelista",
+        "point": [
+          -102.0735844,
+          19.4080737
+        ]
+      },
+      {
+        "name": "Mercado Zona Poniente",
+        "point": [
+          -102.0767259,
+          19.4305966
+        ]
+      }
+    ]
   },
   {
     "id": 81,

@@ -8,6 +8,12 @@ import { getRouteDestination, getRouteSearchTerms } from "@/lib/route-names";
 import type { ResolvedRouteData, RouteDirection, ProductionRouteLandmark } from "@/lib/types";
 
 const TELEFERICO_ROUTE_NAME = "Teleférico Uruapan";
+const EMPTY_ROUTE_NAMES = new Set<string>();
+
+type LandmarkSearchEntry = {
+  label: string;
+  routeNames: Set<string>;
+};
 
 type RouteListProps = {
   routes: ResolvedRouteData[];
@@ -30,6 +36,25 @@ type RouteListProps = {
 
 function isTelefericoRoute(route: Pick<ResolvedRouteData, "ruta" | "nombre">) {
   return route.ruta === TELEFERICO_ROUTE_NAME || route.nombre === TELEFERICO_ROUTE_NAME;
+}
+
+function normalizeSearchValue(value: string) {
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+}
+
+function findMatchedLandmark(query: string, index: Map<string, LandmarkSearchEntry>) {
+  if (!query) return null;
+  const normalizedQuery = normalizeSearchValue(query);
+  for (const [key, entry] of index) {
+    if (key.includes(normalizedQuery) || normalizedQuery.includes(key)) {
+      return { key, label: entry.label };
+    }
+  }
+  return null;
 }
 
 type RouteItemProps = {
@@ -257,33 +282,24 @@ export default function RouteList({
 
   // Inverted index: landmark name → set of route names that have it
   const landmarkRouteMap = useMemo(() => {
-    const map = new Map<string, Set<string>>();
+    const map = new Map<string, LandmarkSearchEntry>();
     if (!landmarksByRouteName) return map;
     for (const [routeName, landmarks] of landmarksByRouteName) {
       for (const lm of landmarks) {
-        const key = lm.name.toLowerCase();
-        let set = map.get(key);
-        if (!set) {
-          set = new Set();
-          map.set(key, set);
+        const key = normalizeSearchValue(lm.name);
+        let entry = map.get(key);
+        if (!entry) {
+          entry = { label: lm.name, routeNames: new Set() };
+          map.set(key, entry);
         }
-        set.add(routeName);
+        entry.routeNames.add(routeName);
       }
     }
     return map;
   }, [landmarksByRouteName]);
 
-  // Find which landmark the query matched (for badge display)
-  const matchedLandmark = useMemo(() => {
-    if (!normalizedQuery) return null;
-    const q = normalizedQuery.toLowerCase();
-    for (const [landmarkName] of landmarkRouteMap) {
-      if (landmarkName.includes(q) || q.includes(landmarkName)) {
-        return landmarkName;
-      }
-    }
-    return null;
-  }, [normalizedQuery, landmarkRouteMap]);
+  // Find which landmark the query matched (for badge display).
+  const matchedLandmark = findMatchedLandmark(normalizedQuery, landmarkRouteMap);
 
   const fuse = useMemo(
     () =>
@@ -338,37 +354,23 @@ export default function RouteList({
   const hasSuggested = suggestedRouteIds.length > 0;
 
   // Set of route names that pass through the matched landmark
-  const landmarkMatchingRouteNames = useMemo(() => {
-    if (!matchedLandmark || !landmarksByRouteName) return new Set<string>();
-    const names = new Set<string>();
-    for (const [routeName, landmarks] of landmarksByRouteName) {
-      if (landmarks.some((lm) => lm.name.toLowerCase() === matchedLandmark)) {
-        names.add(routeName);
-      }
-    }
-    return names;
-  }, [matchedLandmark, landmarksByRouteName]);
+  const landmarkMatchingRouteNames = matchedLandmark
+    ? landmarkRouteMap.get(matchedLandmark.key)?.routeNames ?? EMPTY_ROUTE_NAMES
+    : EMPTY_ROUTE_NAMES;
 
   const filteredRoutes = useMemo(() => {
-    const base = normalizedQuery
+    const searchResults = normalizedQuery
       ? fuse.search(normalizedQuery).map((result) => result.item)
       : searchableRoutes;
 
-    // Pin landmark-matching routes to top when searching by landmark
+    // Direct landmark matches must not depend on Fuse's field-length score.
     if (normalizedQuery && landmarkMatchingRouteNames.size > 0) {
-      const landmark: ResolvedRouteData[] = [];
-      const rest: ResolvedRouteData[] = [];
-
-      for (const route of base) {
-        if (landmarkMatchingRouteNames.has(route.ruta)) {
-          landmark.push(route);
-        } else {
-          rest.push(route);
-        }
-      }
-
-      return [...landmark, ...rest];
+      const landmarkRoutes = searchableRoutes.filter((route) => landmarkMatchingRouteNames.has(route.ruta));
+      const directRouteNames = new Set(landmarkRoutes.map((route) => route.ruta));
+      return [...landmarkRoutes, ...searchResults.filter((route) => !directRouteNames.has(route.ruta))];
     }
+
+    const base = searchResults;
 
     // Fijar arriba sugeridas (mejor primero), luego cercanas, luego
     // favoritas y al final el resto. Con búsqueda activa solo se fijan
@@ -581,7 +583,7 @@ export default function RouteList({
                 nearbyRank={nearbyRank}
                 isNearby={isNearby}
                 isLandmarkMatch={isLandmarkMatch}
-                matchedLandmark={matchedLandmark}
+                matchedLandmark={matchedLandmark?.label ?? null}
                 suggestionDir={suggestionDir}
                 showDivider={showDivider}
                 showFavoritesHeader={showFavoritesHeader}

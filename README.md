@@ -142,6 +142,17 @@ La fuente principal de recorridos es `data/rutas_produccion_final.json`. El proy
 
 Los reportes sobre rutas, horarios o puntos incorrectos pueden enviarse desde la página [`/reportar-error`](https://www.urugo.app/reportar-error).
 
+### Generar puntos de referencia
+
+Los puntos de referencia de las rutas pueden regenerarse desde OpenStreetMap sin sobrescribir los que ya fueron verificados manualmente:
+
+```bash
+npm run landmarks:review  # genera .cache/landmarks-review.json
+npm run landmarks:apply   # aplica las propuestas a rutas sin referencias
+```
+
+Los lugares generados incluyen datos de [OpenStreetMap](https://www.openstreetmap.org/copyright), disponibles bajo ODbL 1.0, y deben revisarse antes de publicarse.
+
 ## Alcance y limitaciones
 
 - UruGo es un proyecto independiente; no pertenece al Ayuntamiento de Uruapan ni a los operadores de transporte.

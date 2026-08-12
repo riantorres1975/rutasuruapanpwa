@@ -102,4 +102,11 @@ describe("integridad de rutas de producción", () => {
       }
     }
   });
+
+  it("incluye suficientes puntos de referencia en cada direccion", () => {
+    for (const route of routeData) {
+      expect(route.landmarks.length, route.original_name).toBeGreaterThanOrEqual(5);
+      expect(route.landmarks.length, route.original_name).toBeLessThanOrEqual(12);
+    }
+  });
 });
