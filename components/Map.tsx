@@ -1770,20 +1770,8 @@ function MapComponent({
       }
     };
 
-    const onLoad = async () => {
+    const onLoad = () => {
       ensureRouteLayers();
-
-      // Load teleférico GeoJSON
-      try {
-        const res = await fetch("/teleferico.geojson");
-        if (res.ok) {
-          const geojson = await res.json();
-          telefericoGeoJSONRef.current = geojson;
-          addTelefericoLayers(geojson);
-        }
-      } catch {
-        // non-fatal — teleférico layer is optional
-      }
 
       const bounds = getBoundsFromRoutes(routesRef.current);
       if (bounds) {
@@ -1799,6 +1787,20 @@ function MapComponent({
 
       isMapReadyRef.current = true;
       setIsLoading(false);
+
+      // La capa del Teleférico es opcional. Cargarla en segundo plano evita
+      // bloquear marcadores y controles que ya pueden usar el mapa base.
+      void fetch("/teleferico.geojson")
+        .then(async (res) => {
+          if (!res.ok) return;
+          const geojson = await res.json();
+          if (mapRef.current !== map || !isMapReadyRef.current) return;
+          telefericoGeoJSONRef.current = geojson;
+          addTelefericoLayers(geojson);
+        })
+        .catch(() => {
+          // non-fatal: el mapa y el modo viaje funcionan sin esta capa
+        });
     };
 
     let lastThemeIsDark = getThemeIsDark();

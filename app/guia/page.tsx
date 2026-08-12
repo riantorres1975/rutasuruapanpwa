@@ -310,7 +310,12 @@ export default function GuidePage() {
             </div>
             <p className="mt-6 border-l-2 border-[#a78bfa] pl-4 text-sm leading-7 text-[#d2dfc4]">Las referencias ayudan a orientarte, pero no son paradas oficiales. En el Teleférico, el cálculo de abordaje y bajada siempre usa estaciones.</p>
           </div>
-          <div className="-mx-5 mt-12 overflow-x-auto px-5 pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:-mx-8 sm:px-8 lg:mx-0 lg:overflow-visible lg:px-0">
+          <div
+            role="region"
+            aria-label="Ejemplos del modo viaje"
+            tabIndex={0}
+            className="-mx-5 mt-12 overflow-x-auto px-5 pb-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#b8e840] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:-mx-8 sm:px-8 lg:mx-0 lg:overflow-visible lg:px-0"
+          >
             <div className="flex w-max snap-x snap-mandatory gap-5 lg:grid lg:w-full lg:grid-cols-3">
               {[
                 ["En camión", "/guide/modo-viaje.png", "Modo viaje de UruGo mostrando el camión animado sobre una ruta urbana"],
