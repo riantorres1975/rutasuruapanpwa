@@ -150,15 +150,18 @@ test("un viaje en Teleférico continúa a pie desde la estación", async ({ page
   const tripPanel = page.getByRole("region", { name: "Modo viaje" });
   await expect(tripPanel).toContainText("EN CAMINO");
   await expect(tripPanel).toContainText("Baja en la estación Boulevard Industrial / Plaza Agora");
+  await expect(page.locator(".trip-map-marker--teleferico")).toBeVisible();
 
   await context.setGeolocation({ longitude: -102.0375379, latitude: 19.4216787 });
   await expect(tripPanel).toContainText("ÚLTIMO TRAMO");
   await expect(tripPanel).toContainText("Camina a tu destino");
+  await expect(page.locator(".trip-map-marker--walking")).toBeVisible();
 
   await context.setGeolocation({ longitude: -102.0375379, latitude: 19.4241787 });
   await expect(tripPanel).toContainText("ÚLTIMO TRAMO");
   await context.setGeolocation({ longitude: -102.03745, latitude: 19.4241787 });
   await expect(tripPanel).toContainText("Llegaste");
+  await expect(page.locator(".trip-map-marker--arrived")).toBeVisible();
 });
 
 test("una actualización del GPS no borra el transbordo seleccionado", async ({ page, context }) => {
@@ -252,6 +255,8 @@ test("el modo viaje sigue el GPS sin recuperar la cámara después de un gesto m
   await startTripButton.click();
 
   await expect(page.getByRole("region", { name: "Modo viaje" })).toBeVisible();
+  await expect(page.locator(".trip-map-marker--bus")).toBeVisible();
+  await expect(page.locator('.trip-map-marker[aria-label^="Tu posición en"]')).toBeVisible();
   await expect(page.getByRole("button", { name: "Centrar en mi ubicación durante el viaje" })).toBeVisible();
 
   await map.dispatchEvent("pointerdown", { pointerType: "touch" });
@@ -341,6 +346,7 @@ test("el modo viaje conserva la ruta durante una pérdida temporal de GPS", asyn
 
   const panel = page.getByRole("region", { name: "Modo viaje" });
   await expect(panel).toContainText("EN CAMINO");
+  await expect(page.locator(".trip-map-marker--bus")).toBeVisible();
 
   const sendFix = async (detail: { longitude: number; latitude: number; accuracy: number }) => {
     await page.evaluate((fix) => {
@@ -372,11 +378,13 @@ test("el modo viaje conserva la ruta durante una pérdida temporal de GPS", asyn
   await sendFix({ longitude: -102.042104, latitude: 19.426085, accuracy: 12 });
   await expect(panel).toContainText("ÚLTIMO TRAMO");
   await expect(panel).toContainText("Camina a tu destino");
+  await expect(page.locator(".trip-map-marker--walking")).toBeVisible();
 
   await sendFix({ longitude: -102.04234, latitude: 19.42687, accuracy: 12 });
   await expect(panel).toContainText("ÚLTIMO TRAMO");
   await sendFix({ longitude: -102.04225, latitude: 19.42687, accuracy: 12 });
   await expect(panel).toContainText("Llegaste");
+  await expect(page.locator(".trip-map-marker--arrived")).toBeVisible();
 
   await sendFix({ longitude: -102.05447, latitude: 19.42623, accuracy: 12 });
   await expect(panel).toContainText("Llegaste");

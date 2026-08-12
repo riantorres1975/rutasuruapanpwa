@@ -1311,6 +1311,8 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
             tripModeActive={isTripActive}
             tripSessionKey={isTripActive ? tripSession?.cameraKey ?? null : null}
             tripLocation={isTripActive ? liveLocation : null}
+            tripJourney={isTripActive ? tripSession?.journey ?? null : null}
+            tripProgress={isTripActive ? tripProgress : null}
             awaitingPick={flowStep === 3 ? null : activePoint}
             hoveredRouteId={hoveredRouteId}
             onMapPick={handleMapPick}

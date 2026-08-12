@@ -13,7 +13,16 @@ import {
   URUAPAN_CENTER
 } from "@/lib/map";
 import type { Coordinates, RouteData } from "@/lib/types";
-import { isWithinUruapanServiceArea } from "@/lib/geo";
+import { haversineMeters, isWithinUruapanServiceArea } from "@/lib/geo";
+import type { TripJourney, TripProgress } from "@/lib/trip-mode";
+import {
+  getTripMarkerAnimationDuration,
+  getTripMarkerPresentation,
+  getTripMarkerTarget,
+  interpolateBearing,
+  interpolateCoordinate,
+  type TripMarkerMode,
+} from "@/lib/trip-marker";
 
 type ArrowSegment = { coords: Coordinates[]; color: string; showLine?: boolean };
 import type { TransferOption } from "@/lib/transfers";
@@ -125,6 +134,51 @@ function createEndpointMarkerElement(color: string, label: string) {
   return element;
 }
 
+const TRIP_MARKER_ICONS: Record<TripMarkerMode, string> = {
+  walking: `
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="5" r="2.2" fill="currentColor" />
+      <path d="m10.5 9 3-1 2.2 3.4M11.5 8.7l-1 5.1-3.2 3.8M10.5 13.8l4 1.7 1.5 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+    </svg>`,
+  bus: `
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M8 2.5h8a3 3 0 0 1 3 3v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-13a3 3 0 0 1 3-3Z" fill="currentColor" />
+      <path d="M8 5.5h8v5H8z" fill="white" fill-opacity=".82" />
+      <path d="M8 13h8v3H8z" fill="white" fill-opacity=".5" />
+      <circle cx="8" cy="18" r="1" fill="white" />
+      <circle cx="16" cy="18" r="1" fill="white" />
+      <path d="M5 7H3.8M20.2 7H19M5 16H3.8M20.2 16H19" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+    </svg>`,
+  teleferico: `
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4 5.5 20 3M12 4.3v3.2M7 8h10a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+      <path d="M8 11h8v4H8zM8 19v1M16 19v1" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+    </svg>`,
+  arrived: `
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="m6.5 12.5 3.4 3.4 7.6-8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+    </svg>`,
+};
+
+function createTripMarkerElement(mode: TripMarkerMode, label: string) {
+  const element = document.createElement("div");
+  element.className = `trip-map-marker trip-map-marker--${mode}`;
+  element.setAttribute("role", "img");
+  element.setAttribute("aria-label", label);
+  element.innerHTML = `
+    <span class="trip-map-marker__pulse" aria-hidden="true"></span>
+    <span class="trip-map-marker__badge">${TRIP_MARKER_ICONS[mode]}</span>
+  `;
+  return element;
+}
+
+function setUserLocationLayerVisibility(map: mapboxgl.Map, visible: boolean) {
+  const visibility = visible ? "visible" : "none";
+  for (const layer of [USER_LOC_ACCURACY_LAYER, USER_LOC_DOT_LAYER]) {
+    if (map.getLayer(layer)) map.setLayoutProperty(layer, "visibility", visibility);
+  }
+}
+
 type MapProps = {
   routes: RouteData[];
   selectedRouteId: number | null;
@@ -140,6 +194,8 @@ type MapProps = {
   tripModeActive?: boolean;
   tripSessionKey?: string | null;
   tripLocation?: Coordinates | null;
+  tripJourney?: TripJourney | null;
+  tripProgress?: TripProgress | null;
   awaitingPick?: "origin" | "destination" | null;
   /** Ruta resaltada al pasar el mouse por la lista (desktop) */
   hoveredRouteId?: number | null;
@@ -1046,6 +1102,8 @@ function MapComponent({
   tripModeActive = false,
   tripSessionKey = null,
   tripLocation = null,
+  tripJourney = null,
+  tripProgress = null,
   awaitingPick = null,
   hoveredRouteId = null,
   onMapPick,
@@ -1070,6 +1128,11 @@ function MapComponent({
   const animationTokenRef = useRef(0);
   const originMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const destinationMarkerRef = useRef<mapboxgl.Marker | null>(null);
+  const tripMarkerRef = useRef<mapboxgl.Marker | null>(null);
+  const tripMarkerModeRef = useRef<TripMarkerMode | null>(null);
+  const tripMarkerCoordinateRef = useRef<Coordinates | null>(null);
+  const tripMarkerBearingRef = useRef(0);
+  const tripMarkerAnimationFrameRef = useRef<number | null>(null);
   const prevOriginRef = useRef<[number, number] | null>(null);
   const prevDestinationRef = useRef<[number, number] | null>(null);
   const onNearbyRoutesFoundRef = useRef(onNearbyRoutesFound);
@@ -1358,20 +1421,92 @@ function MapComponent({
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !isMapReadyRef.current || !tripModeActive || !tripLocation) return;
+    if (!map || !isMapReadyRef.current) return;
+
+    if (!tripModeActive || !tripLocation || !tripJourney) {
+      if (tripMarkerAnimationFrameRef.current !== null) {
+        window.cancelAnimationFrame(tripMarkerAnimationFrameRef.current);
+        tripMarkerAnimationFrameRef.current = null;
+      }
+      tripMarkerRef.current?.remove();
+      tripMarkerRef.current = null;
+      tripMarkerModeRef.current = null;
+      tripMarkerCoordinateRef.current = null;
+      setUserLocationLayerVisibility(map, true);
+      return;
+    }
 
     userLocationRef.current = { location: tripLocation, accuracyM: 0 };
-    renderUserLocation(map, tripLocation, 0);
+    const presentation = getTripMarkerPresentation(tripJourney, tripProgress);
+    const target = getTripMarkerTarget(tripLocation, presentation.path);
+    const previousCoordinate = tripMarkerCoordinateRef.current ?? target.coordinate;
+    const isDirectional = presentation.mode === "bus" || presentation.mode === "teleferico";
+    const previousBearing = isDirectional ? tripMarkerBearingRef.current : 0;
+    const nextBearing = isDirectional ? target.bearing ?? previousBearing : 0;
+
+    setUserLocationLayerVisibility(map, false);
+    if (!tripMarkerRef.current || tripMarkerModeRef.current !== presentation.mode) {
+      tripMarkerRef.current?.remove();
+      const element = createTripMarkerElement(presentation.mode, presentation.label);
+      tripMarkerRef.current = new mapboxgl.Marker({
+        element,
+        anchor: "center",
+        rotationAlignment: "map",
+        pitchAlignment: "map",
+      })
+        .setLngLat(previousCoordinate)
+        .setRotation(previousBearing)
+        .addTo(map);
+      tripMarkerModeRef.current = presentation.mode;
+    } else {
+      tripMarkerRef.current.getElement().setAttribute("aria-label", presentation.label);
+    }
+
+    if (tripMarkerAnimationFrameRef.current !== null) {
+      window.cancelAnimationFrame(tripMarkerAnimationFrameRef.current);
+    }
+
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const distanceM = haversineMeters(previousCoordinate, target.coordinate);
+    const duration = getTripMarkerAnimationDuration(distanceM, reduceMotion);
+    const startedAt = performance.now();
+
+    const renderFrame = (timestamp: number) => {
+      const linearProgress = duration === 0 ? 1 : Math.min(1, (timestamp - startedAt) / duration);
+      const easedProgress = cameraEasing(linearProgress);
+      const coordinate = interpolateCoordinate(previousCoordinate, target.coordinate, easedProgress);
+      const bearing = interpolateBearing(previousBearing, nextBearing, easedProgress);
+
+      tripMarkerRef.current?.setLngLat(coordinate).setRotation(bearing);
+      tripMarkerCoordinateRef.current = coordinate;
+      tripMarkerBearingRef.current = bearing;
+
+      if (linearProgress < 1) {
+        tripMarkerAnimationFrameRef.current = window.requestAnimationFrame(renderFrame);
+      } else {
+        tripMarkerAnimationFrameRef.current = null;
+      }
+    };
+    tripMarkerAnimationFrameRef.current = window.requestAnimationFrame(renderFrame);
+
     if (tripFollowingRef.current) {
       map.easeTo({
-        center: tripLocation,
+        center: target.coordinate,
         zoom: Math.max(map.getZoom(), 15.5),
-        duration: 700,
+        duration,
+        easing: cameraEasing,
         padding: { top: 96, right: 24, bottom: 150, left: 24 },
         essential: true,
       });
     }
-  }, [isLoading, tripLocation, tripModeActive]);
+
+    return () => {
+      if (tripMarkerAnimationFrameRef.current !== null) {
+        window.cancelAnimationFrame(tripMarkerAnimationFrameRef.current);
+        tripMarkerAnimationFrameRef.current = null;
+      }
+    };
+  }, [isLoading, tripJourney, tripLocation, tripModeActive, tripProgress]);
 
   const stopRouteAnimation = useCallback(() => {
     animationTokenRef.current += 1;
@@ -1687,6 +1822,7 @@ function MapComponent({
             userLocationRef.current.location,
             userLocationRef.current.accuracyM,
           );
+          setUserLocationLayerVisibility(map, !tripModeActiveRef.current);
         }
         // Restore arrow layers after style reload (image is tied to style, re-add it)
         ensureChevronImage(map);
@@ -1750,8 +1886,14 @@ function MapComponent({
       stopRouteAnimation();
       originMarkerRef.current?.remove();
       destinationMarkerRef.current?.remove();
+      tripMarkerRef.current?.remove();
       originMarkerRef.current = null;
       destinationMarkerRef.current = null;
+      tripMarkerRef.current = null;
+      if (tripMarkerAnimationFrameRef.current !== null) {
+        window.cancelAnimationFrame(tripMarkerAnimationFrameRef.current);
+        tripMarkerAnimationFrameRef.current = null;
+      }
       themeObserver.disconnect();
       map.off("load", onLoad);
       map.off("click", onMapClick);
@@ -1798,7 +1940,7 @@ function MapComponent({
     const segmentStart = selectedRouteSegment?.[0] ?? null;
     const segmentEnd = selectedRouteSegment ? selectedRouteSegment[selectedRouteSegment.length - 1] ?? null : null;
 
-    const effectiveOrigin = originPoint ?? segmentStart;
+    const effectiveOrigin = tripModeActive ? null : originPoint ?? segmentStart;
     const effectiveDestination = destinationPoint ?? segmentEnd;
 
     updateMarker(originMarkerRef, effectiveOrigin, "#16a34a", "A");
@@ -1846,7 +1988,7 @@ function MapComponent({
       }
       // Si solo hay origin (usuario eligiendo destino), no mover el mapa
     }
-  }, [destinationPoint, isLoading, originPoint, selectedRouteSegment]);
+  }, [destinationPoint, isLoading, originPoint, selectedRouteSegment, tripModeActive]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -2143,9 +2285,10 @@ function MapComponent({
     tripFollowingRef.current = true;
     setReleasedTripKey(null);
     map.easeTo({
-      center: tripLocation,
+      center: tripMarkerCoordinateRef.current ?? tripLocation,
       zoom: Math.max(map.getZoom(), 15.5),
       duration: 700,
+      easing: cameraEasing,
       padding: { top: 96, right: 24, bottom: 150, left: 24 },
       essential: true,
     });

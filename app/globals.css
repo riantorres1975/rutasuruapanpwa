@@ -380,9 +380,76 @@ body {
   animation: map-routes-fade-in 800ms ease-out both;
 }
 
+.trip-map-marker {
+  --trip-marker-color: #3b82f6;
+  position: relative;
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.trip-map-marker--bus {
+  --trip-marker-color: #b8ef30;
+}
+
+.trip-map-marker--teleferico {
+  --trip-marker-color: #00d4aa;
+}
+
+.trip-map-marker--arrived {
+  --trip-marker-color: #22c55e;
+}
+
+.trip-map-marker__pulse {
+  position: absolute;
+  inset: 3px;
+  border: 2px solid color-mix(in srgb, var(--trip-marker-color) 70%, white 30%);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--trip-marker-color) 16%, transparent);
+  box-shadow: 0 0 0 8px color-mix(in srgb, var(--trip-marker-color) 12%, transparent);
+  animation: trip-marker-pulse 1.8s ease-out infinite;
+}
+
+.trip-map-marker__badge {
+  position: relative;
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 2px solid rgba(255, 255, 255, 0.96);
+  border-radius: 12px;
+  color: #0c110a;
+  background: var(--trip-marker-color);
+  box-shadow: 0 5px 16px rgba(0, 0, 0, 0.38);
+}
+
+.trip-map-marker__badge svg {
+  width: 23px;
+  height: 23px;
+}
+
+@keyframes trip-marker-pulse {
+  0% {
+    opacity: 0.8;
+    transform: scale(0.72);
+  }
+  75%, 100% {
+    opacity: 0;
+    transform: scale(1.45);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .map-routes-fade-in .mapboxgl-canvas {
     animation: none;
+  }
+
+  .trip-map-marker__pulse {
+    animation: none;
+    opacity: 0.45;
   }
 }
 

@@ -296,6 +296,7 @@ export default function GuidePage() {
             <p className="mt-5 max-w-2xl text-base leading-8 text-[#a8c888]">Después de elegir una opción, toca <strong className="text-white">Iniciar viaje</strong>. La app sigue tu avance con el GPS sin obligarte a mantener el mapa centrado.</p>
             <div className="mt-8 grid gap-3 sm:grid-cols-2">
               {[
+                ["Marcador del viaje", "Cambia entre caminar, camión y cabina del Teleférico, y avanza suavemente sobre el recorrido."],
                 ["Referencia próxima", "Muestra un lugar reconocible y su distancia aproximada."],
                 ["Aviso de bajada", "Te prepara cuando te acercas al destino o al transbordo."],
                 ["Cambio de ruta", "Distingue el primer tramo, la caminata y la segunda ruta."],
@@ -309,7 +310,7 @@ export default function GuidePage() {
             </div>
             <p className="mt-6 border-l-2 border-[#a78bfa] pl-4 text-sm leading-7 text-[#d2dfc4]">Las referencias ayudan a orientarte, pero no son paradas oficiales. En el Teleférico, el cálculo de abordaje y bajada siempre usa estaciones.</p>
           </div>
-          <PhoneScreenshot src="/guide/modo-viaje.png" alt="Modo viaje de UruGo mostrando la ruta activa, una referencia próxima y el botón para finalizar" />
+          <PhoneScreenshot src="/guide/modo-viaje.png" alt="Modo viaje de UruGo mostrando el camión sobre la ruta activa, una referencia próxima y el botón para finalizar" />
         </div>
       </section>
 
