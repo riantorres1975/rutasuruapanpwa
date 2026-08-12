@@ -210,7 +210,10 @@ export default function GuidePage() {
         </div>
       </header>
 
-      <nav aria-label="Secciones de la guía" className="sticky top-[72px] z-40 overflow-x-auto border-b border-white/10 bg-[#0c110a]/95 backdrop-blur-xl">
+      <nav
+        aria-label="Secciones de la guía"
+        className="sticky top-[72px] z-40 touch-pan-x overflow-x-auto overscroll-x-contain border-b border-white/10 bg-[#0c110a]/95 backdrop-blur-xl [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
         <div className="mx-auto flex min-w-max max-w-6xl gap-1 px-4 py-2 sm:px-8">
           {[
             ["#inicio-rapido", "Inicio rápido"],

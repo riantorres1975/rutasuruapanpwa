@@ -4,7 +4,9 @@ test("la guía explica las funciones y carga sus capturas reales", async ({ page
   await page.goto("/guia");
 
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Muévete con la app");
-  await expect(page.getByRole("navigation", { name: "Secciones de la guía" })).toBeVisible();
+  const sectionNavigation = page.getByRole("navigation", { name: "Secciones de la guía" });
+  await expect(sectionNavigation).toBeVisible();
+  await expect(sectionNavigation).toHaveCSS("scrollbar-width", "none");
   await expect(page.getByRole("heading", { name: "Planea tu viaje en cuatro pasos." })).toBeVisible();
 
   const screenshots = page.locator("main img");
