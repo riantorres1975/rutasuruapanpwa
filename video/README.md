@@ -1,6 +1,6 @@
 # Video de producto de UruGo
 
-El video combina grabaciones reales de la aplicación con títulos y transiciones generados en React. Tiene una versión horizontal para web o YouTube y otra vertical para Reels, TikTok y Shorts.
+El video muestra grabaciones reales de la aplicación, sin textos editoriales sobre la interfaz. La explicación se agrega mediante una voz en off basada en `VOICEOVER.md`. Tiene una versión horizontal para web o YouTube y otra vertical para Reels, TikTok y Shorts.
 
 ## Flujo de trabajo
 

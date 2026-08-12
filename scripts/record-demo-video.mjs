@@ -109,6 +109,12 @@ async function visibleRouteSearch(page) {
   return page.getByPlaceholder(/punto de referencia/i).filter({ visible: true });
 }
 
+async function emitDemoGeolocation(page, position) {
+  await page.evaluate((coords) => {
+    Reflect.get(window, "__urugoDemoSetLocation")?.(coords);
+  }, position);
+}
+
 const scenes = [
   {
     name: "landing",
@@ -198,18 +204,27 @@ const scenes = [
     name: "teleferico",
     minimumMs: 12_000,
     run: async ({ page, context }) => {
-      await context.setGeolocation({ longitude: -102.02093, latitude: 19.396299 });
       await goto(page, "/mapa?a=-102.02093,19.396299&b=-102.0375379,19.4241787", 700);
       await activateMapIfNeeded(page);
       const start = page.locator('button[aria-label^="Iniciar viaje en"]:visible').first();
       await pointAt(page, start, { click: true });
       await page.locator(".trip-map-marker--teleferico").waitFor({ state: "visible", timeout: 10_000 });
-      await sleep(page, 1_700);
-      await context.setGeolocation({ longitude: -102.0305, latitude: 19.4105 });
-      await sleep(page, 1_500);
-      await context.setGeolocation({ longitude: -102.0375379, latitude: 19.4216787 });
+      await sleep(page, 900);
+      for (const position of [
+        { longitude: -102.022099, latitude: 19.400893 },
+        { longitude: -102.023268, latitude: 19.405487 },
+        { longitude: -102.024437, latitude: 19.410081 },
+        { longitude: -102.025606, latitude: 19.4146744 },
+        { longitude: -102.028589, latitude: 19.4164255 },
+        { longitude: -102.031572, latitude: 19.4181766 },
+        { longitude: -102.034555, latitude: 19.4199276 },
+        { longitude: -102.0375379, latitude: 19.4216787 },
+      ]) {
+        await emitDemoGeolocation(page, position);
+        await sleep(page, 650);
+      }
       await page.locator(".trip-map-marker--walking").waitFor({ state: "visible", timeout: 10_000 });
-      await sleep(page, 1_800);
+      await sleep(page, 1_100);
     },
   },
   {
@@ -253,6 +268,47 @@ async function recordScene(browser, format, scene) {
     localStorage.setItem("voy-pwa-banner-dismissed", "1");
     localStorage.setItem("voy-pwa-ios-hint-dismissed", "1");
   });
+  if (scene.name === "teleferico") {
+    await context.addInitScript(() => {
+      const watchers = new Map();
+      let current = { longitude: -102.02093, latitude: 19.396299 };
+      let nextId = 1;
+      const positionFor = (coords) => ({
+        coords: {
+          longitude: coords.longitude,
+          latitude: coords.latitude,
+          accuracy: 12,
+          altitude: null,
+          altitudeAccuracy: null,
+          heading: null,
+          speed: null,
+        },
+        timestamp: Date.now(),
+      });
+      const emit = (coords) => {
+        current = coords;
+        for (const success of watchers.values()) success(positionFor(coords));
+      };
+      Object.defineProperty(navigator, "geolocation", {
+        configurable: true,
+        value: {
+          getCurrentPosition(success) {
+            window.setTimeout(() => success(positionFor(current)), 0);
+          },
+          watchPosition(success) {
+            const id = nextId++;
+            watchers.set(id, success);
+            window.setTimeout(() => success(positionFor(current)), 0);
+            return id;
+          },
+          clearWatch(id) {
+            watchers.delete(id);
+          },
+        },
+      });
+      Reflect.set(window, "__urugoDemoSetLocation", emit);
+    });
+  }
 
   const page = await context.newPage();
   const video = page.video();
