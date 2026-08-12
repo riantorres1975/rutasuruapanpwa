@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import BlogArticleLayout from "@/components/BlogArticleLayout";
 import PageHeader from "@/components/PageHeader";
-import NotGovernmentNotice from "@/components/NotGovernmentNotice";
-import ForceDark from "@/components/ForceDark";
 
 export const metadata: Metadata = {
   title: "Las rutas de camión más usadas en Uruapan",
@@ -55,10 +54,14 @@ const jsonLd = {
 
 export default function RutasCamionMasUsadasPage() {
   return (
-    <main className="greca-bg greca-bg-animated min-h-dvh px-5 py-8 sm:px-8 lg:px-10" style={{ background: "#0c110a", color: "#e8f2d8" }}>
-      <ForceDark />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <article className="relative z-10 mx-auto max-w-3xl">
+    <BlogArticleLayout
+      currentSlug="rutas-camion-mas-usadas-uruapan"
+      readingTime="5 min"
+      toc={[{ id: "rutas-destacadas", label: "Rutas destacadas" }, { id: "explorar", label: "Explorar las 40 rutas" }]}
+      jsonLd={jsonLd}
+      actionHref="/rutas"
+      actionLabel="Consultar las 40 rutas"
+    >
         <PageHeader
           eyebrow="En preparación"
           title={
@@ -70,7 +73,7 @@ export default function RutasCamionMasUsadasPage() {
         />
 
         {/* Rutas destacadas */}
-        <section className="mt-12 grid gap-4 sm:grid-cols-2">
+        <section id="rutas-destacadas" className="mt-12 scroll-mt-40 grid gap-4 sm:grid-cols-2">
           {[
             {
               id: "Ruta 11 Uruapan",
@@ -100,7 +103,7 @@ export default function RutasCamionMasUsadasPage() {
             <Link
               key={r.id}
               href={`/mapa?destino=${encodeURIComponent(r.id)}`}
-              className="card-lift group rounded-2xl border border-foreground/10 bg-ink-900/60 p-5 backdrop-blur transition"
+              className="group rounded-lg border border-foreground/10 bg-ink-900/60 p-5 transition hover:border-[#6aab48]/40"
             >
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-lima">{r.id}</p>
               <h3 className="mt-1 font-serif-display text-lg font-black text-white">{r.nombre}</h3>
@@ -113,7 +116,7 @@ export default function RutasCamionMasUsadasPage() {
           ))}
         </section>
 
-        <section className="mt-6 rounded-[1.75rem] border border-foreground/12 bg-ink-900/65 p-8 backdrop-blur">
+        <section id="explorar" className="mt-8 scroll-mt-40 border-t border-foreground/12 pt-8">
           <h2 className="font-serif-display text-2xl font-black text-white">
             Próximamente
           </h2>
@@ -128,10 +131,6 @@ export default function RutasCamionMasUsadasPage() {
           </Link>
         </section>
 
-        <div className="mt-12">
-          <NotGovernmentNotice variant="compact" />
-        </div>
-      </article>
-    </main>
+    </BlogArticleLayout>
   );
 }

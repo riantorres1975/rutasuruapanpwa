@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import BlogArticleLayout from "@/components/BlogArticleLayout";
 import PageHeader from "@/components/PageHeader";
-import NotGovernmentNotice from "@/components/NotGovernmentNotice";
-import ForceDark from "@/components/ForceDark";
 import { FARES_2026, TELEFERICO_URUAPAN } from "@/lib/mobility-config";
 
 export const metadata: Metadata = {
@@ -66,40 +64,54 @@ const stationDescriptions = [
 
 const SECTIONS = [
   {
+    id: "que-es",
     n: "01",
     title: "Qué es el Teleférico",
     body: "El Teleférico de Uruapan es un sistema de transporte urbano que conecta zonas clave de la ciudad mediante estaciones elevadas. En UruGo aparece integrado con rutas de camión para planear viajes multimodales."
   },
   {
+    id: "tarjeta",
     n: "02",
     title: "Cómo obtener la tarjeta de movilidad",
     body: `Para usar el Teleférico necesitas una tarjeta electrónica de movilidad. Como referencia se muestra un costo de ${FARES_2026.mobilityCard.price}. Conserva la tarjeta para recargarla y validar futuros accesos.`
   },
   {
+    id: "acceso",
     n: "03",
     title: "Cómo validar el acceso",
     body: `Al entrar a la estación, acerca tu tarjeta al validador. Cada viaje cuesta ${TELEFERICO_URUAPAN.fare}. Si también usas camión urbano, considera cada abordaje por separado al calcular tu presupuesto.`
   },
   {
+    id: "horario",
     n: "04",
     title: "Horario",
     body: `Opera de ${TELEFERICO_URUAPAN.hours} todos los días. Revisa avisos oficiales antes de viajar, especialmente en días festivos o por mantenimiento programado.`
   },
   {
+    id: "combinaciones",
     n: "05",
     title: "Tips para combinarlo con camión",
     body: "Marca tu origen y destino en el mapa para ver si te conviene llegar a una estación caminando, en camión o con transbordo. El Teleférico puede ser útil para cruzar de oriente a poniente y después completar el trayecto en ruta urbana."
   }
 ] as const;
 
+const TOC = [
+  ...SECTIONS.map((section) => ({ id: section.id, label: section.title })),
+  { id: "estaciones", label: "Las 6 estaciones" },
+];
+
 export default function TelefericoBlogArticlePage() {
   return (
-    <main className="greca-bg greca-bg-animated min-h-dvh px-5 py-8 sm:px-8 lg:px-10" style={{ background: "#0c110a", color: "#e8f2d8" }}>
-      <ForceDark />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <article className="relative z-10 mx-auto max-w-3xl">
+    <BlogArticleLayout
+      currentSlug="como-usar-el-teleferico-uruapan"
+      readingTime="6 min"
+      toc={TOC}
+      jsonLd={jsonLd}
+      actionHref="/mapa?destino=Teleferico%20Uruapan"
+      actionLabel="Ver Teleférico en el mapa"
+    >
         <PageHeader
-          kicker="Únicо en Michoacán"
+          kicker="Único en Michoacán"
           eyebrow="Guía 2026"
           title={
             <>
@@ -113,7 +125,8 @@ export default function TelefericoBlogArticlePage() {
           {SECTIONS.map((section) => (
             <section
               key={section.n}
-              className="rounded-2xl border border-foreground/10 bg-ink-900/55 p-6 backdrop-blur"
+              id={section.id}
+              className="scroll-mt-40 border-t border-white/[0.1] py-8 first:border-t-0 first:pt-0"
             >
               <p className="font-serif-display text-3xl font-black text-lima">
                 {section.n}
@@ -127,7 +140,7 @@ export default function TelefericoBlogArticlePage() {
             </section>
           ))}
 
-          <section>
+          <section id="estaciones" className="scroll-mt-40 border-t border-white/[0.1] pt-8">
             <p className="font-serif-display text-3xl font-black text-lima">06</p>
             <h2 className="mt-2 font-serif-display text-2xl font-black text-white">
               Las 6 estaciones, de oriente a poniente
@@ -136,7 +149,7 @@ export default function TelefericoBlogArticlePage() {
               {TELEFERICO_URUAPAN.stations.map((station, index) => (
                 <article
                   key={station}
-                  className="card-lift rounded-2xl border border-foreground/10 bg-ink-900/65 p-4 backdrop-blur"
+                  className="rounded-lg border border-foreground/10 bg-ink-900/65 p-4"
                 >
                   <p className="font-serif-display text-xs font-black text-lima">
                     E{index + 1}
@@ -153,17 +166,6 @@ export default function TelefericoBlogArticlePage() {
           </section>
         </div>
 
-        <Link
-          href="/mapa"
-          className="cta-shine mt-10 inline-flex h-12 items-center rounded-full bg-verde px-6 py-2 text-sm font-black text-white hover:opacity-90"
-        >
-          Ver el mapa de rutas →
-        </Link>
-
-        <div className="mt-12">
-          <NotGovernmentNotice variant="compact" />
-        </div>
-      </article>
-    </main>
+    </BlogArticleLayout>
   );
 }

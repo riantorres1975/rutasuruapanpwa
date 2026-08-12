@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import BlogArticleLayout from "@/components/BlogArticleLayout";
 import PageHeader from "@/components/PageHeader";
-import NotGovernmentNotice from "@/components/NotGovernmentNotice";
-import ForceDark from "@/components/ForceDark";
 import { FARES_2026 } from "@/lib/mobility-config";
 
 export const metadata: Metadata = {
@@ -77,17 +76,21 @@ const CARDS = [
   },
   {
     eyebrow: "Costo y pago",
-    title: `${FARES_2026.urbanBus.price} MXN · tarjeta electrónica`,
-    body: "La misma tarifa aplica para camión y Teleférico. Con la tarjeta electrónica de movilidad no necesitas efectivo, abordas más rápido y reduces el riesgo de asalto."
+    title: `${FARES_2026.urbanBus.price} por abordaje`,
+    body: "La tarifa base es la misma para camión y Teleférico, pero el método de pago cambia: efectivo en el camión y tarjeta electrónica de movilidad en el Teleférico."
   }
 ] as const;
 
 export default function GuiaEstudiantesPage() {
   return (
-    <main className="greca-bg greca-bg-animated min-h-dvh px-5 py-8 sm:px-8 lg:px-10" style={{ background: "#0c110a", color: "#e8f2d8" }}>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <ForceDark />
-      <article className="relative z-10 mx-auto max-w-3xl">
+    <BlogArticleLayout
+      currentSlug="guia-transporte-publico-estudiantes-uruapan"
+      readingTime="7 min"
+      toc={[{ id: "datos-clave", label: "Datos clave" }, { id: "planear", label: "Planear el trayecto" }]}
+      jsonLd={jsonLd}
+      actionHref="/como-llegar"
+      actionLabel="Buscar mi escuela"
+    >
         <PageHeader
           eyebrow="En preparación"
           title={
@@ -98,11 +101,11 @@ export default function GuiaEstudiantesPage() {
           intro="37 escuelas conectadas, Wi-Fi en el Teleférico y cámaras en los camiones. Todo lo que necesitas para moverte entre prepa, uni y casa."
         />
 
-        <section className="mt-12 grid gap-4 sm:grid-cols-2">
+        <section id="datos-clave" className="mt-12 scroll-mt-40 grid gap-4 sm:grid-cols-2">
           {CARDS.map((card) => (
             <div
               key={card.title}
-              className="card-lift rounded-2xl border border-foreground/10 bg-ink-900/60 p-5 backdrop-blur"
+              className="rounded-lg border border-foreground/10 bg-ink-900/60 p-5"
             >
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-lima">{card.eyebrow}</p>
               <h3 className="mt-1 font-serif-display text-lg font-black text-white">{card.title}</h3>
@@ -111,7 +114,7 @@ export default function GuiaEstudiantesPage() {
           ))}
         </section>
 
-        <section className="mt-6 rounded-[1.75rem] border border-foreground/12 bg-ink-900/65 p-8 backdrop-blur">
+        <section id="planear" className="mt-8 scroll-mt-40 border-t border-foreground/12 pt-8">
           <h2 className="font-serif-display text-2xl font-black text-white">Próximamente</h2>
           <p className="mt-3 text-sm leading-7 text-foreground/75">
             Estamos armando esta guía con la ubicación de las 37 escuelas conectadas al sistema, horarios pico, rutas terrestres recomendadas y cómo aprovechar el Wi-Fi gratuito y las cámaras de seguridad en tus trayectos de prepa o universidad. Mientras tanto, planea tu viaje en el mapa.
@@ -124,10 +127,6 @@ export default function GuiaEstudiantesPage() {
           </Link>
         </section>
 
-        <div className="mt-12">
-          <NotGovernmentNotice variant="compact" />
-        </div>
-      </article>
-    </main>
+    </BlogArticleLayout>
   );
 }

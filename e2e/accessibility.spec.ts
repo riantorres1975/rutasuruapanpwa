@@ -7,6 +7,7 @@ const pages = [
   { name: "horarios", path: "/horarios" },
   { name: "guía de uso", path: "/guia" },
   { name: "reporte de errores", path: "/reportar-error" },
+  { name: "artículo del blog", path: "/blog/como-usar-el-teleferico-uruapan" },
 ] as const;
 
 async function expectNoWcagViolations(page: import("@playwright/test").Page) {
