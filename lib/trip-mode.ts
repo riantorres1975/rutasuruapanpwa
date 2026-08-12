@@ -1,7 +1,7 @@
 import { haversineMeters } from "@/lib/geo";
 import { getClosestPointOnPath, getRouteMetrics } from "@/lib/routeMatcher";
 import { getTransferSelectionKey } from "@/lib/transfer-selection";
-import type { Coordinates } from "@/lib/types";
+import type { Coordinates, ProductionRouteLandmark } from "@/lib/types";
 
 const BUS_SPEED_M_PER_MIN = 300;
 const WALK_SPEED_M_PER_MIN = 75;
@@ -29,6 +29,7 @@ export type DirectTripJourney = {
   routeName: string;
   segment: Coordinates[];
   destination: Coordinates;
+  landmarks?: ProductionRouteLandmark[];
   boardingStopLabel?: string;
   destinationStopLabel?: string;
 };
@@ -48,6 +49,8 @@ export type TransferTripJourney = {
   transferPoint: Coordinates;
   walkMeters: number;
   destination: Coordinates;
+  routeALandmarks?: ProductionRouteLandmark[];
+  routeBLandmarks?: ProductionRouteLandmark[];
   boardingStopLabel?: string;
   transferArrivalStopLabel?: string;
   transferBoardingStopLabel?: string;

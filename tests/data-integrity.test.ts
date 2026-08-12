@@ -109,4 +109,15 @@ describe("integridad de rutas de producción", () => {
       expect(route.landmarks.length, route.original_name).toBeLessThanOrEqual(12);
     }
   });
+
+  it("incluye el Tec Uruapan como referencia en ambas direcciones de la Ruta 27", () => {
+    const route27Directions = routeData.filter((route) => route.name === "Ruta 27");
+    expect(route27Directions).toHaveLength(2);
+    for (const route of route27Directions) {
+      expect(
+        route.landmarks.some((landmark) => landmark.name.includes("Tec Uruapan")),
+        route.original_name,
+      ).toBe(true);
+    }
+  });
 });

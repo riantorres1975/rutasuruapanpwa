@@ -34,11 +34,15 @@ import { useSharedMapState } from "@/hooks/useSharedMapState";
 import { useTripSession } from "@/hooks/useTripSession";
 import { addRecentTrip, getRecentTrips, RECENT_TRIPS_EVENT, type RecentTrip } from "@/lib/recent-trips";
 import { formatRouteLabel, getRouteDestination } from "@/lib/route-names";
-import type { Coordinates, ProductionRouteLandmark } from "@/lib/types";
+import type { Coordinates } from "@/lib/types";
 import { findMatchingTransfer } from "@/lib/transfer-selection";
 import { buildSharedRouteSegment } from "@/lib/shared-route";
 import { formatCoordinateParam, getSharedTransferIdentity } from "@/lib/shared-map-state";
 import { haversineMeters } from "@/lib/geo";
+import {
+  findNearestLandmark as findNearestRouteLandmark,
+  findUpcomingLandmark,
+} from "@/lib/landmark-guidance";
 import {
   getMapAutoLoadDelay,
   shouldPreloadMap,
@@ -153,24 +157,6 @@ function walkMinutes(meters: number) {
   return Math.max(1, Math.round(meters / 75));
 }
 
-function findNearestLandmark(
-  point: Coordinates,
-  landmarks: ProductionRouteLandmark[] | undefined,
-  maxDistM: number
-): string | null {
-  if (!landmarks?.length) return null;
-  let best: string | null = null;
-  let bestDist = maxDistM;
-  for (const lm of landmarks) {
-    const d = haversineMeters(point, lm.point);
-    if (d < bestDist) {
-      bestDist = d;
-      best = lm.name;
-    }
-  }
-  return best;
-}
-
 export default function HomePage() {
   const initialSearch = useSyncExternalStore<string>(
     subscribeLocationSearch,
@@ -236,6 +222,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     Boolean(initialUrlState.sharedState?.origin && initialUrlState.sharedState.destination),
   );
   const {
+    announceLandmark,
     cancelStop: cancelStopTrip,
     completeStop: completeStopTrip,
     dismissDropOffAlert,
@@ -657,6 +644,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
         routeName: bestSuggestion.ruta,
         segment: bestSuggestion.segment,
         destination: destinationPoint,
+        landmarks: polylineRoutesById.get(bestSuggestion.routeId)?.landmarks,
         boardingStopLabel: isTeleferico
           ? getTelefericoStationName(bestSuggestion.indexA) ?? undefined
           : undefined,
@@ -683,6 +671,8 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
         transferPoint: selectedTransfer.transferPoint,
         walkMeters: selectedTransfer.walkMeters,
         destination: destinationPoint,
+        routeALandmarks: polylineRoutesById.get(selectedTransfer.routeAId)?.landmarks,
+        routeBLandmarks: polylineRoutesById.get(selectedTransfer.routeBId)?.landmarks,
         boardingStopLabel: routeAIsTeleferico
           ? getTelefericoStationName(selectedTransfer.routeAStartIndex) ?? undefined
           : undefined,
@@ -698,7 +688,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
       };
     }
     return null;
-  }, [bestSuggestion, destinationPoint, selectedTransfer]);
+  }, [bestSuggestion, destinationPoint, polylineRoutesById, selectedTransfer]);
   const plannedJourneyKey = plannedJourney
     ? getTripJourneyKey(plannedJourney)
     : null;
@@ -709,6 +699,36 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     : liveLocation
       ? "ready"
       : "locating";
+  const tripLandmarkCue = useMemo(() => {
+    if (!tripSession || !tripProgress || !liveLocation) return null;
+    if (tripProgress.phase === "riding-direct" && tripSession.journey.kind === "direct") {
+      return findUpcomingLandmark(
+        liveLocation,
+        tripSession.journey.segment,
+        tripSession.journey.landmarks,
+      );
+    }
+    if (tripSession.journey.kind !== "transfer") return null;
+    if (tripProgress.phase === "riding-first") {
+      return findUpcomingLandmark(
+        liveLocation,
+        tripSession.journey.segmentA,
+        tripSession.journey.routeALandmarks,
+      );
+    }
+    if (tripProgress.phase === "riding-second") {
+      return findUpcomingLandmark(
+        liveLocation,
+        tripSession.journey.segmentB,
+        tripSession.journey.routeBLandmarks,
+      );
+    }
+    return null;
+  }, [liveLocation, tripProgress, tripSession]);
+
+  useEffect(() => {
+    announceLandmark(tripLandmarkCue);
+  }, [announceLandmark, tripLandmarkCue]);
 
   useEffect(() => {
     if (!tripSession || tripSession.key === plannedJourneyKey) return;
@@ -820,10 +840,10 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
 
       const bestRoute = polylineRoutesById.get(bestSuggestion.routeId);
       const originLandmark = originPoint
-        ? findNearestLandmark(originPoint, bestRoute?.landmarks, 150)
+        ? findNearestRouteLandmark(originPoint, [bestRoute?.landmarks], 150)?.name ?? null
         : null;
       const destLandmark = destinationPoint
-        ? findNearestLandmark(destinationPoint, bestRoute?.landmarks, 150)
+        ? findNearestRouteLandmark(destinationPoint, [bestRoute?.landmarks], 150)?.name ?? null
         : null;
 
       return {
@@ -843,6 +863,14 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
         selectedTransfer.routeAName,
         selectedTransfer.routeBName,
       ]);
+      const transferLandmark = findNearestRouteLandmark(
+        selectedTransfer.transferPoint,
+        [
+          polylineRoutesById.get(selectedTransfer.routeAId)?.landmarks,
+          polylineRoutesById.get(selectedTransfer.routeBId)?.landmarks,
+        ],
+        300,
+      )?.name;
       const firstInstruction = routeAIsTeleferico
         ? `Primero aborda el Teleférico en la estación ${getTelefericoStationName(selectedTransfer.routeAStartIndex) ?? "indicada"}.`
         : `Primero toma ${formatRouteLabel(selectedTransfer.routeAName)}.`;
@@ -850,7 +878,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
         ? `Baja en la estación ${getTelefericoStationName(selectedTransfer.routeATransferIndex) ?? "indicada"} y camina aproximadamente ${Math.round(selectedTransfer.walkMeters)} m (${walkMinutes(selectedTransfer.walkMeters)} min) para transbordar.`
         : routeBIsTeleferico
           ? `Camina aproximadamente ${Math.round(selectedTransfer.walkMeters)} m (${walkMinutes(selectedTransfer.walkMeters)} min) hasta la estación ${getTelefericoStationName(selectedTransfer.routeBTransferIndex) ?? "indicada"}.`
-          : `Camina aproximadamente ${Math.round(selectedTransfer.walkMeters)} m (${walkMinutes(selectedTransfer.walkMeters)} min) en el punto de transbordo.`;
+          : `Camina aproximadamente ${Math.round(selectedTransfer.walkMeters)} m (${walkMinutes(selectedTransfer.walkMeters)} min) para transbordar${transferLandmark ? ` cerca de ${transferLandmark}` : ""}.`;
       const secondInstruction = routeBIsTeleferico
         ? `Continúa en el Teleférico hasta la estación ${getTelefericoStationName(selectedTransfer.routeBEndIndex) ?? "indicada"}.`
         : `Continúa en ${formatRouteLabel(selectedTransfer.routeBName)} hasta acercarte al destino.`;
@@ -869,7 +897,17 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     if (transfers.length > 0) {
       return {
         title: "Opciones de transbordo disponibles",
-        items: transfers.slice(0, 2).map((transfer) => `${formatRouteLabel(transfer.routeAName)} a ${formatRouteLabel(transfer.routeBName)}, caminando ~${Math.round(transfer.walkMeters)} m (${walkMinutes(transfer.walkMeters)} min) para transbordar.`)
+        items: transfers.slice(0, 2).map((transfer) => {
+          const landmark = findNearestRouteLandmark(
+            transfer.transferPoint,
+            [
+              polylineRoutesById.get(transfer.routeAId)?.landmarks,
+              polylineRoutesById.get(transfer.routeBId)?.landmarks,
+            ],
+            300,
+          )?.name;
+          return `${formatRouteLabel(transfer.routeAName)} a ${formatRouteLabel(transfer.routeBName)}, caminando ~${Math.round(transfer.walkMeters)} m (${walkMinutes(transfer.walkMeters)} min) para transbordar${landmark ? ` cerca de ${landmark}` : ""}.`;
+        })
       };
     }
 
@@ -1367,6 +1405,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
             journey={tripSession.journey}
             progress={tripProgress}
             locationStatus={tripLocationStatus}
+            landmarkCue={tripLandmarkCue}
             onStop={handleStopTrip}
           />
         ) : null}

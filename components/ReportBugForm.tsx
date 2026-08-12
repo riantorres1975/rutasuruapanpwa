@@ -23,10 +23,15 @@ const REPORT_TYPES = [
   "Otro"
 ] as const;
 
-export default function ReportBugForm() {
+type ReportBugFormProps = {
+  initialRoute?: string;
+  initialLandmark?: string;
+};
+
+export default function ReportBugForm({ initialRoute = "", initialLandmark = "" }: ReportBugFormProps) {
   const [reportType, setReportType] = useState<(typeof REPORT_TYPES)[number]>("Ruta incorrecta");
-  const [routeName, setRouteName] = useState("");
-  const [place, setPlace] = useState("");
+  const [routeName, setRouteName] = useState(initialRoute);
+  const [place, setPlace] = useState(initialLandmark ? `Cerca de ${initialLandmark}` : "");
   const [description, setDescription] = useState("");
   const [expected, setExpected] = useState("");
   const [contact, setContact] = useState("");

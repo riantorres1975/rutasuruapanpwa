@@ -16003,6 +16003,13 @@
           -102.0742929,
           19.4740214
         ]
+      },
+      {
+        "name": "Instituto Tecnológico Superior de Uruapan (Tec Uruapan)",
+        "point": [
+          -102.0747,
+          19.47727
+        ]
       }
     ]
   },
@@ -16304,6 +16311,13 @@
       ]
     ],
     "landmarks": [
+      {
+        "name": "Instituto Tecnológico Superior de Uruapan (Tec Uruapan)",
+        "point": [
+          -102.0747,
+          19.47727
+        ]
+      },
       {
         "name": "CETIS 27",
         "point": [

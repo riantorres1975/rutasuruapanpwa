@@ -31,6 +31,11 @@ describe("geocode", () => {
     expect(searchLocalPlaces("CENTRO HISTORICO")[0]?.label).toBe("Centro Histórico");
   });
 
+  it("encuentra el Tec Uruapan por su nombre corto y siglas", () => {
+    expect(searchLocalPlaces("Tec Uruapan")[0]?.label).toContain("Tec Uruapan");
+    expect(searchLocalPlaces("ITSU")[0]?.label).toContain("Tec Uruapan");
+  });
+
   it("acepta resultados de Mapbox dentro de Uruapan", async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       mapboxResponse([

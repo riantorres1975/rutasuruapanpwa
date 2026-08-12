@@ -29,6 +29,12 @@ describe("como-llegar (datos reales)", () => {
     expect(routes.every((r) => r.distanceM <= 500)).toBe(true);
   });
 
+  it("publica una guía del Tec Uruapan asociada a la Ruta 27", () => {
+    const tec = getPlaceSeoItems().find((place) => place.label.includes("Tec Uruapan"));
+    expect(tec?.slug).toContain("tec-uruapan");
+    expect(getRoutesNearPlace(tec!.center).map((route) => route.name)).toContain("Ruta 27");
+  });
+
   it("excluye el Teleférico de las rutas de camión", () => {
     for (const place of getPlaceSeoItems()) {
       const routes = getRoutesNearPlace(place.center);

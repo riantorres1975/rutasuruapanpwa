@@ -1,4 +1,5 @@
 import type { TripJourney, TripProgress } from "@/lib/trip-mode";
+import type { LandmarkCue } from "@/lib/landmark-guidance";
 
 type TripLocationStatus = "locating" | "ready" | "unavailable";
 
@@ -6,6 +7,7 @@ type TripModePanelProps = {
   journey: TripJourney;
   progress: TripProgress | null;
   locationStatus: TripLocationStatus;
+  landmarkCue?: LandmarkCue | null;
   onStop: () => void;
 };
 
@@ -110,6 +112,7 @@ export default function TripModePanel({
   journey,
   progress,
   locationStatus,
+  landmarkCue,
   onStop,
 }: TripModePanelProps) {
   const copy = getTripCopy(journey, progress, locationStatus);
@@ -140,6 +143,11 @@ export default function TripModePanel({
             <p className="text-[9px] font-bold tracking-[1.5px] text-lima">{copy.eyebrow}</p>
             <p className="ov-text text-[14px] font-bold leading-5">{copy.title}</p>
             <p className="ov-text-muted text-[11px] leading-4">{copy.detail}</p>
+            {landmarkCue ? (
+              <p className="mt-0.5 truncate text-[11px] font-semibold leading-4 text-lima/90">
+                Próxima referencia: {landmarkCue.name} · ~{Math.round(landmarkCue.distanceM)} m
+              </p>
+            ) : null}
           </div>
 
           <button

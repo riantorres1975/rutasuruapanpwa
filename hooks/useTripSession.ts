@@ -11,6 +11,7 @@ import {
   type TripTrackingState,
 } from "@/lib/trip-mode";
 import type { Coordinates } from "@/lib/types";
+import type { LandmarkCue } from "@/lib/landmark-guidance";
 
 export type TripSession = {
   key: string;
@@ -24,6 +25,7 @@ export function useTripSession() {
   const [isStopDialogOpen, setIsStopDialogOpen] = useState(false);
   const [dropOffAlert, setDropOffAlert] = useState<string | null>(null);
   const milestonesRef = useRef(new Set<string>());
+  const announcedLandmarksRef = useRef(new Set<string>());
 
   const reset = useCallback(() => {
     setSession(null);
@@ -31,11 +33,13 @@ export function useTripSession() {
     setIsStopDialogOpen(false);
     setDropOffAlert(null);
     milestonesRef.current.clear();
+    announcedLandmarksRef.current.clear();
   }, []);
 
   const start = useCallback((journey: TripJourney) => {
     const key = getTripJourneyKey(journey);
     milestonesRef.current.clear();
+    announcedLandmarksRef.current.clear();
     setSession({ key, cameraKey: `${key}:${Date.now()}`, journey });
     setTracking(createTripTrackingState());
     setIsStopDialogOpen(false);
@@ -67,6 +71,12 @@ export function useTripSession() {
 
   const cancelStop = useCallback(() => setIsStopDialogOpen(false), []);
   const dismissDropOffAlert = useCallback(() => setDropOffAlert(null), []);
+
+  const announceLandmark = useCallback((cue: LandmarkCue | null) => {
+    if (!cue || cue.distanceM > 250 || announcedLandmarksRef.current.has(cue.name)) return;
+    announcedLandmarksRef.current.add(cue.name);
+    setDropOffAlert(`Próxima referencia: ${cue.name}, a aproximadamente ${Math.round(cue.distanceM)} m.`);
+  }, []);
 
   const updateLocation = useCallback((location: Coordinates) => {
     setTracking((current) => {
@@ -106,6 +116,7 @@ export function useTripSession() {
 
   return {
     cancelStop,
+    announceLandmark,
     completeStop,
     dismissDropOffAlert,
     dropOffAlert,

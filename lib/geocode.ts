@@ -1,4 +1,5 @@
 import type { Coordinates } from "@/lib/types";
+import landmarkPlaces from "@/data/landmark-places.json";
 
 // ── Geocodificación de lugares para Uruapan ──────────────────────────────────
 // Estrategia híbrida:
@@ -67,8 +68,16 @@ function normalize(value: string): string {
     .trim();
 }
 
+const featuredPlaceNames = new Set(KNOWN_PLACES.map((place) => normalize(place.label)));
+export const SEARCHABLE_PLACES: KnownPlace[] = [
+  ...KNOWN_PLACES,
+  ...(landmarkPlaces as KnownPlace[]).filter(
+    (place) => !featuredPlaceNames.has(normalize(place.label)),
+  ),
+];
+
 // Índice invertido: término normalizado → lugar
-const LOCAL_INDEX: { key: string; place: KnownPlace }[] = KNOWN_PLACES.flatMap((place) => {
+const LOCAL_INDEX: { key: string; place: KnownPlace }[] = SEARCHABLE_PLACES.flatMap((place) => {
   const keys = new Set<string>([normalize(place.label), ...place.aliases.map(normalize)]);
   return Array.from(keys).map((key) => ({ key, place }));
 });

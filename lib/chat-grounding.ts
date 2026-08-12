@@ -1,5 +1,5 @@
 import rutasProduccion from "@/data/rutas_produccion_final.json";
-import { getPlaceSeoItems, getRoutesNearPlace } from "@/lib/como-llegar";
+import { getFeaturedPlaceSeoItems, getRoutesNearPlace } from "@/lib/como-llegar";
 import { haversineMeters } from "@/lib/geo";
 import type { Coordinates } from "@/lib/types";
 
@@ -28,7 +28,7 @@ let placesCache: PlaceKnowledge[] | null = null;
 
 function getPlacesKnowledge(): PlaceKnowledge[] {
   if (placesCache) return placesCache;
-  placesCache = getPlaceSeoItems().map((place) => ({
+  placesCache = getFeaturedPlaceSeoItems().map((place) => ({
     label: place.label,
     routes: getRoutesNearPlace(place.center).map((r) => ({ name: r.name, distanceM: r.distanceM })),
   }));

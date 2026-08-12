@@ -18,6 +18,12 @@ const FALLBACK_RADIUS_M = 300;
 const MAX_LANDMARKS = 10;
 const TARGET_LANDMARKS = 8;
 const MIN_LANDMARKS = 5;
+const CURATED_LANDMARKS = new Map([
+  ["Ruta 27", [{
+    name: "Instituto Tecnológico Superior de Uruapan (Tec Uruapan)",
+    point: [-102.0747, 19.47727],
+  }]],
+]);
 const argv = new Set(process.argv.slice(2));
 const shouldApply = argv.has("--apply");
 const shouldRefresh = argv.has("--refresh");
@@ -373,7 +379,12 @@ const reviewRoutes = [];
 let generatedCount = 0;
 
 for (const route of routes) {
+  const curatedLandmarks = CURATED_LANDMARKS.get(route.name) ?? [];
   if (route.landmarks.length > 0) {
+    const existingNames = new Set(route.landmarks.map((landmark) => normalize(landmark.name)));
+    route.landmarks.push(
+      ...curatedLandmarks.filter((landmark) => !existingNames.has(normalize(landmark.name))),
+    );
     reviewRoutes.push({
       id: route.id,
       originalName: route.original_name,
@@ -396,6 +407,10 @@ for (const route of routes) {
     name: candidate.name,
     point: candidate.point.map((value) => Number(value.toFixed(7))),
   }));
+  const generatedNames = new Set(route.landmarks.map((landmark) => normalize(landmark.name)));
+  route.landmarks.push(
+    ...curatedLandmarks.filter((landmark) => !generatedNames.has(normalize(landmark.name))),
+  );
   generatedCount += route.landmarks.length;
   reviewRoutes.push({
     id: route.id,

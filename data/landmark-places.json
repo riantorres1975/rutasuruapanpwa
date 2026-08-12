@@ -1,0 +1,816 @@
+[
+  {
+    "label": "Acceso Caltzontzin",
+    "center": [
+      -102.0104354,
+      19.4241514
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Área recreativa de San Juan Evangelista",
+    "center": [
+      -102.0735844,
+      19.4080737
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Barrio de Santiago",
+    "center": [
+      -102.0707626,
+      19.4233862
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Bodega Aurrera",
+    "center": [
+      -102.03529,
+      19.4148636
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Bodega Aurrera Express, Palito Verde",
+    "center": [
+      -102.07071,
+      19.40384
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Bomberos",
+    "center": [
+      -102.0627479,
+      19.4183634
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Boulevard Industrial / Plaza Ágora",
+    "center": [
+      -102.0375379,
+      19.4216787
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Capilla de San Pedro",
+    "center": [
+      -102.0701515,
+      19.4164494
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Capilla del Niño Jesús",
+    "center": [
+      -102.0417247,
+      19.3770914
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Casa Más Chiquita del Mundo",
+    "center": [
+      -102.0660477,
+      19.4254706
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Castillo",
+    "center": [
+      -102.058541,
+      19.4092848
+    ],
+    "aliases": []
+  },
+  {
+    "label": "CECATI 117",
+    "center": [
+      -102.0429581,
+      19.406388
+    ],
+    "aliases": []
+  },
+  {
+    "label": "CENDI",
+    "center": [
+      -102.0657025,
+      19.4158116
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Central Camionera de Uruapan",
+    "center": [
+      -102.0422135,
+      19.427425
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Central de Autobuses",
+    "center": [
+      -102.04234,
+      19.42687
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Centro",
+    "center": [
+      -102.06303,
+      19.42101
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Centro de Espectáculos 'La Macarena'",
+    "center": [
+      -102.0427969,
+      19.4161479
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Centro Histórico",
+    "center": [
+      -102.0585911,
+      19.419822
+    ],
+    "aliases": []
+  },
+  {
+    "label": "CETIS 27",
+    "center": [
+      -102.0742929,
+      19.4740214
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Colegio Casa del Niño",
+    "center": [
+      -102.0652472,
+      19.4056192
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Colegio de Bachilleres Uruapan",
+    "center": [
+      -102.031135,
+      19.4171769
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Colegio Hidalgo de Michoacán",
+    "center": [
+      -102.0322246,
+      19.4152532
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Colegio Nelson Mandela Primera",
+    "center": [
+      -102.0409334,
+      19.4205442
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Coppel",
+    "center": [
+      -102.06328,
+      19.4187303
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Coppel Cupatitzio",
+    "center": [
+      -102.06297,
+      19.41967
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Elektra",
+    "center": [
+      -102.0261909,
+      19.4249294
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Escuela Primaria Mártires Uruapan",
+    "center": [
+      -102.0663554,
+      19.4150387
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Escuela Secundaria Federal de Uruapan No. 1",
+    "center": [
+      -102.0444411,
+      19.4306917
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Escuela Secundaria Federal Urbana No. 2",
+    "center": [
+      -102.046162,
+      19.4096274
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Escuela Secundaria Federal Urbana No. 3",
+    "center": [
+      -102.0754839,
+      19.4076314
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Escuela Secundaria Federal Urbana No. 4",
+    "center": [
+      -102.0561877,
+      19.3916281
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Escuela Secundaria Técnica No. 66",
+    "center": [
+      -102.0848993,
+      19.4270764
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Escuela Secundaria Técnica Número 30",
+    "center": [
+      -102.0413191,
+      19.4032447
+    ],
+    "aliases": []
+  },
+  {
+    "label": "ESFU 3",
+    "center": [
+      -102.07498,
+      19.40752
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Estadio de Béisbol Héroe de Nacozari",
+    "center": [
+      -102.0499547,
+      19.4146164
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Estadio Hermanos López Rayón",
+    "center": [
+      -102.0337435,
+      19.4240083
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Foro Cultural La Morada",
+    "center": [
+      -102.0665395,
+      19.4230362
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Fraccionamiento Viñedos",
+    "center": [
+      -102.07299,
+      19.40509
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Galerías Metropolitana Uruapan",
+    "center": [
+      -102.0262455,
+      19.4256922
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Glorieta del Cacahuate",
+    "center": [
+      -102.0557007,
+      19.4043487
+    ],
+    "aliases": []
+  },
+  {
+    "label": "H. Cuerpo de Rescate y Salvamento Michoacán",
+    "center": [
+      -102.0313273,
+      19.4292638
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Hospital Civil",
+    "center": [
+      -102.071614,
+      19.4260638
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Hospital El Ángel",
+    "center": [
+      -102.056462,
+      19.4084122
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Hospital Fray Juan de San Miguel",
+    "center": [
+      -102.0534,
+      19.4119431
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Hospital General Regional \"Dr. Pedro Daniel Martínez\"",
+    "center": [
+      -102.0225319,
+      19.3908775
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Hospital Regional",
+    "center": [
+      -102.02093,
+      19.396299
+    ],
+    "aliases": []
+  },
+  {
+    "label": "IMSS Hospital General de Zona 8 Uruapan",
+    "center": [
+      -102.0555,
+      19.42768
+    ],
+    "aliases": []
+  },
+  {
+    "label": "IMSS Hospital General de Zona No. 8 Uruapan",
+    "center": [
+      -102.0558556,
+      19.4272637
+    ],
+    "aliases": []
+  },
+  {
+    "label": "IMSS UMF 76 Uruapan",
+    "center": [
+      -102.0043841,
+      19.4195067
+    ],
+    "aliases": []
+  },
+  {
+    "label": "INFONAVIT",
+    "center": [
+      -102.0515678,
+      19.4172932
+    ],
+    "aliases": []
+  },
+  {
+    "label": "INIFAP Campo Experimental Uruapan",
+    "center": [
+      -102.0521018,
+      19.4070152
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Instituto Tecnológico Superior de Uruapan (Tec Uruapan)",
+    "center": [
+      -102.0747,
+      19.47727
+    ],
+    "aliases": [
+      "tec uruapan",
+      "tecnologico de uruapan",
+      "instituto tecnologico de uruapan",
+      "itsu",
+      "tecnm uruapan"
+    ]
+  },
+  {
+    "label": "Jardín Rotario",
+    "center": [
+      -102.0461009,
+      19.4173087
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Jefatura de Tenencia",
+    "center": [
+      -102.005574,
+      19.4294703
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Josefa Ortiz de Domínguez",
+    "center": [
+      -102.0342047,
+      19.4226957
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Jucutacato",
+    "center": [
+      -102.0796053,
+      19.3773941
+    ],
+    "aliases": []
+  },
+  {
+    "label": "La Comer",
+    "center": [
+      -102.0548694,
+      19.4009376
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Libramiento Aeropuerto",
+    "center": [
+      -102.025606,
+      19.4146744
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Mansión del Cupatitzio",
+    "center": [
+      -102.074191,
+      19.429717
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Mercado Colonial La Charanda",
+    "center": [
+      -102.0597714,
+      19.4281755
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Mercado de Abastos",
+    "center": [
+      -102.0442867,
+      19.3812403
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Mercado de Antojitos",
+    "center": [
+      -102.0618494,
+      19.4216059
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Mercado Poniente",
+    "center": [
+      -102.0769769,
+      19.4306165
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Mercado Zona Poniente",
+    "center": [
+      -102.0767259,
+      19.4305966
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Merza",
+    "center": [
+      -102.0658662,
+      19.4117575
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Módulo INE",
+    "center": [
+      -102.0504371,
+      19.4186127
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Monumento a Lázaro Cárdenas",
+    "center": [
+      -102.0506518,
+      19.4179886
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Monumento a Zapata",
+    "center": [
+      -102.0545503,
+      19.3708535
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Monumento al Padre Ochoa",
+    "center": [
+      -102.0663825,
+      19.4052259
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Mural de los Orígenes de Uruapan",
+    "center": [
+      -102.0747918,
+      19.4333208
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Paraíso Villa",
+    "center": [
+      -102.018429,
+      19.4198292
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Parque del Templo",
+    "center": [
+      -102.038517,
+      19.4120306
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Parque Lineal Cupatitzio",
+    "center": [
+      -102.06401,
+      19.41528
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Parroquia de Cristo Rey",
+    "center": [
+      -102.0544479,
+      19.4181948
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Paseo Lázaro Cárdenas",
+    "center": [
+      -102.0562636,
+      19.398809
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Pérgola Municipal",
+    "center": [
+      -102.0633039,
+      19.421018
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Plaza de la Ranita",
+    "center": [
+      -102.0632288,
+      19.4222969
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Plaza Estambul",
+    "center": [
+      -102.0508255,
+      19.3959361
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Plaza Juárez",
+    "center": [
+      -102.0613193,
+      19.4286843
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Plaza Paquistán",
+    "center": [
+      -102.0511333,
+      19.3953001
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Presidencia",
+    "center": [
+      -102.0477917,
+      19.4211717
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Presidencia Municipal de Uruapan",
+    "center": [
+      -102.0474851,
+      19.4217269
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Primaria Francisco Villa",
+    "center": [
+      -102.018691,
+      19.3885015
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Primaria Manuel Ocaranza",
+    "center": [
+      -102.0521203,
+      19.4223001
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Profesor Genaro Vázquez Rojas",
+    "center": [
+      -102.0865471,
+      19.4366131
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Protección Civil",
+    "center": [
+      -102.057972,
+      19.392143
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Seguridad Pública, Tránsito y Vialidad Municipal",
+    "center": [
+      -102.0460906,
+      19.3952511
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Skatepark",
+    "center": [
+      -102.0367268,
+      19.4161134
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Soriana",
+    "center": [
+      -102.0578555,
+      19.3828968
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Subprocuraduría Regional de Uruapan PGJ",
+    "center": [
+      -102.0690661,
+      19.4000732
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Taller Escuela de Artes Plásticas y Artesanías MAPECO",
+    "center": [
+      -102.0469426,
+      19.4089166
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Templo de la Santísima Trinidad",
+    "center": [
+      -102.0498566,
+      19.3958829
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Templo de San Miguel Arcángel",
+    "center": [
+      -102.0619289,
+      19.4258894
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Templo del Espíritu Santo",
+    "center": [
+      -102.048864,
+      19.4078281
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Toreo El Bajo",
+    "center": [
+      -102.0042996,
+      19.4458941
+    ],
+    "aliases": []
+  },
+  {
+    "label": "UNID Uruapan",
+    "center": [
+      -102.04459,
+      19.42587
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Unidad Deportiva",
+    "center": [
+      -102.03304,
+      19.42662
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Unidad Médica Familiar 76",
+    "center": [
+      -102.0090912,
+      19.4079085
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Universidad Don Vasco",
+    "center": [
+      -102.04726,
+      19.42619
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Universidad Michoacana de San Nicolás de Hidalgo",
+    "center": [
+      -102.0584633,
+      19.3951469
+    ],
+    "aliases": []
+  },
+  {
+    "label": "Walmart",
+    "center": [
+      -102.0378227,
+      19.4245837
+    ],
+    "aliases": []
+  }
+]

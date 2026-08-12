@@ -144,9 +144,13 @@ export function buildSimplifiedMapRoutes(routes: ProductionRoute[]) {
 export function buildLandmarksByRouteName(routes: ProductionRoute[]) {
   const landmarks = new Map<string, ProductionRouteLandmark[]>();
   for (const route of routes) {
-    if (route.landmarks?.length && !landmarks.has(route.name)) {
-      landmarks.set(route.name, route.landmarks);
-    }
+    if (!route.landmarks?.length) continue;
+    const current = landmarks.get(route.name) ?? [];
+    const names = new Set(current.map((landmark) => landmark.name));
+    landmarks.set(route.name, [
+      ...current,
+      ...route.landmarks.filter((landmark) => !names.has(landmark.name)),
+    ]);
   }
   return landmarks;
 }

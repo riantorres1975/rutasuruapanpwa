@@ -1,6 +1,6 @@
 import rutasProduccion from "@/data/rutas_produccion_final.json";
 import { haversineMeters } from "@/lib/geo";
-import { KNOWN_PLACES, type KnownPlace } from "@/lib/geocode";
+import { KNOWN_PLACES, SEARCHABLE_PLACES, type KnownPlace } from "@/lib/geocode";
 import { getRouteSeoItems, slugify } from "@/lib/route-seo";
 import type { Coordinates } from "@/lib/types";
 
@@ -33,6 +33,10 @@ const MAX_WALK_METERS = 500;
 const TELEFERICO_NAME = "teleférico";
 
 export function getPlaceSeoItems(): PlaceSeoItem[] {
+  return SEARCHABLE_PLACES.map((place) => ({ ...place, slug: slugify(place.label) }));
+}
+
+export function getFeaturedPlaceSeoItems(): PlaceSeoItem[] {
   return KNOWN_PLACES.map((place) => ({ ...place, slug: slugify(place.label) }));
 }
 

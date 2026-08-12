@@ -357,6 +357,13 @@ export default function RouteList({
   const landmarkMatchingRouteNames = matchedLandmark
     ? landmarkRouteMap.get(matchedLandmark.key)?.routeNames ?? EMPTY_ROUTE_NAMES
     : EMPTY_ROUTE_NAMES;
+  const reportHref = useMemo(() => {
+    const params = new URLSearchParams({ from: "mapa" });
+    const selectedRouteName = routes.find((route) => route.id === selectedRouteId)?.ruta;
+    if (selectedRouteName) params.set("ruta", selectedRouteName);
+    if (matchedLandmark?.label) params.set("referencia", matchedLandmark.label);
+    return `/reportar-error?${params.toString()}`;
+  }, [matchedLandmark, routes, selectedRouteId]);
 
   const filteredRoutes = useMemo(() => {
     const searchResults = normalizedQuery
@@ -614,7 +621,7 @@ export default function RouteList({
       )}
 
       <Link
-        href="/reportar-error?from=mapa"
+        href={reportHref}
         className="ov-pill ov-border ov-text-muted inline-flex w-full items-center justify-center rounded-2xl border px-4 py-3 text-center text-[12px] font-semibold transition hover:border-lima/40 hover:text-lima"
       >
         ¿Viste una ruta mal? Reportar error

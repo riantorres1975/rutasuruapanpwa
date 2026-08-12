@@ -79,6 +79,18 @@ test("encuentra rutas por los nuevos puntos de referencia", async ({ page }) => 
   await expect(routeSheet.getByText(/Pasa por: Galerías Metropolitana Uruapan/i)).toBeVisible();
 });
 
+test("encuentra la Ruta 27 al buscar el Tec Uruapan", async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem("rutas-uru-onboarded", "1"));
+  await page.goto("/mapa");
+
+  await page.locator('button[aria-label^="Rutas "]:visible').click();
+  const routeSheet = page.getByRole("dialog", { name: "Selecciona una ruta" });
+  await routeSheet.getByPlaceholder(/punto de referencia/i).fill("Tec Uruapan");
+
+  await expect(routeSheet.getByText("Ruta 27", { exact: true })).toBeVisible();
+  await expect(routeSheet.getByText(/Pasa por: Instituto Tecnológico Superior de Uruapan/i)).toBeVisible();
+});
+
 test("negar la geolocalización conserva el flujo de origen manual", async ({ page }) => {
   await page.addInitScript(() => {
     Object.defineProperty(navigator, "geolocation", {

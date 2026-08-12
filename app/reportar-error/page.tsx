@@ -27,7 +27,14 @@ const REPORT_TIPS = [
   "Captura de pantalla si tu app de correo te permite adjuntarla."
 ] as const;
 
-export default function ReportErrorPage() {
+type ReportErrorPageProps = {
+  searchParams: Promise<{ ruta?: string; referencia?: string }>;
+};
+
+export default async function ReportErrorPage({ searchParams }: ReportErrorPageProps) {
+  const params = await searchParams;
+  const initialRoute = params.ruta?.trim().slice(0, 100) ?? "";
+  const initialLandmark = params.referencia?.trim().slice(0, 120) ?? "";
   return (
     <main style={{ background: "#0c110a", color: "#e8f2d8", minHeight: "100dvh" }}>
       <ForceDark />
@@ -84,7 +91,7 @@ export default function ReportErrorPage() {
               </div>
             </aside>
 
-            <ReportBugForm />
+            <ReportBugForm initialRoute={initialRoute} initialLandmark={initialLandmark} />
           </div>
         </div>
       </div>

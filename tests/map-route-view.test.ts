@@ -45,7 +45,7 @@ describe("map route view model", () => {
     expect(countVisibleRoutes(list)).toBe(1);
   });
 
-  it("indexa una sola colección de referencias por nombre", () => {
+  it("combina las referencias de ida y vuelta por nombre", () => {
     const firstLandmarks = [{ name: "Centro", point: [-102.07, 19.41] as Coordinates }];
     const landmarks = buildLandmarksByRouteName([
       makeRoute({ landmarks: firstLandmarks }),
@@ -54,7 +54,10 @@ describe("map route view model", () => {
       ] }),
     ]);
 
-    expect(landmarks.get("Ruta 1")).toBe(firstLandmarks);
+    expect(landmarks.get("Ruta 1")?.map((landmark) => landmark.name)).toEqual([
+      "Centro",
+      "Mercado",
+    ]);
   });
 
   it("reduce recorridos de fondo preservando sus extremos", () => {
