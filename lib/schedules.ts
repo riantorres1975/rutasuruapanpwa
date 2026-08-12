@@ -81,19 +81,33 @@ export type ScheduleStatus =
   | { kind: "last-service"; minutesLeft: number; last: string }
   | { kind: "off"; first: string; last: string };
 
-export function getScheduleStatus(schedule: RouteSchedule, now?: Date): ScheduleStatus {
+function minutesInTimeZone(date: Date, timeZone: string): number {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(date);
+  const hour = Number(parts.find((part) => part.type === "hour")?.value ?? 0);
+  const minute = Number(parts.find((part) => part.type === "minute")?.value ?? 0);
+  return hour * 60 + minute;
+}
+
+export function getScheduleStatus(schedule: RouteSchedule, now?: Date, timeZone?: string): ScheduleStatus {
   const date = now ?? new Date();
-  const currentMin = date.getHours() * 60 + date.getMinutes();
+  const currentMin = timeZone
+    ? minutesInTimeZone(date, timeZone)
+    : date.getHours() * 60 + date.getMinutes();
   const firstMin = toMinutes(schedule.first);
   const lastMin = toMinutes(schedule.last);
   const avgFreq = Math.round((schedule.freqMin + schedule.freqMax) / 2);
 
-  if (schedule.continuous) {
-    return { kind: "continuous", first: schedule.first, last: schedule.last };
-  }
-
   if (currentMin < firstMin || currentMin > lastMin) {
     return { kind: "off", first: schedule.first, last: schedule.last };
+  }
+
+  if (schedule.continuous) {
+    return { kind: "continuous", first: schedule.first, last: schedule.last };
   }
 
   // Within last 20 min of service

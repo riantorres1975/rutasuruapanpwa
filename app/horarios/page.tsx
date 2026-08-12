@@ -3,7 +3,8 @@ import Link from "next/link";
 import ForceDark from "@/components/ForceDark";
 import PublicFooter from "@/components/PublicFooter";
 import PublicHeader from "@/components/PublicHeader";
-import { DATA_LAST_UPDATED, FARES_2026, TELEFERICO_URUAPAN } from "@/lib/mobility-config";
+import ScheduleDirectory, { type ScheduleService } from "@/components/ScheduleDirectory";
+import { DATA_LAST_UPDATED, FARES_2026 } from "@/lib/mobility-config";
 import { getRouteSeoItems } from "@/lib/route-seo";
 import { getSchedule } from "@/lib/schedules";
 import { SITE_URL } from "@/lib/site-url";
@@ -15,51 +16,61 @@ export const metadata: Metadata = {
   alternates: { canonical: `${SITE_URL}/horarios` },
   openGraph: {
     title: "Horarios de camiones en Uruapan — Todas las rutas",
-    description:
-      "Primer y último camión, frecuencia de paso y horario del Teleférico de Uruapan, en una sola tabla.",
+    description: "Primer y último camión, frecuencia de paso y horario del Teleférico de Uruapan, en una sola tabla.",
     url: `${SITE_URL}/horarios`,
-    type: "website"
-  }
+    type: "website",
+  },
 };
 
-function frequencyLabel(freqMin: number, freqMax: number, continuous?: boolean): string {
-  if (continuous) return "Continuo";
-  return freqMin === freqMax ? `Cada ${freqMin} min` : `Cada ${freqMin}–${freqMax} min`;
-}
+const faqs = [
+  {
+    question: "¿A qué hora pasa el primer camión en Uruapan?",
+    answer:
+      "La mayoría de las rutas urbanas inician entre 5:15 y 6:00 de la mañana. Las rutas con servicio más temprano son la Ruta 2 (5:15) y las rutas 1, 1A, 20 y 176 (5:30).",
+  },
+  {
+    question: "¿Hasta qué hora hay camiones en Uruapan?",
+    answer:
+      "El servicio termina entre 21:00 y 22:30 según la ruta. La Ruta 176 es de las que más tarde circulan (hasta 23:30). El Teleférico opera hasta las 23:00.",
+  },
+  {
+    question: "¿Cada cuánto pasa el camión?",
+    answer:
+      "En horas pico la mayoría de las rutas pasan cada 8 a 15 minutos. En horarios de baja demanda la frecuencia puede llegar a 20 minutos.",
+  },
+  {
+    question: "¿Los horarios son exactos?",
+    answer:
+      `Los camiones urbanos en Uruapan no operan con horario fijo por parada: los rangos son aproximados y pueden variar por tráfico y día de la semana. Los datos se verificaron en campo y se actualizaron en ${DATA_LAST_UPDATED}.`,
+  },
+] as const;
 
 export default function HorariosPage() {
-  const routes = getRouteSeoItems().filter((r) => !r.name.toLowerCase().includes("teleférico"));
-
-  const rows = routes
-    .map((route) => {
+  const services: ScheduleService[] = getRouteSeoItems()
+    .filter((route) => !route.name.toLowerCase().includes("teleférico"))
+    .flatMap((route) => {
       const schedule = getSchedule(route.name);
-      if (!schedule) return null;
-      return { route, schedule };
-    })
-    .filter((row): row is NonNullable<typeof row> => row !== null);
+      return schedule ? [{
+        name: route.name,
+        destination: route.destination,
+        slug: route.slug,
+        color: route.color,
+        kind: "bus" as const,
+        schedule,
+      }] : [];
+    });
 
-  const faqs = [
-    {
-      question: "¿A qué hora pasa el primer camión en Uruapan?",
-      answer:
-        "La mayoría de las rutas urbanas inician entre 5:15 y 6:00 de la mañana. Las rutas con servicio más temprano son la Ruta 2 (5:15) y las rutas 1, 1A, 20 y 176 (5:30)."
-    },
-    {
-      question: "¿Hasta qué hora hay camiones en Uruapan?",
-      answer:
-        "El servicio termina entre 21:00 y 22:30 según la ruta. La Ruta 176 es de las que más tarde circulan (hasta 23:30). El Teleférico opera hasta las 23:00."
-    },
-    {
-      question: "¿Cada cuánto pasa el camión?",
-      answer:
-        "En horas pico la mayoría de las rutas pasan cada 8 a 15 minutos. En horarios de baja demanda la frecuencia puede llegar a 20 minutos."
-    },
-    {
-      question: "¿Los horarios son exactos?",
-      answer:
-        "Los camiones urbanos en Uruapan no operan con horario fijo por parada: los rangos son aproximados y pueden variar por tráfico y día de la semana. Los datos se verificaron en campo y se actualizaron en " + DATA_LAST_UPDATED + "."
-    }
-  ];
+  const telefericoSchedule = getSchedule("Teleférico Uruapan");
+  if (telefericoSchedule) {
+    services.unshift({
+      name: "Teleférico Uruapan",
+      destination: "6 estaciones",
+      slug: "teleferico-uruapan",
+      color: "#00D4AA",
+      kind: "teleferico",
+      schedule: telefericoSchedule,
+    });
+  }
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -68,245 +79,72 @@ export default function HorariosPage() {
         "@type": "BreadcrumbList",
         itemListElement: [
           { "@type": "ListItem", position: 1, name: "Inicio", item: `${SITE_URL}/` },
-          { "@type": "ListItem", position: 2, name: "Horarios", item: `${SITE_URL}/horarios` }
-        ]
+          { "@type": "ListItem", position: 2, name: "Horarios", item: `${SITE_URL}/horarios` },
+        ],
       },
       {
         "@type": "FAQPage",
         mainEntity: faqs.map((faq) => ({
           "@type": "Question",
           name: faq.question,
-          acceptedAnswer: { "@type": "Answer", text: faq.answer }
-        }))
-      }
-    ]
+          acceptedAnswer: { "@type": "Answer", text: faq.answer },
+        })),
+      },
+    ],
   };
 
-  const cellBorder = { borderColor: "rgba(140,200,80,0.1)" };
-
   return (
-    <main style={{ background: "#0c110a", color: "#e8f2d8", minHeight: "100dvh" }}>
+    <main className="min-h-dvh bg-[#0c110a] text-[#e8f2d8]">
       <ForceDark />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-
       <PublicHeader active="horarios" />
 
-      <div className="px-5 pt-28 pb-16 sm:px-8 lg:px-10">
+      <div className="px-5 pb-16 pt-28 sm:px-8 lg:px-10">
         <div className="mx-auto max-w-5xl">
-          <div className="mb-3">
-            <Link
-              href="/rutas"
-              className="text-xs font-semibold uppercase tracking-widest transition hover:opacity-80"
-              style={{ color: "#6aab48" }}
-            >
-              ← Todas las rutas
-            </Link>
-          </div>
-          <p className="text-xs font-bold uppercase tracking-[0.22em]" style={{ color: "#b8e840" }}>
-            Uruapan, Michoacán · 2026
-          </p>
-          <h1
-            className="mt-2 font-serif text-4xl font-black tracking-tight md:text-5xl"
-            style={{ color: "#e8f2d8", letterSpacing: "-0.025em" }}
-          >
-            Horarios de <em style={{ fontStyle: "italic", color: "#b8e840" }}>camiones</em> en Uruapan
+          <Link href="/rutas" className="text-xs font-semibold uppercase tracking-widest text-[#6aab48] transition hover:opacity-80">
+            ← Todas las rutas
+          </Link>
+          <p className="mt-5 text-xs font-bold uppercase tracking-[0.22em] text-[#b8e840]">Uruapan, Michoacán · 2026</p>
+          <h1 className="mt-2 font-serif text-4xl font-black leading-tight md:text-5xl">
+            Horarios de <em className="text-[#b8e840]">camiones</em> en Uruapan
           </h1>
-          <p className="mt-4 max-w-2xl text-sm leading-7" style={{ color: "#a8c888" }}>
-            Primer y último camión de cada ruta y cada cuántos minutos pasa. Los camiones no tienen
-            horario fijo por parada: los rangos son aproximados y pueden variar por tráfico.
+          <p className="mt-4 max-w-2xl text-sm leading-7 text-[#a8c888]">
+            Busca una ruta o destino y revisa si está operando según la hora actual de Uruapan. Los rangos son aproximados y pueden variar por tráfico.
           </p>
-          <p className="mt-3 inline-flex items-center gap-1.5 text-[11px] font-semibold" style={{ color: "#a8c888" }}>
-            <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 shrink-0" style={{ color: "#b8e840" }} aria-hidden="true">
+          <p className="mt-3 inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#a8c888]">
+            <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 shrink-0 text-[#b8e840]" aria-hidden="true">
               <path d="M9 12l2 2 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
             </svg>
             Datos verificados en campo · actualizado {DATA_LAST_UPDATED}
           </p>
 
-          {/* Teleférico destacado */}
-          <div
-            className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 rounded-2xl border p-4"
-            style={{ borderColor: "rgba(0,212,170,0.2)", background: "rgba(0,212,170,0.04)" }}
-          >
-            <p className="font-serif text-lg font-black" style={{ color: "#e8f2d8" }}>Teleférico Uruapan</p>
-            <p className="text-sm font-semibold" style={{ color: "#00D4AA" }}>{TELEFERICO_URUAPAN.hours}</p>
-            <p className="text-sm" style={{ color: "#a8c888" }}>{TELEFERICO_URUAPAN.frequency} · {TELEFERICO_URUAPAN.fare} con tarjeta</p>
-            <Link
-              href="/teleferico-uruapan-horario"
-              className="text-xs font-bold transition hover:opacity-80"
-              style={{ color: "#00D4AA" }}
-            >
-              Ver guía completa →
-            </Link>
-          </div>
+          <ScheduleDirectory services={services} />
 
-          {/* Lista de horarios para pantallas pequeñas */}
-          <div
-            className="mt-6 overflow-hidden rounded-lg border md:hidden"
-            style={{ borderColor: "rgba(140,200,80,0.12)", background: "rgba(20,28,16,0.6)" }}
-          >
-            <ul className="divide-y" style={{ borderColor: "rgba(140,200,80,0.1)" }}>
-              {rows.map(({ route, schedule }) => (
-                <li key={route.slug} className="p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex min-w-0 items-start gap-2.5">
-                      <span
-                        className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full"
-                        style={{ backgroundColor: route.color }}
-                      />
-                      <div className="min-w-0">
-                        <p className="text-sm font-bold leading-5" style={{ color: "#e8f2d8" }}>
-                          {route.name}
-                        </p>
-                        {route.destination && (
-                          <p className="mt-0.5 text-[11px] leading-4" style={{ color: "#6aab48" }}>
-                            → {route.destination}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <Link
-                      href={`/ruta/${route.slug}`}
-                      prefetch={false}
-                      className="shrink-0 text-xs font-bold transition hover:opacity-80"
-                      style={{ color: "#b8e840" }}
-                      aria-label={`Ver detalles de la ${route.name}`}
-                    >
-                      Ver ruta →
-                    </Link>
-                  </div>
-
-                  <dl className="mt-3 grid grid-cols-3 gap-2 border-t pt-3" style={cellBorder}>
-                    <div>
-                      <dt className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "#6aab48" }}>
-                        Primero
-                      </dt>
-                      <dd className="mt-1 text-sm font-bold" style={{ color: "#e8f2d8" }}>
-                        {schedule.first}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "#6aab48" }}>
-                        Último
-                      </dt>
-                      <dd className="mt-1 text-sm font-bold" style={{ color: "#e8f2d8" }}>
-                        {schedule.last}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "#6aab48" }}>
-                        Frecuencia
-                      </dt>
-                      <dd className="mt-1 text-xs leading-5" style={{ color: "#a8c888" }}>
-                        {frequencyLabel(schedule.freqMin, schedule.freqMax, schedule.continuous)}
-                      </dd>
-                    </div>
-                  </dl>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Tabla de horarios para pantallas medianas y grandes */}
-          <div
-            className="mt-6 hidden overflow-x-auto rounded-2xl border md:block"
-            style={{ borderColor: "rgba(140,200,80,0.12)", background: "rgba(20,28,16,0.6)" }}
-          >
-            <table className="w-full min-w-[560px] border-collapse text-left text-sm">
-              <caption className="sr-only">
-                Horarios y frecuencia de las rutas de camión urbano en Uruapan
-              </caption>
-              <thead>
-                <tr style={{ borderBottom: "1px solid rgba(140,200,80,0.15)" }}>
-                  <th scope="col" className="px-4 py-3 text-xs font-bold uppercase tracking-widest" style={{ color: "#6aab48" }}>Ruta</th>
-                  <th scope="col" className="px-4 py-3 text-xs font-bold uppercase tracking-widest" style={{ color: "#6aab48" }}>Primer camión</th>
-                  <th scope="col" className="px-4 py-3 text-xs font-bold uppercase tracking-widest" style={{ color: "#6aab48" }}>Último camión</th>
-                  <th scope="col" className="px-4 py-3 text-xs font-bold uppercase tracking-widest" style={{ color: "#6aab48" }}>Frecuencia</th>
-                  <th scope="col" className="px-4 py-3 text-xs font-bold uppercase tracking-widest" style={{ color: "#6aab48" }}>
-                    <span className="sr-only">Acciones</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map(({ route, schedule }) => (
-                  <tr key={route.slug} className="border-b last:border-b-0" style={cellBorder}>
-                    <th scope="row" className="px-4 py-3 font-semibold" style={{ color: "#e8f2d8" }}>
-                      <span className="flex items-center gap-2">
-                        <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: route.color }} />
-                        <span>
-                          {route.name}
-                          {route.destination && (
-                            <span className="block text-[11px] font-normal" style={{ color: "#6aab48" }}>
-                              → {route.destination}
-                            </span>
-                          )}
-                        </span>
-                      </span>
-                    </th>
-                    <td className="px-4 py-3 font-semibold" style={{ color: "#e8f2d8" }}>{schedule.first}</td>
-                    <td className="px-4 py-3 font-semibold" style={{ color: "#e8f2d8" }}>{schedule.last}</td>
-                    <td className="px-4 py-3" style={{ color: "#a8c888" }}>
-                      {frequencyLabel(schedule.freqMin, schedule.freqMax, schedule.continuous)}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <Link
-                        href={`/ruta/${route.slug}`}
-                        prefetch={false}
-                        className="text-xs font-bold whitespace-nowrap transition hover:opacity-80"
-                        style={{ color: "#b8e840" }}
-                        aria-label={`Ver detalles de la ${route.name}`}
-                      >
-                        Ver ruta →
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <p className="mt-3 text-[11px]" style={{ color: "rgba(232,242,216,0.55)" }}>
-            Tarifa única: {FARES_2026.urbanBus.price} en efectivo. Los horarios marcados como estimación
-            siguen los patrones típicos de operación en Uruapan y pueden variar.
+          <p className="mt-3 text-[11px] text-[#78965f]">
+            Tarifa base: {FARES_2026.urbanBus.price} por abordaje. “En servicio” indica que la hora actual está dentro del rango general de operación; no representa seguimiento en tiempo real de las unidades.
           </p>
 
-          {/* FAQs */}
-          <section className="mt-10">
-            <h2 className="font-serif text-2xl font-black mb-5" style={{ color: "#e8f2d8" }}>
-              Preguntas frecuentes
-            </h2>
-            <div className="flex flex-col gap-4">
+          <section className="mt-12">
+            <h2 className="font-serif text-2xl font-black">Preguntas frecuentes</h2>
+            <div className="mt-5 grid gap-3 md:grid-cols-2">
               {faqs.map((faq) => (
-                <div
-                  key={faq.question}
-                  className="rounded-2xl border p-5"
-                  style={{ borderColor: "rgba(140,200,80,0.10)", background: "rgba(20,28,16,0.6)" }}
-                >
-                  <h3 className="text-sm font-bold mb-2" style={{ color: "#b8e840" }}>{faq.question}</h3>
-                  <p className="text-sm leading-6" style={{ color: "#a8c888" }}>{faq.answer}</p>
-                </div>
+                <details key={faq.question} className="group rounded-lg border border-white/[0.08] bg-[#111a0d]">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-5 font-serif text-base font-black [&::-webkit-details-marker]:hidden">
+                    {faq.question}
+                    <span className="shrink-0 text-lg text-[#b8e840] transition group-open:rotate-45" aria-hidden="true">+</span>
+                  </summary>
+                  <p className="px-5 pb-5 text-sm leading-7 text-[#a8c888]">{faq.answer}</p>
+                </details>
               ))}
             </div>
           </section>
 
-          {/* CTA */}
           <div className="mt-10 flex flex-col gap-3 sm:flex-row">
-            <Link
-              href="/mapa"
-              className="inline-flex h-12 items-center justify-center rounded-full px-6 text-sm font-black text-ink-900 transition hover:opacity-90"
-              style={{ background: "#6aab48" }}
-            >
+            <Link href="/mapa" className="inline-flex h-12 items-center justify-center rounded-full bg-[#6aab48] px-6 text-sm font-black text-[#0c110a] transition hover:bg-[#77bc52]">
               Planear mi viaje en el mapa
             </Link>
-            <Link
-              href="/rutas"
-              className="inline-flex h-12 items-center justify-center rounded-full border px-6 text-sm font-bold transition"
-              style={{
-                borderColor: "rgba(140,200,80,0.15)",
-                background: "rgba(106,171,72,0.06)",
-                color: "#e8f2d8",
-              }}
-            >
+            <Link href="/rutas" className="inline-flex h-12 items-center justify-center rounded-full border border-white/10 px-6 text-sm font-bold text-[#e8f2d8] transition hover:bg-white/[0.04]">
               Ver directorio de rutas
             </Link>
           </div>

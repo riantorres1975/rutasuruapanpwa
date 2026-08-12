@@ -57,4 +57,10 @@ describe("getScheduleStatus", () => {
     const continuous = { first: "05:00", last: "23:00", freqMin: 0, freqMax: 0, continuous: true };
     expect(getScheduleStatus(continuous, at(12, 0)).kind).toBe("continuous");
   });
+
+  it("servicio continuo también respeta su hora de cierre", () => {
+    const continuous = { first: "05:00", last: "23:00", freqMin: 0, freqMax: 0, continuous: true };
+    expect(getScheduleStatus(continuous, at(4, 30)).kind).toBe("off");
+    expect(getScheduleStatus(continuous, at(23, 30)).kind).toBe("off");
+  });
 });

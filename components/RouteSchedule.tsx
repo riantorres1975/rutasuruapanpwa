@@ -19,7 +19,7 @@ export default function RouteSchedule({ routeName }: Props) {
   const schedule = getSchedule(routeName);
   if (!schedule) return null;
 
-  const status = getScheduleStatus(schedule);
+  const status = getScheduleStatus(schedule, undefined, "America/Mexico_City");
   void tick; // consumed only to trigger re-render
 
   return (
