@@ -165,7 +165,7 @@ export default function ScheduleDirectory({ services }: { services: ScheduleServ
       <div className="overflow-hidden rounded-lg border border-white/[0.08] bg-[#111a0d] md:hidden">
         <ul className="divide-y divide-white/[0.08]">
           {visible.map((service) => (
-            <li key={service.slug} className="p-4">
+            <li key={service.slug} className="p-4 [contain-intrinsic-size:auto_150px] [content-visibility:auto]">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex min-w-0 items-start gap-2.5">
                   <span className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: service.color }} />
@@ -201,7 +201,7 @@ export default function ScheduleDirectory({ services }: { services: ScheduleServ
           </tr></thead>
           <tbody>
             {visible.map((service) => (
-              <tr key={service.slug} className="border-b border-white/[0.08] last:border-b-0">
+              <tr key={service.slug} className="border-b border-white/[0.08] [contain-intrinsic-size:auto_64px] [content-visibility:auto] last:border-b-0">
                 <th scope="row" className="px-4 py-3 font-semibold text-[#e8f2d8]">
                   <span className="flex items-center gap-2"><span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: service.color }} /><span>{service.name}{service.destination && <span className="block text-[11px] font-normal text-[#6aab48]">→ {service.destination}</span>}</span></span>
                 </th>

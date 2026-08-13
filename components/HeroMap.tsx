@@ -42,28 +42,46 @@ export default function HeroMap() {
 
   useEffect(() => {
     const token = mapboxToken;
-    if (!token || !frameRef.current) {
-      return;
-    }
+    if (!token || !frameRef.current) return;
 
     let cancelled = false;
     let timer = 0;
     let raf = 0;
+    let mapIsVisible = true;
+    let bearing = -8;
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    const loadMap = () => {
-      if (timer || mapRef.current) {
+    const stopRotation = () => {
+      if (!raf) return;
+      window.cancelAnimationFrame(raf);
+      raf = 0;
+    };
+
+    const rotateMap = () => {
+      raf = 0;
+      if (cancelled || !mapIsVisible || document.hidden || !mapRef.current) return;
+
+      bearing = (bearing + 0.04) % 360;
+      mapRef.current.setBearing(bearing);
+      raf = window.requestAnimationFrame(rotateMap);
+    };
+
+    const syncRotation = () => {
+      if (prefersReducedMotion || cancelled || !mapIsVisible || document.hidden || !mapRef.current) {
+        stopRotation();
         return;
       }
 
+      if (!raf) raf = window.requestAnimationFrame(rotateMap);
+    };
+
+    const loadMap = () => {
+      if (timer || mapRef.current) return;
       timer = window.setTimeout(async () => {
-        if (cancelled || !mapContainerRef.current || mapRef.current) {
-          return;
-        }
+        if (cancelled || !mapContainerRef.current || mapRef.current) return;
 
         const mapboxgl = (await import("mapbox-gl")).default;
-        if (cancelled || !mapContainerRef.current) {
-          return;
-        }
+        if (cancelled || !mapContainerRef.current) return;
 
         mapboxgl.accessToken = token;
         const map = new mapboxgl.Map({
@@ -79,21 +97,10 @@ export default function HeroMap() {
 
         mapRef.current = map;
         map.on("load", () => {
-          if (!cancelled) {
-            setLiveReady(true);
-          }
+          if (!cancelled) setLiveReady(true);
         });
 
-        const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-        if (!prefersReducedMotion) {
-          let bearing = -8;
-          const tick = () => {
-            bearing = (bearing + 0.04) % 360;
-            map.setBearing(bearing);
-            raf = window.requestAnimationFrame(tick);
-          };
-          raf = window.requestAnimationFrame(tick);
-        }
+        syncRotation();
       }, MAP_LOAD_DELAY_MS);
     };
 
@@ -107,15 +114,24 @@ export default function HeroMap() {
       { rootMargin: "160px" }
     );
 
-    observer.observe(frameRef.current);
+    const animationObserver = new IntersectionObserver(
+      ([entry]) => {
+        mapIsVisible = entry.isIntersecting;
+        syncRotation();
+      },
+      { threshold: 0.05 },
+    );
 
+    observer.observe(frameRef.current);
+    animationObserver.observe(frameRef.current);
+    document.addEventListener("visibilitychange", syncRotation);
     return () => {
       cancelled = true;
       observer.disconnect();
+      animationObserver.disconnect();
+      document.removeEventListener("visibilitychange", syncRotation);
       window.clearTimeout(timer);
-      if (raf) {
-        window.cancelAnimationFrame(raf);
-      }
+      stopRotation();
       mapRef.current?.remove();
       mapRef.current = null;
     };

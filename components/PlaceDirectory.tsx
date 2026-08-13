@@ -70,7 +70,7 @@ export default function PlaceDirectory({ places }: { places: Place[] }) {
           <Link
             key={place.slug}
             href={`/como-llegar/${place.slug}`}
-            className="group flex min-w-0 items-center gap-3 rounded-lg border border-white/[0.08] bg-[#111a0d] p-4 transition hover:border-[#6aab48]/40 hover:bg-[#141e10]"
+            className="group flex min-w-0 items-center gap-3 rounded-lg border border-white/[0.08] bg-[#111a0d] p-4 transition [contain-intrinsic-size:auto_76px] [content-visibility:auto] hover:border-[#6aab48]/40 hover:bg-[#141e10]"
           >
             <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#6aab48]/10 text-[#b8e840]">
               <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">

@@ -1,8 +1,6 @@
-"use client";
-
-import { useState } from "react";
 import Link from "next/link";
 import Logo from "@/components/Logo";
+import PublicMobileMenu from "@/components/PublicMobileMenu";
 
 const links = [
   { href: "/rutas", label: "Rutas" },
@@ -17,8 +15,6 @@ type Props = {
 };
 
 export default function PublicHeader({ active, mapHref = "/mapa" }: Props) {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
   return (
     <header className="fixed inset-x-0 top-0 z-50 border-b border-white/[0.08] bg-[#0c110a]/95 backdrop-blur-xl">
       <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between gap-4 px-5 sm:px-8 lg:px-10">
@@ -42,45 +38,7 @@ export default function PublicHeader({ active, mapHref = "/mapa" }: Props) {
         </nav>
 
         <div className="flex items-center gap-2">
-          <div className="relative md:hidden">
-            <button
-              type="button"
-              onClick={() => setMobileMenuOpen((open) => !open)}
-              className="grid h-10 w-10 place-items-center rounded-md border border-white/10 text-[#e8f2d8]"
-              aria-label="Abrir navegación"
-              aria-expanded={mobileMenuOpen}
-              aria-controls="public-mobile-navigation"
-            >
-              <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
-                <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              </svg>
-            </button>
-            {mobileMenuOpen && (
-              <nav
-                id="public-mobile-navigation"
-                aria-label="Navegación móvil"
-                className="absolute right-0 top-12 w-52 overflow-hidden rounded-lg border border-white/10 bg-[#111a0d] p-1.5 shadow-2xl"
-              >
-                {links.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="block rounded-md px-3 py-3 text-sm font-semibold text-[#d2dfc4] transition hover:bg-white/[0.06]"
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-                <Link
-                  href="/blog"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="block rounded-md px-3 py-3 text-sm font-semibold text-[#d2dfc4] transition hover:bg-white/[0.06]"
-                >
-                  Guías locales
-                </Link>
-              </nav>
-            )}
-          </div>
+          <PublicMobileMenu />
 
           <Link
             href={mapHref}
