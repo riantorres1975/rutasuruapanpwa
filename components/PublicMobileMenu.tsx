@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
 const links = [
@@ -13,19 +13,40 @@ const links = [
 
 export default function PublicMobileMenu() {
   const [open, setOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const closeMenu = (event: KeyboardEvent | PointerEvent) => {
+      if (event instanceof KeyboardEvent) {
+        if (event.key === "Escape") setOpen(false);
+        return;
+      }
+
+      if (!menuRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+
+    document.addEventListener("keydown", closeMenu);
+    document.addEventListener("pointerdown", closeMenu);
+    return () => {
+      document.removeEventListener("keydown", closeMenu);
+      document.removeEventListener("pointerdown", closeMenu);
+    };
+  }, [open]);
 
   return (
-    <div className="relative md:hidden">
+    <div ref={menuRef} className="relative md:hidden">
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
         className="grid h-10 w-10 place-items-center rounded-md border border-white/10 text-[#e8f2d8]"
-        aria-label="Abrir navegación"
+        aria-label={open ? "Cerrar navegación" : "Abrir navegación"}
         aria-expanded={open}
         aria-controls="public-mobile-navigation"
       >
         <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
-          <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          <path d={open ? "M6 6l12 12M18 6 6 18" : "M4 7h16M4 12h16M4 17h16"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
         </svg>
       </button>
       {open ? (

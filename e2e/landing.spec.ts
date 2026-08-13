@@ -20,3 +20,28 @@ test("el buscador de la portada no cubre los accesos populares", async ({ page }
   expect(popularBox).not.toBeNull();
   expect(suggestionsBox!.y + suggestionsBox!.height).toBeLessThanOrEqual(popularBox!.y);
 });
+
+test("la tarifa usa un signo de pesos legible", async ({ page }) => {
+  await page.goto("/");
+
+  const fareLabel = page.getByText("tarifa base 2026 MXN", { exact: true });
+  const fareValue = fareLabel.locator("xpath=preceding-sibling::*[1]");
+
+  await expect(fareValue).toHaveText("$12");
+  await expect(fareValue.locator("span")).toHaveCSS("font-family", /DM Sans/);
+});
+
+test("el menú móvil se cierra con Escape y al tocar fuera", async ({ page }) => {
+  await page.goto("/");
+
+  const openButton = page.getByRole("button", { name: "Abrir navegación" });
+  await openButton.click();
+  await expect(page.getByRole("navigation", { name: "Navegación móvil" })).toBeVisible();
+
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("navigation", { name: "Navegación móvil" })).toBeHidden();
+
+  await openButton.click();
+  await page.mouse.click(12, 420);
+  await expect(page.getByRole("navigation", { name: "Navegación móvil" })).toBeHidden();
+});
