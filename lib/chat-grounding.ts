@@ -1,4 +1,5 @@
 import rutasProduccion from "@/data/rutas_produccion_final.json";
+import { CHAT_ALIASES } from "@/lib/chat-knowledge";
 import { getFeaturedPlaceSeoItems, getRoutesNearPlace } from "@/lib/como-llegar";
 import { haversineMeters } from "@/lib/geo";
 import type { Coordinates } from "@/lib/types";
@@ -23,8 +24,15 @@ type PlaceKnowledge = {
   routes: { name: string; distanceM: number }[];
 };
 
+type RouteLandmarkKnowledge = {
+  routeName: string;
+  landmarkName: string;
+};
+
 // Calculado una vez por instancia (mismo costo que un build de /como-llegar).
 let placesCache: PlaceKnowledge[] | null = null;
+let routeLandmarksCache: RouteLandmarkKnowledge[] | null = null;
+let routeLandmarksByRouteCache: Map<string, string[]> | null = null;
 
 function getPlacesKnowledge(): PlaceKnowledge[] {
   if (placesCache) return placesCache;
@@ -33,6 +41,122 @@ function getPlacesKnowledge(): PlaceKnowledge[] {
     routes: getRoutesNearPlace(place.center).map((r) => ({ name: r.name, distanceM: r.distanceM })),
   }));
   return placesCache;
+}
+
+function getRouteLandmarksKnowledge(): RouteLandmarkKnowledge[] {
+  if (routeLandmarksCache) return routeLandmarksCache;
+
+  const routes = rutasProduccion as unknown as Array<{ name: string; landmarks?: { name: string }[] }>;
+  routeLandmarksCache = routes.flatMap((route) =>
+    (route.landmarks ?? []).map((landmark) => ({
+      routeName: route.name,
+      landmarkName: landmark.name,
+    }))
+  );
+  return routeLandmarksCache;
+}
+
+function getRouteLandmarksByRoute(): Map<string, string[]> {
+  if (routeLandmarksByRouteCache) return routeLandmarksByRouteCache;
+
+  const map = new Map<string, string[]>();
+  for (const entry of getRouteLandmarksKnowledge()) {
+    const current = map.get(entry.routeName) ?? [];
+    if (!current.includes(entry.landmarkName)) {
+      current.push(entry.landmarkName);
+      map.set(entry.routeName, current);
+    }
+  }
+
+  routeLandmarksByRouteCache = map;
+  return routeLandmarksByRouteCache;
+}
+
+function normalizeText(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+const LANDMARK_STOPWORDS = new Set([
+  "a", "al", "con", "de", "del", "el", "en", "esa", "ese", "eso", "esta",
+  "este", "la", "las", "le", "lo", "los", "me", "mi", "por", "para", "que",
+  "quien", "se", "sin", "su", "te", "tu", "un", "una", "y", "ir", "quiero",
+  "ruta", "rutas", "cerca", "porfavor", "favor",
+]);
+
+function tokenize(value: string): string[] {
+  return normalizeText(value)
+    .split(" ")
+    .map((token) => token.trim())
+    .filter((token) => token.length >= 3 && !LANDMARK_STOPWORDS.has(token));
+}
+
+function getRouteAliases(routeName: string): string[] {
+  return [routeName, ...(CHAT_ALIASES[routeName] ?? [])];
+}
+
+export function buildRelevantLandmarksSection(query: string, history: string[] = []): string {
+  const text = normalizeText([query, ...history].join(" "));
+  if (!text) return "";
+  const queryTokens = tokenize(text);
+
+  const routeLandmarksByRoute = getRouteLandmarksByRoute();
+  const matchedRoutes = new Map<string, { score: number; landmarks: string[] }>();
+
+  const registerRoute = (routeName: string) => {
+    const current = matchedRoutes.get(routeName);
+    if (current) return current;
+    const entry = { score: 0, landmarks: [] as string[] };
+    matchedRoutes.set(routeName, entry);
+    return entry;
+  };
+
+  for (const [routeName, landmarks] of routeLandmarksByRoute) {
+    const aliases = getRouteAliases(routeName).map(normalizeText).filter(Boolean);
+    const routeMatched = aliases.some((alias) => text.includes(alias) || alias.includes(text));
+    if (!routeMatched) continue;
+
+    const entry = registerRoute(routeName);
+    entry.score += 2;
+    for (const landmark of landmarks.slice(0, 3)) {
+      if (!entry.landmarks.includes(landmark)) entry.landmarks.push(landmark);
+    }
+  }
+
+  for (const { routeName, landmarkName } of getRouteLandmarksKnowledge()) {
+    const normalizedLandmark = normalizeText(landmarkName);
+    if (!normalizedLandmark) continue;
+
+    const landmarkTokens = tokenize(normalizedLandmark);
+    const overlap = landmarkTokens.filter((token) => queryTokens.includes(token)).length;
+    const isDirectMatch =
+      text.includes(normalizedLandmark) ||
+      normalizedLandmark.includes(text) ||
+      (queryTokens.length > 0 && queryTokens.every((token) => normalizedLandmark.includes(token)));
+    const isTokenMatch =
+      overlap >= 2 ||
+      (queryTokens.length === 1 && overlap === 1);
+    if (!isDirectMatch && !isTokenMatch) continue;
+
+    const entry = registerRoute(routeName);
+    entry.score += 3;
+    if (!entry.landmarks.includes(landmarkName)) {
+      entry.landmarks.unshift(landmarkName);
+    }
+  }
+
+  const lines = [...matchedRoutes.entries()]
+    .filter(([, entry]) => entry.landmarks.length > 0)
+    .sort((a, b) => b[1].score - a[1].score || a[0].localeCompare(b[0]))
+    .slice(0, 5)
+    .map(([routeName, entry]) => `• ${routeName}: ${entry.landmarks.slice(0, 4).join(", ")}`);
+
+  if (lines.length === 0) return "";
+  return ["## Landmarks detectadas en la consulta:", ...lines].join("\n");
 }
 
 /** Sección "qué rutas te dejan cerca de cada lugar" para el system prompt. */

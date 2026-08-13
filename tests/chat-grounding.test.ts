@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { buildPlacesSection, getRealRouteNames, getRoutePlaces, nearbyRoutesReal } from "@/lib/chat-grounding";
+import {
+  buildPlacesSection,
+  buildRelevantLandmarksSection,
+  getRealRouteNames,
+  getRoutePlaces,
+  nearbyRoutesReal,
+} from "@/lib/chat-grounding";
 
 // Coordenadas del Centro (las mismas de KNOWN_PLACES en lib/geocode.ts)
 const CENTRO_LAT = 19.42101;
@@ -36,5 +42,17 @@ describe("chat-grounding (datos reales)", () => {
     expect(names.length).toBe(41);
     expect(names).toContain("Ruta 2");
     expect(names).toContain("Teleférico Uruapan");
+  });
+
+  it("usa landmarks para aterrizar consultas vagas sobre el TEC", () => {
+    const section = buildRelevantLandmarksSection("Tec Uruapan");
+    expect(section).toContain("Ruta 27");
+    expect(section).toContain("Tec Uruapan");
+  });
+
+  it("usa el historial reciente para recuperar una referencia conocida", () => {
+    const section = buildRelevantLandmarksSection("esa", ["Quiero ir al Tec Uruapan"]);
+    expect(section).toContain("Ruta 27");
+    expect(section).toContain("Tec Uruapan");
   });
 });
