@@ -45,3 +45,23 @@ test("el menú móvil se cierra con Escape y al tocar fuera", async ({ page }) =
   await page.mouse.click(12, 420);
   await expect(page.getByRole("navigation", { name: "Navegación móvil" })).toBeHidden();
 });
+
+test("las tarjetas de transporte usan iconos y caben en mobile", async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  await page.goto("/");
+
+  const busCard = page.getByRole("link", { name: /Camión urbano/ });
+  const cableCarCard = page.getByRole("link", { name: /Teleférico Uruapan/ });
+
+  await expect(busCard.locator(".lucide-bus-front")).toBeVisible();
+  await expect(cableCarCard.locator(".lucide-cable-car")).toBeVisible();
+  await expect(busCard).toContainText("$12 · Efectivo");
+  await expect(cableCarCard).toContainText("$12 · Tarjeta");
+  await expect(busCard).toHaveCSS("border-radius", "8px");
+
+  const layout = await page.evaluate(() => ({
+    scrollWidth: document.documentElement.scrollWidth,
+    viewportWidth: window.innerWidth,
+  }));
+  expect(layout.scrollWidth).toBeLessThanOrEqual(layout.viewportWidth);
+});

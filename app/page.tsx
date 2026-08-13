@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ArrowRight, BusFront, CableCar, MapPin } from "lucide-react";
 import HeroMap from "@/components/HeroMap";
 import LandingSearch from "@/components/LandingSearch";
 import StatsAnimados from "@/components/StatsAnimados";
@@ -22,6 +23,17 @@ const HOW_IT_WORKS_STEPS = [
   { n: "03", title: "Marca tu destino", desc: "El mapa detecta las rutas más cercanas." },
   { n: "04", title: "Compara opciones", desc: "Ve la ruta recomendada, tiempo y alternativas." },
 ] as const;
+
+const HOW_IT_WORKS_BORDERS = [
+  "border-b border-r lg:border-b-0",
+  "border-b lg:border-b-0 lg:border-r",
+  "border-r",
+  "",
+] as const;
+
+const DEFERRED_SECTION = "[content-visibility:auto] [contain-intrinsic-size:auto_560px]";
+const URBAN_FARE_DISPLAY = FARES_2026.urbanBus.price.replace(/\.00$/, "");
+const TELEFERICO_FARE_DISPLAY = FARES_2026.teleferico.price.replace(/\.00$/, "");
 
 const FEATURED_PLACE_LABELS = [
   "Centro",
@@ -150,8 +162,7 @@ export default function LandingPage() {
 
           {/* H1 */}
           <h1
-            className="animate-fade-up animate-delay-100 font-serif text-5xl font-black leading-[1.02] tracking-tight sm:text-6xl lg:text-7xl"
-            style={{ letterSpacing: "-0.025em" }}
+            className="animate-fade-up animate-delay-100 font-serif text-5xl font-black leading-[1.02] sm:text-6xl lg:text-7xl"
           >
             Encuentra qué camión tomar en{" "}
             <em style={{ fontStyle: "italic", color: "var(--lima)" }}>Uruapan.</em>
@@ -222,7 +233,7 @@ export default function LandingPage() {
       <StatsAnimados />
 
       {/* ── TRANSPORTE ── */}
-      <section id="transporte" className="mx-auto max-w-[1200px] px-5 py-16 lg:py-24">
+      <section id="transporte" className="mx-auto max-w-[1200px] px-5 py-14 lg:py-24">
         <div
           className="mb-8 flex items-baseline justify-between border-b pb-4"
           style={{ borderColor: "var(--ov-border)" }}
@@ -231,7 +242,7 @@ export default function LandingPage() {
             <p className="mb-1 text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--muted)" }}>
               Cómo moverte
             </p>
-            <h2 className="font-serif text-3xl font-black tracking-tight" style={{ letterSpacing: "-0.02em" }}>
+            <h2 className="font-serif text-3xl font-black">
               Dos formas de cruzar{" "}
               <em style={{ fontStyle: "italic", color: "var(--lima)" }}>la ciudad.</em>
             </h2>
@@ -242,75 +253,80 @@ export default function LandingPage() {
           {/* Card Camión */}
           <Link
             href="/rutas"
-            className="group flex flex-col rounded-2xl p-7 transition-all hover:-translate-y-1 hover:shadow-[0_24px_50px_rgba(0,0,0,0.4)]"
-            style={{ background: "var(--card, #141c10)", border: "1px solid var(--ov-border)" }}
+            className="group flex min-h-[300px] flex-col rounded-lg border border-[var(--ov-border)] p-5 transition-all hover:-translate-y-1 hover:border-[#6aab48]/40 hover:shadow-[0_24px_50px_rgba(0,0,0,0.4)] sm:min-h-[330px] sm:p-7"
+            style={{ background: "var(--card, #141c10)" }}
           >
-            <div className="mb-5 flex items-center justify-between">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl text-xl" style={{ background: "var(--verde-l)" }}>🚌</div>
+            <div className="mb-5 flex items-center justify-between gap-3">
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-md text-[#b8e840]" style={{ background: "var(--verde-l)" }} aria-hidden="true">
+                <BusFront className="h-6 w-6" strokeWidth={1.8} />
+              </span>
               <span
-                className="rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider"
+                className="rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider"
                 style={{ background: "rgba(23,32,18,0.8)", color: "var(--muted)", border: "1px solid var(--ov-border)" }}
-              >{FARES_2026.urbanBus.price} · Efectivo</span>
+              >{URBAN_FARE_DISPLAY} · Efectivo</span>
             </div>
-            <div className="font-serif text-5xl font-black leading-none tracking-tight" style={{ color: "var(--ink)" }}>
-              40 <span className="text-base font-sans font-normal" style={{ color: "var(--muted)" }}>rutas</span>
+            <h3 className="text-base font-bold" style={{ color: "var(--ink2)" }}>Camión urbano</h3>
+            <div className="mt-2 font-serif text-4xl font-black leading-none sm:text-5xl" style={{ color: "var(--ink)" }}>
+              40 <span className="text-sm font-sans font-semibold" style={{ color: "var(--muted)" }}>rutas</span>
             </div>
-            <p className="mt-1.5 text-sm font-semibold" style={{ color: "var(--ink2)" }}>Camión urbano</p>
-            <p className="mt-2.5 text-sm leading-relaxed" style={{ color: "var(--muted)" }}>
+            <p className="mt-3 text-sm leading-relaxed" style={{ color: "var(--muted)" }}>
               Cubren toda la ciudad, de las colonias al Centro. La mayoría se pagan en efectivo al subir.
             </p>
-            <span className="mt-auto inline-flex items-center gap-1 pt-4 text-xs font-bold transition group-hover:gap-2" style={{ color: "var(--lima)" }}>
-              Ver las 40 rutas →
+            <span className="mt-auto inline-flex min-h-10 items-center gap-2 pt-4 text-xs font-bold" style={{ color: "var(--lima)" }}>
+              Ver las 40 rutas
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />
             </span>
           </Link>
 
           {/* Card Teleférico */}
           <Link
             href="/teleferico-uruapan-horario"
-            className="group flex flex-col rounded-2xl p-7 transition-all hover:-translate-y-1 hover:shadow-[0_24px_50px_rgba(0,0,0,0.4)]"
-            style={{ background: "var(--card, #141c10)", border: "1px solid var(--ov-border)" }}
+            className="group flex min-h-[300px] flex-col rounded-lg border border-[var(--ov-border)] p-5 transition-all hover:-translate-y-1 hover:border-[#48a878]/45 hover:shadow-[0_24px_50px_rgba(0,0,0,0.4)] sm:min-h-[330px] sm:p-7"
+            style={{ background: "var(--card, #141c10)" }}
           >
-            <div className="mb-5 flex items-center justify-between">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl text-xl" style={{ background: "var(--agua-l)" }}>🚡</div>
+            <div className="mb-5 flex items-center justify-between gap-3">
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-md text-[#70c9a0]" style={{ background: "var(--agua-l)" }} aria-hidden="true">
+                <CableCar className="h-6 w-6" strokeWidth={1.8} />
+              </span>
               <span
-                className="rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider"
+                className="rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider"
                 style={{ background: "rgba(23,32,18,0.8)", color: "var(--muted)", border: "1px solid var(--ov-border)" }}
-              >{FARES_2026.teleferico.price} · Tarjeta</span>
+              >{TELEFERICO_FARE_DISPLAY} · Tarjeta</span>
             </div>
-            <div className="font-serif text-5xl font-black leading-none tracking-tight" style={{ color: "var(--ink)" }}>
-              6 <span className="text-base font-sans font-normal" style={{ color: "var(--muted)" }}>estaciones</span>
+            <h3 className="text-base font-bold" style={{ color: "var(--ink2)" }}>Teleférico Uruapan</h3>
+            <div className="mt-2 font-serif text-4xl font-black leading-none sm:text-5xl" style={{ color: "var(--ink)" }}>
+              6 <span className="text-sm font-sans font-semibold" style={{ color: "var(--muted)" }}>estaciones</span>
             </div>
-            <p className="mt-1.5 text-sm font-semibold" style={{ color: "var(--ink2)" }}>Teleférico Uruapan</p>
-            <p className="mt-2.5 text-sm leading-relaxed" style={{ color: "var(--muted)" }}>
+            <p className="mt-3 text-sm leading-relaxed" style={{ color: "var(--muted)" }}>
               Único en Michoacán. Cruza la ciudad de oriente a poniente. Opera {TELEFERICO_URUAPAN.hours}.
             </p>
-            <span className="mt-auto inline-flex items-center gap-1 pt-4 text-xs font-bold transition group-hover:gap-2" style={{ color: "var(--lima)" }}>
-              Guía del Teleférico →
+            <span className="mt-auto inline-flex min-h-10 items-center gap-2 pt-4 text-xs font-bold" style={{ color: "var(--lima)" }}>
+              Guía del Teleférico
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />
             </span>
           </Link>
         </div>
       </section>
 
       {/* ── CUATRO PASOS ── */}
-      <section id="como-funciona" className="mx-auto max-w-[1200px] scroll-mt-20 px-5 pb-16 lg:pb-24">
+      <section id="como-funciona" className={`mx-auto max-w-[1200px] scroll-mt-20 px-5 pb-16 lg:pb-24 ${DEFERRED_SECTION}`}>
         <div className="mb-8 border-b pb-4" style={{ borderColor: "var(--ov-border)" }}>
           <p className="mb-1 text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--muted)" }}>
             Cómo se usa
           </p>
-          <h2 className="font-serif text-3xl font-black tracking-tight" style={{ letterSpacing: "-0.02em" }}>
+          <h2 className="font-serif text-3xl font-black">
             Cuatro pasos.{" "}
             <em style={{ fontStyle: "italic", color: "var(--lima)" }}>Sin más.</em>
           </h2>
         </div>
         <div
-          className="grid grid-cols-2 overflow-hidden rounded-2xl lg:grid-cols-4"
+          className="grid grid-cols-2 overflow-hidden rounded-lg lg:grid-cols-4"
           style={{ background: "var(--card, #141c10)", border: "1px solid var(--ov-border)" }}
         >
           {HOW_IT_WORKS_STEPS.map((step, i) => (
             <div
               key={step.n}
-              className="p-6 transition-colors hover:bg-[rgba(23,32,18,0.8)]"
-              style={{ borderRight: i < 3 ? "1px solid var(--ov-border)" : "none" }}
+              className={`border-[var(--ov-border)] p-5 transition-colors hover:bg-[rgba(23,32,18,0.8)] sm:p-6 ${HOW_IT_WORKS_BORDERS[i]}`}
             >
               <div className="mb-4 font-serif text-3xl font-bold leading-none" style={{ color: "var(--lima)", opacity: 0.55 }}>
                 {step.n}
@@ -323,7 +339,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── CÓMO LLEGAR (SEO interno + utilidad) ── */}
-      <section className="mx-auto max-w-[1200px] px-5 pb-16 lg:pb-24">
+      <section className={`mx-auto max-w-[1200px] px-5 pb-16 lg:pb-24 ${DEFERRED_SECTION}`}>
         <div
           className="mb-8 flex flex-wrap items-end justify-between gap-3 border-b pb-4"
           style={{ borderColor: "var(--ov-border)" }}
@@ -332,7 +348,7 @@ export default function LandingPage() {
             <p className="mb-1 text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--muted)" }}>
               Lugares frecuentes
             </p>
-            <h2 className="font-serif text-3xl font-black tracking-tight" style={{ letterSpacing: "-0.02em" }}>
+            <h2 className="font-serif text-3xl font-black">
               ¿Cómo llegar{" "}
               <em style={{ fontStyle: "italic", color: "var(--lima)" }}>a...?</em>
             </h2>
@@ -350,31 +366,28 @@ export default function LandingPage() {
             <Link
               key={place.slug}
               href={`/como-llegar/${place.slug}`}
-              className="card-lift group flex flex-col rounded-2xl border p-5"
+              className="card-lift group grid min-h-[88px] grid-cols-[36px_1fr_auto] items-center gap-3 rounded-lg border p-4 sm:min-h-[132px] sm:grid-cols-[36px_1fr] sm:items-start"
               style={{ background: "var(--card, #141c10)", borderColor: "var(--ov-border)" }}
             >
-              <p className="text-sm font-bold leading-snug" style={{ color: "var(--ink)" }}>
-                {place.label}
-              </p>
-              <p className="mt-1.5 text-xs leading-relaxed" style={{ color: "var(--muted)" }}>
-                {place.routeCount} {place.routeCount === 1 ? "ruta te deja" : "rutas te dejan"} cerca · desde{" "}
-                {place.nearestWalkMin} min a pie
-              </p>
-              <span
-                className="mt-3 inline-flex items-center gap-1 text-xs font-bold transition group-hover:gap-2"
-                style={{ color: "var(--lima)" }}
-              >
-                Cómo llegar →
+              <span className="grid h-9 w-9 place-items-center rounded-md bg-[#6aab48]/10 text-[#b8e840]" aria-hidden="true">
+                <MapPin className="h-4 w-4" strokeWidth={2} />
               </span>
+              <span className="min-w-0">
+                <span className="block text-sm font-bold leading-snug" style={{ color: "var(--ink)" }}>{place.label}</span>
+                <span className="mt-1 block text-xs leading-relaxed" style={{ color: "var(--muted)" }}>
+                  {place.routeCount} {place.routeCount === 1 ? "ruta te deja" : "rutas te dejan"} cerca · {place.nearestWalkMin} min a pie
+                </span>
+              </span>
+              <ArrowRight className="h-4 w-4 text-[#b8e840] transition-transform group-hover:translate-x-1 sm:col-start-2 sm:mt-1" aria-hidden="true" />
             </Link>
           ))}
         </div>
       </section>
 
       {/* ── FAQ ── */}
-      <section className="mx-auto max-w-[1200px] px-5 pb-16 lg:pb-24">
+      <section className={`mx-auto max-w-[1200px] px-5 pb-16 lg:pb-24 ${DEFERRED_SECTION}`}>
         <div className="mb-8 border-b pb-4" style={{ borderColor: "var(--ov-border)" }}>
-          <h2 className="font-serif text-3xl font-black tracking-tight" style={{ letterSpacing: "-0.02em", color: "var(--ink)" }}>
+          <h2 className="font-serif text-3xl font-black" style={{ color: "var(--ink)" }}>
             Preguntas frecuentes
           </h2>
         </div>
@@ -382,7 +395,7 @@ export default function LandingPage() {
           {LANDING_FAQS.slice(0, 4).map((item) => (
             <details
               key={item.question}
-              className="card-lift group rounded-2xl border backdrop-blur open:border-verde-400/30"
+              className="card-lift group rounded-lg border backdrop-blur open:border-verde-400/30"
               style={{ background: "var(--card, #141c10)", borderColor: "var(--ov-border)" }}
             >
               <summary className="font-serif-display flex cursor-pointer list-none items-center justify-between gap-3 p-5 text-base font-black [&::-webkit-details-marker]:hidden" style={{ color: "var(--ink)" }}>
@@ -396,14 +409,14 @@ export default function LandingPage() {
       </section>
 
       {/* ── CTA FINAL ── */}
-      <div className="mx-auto max-w-[1200px] px-5 pb-16 lg:pb-24">
+      <div className={`mx-auto max-w-[1200px] px-5 pb-16 lg:pb-24 ${DEFERRED_SECTION}`}>
         <div
           style={{
             position: "relative",
             overflow: "hidden",
             background: "linear-gradient(135deg, #3d6828 0%, #2a4a1a 50%, #1a3a28 100%)",
-            borderRadius: "24px",
-            padding: "4.5rem 2.5rem",
+            borderRadius: "8px",
+            padding: "clamp(3rem, 8vw, 4.5rem) clamp(1.25rem, 5vw, 2.5rem)",
             textAlign: "center",
             border: "1px solid rgba(106,171,72,0.2)",
           }}
@@ -453,8 +466,8 @@ export default function LandingPage() {
 
           <div className="relative z-10">
             <h2
-              className="font-serif text-5xl font-black tracking-tight sm:text-6xl"
-              style={{ color: "#e8f2d8", letterSpacing: "-0.025em" }}
+              className="font-serif text-5xl font-black sm:text-6xl"
+              style={{ color: "#e8f2d8" }}
             >
               ¿A dónde vas<br />
               <em style={{ fontStyle: "italic", color: "#b8e840" }}>hoy?</em>
