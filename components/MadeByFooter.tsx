@@ -3,7 +3,7 @@ import Logo from "@/components/Logo";
 
 const AUTHOR_NAME = "Antonio Rivera";
 const GITHUB_URL = "https://github.com/riantorres1975";
-const X_URL = "https://x.com/WHO1S_ROOT";
+const X_URL = "https://x.com/WH01S_R00T";
 const LINKEDIN_URL = "https://www.linkedin.com/in/josé-antonio-rivera-torres-b44559244?utm_source=share_via&utm_content=profile&utm_medium=member_android";
 const REPO_URL = "https://github.com/riantorres1975/rutasuruapanpwa";
 const DONATION_URL = "https://www.paypal.com/paypalme/wh0code";
