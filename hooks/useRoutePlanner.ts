@@ -33,7 +33,7 @@ export function useRoutePlanner({
       ? null
       : initialUrlState.sharedState?.origin
         ? "destination"
-        : "origin",
+        : null,
   );
   const [hintVisibility, setHintVisibility] = useState<{ step: FlowStep; visible: boolean }>({
     step: initialUrlState.sharedState?.origin && initialUrlState.sharedState.destination
@@ -51,11 +51,13 @@ export function useRoutePlanner({
   const geolocation = useUruapanGeolocation(manualOrigin !== null && !tripSessionActive);
   const originPoint = manualOrigin ?? geolocation.userLocation;
   const flowStep = getFlowStep(originPoint, destinationPoint);
-  const activePoint: ActivePoint = flowStep === 1
+  const activePoint: ActivePoint = requestedActivePoint === "origin"
     ? "origin"
-    : flowStep === 2
-      ? "destination"
-      : requestedActivePoint;
+    : flowStep === 1
+      ? "origin"
+      : flowStep === 2
+        ? "destination"
+        : requestedActivePoint;
   const showHint = hintVisibility.step === flowStep ? hintVisibility.visible : true;
   const activePointRef = useRef(activePoint);
   const originPointRef = useRef(originPoint);

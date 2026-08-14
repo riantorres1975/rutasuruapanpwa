@@ -1030,6 +1030,12 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
           destinationSelected={destinationPoint !== null}
           isMobile={isMobile}
           lastTrip={lastTrip}
+          usingAutomaticOrigin={userLocation !== null && manualOrigin === null}
+          onChooseManualOrigin={() => {
+            setAbExpanded(true);
+            setActivePoint("origin");
+            setShowHint(true);
+          }}
           onDestinationSelect={handleChipSearch}
           onPlaceSelect={handlePlaceSearch}
           onRepeatTrip={repeatTrip}

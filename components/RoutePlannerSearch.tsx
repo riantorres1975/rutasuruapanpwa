@@ -1,5 +1,7 @@
 "use client";
 
+import { useRef } from "react";
+import { ChevronRight, LocateFixed, MapPinPen } from "lucide-react";
 import PlaceSearch from "@/components/PlaceSearch";
 import type { ActivePoint } from "@/hooks/useRoutePlanner";
 import type { PlaceResult } from "@/lib/geocode";
@@ -12,6 +14,8 @@ type RoutePlannerSearchProps = {
   destinationSelected: boolean;
   isMobile: boolean;
   lastTrip: RecentTrip | null;
+  usingAutomaticOrigin: boolean;
+  onChooseManualOrigin: () => void;
   onDestinationSelect: (destination: string) => void;
   onPlaceSelect: (result: PlaceResult) => void;
   onRepeatTrip: (trip: RecentTrip) => void;
@@ -22,12 +26,23 @@ export default function RoutePlannerSearch({
   destinationSelected,
   isMobile,
   lastTrip,
+  usingAutomaticOrigin,
+  onChooseManualOrigin,
   onDestinationSelect,
   onPlaceSelect,
   onRepeatTrip,
 }: RoutePlannerSearchProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const chooseManualOrigin = () => {
+    onChooseManualOrigin();
+    window.requestAnimationFrame(() => {
+      containerRef.current?.querySelector("input")?.focus();
+    });
+  };
+
   return (
-    <div className="w-full">
+    <div ref={containerRef} className="w-full">
       <PlaceSearch
         label={activePoint === "origin" ? "Buscar origen" : "Buscar destino"}
         placeholder={activePoint === "origin"
@@ -35,6 +50,25 @@ export default function RoutePlannerSearch({
           : "¿A dónde vas? Colonia, hospital, plaza…"}
         onSelect={onPlaceSelect}
       />
+
+      {usingAutomaticOrigin && activePoint !== "origin" && (
+        <div className="ov-panel mt-2 flex h-11 w-full items-center gap-2 rounded-xl border border-lima/25 px-2.5 shadow-soft backdrop-blur-xl">
+          <LocateFixed className="h-4 w-4 shrink-0 text-lima" aria-hidden="true" />
+          <span className="ov-text-muted min-w-0 flex-1 truncate text-[12px] font-semibold">
+            Origen: mi ubicación
+          </span>
+          <button
+            type="button"
+            onClick={chooseManualOrigin}
+            className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg bg-lima/15 px-2.5 text-[12px] font-black text-lima transition hover:bg-lima/25 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lima"
+            aria-label="Elegir origen manualmente"
+          >
+            <MapPinPen className="h-3.5 w-3.5" aria-hidden="true" />
+            Elegir otro origen
+            <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
+          </button>
+        </div>
+      )}
 
       {activePoint !== "origin" && !destinationSelected && (
         <div

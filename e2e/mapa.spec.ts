@@ -19,6 +19,28 @@ test("el flujo móvil permite buscar un origen manual sin desbordar la pantalla"
   expect(overflow).toBeLessThanOrEqual(1);
 });
 
+test("permite reemplazar el GPS por un origen manual visible", async ({ page, context }) => {
+  await context.setGeolocation({ longitude: -102.06303, latitude: 19.42101 });
+  await context.grantPermissions(["geolocation"]);
+  await page.addInitScript(() => localStorage.setItem("rutas-uru-onboarded", "1"));
+  await page.goto("/mapa");
+
+  const manualOriginButton = page.getByRole("button", { name: "Elegir origen manualmente" });
+  await expect(manualOriginButton).toBeVisible();
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth),
+  ).toBeLessThanOrEqual(1);
+  await manualOriginButton.click();
+
+  const originSearch = page.locator('input[aria-label="Buscar origen"]:visible');
+  await expect(originSearch).toBeFocused();
+  await originSearch.fill("Centro");
+  await originSearch.press("Enter");
+
+  await expect(page.locator("span:visible", { hasText: "Origen ajustado" }).first()).toBeVisible();
+  await expect(manualOriginButton).toBeHidden();
+});
+
 test("monta una sola interfaz del mapa al cambiar de tamaño", async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem("rutas-uru-onboarded", "1"));
   await page.goto("/mapa");
