@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, BusFront, CableCar, MapPin } from "lucide-react";
-import HeroMap from "@/components/HeroMap";
-import LandingSearch from "@/components/LandingSearch";
+import LandingHeroPlanner from "@/components/LandingHeroPlanner";
 import StatsAnimados from "@/components/StatsAnimados";
 import ForceDark from "@/components/ForceDark";
 import FareUpdateNotice from "@/components/FareUpdateNotice";
@@ -12,7 +11,6 @@ import {
   APP_BRAND,
   FARES_2026,
   LANDING_FAQS,
-  LANDING_SEARCH_SUGGESTIONS,
   TELEFERICO_URUAPAN
 } from "@/lib/mobility-config";
 import { getPlaceSeoItems, getRoutesNearPlace, walkMinutesFor } from "@/lib/como-llegar";
@@ -147,87 +145,38 @@ export default function LandingPage() {
       <FareUpdateNotice />
 
       {/* ── HERO ── */}
-      <section className="mx-auto grid max-w-[1200px] grid-cols-1 items-center gap-8 px-5 pb-12 pt-28 lg:grid-cols-2 lg:gap-16 lg:pb-16 lg:pt-32">
+      <section className="mx-auto max-w-[1200px] px-5 pb-12 pt-28 lg:pb-16 lg:pt-32">
         <div className="relative z-10">
-          {/* Eyebrow */}
-          <div
-            className="animate-fade-up mb-6 inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-semibold uppercase tracking-widest"
-            style={{
-              background: "var(--verde-l)",
-              border: "1px solid rgba(140,200,80,0.2)",
-              color: "var(--verde)",
-            }}
-          >
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full" style={{ background: "var(--lima)" }} />
-            Uruapan, Michoacán
+          <div className="lg:text-center">
+            {/* Eyebrow */}
+            <div
+              className="animate-fade-up mb-6 inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-semibold uppercase tracking-widest"
+              style={{
+                background: "var(--verde-l)",
+                border: "1px solid rgba(140,200,80,0.2)",
+                color: "var(--verde)",
+              }}
+            >
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full" style={{ background: "var(--lima)" }} />
+              Uruapan, Michoacán
+            </div>
+
+            {/* H1 */}
+            <h1
+              className="animate-fade-up animate-delay-100 max-w-4xl font-serif text-5xl font-black leading-[1.02] sm:text-6xl lg:mx-auto lg:text-7xl"
+            >
+              Encuentra qué camión tomar en{" "}
+              <em style={{ fontStyle: "italic", color: "var(--lima)" }}>Uruapan.</em>
+            </h1>
+
+            <p className="animate-fade-up animate-delay-200 mt-5 max-w-xl text-base leading-relaxed lg:mx-auto" style={{ color: "var(--ink2)" }}>
+              Busca tu destino, compara rutas y combina camión con Teleférico en un mapa hecho aquí. Sin cuentas ni anuncios.
+            </p>
           </div>
 
-          {/* H1 */}
-          <h1
-            className="animate-fade-up animate-delay-100 font-serif text-5xl font-black leading-[1.02] sm:text-6xl lg:text-7xl"
-          >
-            Encuentra qué camión tomar en{" "}
-            <em style={{ fontStyle: "italic", color: "var(--lima)" }}>Uruapan.</em>
-          </h1>
-
-          <p className="animate-fade-up animate-delay-200 mt-5 max-w-sm text-base leading-relaxed" style={{ color: "var(--ink2)" }}>
-            Busca tu destino, compara rutas y combina camión con Teleférico en un mapa hecho aquí. Sin cuentas ni anuncios.
-          </p>
-
-          {/* Search form con autocompletado (mejora progresiva: funciona sin JS) */}
           <div className="animate-fade-up animate-delay-300">
-            <LandingSearch />
+            <LandingHeroPlanner />
           </div>
-
-          {/* Chips */}
-          <div className="animate-fade-up animate-delay-400 mt-4 flex flex-wrap items-center gap-2">
-            <span className="text-[11px] font-bold uppercase tracking-widest" style={{ color: "var(--muted)" }}>
-              Populares
-            </span>
-            {LANDING_SEARCH_SUGGESTIONS.slice(0, 3).map((item) => (
-              <Link
-                key={item}
-                href={`/mapa?destino=${encodeURIComponent(item)}`}
-                className="animated-chip inline-flex items-center rounded-full border px-3.5 py-1.5 text-xs font-semibold transition"
-                style={{
-                  borderColor: "rgba(140,200,80,0.15)",
-                  background: "rgba(106,171,72,0.06)",
-                  color: "var(--ink2)",
-                }}
-              >
-                {item}
-              </Link>
-            ))}
-          </div>
-
-          {/* CTAs */}
-          <div className="animate-fade-up animate-delay-500 mt-7 flex flex-wrap items-center gap-3">
-            <Link
-              href="/mapa?cerca=1"
-              className="inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-semibold text-ink-900 transition-all hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(106,171,72,0.35)]"
-              style={{ background: "var(--verde)" }}
-            >
-              <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
-                <circle cx="12" cy="12" r="4" fill="currentColor" />
-                <path d="M12 2v3M12 19v3M2 12h3M19 12h3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              </svg>
-              Rutas cerca de mí
-            </Link>
-            <a
-              href="#como-funciona"
-              className="inline-flex items-center gap-1.5 px-2 py-3.5 text-sm font-semibold underline-offset-4 transition hover:underline"
-              style={{ color: "var(--ink2)" }}
-            >
-              Cómo funciona
-              <span aria-hidden="true">↓</span>
-            </a>
-          </div>
-        </div>
-
-        {/* Columna derecha: mapa animado */}
-        <div className="animate-fade-up animate-delay-200 relative mx-auto w-full max-w-sm lg:max-w-none">
-          <div className="absolute -inset-8 rounded-[3rem] blur-3xl" style={{ background: "rgba(106,171,72,0.08)" }} />
-          <HeroMap />
         </div>
       </section>
 

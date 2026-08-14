@@ -21,6 +21,43 @@ test("el buscador de la portada no cubre los accesos populares", async ({ page }
   expect(suggestionsBox!.y + suggestionsBox!.height).toBeLessThanOrEqual(popularBox!.y);
 });
 
+test("el simulador cambia de destino y abre el recorrido seleccionado", async ({ page }) => {
+  await page.goto("/");
+
+  const simulator = page.getByTestId("landing-trip-simulator");
+  await expect(simulator).toBeVisible();
+  await expect(simulator).toContainText("Central de Autobuses");
+  await expect(simulator).toContainText("Ruta 11");
+
+  await page.getByRole("button", { name: "Pausar ejemplos de viaje" }).click();
+  await expect(page.getByRole("button", { name: "Reproducir ejemplos de viaje" })).toBeVisible();
+  await page.getByRole("button", { name: "Reproducir ejemplos de viaje" }).click();
+
+  await page.getByRole("button", { name: "Hospital Regional", exact: true }).click();
+
+  await expect(simulator).toContainText("Estación Presidencia");
+  await expect(simulator).toContainText("Dirección Hospital Regional");
+  await expect(simulator).toContainText("$24 total");
+  await expect(simulator.getByRole("link", { name: "Ver recorrido completo" })).toHaveAttribute(
+    "href",
+    "/mapa?destino=Hospital%20Regional",
+  );
+  await expect(page.locator(".mapboxgl-map")).toHaveCount(0);
+});
+
+test("el simulador animado cabe en una pantalla móvil", async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  await page.goto("/");
+
+  await expect(page.getByTestId("landing-trip-simulator")).toBeVisible();
+  const layout = await page.evaluate(() => ({
+    scrollWidth: document.documentElement.scrollWidth,
+    viewportWidth: window.innerWidth,
+  }));
+
+  expect(layout.scrollWidth).toBeLessThanOrEqual(layout.viewportWidth);
+});
+
 test("la tarifa usa un signo de pesos legible", async ({ page }) => {
   await page.goto("/");
 
