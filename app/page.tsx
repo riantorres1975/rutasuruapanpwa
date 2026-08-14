@@ -5,6 +5,7 @@ import HeroMap from "@/components/HeroMap";
 import LandingSearch from "@/components/LandingSearch";
 import StatsAnimados from "@/components/StatsAnimados";
 import ForceDark from "@/components/ForceDark";
+import FareUpdateNotice from "@/components/FareUpdateNotice";
 import PublicFooter from "@/components/PublicFooter";
 import PublicHeader from "@/components/PublicHeader";
 import {
@@ -143,6 +144,7 @@ export default function LandingPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }} />
 
       <PublicHeader />
+      <FareUpdateNotice />
 
       {/* ── HERO ── */}
       <section className="mx-auto grid max-w-[1200px] grid-cols-1 items-center gap-8 px-5 pb-12 pt-28 lg:grid-cols-2 lg:gap-16 lg:pb-16 lg:pt-32">

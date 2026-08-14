@@ -11,6 +11,7 @@ const SIDEBAR_MAX = 520;        // px máximo al arrastrar
 import { track } from "@vercel/analytics";
 import BottomSheet from "@/components/BottomSheet";
 import ChatBotLauncher from "@/components/ChatBotLauncher";
+import FareUpdateNotice from "@/components/FareUpdateNotice";
 import ActiveRouteSummary from "@/components/ActiveRouteSummary";
 import NearbyToast from "@/components/NearbyToast";
 import OnboardingGate from "@/components/OnboardingGate";
@@ -1594,6 +1595,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
       )}
 
       <OnboardingGate />
+      <FareUpdateNotice deferUntilOnboarding />
     </main>
   );
 }

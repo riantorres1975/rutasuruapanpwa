@@ -1,6 +1,13 @@
 import { defineConfig, devices } from "@playwright/test";
+import {
+  FARE_UPDATE_ANNOUNCEMENT,
+  getAnnouncementDismissalKey,
+} from "./lib/fare-update-announcement";
 
 const isCI = Boolean(process.env.CI);
+const fareAnnouncementDismissalKey = getAnnouncementDismissalKey(
+  FARE_UPDATE_ANNOUNCEMENT.id,
+);
 
 export default defineConfig({
   testDir: "./e2e",
@@ -11,6 +18,17 @@ export default defineConfig({
   reporter: isCI ? "github" : "list",
   use: {
     baseURL: "http://localhost:3100",
+    storageState: {
+      cookies: [],
+      origins: [
+        {
+          origin: "http://localhost:3100",
+          localStorage: [
+            { name: fareAnnouncementDismissalKey, value: "e2e" },
+          ],
+        },
+      ],
+    },
     trace: "retain-on-failure",
   },
   projects: [

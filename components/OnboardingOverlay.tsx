@@ -1,7 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { ONBOARDING_STORAGE_KEY } from "@/lib/onboarding";
+import {
+  ONBOARDING_COMPLETED_EVENT,
+  ONBOARDING_STORAGE_KEY,
+} from "@/lib/onboarding";
 
 // ─── Step data ────────────────────────────────────────────────────────────────
 
@@ -117,6 +120,7 @@ export default function OnboardingOverlay() {
     setDismissed(true);
     try {
       localStorage.setItem(ONBOARDING_STORAGE_KEY, "1");
+      window.dispatchEvent(new Event(ONBOARDING_COMPLETED_EVENT));
     } catch {
       // ignore
     }

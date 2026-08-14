@@ -2,7 +2,10 @@
 
 import { useSyncExternalStore } from "react";
 import dynamic from "next/dynamic";
-import { ONBOARDING_STORAGE_KEY } from "@/lib/onboarding";
+import {
+  ONBOARDING_COMPLETED_EVENT,
+  ONBOARDING_STORAGE_KEY,
+} from "@/lib/onboarding";
 
 const OnboardingOverlay = dynamic(() => import("@/components/OnboardingOverlay"), {
   ssr: false,
@@ -10,7 +13,11 @@ const OnboardingOverlay = dynamic(() => import("@/components/OnboardingOverlay")
 
 const subscribeStorage = (callback: () => void) => {
   window.addEventListener("storage", callback);
-  return () => window.removeEventListener("storage", callback);
+  window.addEventListener(ONBOARDING_COMPLETED_EVENT, callback);
+  return () => {
+    window.removeEventListener("storage", callback);
+    window.removeEventListener(ONBOARDING_COMPLETED_EVENT, callback);
+  };
 };
 
 const shouldShowOnboarding = () => {
