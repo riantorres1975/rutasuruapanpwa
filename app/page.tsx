@@ -5,7 +5,6 @@ import HeroMap from "@/components/HeroMap";
 import LandingSearch from "@/components/LandingSearch";
 import StatsAnimados from "@/components/StatsAnimados";
 import ForceDark from "@/components/ForceDark";
-import MadeByFooter from "@/components/MadeByFooter";
 import PublicFooter from "@/components/PublicFooter";
 import PublicHeader from "@/components/PublicHeader";
 import {
@@ -490,10 +489,6 @@ export default function LandingPage() {
           </div>
         </div>
       </div>
-
-      <section className={`mx-auto max-w-[1200px] px-5 pb-10 lg:pb-16 ${DEFERRED_SECTION}`}>
-        <MadeByFooter />
-      </section>
 
       <PublicFooter />
     </main>
