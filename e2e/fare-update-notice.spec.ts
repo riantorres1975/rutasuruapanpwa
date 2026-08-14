@@ -13,6 +13,8 @@ test("muestra la tarifa y recuerda el cierre en la portada", async ({ page }) =>
   await expect(notice).toBeVisible();
   await expect(notice).toContainText("Camión urbano");
   await expect(notice).toContainText("Teleférico Uruapan");
+  await expect(notice).toHaveCSS("background-color", "rgb(12, 17, 10)");
+  await expect(page.getByTestId("fare-update-amount")).toHaveCSS("font-family", /DM Sans/);
 
   const fitsViewport = await notice.evaluate((element) => {
     const bounds = element.getBoundingClientRect();

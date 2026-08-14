@@ -25,7 +25,6 @@ export default function FareUpdateNotice({
 }: FareUpdateNoticeProps) {
   const [visible, setVisible] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
-  const actionRef = useRef<HTMLButtonElement>(null);
 
   const dismiss = useCallback(() => {
     try {
@@ -87,7 +86,7 @@ export default function FareUpdateNotice({
     const previouslyFocused = document.activeElement as HTMLElement | null;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    actionRef.current?.focus();
+    dialogRef.current?.focus();
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") dismiss();
@@ -111,7 +110,10 @@ export default function FareUpdateNotice({
 
     const first = focusable[0];
     const last = focusable[focusable.length - 1];
-    if (event.shiftKey && document.activeElement === first) {
+    if (
+      event.shiftKey &&
+      (document.activeElement === first || document.activeElement === dialogRef.current)
+    ) {
       event.preventDefault();
       last.focus();
     } else if (!event.shiftKey && document.activeElement === last) {
@@ -126,7 +128,7 @@ export default function FareUpdateNotice({
     <div className="fixed inset-0 z-[90] flex items-center justify-center px-4 py-6 sm:px-6">
       <div
         aria-hidden="true"
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/60 backdrop-blur-[3px]"
         onClick={dismiss}
       />
 
@@ -136,70 +138,76 @@ export default function FareUpdateNotice({
         aria-modal="true"
         aria-labelledby="fare-update-title"
         aria-describedby="fare-update-description"
+        tabIndex={-1}
         onKeyDown={handleDialogKeyDown}
-        className="animate-fade-up relative max-h-[calc(100dvh-2rem)] w-full max-w-[430px] overflow-y-auto rounded-lg border border-lima/30 bg-ink-950 text-crema shadow-[0_28px_90px_rgba(0,0,0,0.55)]"
+        className="animate-fade-up relative max-h-[calc(100dvh-2rem)] w-full max-w-[430px] overflow-y-auto rounded-lg border border-white/10 bg-ink-900 text-cream-50 shadow-[0_28px_90px_rgba(0,0,0,0.72)] outline-none"
       >
-        <div className="h-1 w-full bg-lima" aria-hidden="true" />
+        <div className="h-1 w-full bg-verde" aria-hidden="true" />
         <button
           type="button"
           onClick={dismiss}
           aria-label="Cerrar aviso de tarifa"
-          className="absolute right-3 top-4 inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 text-crema/70 transition hover:border-lima/50 hover:text-lima focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lima"
+          className="absolute right-3 top-4 inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-cream-50/65 transition hover:border-verde/60 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-verde"
         >
           <X className="h-5 w-5" aria-hidden="true" />
         </button>
 
         <div className="px-6 pb-6 pt-7 sm:px-8 sm:pb-8">
-          <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-lg bg-lima text-ink-950">
+          <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-lg bg-verde text-white">
             <BadgeDollarSign className="h-6 w-6" aria-hidden="true" />
           </div>
 
-          <p className="pr-12 text-[11px] font-black uppercase tracking-[0.16em] text-lima">
+          <p className="pr-12 text-[11px] font-black uppercase tracking-[0.16em] text-[#91cf70]">
             Tarifa actualizada
           </p>
           <h2
             id="fare-update-title"
-            className="mt-2 font-serif-display text-[34px] font-black leading-none text-crema sm:text-[38px]"
+            className="mt-2 font-serif-display text-[34px] font-black leading-none text-cream-50 sm:text-[38px]"
           >
-            Nueva tarifa: {FARES_2026.urbanBus.price}
+            Nueva tarifa:{" "}
+            <span
+              data-testid="fare-update-amount"
+              className="font-sans text-[0.9em] font-black tabular-nums tracking-normal text-white"
+            >
+              {FARES_2026.urbanBus.price}
+            </span>
           </h2>
           <p
             id="fare-update-description"
-            className="mt-4 text-[15px] font-medium leading-6 text-crema/70"
+            className="mt-4 text-[15px] font-medium leading-6 text-cream-50/70"
           >
             El camión urbano y el Teleférico ahora cuestan $12.00 por viaje.
           </p>
 
           <div className="mt-6 divide-y divide-white/10 border-y border-white/10">
             <div className="flex items-center gap-3 py-4">
-              <BusFront className="h-5 w-5 shrink-0 text-lima" aria-hidden="true" />
+              <BusFront className="h-5 w-5 shrink-0 text-[#91cf70]" aria-hidden="true" />
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-bold text-crema">Camión urbano</p>
-                <p className="mt-0.5 text-xs text-crema/55">Pago en efectivo</p>
+                <p className="text-sm font-bold text-cream-50">Camión urbano</p>
+                <p className="mt-0.5 text-xs text-cream-50/55">Pago en efectivo</p>
               </div>
-              <span className="text-sm font-black text-crema">{FARES_2026.urbanBus.price}</span>
+              <span className="font-sans text-sm font-black tabular-nums text-white">{FARES_2026.urbanBus.price}</span>
             </div>
             <div className="flex items-center gap-3 py-4">
-              <CableCar className="h-5 w-5 shrink-0 text-[#00d4aa]" aria-hidden="true" />
+              <CableCar className="h-5 w-5 shrink-0 text-agua" aria-hidden="true" />
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-bold text-crema">Teleférico Uruapan</p>
-                <p className="mt-0.5 flex items-center gap-1.5 text-xs text-crema/55">
+                <p className="text-sm font-bold text-cream-50">Teleférico Uruapan</p>
+                <p className="mt-0.5 flex items-center gap-1.5 text-xs text-cream-50/55">
                   <CreditCard className="h-3.5 w-3.5" aria-hidden="true" />
                   Tarjeta de movilidad
                 </p>
               </div>
-              <span className="text-sm font-black text-crema">{FARES_2026.teleferico.price}</span>
+              <span className="font-sans text-sm font-black tabular-nums text-white">{FARES_2026.teleferico.price}</span>
             </div>
           </div>
 
-          <p className="mt-4 text-xs font-medium text-crema/50">
+          <p className="mt-4 text-xs font-medium text-cream-50/50">
             Tarifa vigente desde agosto de 2026.
           </p>
           <button
-            ref={actionRef}
             type="button"
             onClick={dismiss}
-            className="mt-6 inline-flex h-12 w-full items-center justify-center rounded-lg bg-lima px-5 text-sm font-black text-ink-950 transition hover:bg-lima/90 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lima focus-visible:ring-offset-2 focus-visible:ring-offset-ink-950"
+            className="mt-6 inline-flex h-12 w-full items-center justify-center rounded-lg bg-verde px-5 text-sm font-black text-white transition hover:bg-[#78b957] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-verde focus-visible:ring-offset-2 focus-visible:ring-offset-ink-900"
           >
             Entendido
           </button>
