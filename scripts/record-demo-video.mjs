@@ -21,7 +21,7 @@ async function assertServerIsReady() {
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
   } catch (error) {
     throw new Error(
-      `No se pudo abrir ${baseUrl}. Inicia UruGo con \"npm run dev\" antes de grabar.`,
+      `No se pudo abrir ${baseUrl}. Inicia UruGo con \"pnpm dev\" antes de grabar.`,
       { cause: error },
     );
   }

@@ -7,25 +7,25 @@ El video muestra grabaciones reales de la aplicación, sin textos editoriales so
 1. Inicia la aplicación:
 
    ```bash
-   npm run dev
+   pnpm dev
    ```
 
 2. Graba las escenas con Playwright:
 
    ```bash
-   npm run video:record
+   pnpm video:record
    ```
 
 3. Revisa y ajusta la composición:
 
    ```bash
-   npm run video:studio
+   pnpm video:studio
    ```
 
 4. Renderiza las dos versiones:
 
    ```bash
-   npm run video:render
+   pnpm video:render
    ```
 
 Los archivos terminados se guardan en `video/out/`. Para grabar otro entorno, define `VIDEO_BASE_URL` antes de ejecutar `video:record`.

@@ -2,6 +2,11 @@
   "name": "rutas-uruapan",
   "version": "1.0.0",
   "private": true,
+  "packageManager": "pnpm@11.19.0",
+  "engines": {
+    "node": ">=20.9",
+    "pnpm": ">=11 <12"
+  },
   "scripts": {
     "dev": "next dev --webpack",
     "build": "next build --webpack",
@@ -18,9 +23,9 @@
     "video:studio": "remotion studio video/index.ts",
     "video:render:wide": "remotion render video/index.ts UruGoDemoWide video/out/urugo-demo-horizontal.mp4 --codec=h264 --crf=18",
     "video:render:vertical": "remotion render video/index.ts UruGoDemoVertical video/out/urugo-demo-vertical.mp4 --codec=h264 --crf=18",
-    "video:render": "npm run video:render:wide && npm run video:render:vertical",
+    "video:render": "pnpm video:render:wide && pnpm video:render:vertical",
     "bundle:check": "node scripts/check-bundle-budget.mjs",
-    "check": "npm run typecheck && npm run lint && npm run test && npm run build && npm run bundle:check"
+    "check": "pnpm typecheck && pnpm lint && pnpm test && pnpm build && pnpm bundle:check"
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",
@@ -50,9 +55,5 @@
     "tailwindcss": "3.4.6",
     "typescript": "^5.9.3",
     "vitest": "^4.1.10"
-  },
-  "overrides": {
-    "postcss": "8.5.26",
-    "nanoid": "3.3.18"
   }
 }

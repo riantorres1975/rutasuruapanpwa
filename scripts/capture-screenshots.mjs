@@ -1,6 +1,6 @@
 // Captura screenshots reales para el manifest de la PWA.
 // Usa el Edge instalado en el sistema vía playwright-core (sin descargar navegador).
-// Uso: node scripts/capture-screenshots.mjs  (requiere `npm start` corriendo en :3000)
+// Uso: node scripts/capture-screenshots.mjs  (requiere `pnpm start` corriendo en :3000)
 import { chromium } from "playwright-core";
 import { mkdirSync } from "node:fs";
 

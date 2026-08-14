@@ -92,7 +92,8 @@ Matching runs in the browser using project data. Mapbox draws the map and suppor
 
 ### Requirements
 
-- Node.js 20 or newer.
+- Node.js 20.9 or newer.
+- pnpm 11.
 - A Mapbox account and public token.
 - A DeepSeek API key only when the optional assistant is needed.
 
@@ -101,8 +102,10 @@ Matching runs in the browser using project data. Mapbox draws the map and suppor
 ```bash
 git clone https://github.com/riantorres1975/rutasuruapanpwa.git
 cd rutasuruapanpwa
-npm install
+pnpm install
 ```
+
+The project pins pnpm 11.19.0 and records exact versions in `pnpm-lock.yaml`. Installation rejects versions published within the previous 24 hours and only runs explicitly approved dependency scripts.
 
 Copy `.env.example` to `.env.local` and provide at least the Mapbox token:
 
@@ -114,7 +117,7 @@ NEXT_PUBLIC_SITE_URL=http://localhost:3000
 Start the development server:
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
 The app will be available at [http://localhost:3000](http://localhost:3000).
@@ -136,12 +139,12 @@ Restrict the public Mapbox token by domain in the Mapbox dashboard. Private keys
 ## Commands
 
 ```bash
-npm run dev      # local development server
-npm run build    # production build
-npm run start    # serve the production build
-npm run lint     # ESLint checks
-npm test         # Vitest suite
-npm run guide:screenshots # refresh application screenshots
+pnpm dev               # local development server
+pnpm build             # production build
+pnpm start             # serve the production build
+pnpm lint              # ESLint checks
+pnpm test              # Vitest suite
+pnpm guide:screenshots # refresh application screenshots
 ```
 
 ## Project layout
@@ -184,9 +187,9 @@ Incorrect routes, schedules, or locations can be reported through [`/reportar-er
 Run the following before submitting changes:
 
 ```bash
-npm run lint
-npm test
-npm run build
+pnpm lint
+pnpm test
+pnpm build
 ```
 
 GitHub Actions runs the same checks for repository changes.

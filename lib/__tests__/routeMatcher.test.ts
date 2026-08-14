@@ -1,6 +1,6 @@
 /**
  * Tests for lib/routeMatcher.ts
- * Run with:  npx tsx lib/__tests__/routeMatcher.test.ts
+ * Run with: pnpm dlx tsx lib/__tests__/routeMatcher.test.ts
  *
  * Uses a synthetic L-shaped path so tests have no external dependencies.
  *

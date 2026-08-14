@@ -92,7 +92,8 @@ El cálculo se realiza en el cliente con los datos del proyecto. Mapbox se utili
 
 ### Requisitos
 
-- Node.js 20 o posterior.
+- Node.js 20.9 o posterior.
+- pnpm 11.
 - Una cuenta de Mapbox y un token público.
 - Una clave de DeepSeek únicamente si se quiere habilitar el asistente.
 
@@ -101,8 +102,10 @@ El cálculo se realiza en el cliente con los datos del proyecto. Mapbox se utili
 ```bash
 git clone https://github.com/riantorres1975/rutasuruapanpwa.git
 cd rutasuruapanpwa
-npm install
+pnpm install
 ```
+
+El proyecto fija pnpm 11.19.0 y conserva las versiones exactas en `pnpm-lock.yaml`. La instalación rechaza versiones publicadas durante las últimas 24 horas y solo ejecuta scripts de dependencias aprobados expresamente.
 
 Copia `.env.example` como `.env.local` y completa, como mínimo, el token de Mapbox:
 
@@ -114,7 +117,7 @@ NEXT_PUBLIC_SITE_URL=http://localhost:3000
 Después inicia el servidor de desarrollo:
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
 La aplicación estará disponible en [http://localhost:3000](http://localhost:3000).
@@ -140,12 +143,12 @@ En producción conviene configurar Upstash para que los límites de solicitudes 
 ## Comandos disponibles
 
 ```bash
-npm run dev      # servidor local con recarga automática
-npm run build    # compilación de producción
-npm run start    # inicia la compilación de producción
-npm run lint     # revisión estática con ESLint
-npm test         # ejecuta la suite de Vitest
-npm run guide:screenshots # actualiza las capturas de la aplicación
+pnpm dev               # servidor local con recarga automática
+pnpm build             # compilación de producción
+pnpm start             # inicia la compilación de producción
+pnpm lint              # revisión estática con ESLint
+pnpm test              # ejecuta la suite de Vitest
+pnpm guide:screenshots # actualiza las capturas de la aplicación
 ```
 
 ## Estructura del proyecto
@@ -180,8 +183,8 @@ Los reportes sobre rutas, horarios o puntos incorrectos pueden enviarse desde la
 Los puntos de referencia de las rutas pueden regenerarse desde OpenStreetMap sin sobrescribir los que ya fueron verificados manualmente:
 
 ```bash
-npm run landmarks:review  # genera .cache/landmarks-review.json
-npm run landmarks:apply   # aplica las propuestas a rutas sin referencias
+pnpm landmarks:review  # genera .cache/landmarks-review.json
+pnpm landmarks:apply   # aplica las propuestas a rutas sin referencias
 ```
 
 Los lugares generados incluyen datos de [OpenStreetMap](https://www.openstreetmap.org/copyright), disponibles bajo ODbL 1.0, y deben revisarse antes de publicarse.
@@ -199,9 +202,9 @@ Los lugares generados incluyen datos de [OpenStreetMap](https://www.openstreetma
 Antes de enviar cambios se recomienda ejecutar:
 
 ```bash
-npm run lint
-npm test
-npm run build
+pnpm lint
+pnpm test
+pnpm build
 ```
 
 El repositorio también ejecuta estas verificaciones mediante GitHub Actions.

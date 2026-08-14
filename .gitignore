@@ -46,4 +46,4 @@ next-env.d.ts
 /public/sw.js
 
 # data files are now maintained directly via the debug route editor
-# run `npm run pipeline:rutas` manually to regenerate from source GeoJSON if needed
+# run `pnpm pipeline:rutas` manually to regenerate from source GeoJSON if needed

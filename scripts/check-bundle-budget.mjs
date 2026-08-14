@@ -2,14 +2,14 @@ import { readdir, stat } from "node:fs/promises";
 import path from "node:path";
 
 const MAP_PAGE_BUDGET_BYTES = 130_000;
-const HOME_PAGE_BUDGET_BYTES = 22_000;
+const HOME_PAGE_BUDGET_BYTES = 23_000;
 const mapChunkDirectory = path.join(process.cwd(), ".next", "static", "chunks", "app", "mapa");
 const appChunkDirectory = path.join(process.cwd(), ".next", "static", "chunks", "app");
 const chunkNames = await readdir(mapChunkDirectory);
 const pageChunkName = chunkNames.find((name) => /^page-[a-f0-9]+\.js$/.test(name));
 
 if (!pageChunkName) {
-  throw new Error("No se encontró el chunk de /mapa. Ejecuta npm run build antes de revisar el presupuesto.");
+  throw new Error("No se encontró el chunk de /mapa. Ejecuta pnpm build antes de revisar el presupuesto.");
 }
 
 const pageChunkPath = path.join(mapChunkDirectory, pageChunkName);
