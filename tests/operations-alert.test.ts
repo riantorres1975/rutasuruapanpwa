@@ -4,6 +4,7 @@ import {
   isOperationsAlertConfigured,
   notifyCriticalClientError,
 } from "@/lib/operations-alert";
+import { resetMemoryRateLimitsForTests } from "@/lib/rate-limit";
 
 const originalUrl = process.env.ERROR_ALERT_WEBHOOK_URL;
 const originalToken = process.env.ERROR_ALERT_WEBHOOK_TOKEN;
@@ -20,6 +21,7 @@ function report(fingerprint: string, kind: ClientErrorReport["kind"] = "boundary
 
 describe("operations alerts", () => {
   beforeEach(() => {
+    resetMemoryRateLimitsForTests();
     delete process.env.ERROR_ALERT_WEBHOOK_URL;
     delete process.env.ERROR_ALERT_WEBHOOK_TOKEN;
   });
@@ -84,5 +86,17 @@ describe("operations alerts", () => {
     expect(await notifyCriticalClientError(report("feed0002"))).toBe("sent");
     expect(await notifyCriticalClientError(report("feed0002"))).toBe("deduplicated");
     expect(fetchMock).toHaveBeenCalledOnce();
+  });
+
+  it("limita globalmente alertas con huellas diferentes", async () => {
+    process.env.ERROR_ALERT_WEBHOOK_URL = "https://alerts.example.com/hook";
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    for (let index = 0; index < 5; index += 1) {
+      expect(await notifyCriticalClientError(report(`face000${index}`))).toBe("sent");
+    }
+    expect(await notifyCriticalClientError(report("face0005"))).toBe("throttled");
+    expect(fetchMock).toHaveBeenCalledTimes(5);
   });
 });

@@ -1,8 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { rateLimit } from "@/lib/rate-limit";
+import { rateLimit, resetMemoryRateLimitsForTests } from "@/lib/rate-limit";
 
 describe("fallback de rate limiting en memoria", () => {
   beforeEach(() => {
+    resetMemoryRateLimitsForTests();
     delete process.env.UPSTASH_REDIS_REST_URL;
     delete process.env.UPSTASH_REDIS_REST_TOKEN;
   });

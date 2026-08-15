@@ -8,6 +8,12 @@ export async function GET(request: Request) {
   if (!(await rateLimit(`og:${ip}`, 30, 60_000))) {
     return new Response("Demasiadas solicitudes", { status: 429 });
   }
+  if (!(await rateLimit("og:global", 240, 60_000))) {
+    return new Response("Servicio temporalmente ocupado", {
+      status: 429,
+      headers: { "Retry-After": "60" },
+    });
+  }
 
   const { searchParams } = new URL(request.url);
   const rawTitle = searchParams.get("title");

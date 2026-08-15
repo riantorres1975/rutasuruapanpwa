@@ -5,7 +5,12 @@ import {
   notifyCriticalClientError,
 } from "@/lib/operations-alert";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
-import { hasJsonContentType, isSameOriginRequest } from "@/lib/request-security";
+import {
+  hasJsonContentType,
+  isSameOriginRequest,
+  readJsonBodyWithLimit,
+  RequestBodyError,
+} from "@/lib/request-security";
 
 const MAX_BODY_BYTES = 2_048;
 
@@ -17,26 +22,19 @@ export async function POST(request: NextRequest) {
     return new Response(null, { status: 415 });
   }
 
-  const contentLength = Number(request.headers.get("content-length") ?? 0);
-  if (!Number.isFinite(contentLength) || contentLength > MAX_BODY_BYTES) {
-    return Response.json({ error: "Payload demasiado grande" }, { status: 413 });
-  }
-
   const ip = getClientIp(request);
   if (!(await rateLimit(`client-error:${ip}`, 20, 60_000))) {
     return new Response(null, { status: 429 });
   }
 
-  const rawBody = await request.text();
-  if (new TextEncoder().encode(rawBody).length > MAX_BODY_BYTES) {
-    return Response.json({ error: "Payload demasiado grande" }, { status: 413 });
-  }
-
   let payload: unknown;
   try {
-    payload = JSON.parse(rawBody);
-  } catch {
-    return Response.json({ error: "Payload invalido" }, { status: 400 });
+    payload = await readJsonBodyWithLimit(request, MAX_BODY_BYTES);
+  } catch (error) {
+    if (error instanceof RequestBodyError) {
+      return Response.json({ error: error.message }, { status: error.status });
+    }
+    throw error;
   }
 
   if (!isClientErrorReport(payload)) {

@@ -3,6 +3,7 @@ import { rateLimit } from "@/lib/rate-limit";
 
 const ALERT_COOLDOWN_MS = 15 * 60_000;
 const ALERT_TIMEOUT_MS = 3_000;
+const GLOBAL_ALERT_LIMIT = 5;
 
 type OperationsAlertConfig = {
   token?: string;
@@ -14,7 +15,8 @@ export type OperationsAlertResult =
   | "disabled"
   | "failed"
   | "ignored"
-  | "sent";
+  | "sent"
+  | "throttled";
 
 function getOperationsAlertConfig(): OperationsAlertConfig | null {
   const rawUrl = process.env.ERROR_ALERT_WEBHOOK_URL?.trim();
@@ -49,6 +51,13 @@ export async function notifyCriticalClientError(
     ALERT_COOLDOWN_MS,
   );
   if (!allowed) return "deduplicated";
+
+  const withinGlobalBudget = await rateLimit(
+    "client-error-alert:global",
+    GLOBAL_ALERT_LIMIT,
+    ALERT_COOLDOWN_MS,
+  );
+  if (!withinGlobalBudget) return "throttled";
 
   const headers: Record<string, string> = { "content-type": "application/json" };
   if (config.token) headers.authorization = `Bearer ${config.token}`;

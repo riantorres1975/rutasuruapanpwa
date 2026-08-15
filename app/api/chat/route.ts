@@ -6,12 +6,18 @@ import {
   nearbyRoutesReal,
 } from "@/lib/chat-grounding";
 import { buildVerifiedChatReply } from "@/lib/chat-reply";
+import { guardModelReply } from "@/lib/chat-response";
 import { getRouteDestination } from "@/lib/route-names";
 import { FARES_2026 } from "@/lib/mobility-config";
 import { isWithinUruapanServiceArea } from "@/lib/geo";
-import { hasJsonContentType, isSameOriginRequest } from "@/lib/request-security";
+import {
+  hasJsonContentType,
+  isSameOriginRequest,
+  readJsonBodyWithLimit,
+  RequestBodyError,
+} from "@/lib/request-security";
 
-type ChatHistoryItem = { role: "user" | "assistant" | "bot"; text: string };
+type ChatHistoryItem = { role: "user"; text: string };
 type ChatPayload = {
   message: string;
   history: ChatHistoryItem[];
@@ -37,7 +43,6 @@ function buildSystemPrompt(
     : "";
 
   const userHistory = history
-    .filter((item) => item.role === "user")
     .slice(-4)
     .map((item) => item.text)
     .filter(Boolean);
@@ -79,6 +84,8 @@ ${routesList}
 // Durable y global entre instancias si hay Upstash configurado (ver lib/rate-limit.ts).
 const RATE_LIMIT = 10;
 const RATE_WINDOW_MS = 60_000;
+const GLOBAL_AI_MINUTE_LIMIT = 60;
+const GLOBAL_AI_DAILY_LIMIT = 1_000;
 const MAX_BODY_BYTES = 32_000;
 const MAX_MESSAGE_CHARS = 1_000;
 const MAX_HISTORY_ITEMS = 20;
@@ -104,43 +111,6 @@ function isValidLocation(location: unknown): location is { lat: number; lng: num
   );
 }
 
-async function readJsonWithLimit(req: NextRequest): Promise<unknown> {
-  const declaredLength = Number(req.headers.get("content-length"));
-  if (Number.isFinite(declaredLength) && declaredLength > MAX_BODY_BYTES) {
-    throw new RequestError("Solicitud demasiado grande", 413);
-  }
-
-  if (!req.body) throw new RequestError("JSON inválido", 400);
-
-  const reader = req.body.getReader();
-  const chunks: Uint8Array[] = [];
-  let total = 0;
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    total += value.byteLength;
-    if (total > MAX_BODY_BYTES) {
-      await reader.cancel();
-      throw new RequestError("Solicitud demasiado grande", 413);
-    }
-    chunks.push(value);
-  }
-
-  const bytes = new Uint8Array(total);
-  let offset = 0;
-  for (const chunk of chunks) {
-    bytes.set(chunk, offset);
-    offset += chunk.byteLength;
-  }
-
-  try {
-    return JSON.parse(new TextDecoder().decode(bytes));
-  } catch {
-    throw new RequestError("JSON inválido", 400);
-  }
-}
-
 function parsePayload(input: unknown): ChatPayload {
   if (!input || typeof input !== "object" || Array.isArray(input)) {
     throw new RequestError("Solicitud inválida", 400);
@@ -163,7 +133,7 @@ function parsePayload(input: unknown): ChatPayload {
     }
     const entry = item as Record<string, unknown>;
     if (
-      (entry.role !== "user" && entry.role !== "assistant" && entry.role !== "bot") ||
+      entry.role !== "user" ||
       typeof entry.text !== "string" ||
       entry.text.length > MAX_HISTORY_ITEM_CHARS
     ) {
@@ -202,10 +172,10 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { message, history, location } = parsePayload(await readJsonWithLimit(req));
-    const userHistory = history
-      .filter((item) => item.role === "user")
-      .map((item) => item.text);
+    const { message, history, location } = parsePayload(
+      await readJsonBodyWithLimit(req, MAX_BODY_BYTES),
+    );
+    const userHistory = history.map((item) => item.text);
     const verifiedReply = buildVerifiedChatReply(message, userHistory, Boolean(location));
     if (verifiedReply) {
       return NextResponse.json({ reply: withBetaNotice(verifiedReply, history.length === 0) });
@@ -216,16 +186,28 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Servicio no configurado" }, { status: 503 });
     }
 
+    const withinMinuteBudget = await rateLimit(
+      "chat-ai:global:minute",
+      GLOBAL_AI_MINUTE_LIMIT,
+      60_000,
+    );
+    const withinDailyBudget = withinMinuteBudget && await rateLimit(
+      "chat-ai:global:day",
+      GLOBAL_AI_DAILY_LIMIT,
+      24 * 60 * 60_000,
+    );
+    if (!withinDailyBudget) {
+      return NextResponse.json(
+        { error: "El asistente alcanzó su límite temporal. Intenta más tarde." },
+        { status: 429, headers: { "Retry-After": "60" } },
+      );
+    }
+
     const systemPrompt = buildSystemPrompt(location, message, history);
 
     const messages = [
       { role: "system", content: systemPrompt },
-      ...history.slice(-8).filter((m) =>
-        m.role === "user" || m.role === "assistant" || m.role === "bot"
-      ).map((m) => ({
-        role: (m.role === "user" ? "user" : "assistant") as "user" | "assistant",
-        content: m.text,
-      })),
+      ...history.slice(-8).map((item) => ({ role: "user" as const, content: item.text })),
       { role: "user", content: message },
     ];
 
@@ -253,15 +235,11 @@ export async function POST(req: NextRequest) {
     }
 
     const data = await res.json();
-    const rawReply = data?.choices?.[0]?.message?.content;
-    let reply = (typeof rawReply === "string" ? rawReply : "No pude generar una respuesta.")
-      .slice(0, 2_000)
-      .replace(/\s*⚠️ Beta[^🚩]*🚩\.?/g, "")
-      .trim();
+    const reply = guardModelReply(data?.choices?.[0]?.message?.content, getRealRouteNames());
 
     return NextResponse.json({ reply: withBetaNotice(reply, history.length === 0) });
   } catch (e) {
-    if (e instanceof RequestError) {
+    if (e instanceof RequestError || e instanceof RequestBodyError) {
       return NextResponse.json({ error: e.message }, { status: e.status });
     }
     if (e instanceof Error && e.name === "TimeoutError") {

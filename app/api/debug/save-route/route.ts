@@ -2,6 +2,7 @@ import { readFileSync, writeFileSync } from "fs";
 import { join } from "path";
 import { timingSafeEqual } from "crypto";
 import { isWithinUruapanServiceArea } from "@/lib/geo";
+import { readJsonBodyWithLimit, RequestBodyError } from "@/lib/request-security";
 
 export const dynamic = "force-dynamic";
 const MAX_BODY_BYTES = 250_000;
@@ -48,19 +49,6 @@ function isValidCoord(c: unknown): c is [number, number] {
   );
 }
 
-async function readJsonWithLimit(request: Request): Promise<unknown> {
-  const contentLength = Number(request.headers.get("content-length") ?? 0);
-  if (!Number.isFinite(contentLength) || contentLength > MAX_BODY_BYTES) {
-    throw new RangeError("Payload demasiado grande");
-  }
-
-  const rawBody = await request.text();
-  if (new TextEncoder().encode(rawBody).length > MAX_BODY_BYTES) {
-    throw new RangeError("Payload demasiado grande");
-  }
-  return JSON.parse(rawBody);
-}
-
 export async function POST(request: Request) {
   if (process.env.NODE_ENV === "production") {
     return Response.json({ error: "Recurso no disponible" }, { status: 404 });
@@ -72,10 +60,10 @@ export async function POST(request: Request) {
 
   let payload: unknown;
   try {
-    payload = await readJsonWithLimit(request);
+    payload = await readJsonBodyWithLimit(request, MAX_BODY_BYTES);
   } catch (error) {
-    if (error instanceof RangeError) {
-      return Response.json({ error: error.message }, { status: 413 });
+    if (error instanceof RequestBodyError) {
+      return Response.json({ error: error.message }, { status: error.status });
     }
     return Response.json({ error: "JSON inválido" }, { status: 400 });
   }

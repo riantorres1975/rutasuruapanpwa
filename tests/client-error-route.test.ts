@@ -66,4 +66,27 @@ describe("POST /api/client-error", () => {
     expect(response.status).toBe(415);
     expect(log).not.toHaveBeenCalled();
   });
+
+  it("corta una carga fragmentada al superar el limite", async () => {
+    const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new Uint8Array(1_024));
+        controller.enqueue(new Uint8Array(2_048));
+      },
+    });
+    const oversized = new NextRequest("http://localhost/api/client-error", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-forwarded-for": "127.0.0.50",
+      },
+      body: stream,
+    });
+
+    const response = await POST(oversized);
+
+    expect(response.status).toBe(413);
+    expect(log).not.toHaveBeenCalled();
+  });
 });

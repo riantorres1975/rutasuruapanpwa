@@ -94,6 +94,13 @@ export async function rateLimit(key: string, limit: number, windowMs: number): P
   return memoryLimit(key, limit, windowMs);
 }
 
+export function resetMemoryRateLimitsForTests(): void {
+  if (process.env.NODE_ENV !== "test") {
+    throw new Error("El reinicio del rate limit solo está disponible en tests");
+  }
+  memory.clear();
+}
+
 /**
  * Extrae la IP del cliente de cabeceras de proxy de confianza, con validación
  * de formato para evitar que un valor arbitrario contamine la clave de rate limit.

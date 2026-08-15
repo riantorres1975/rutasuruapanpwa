@@ -39,6 +39,7 @@ const securityHeaders = [
       process.env.NODE_ENV === "development"
         ? "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com"
         : "script-src 'self' 'unsafe-inline'",
+      "script-src-attr 'none'",
       "style-src 'self' 'unsafe-inline'",
       "font-src 'self'",
       "img-src 'self' data: blob: https://*.mapbox.com https://*.mapbox.cn https://api.mapbox.com",
@@ -56,6 +57,9 @@ const securityHeaders = [
 
 const nextConfig = {
   productionBrowserSourceMaps: false,
+  experimental: {
+    sri: { algorithm: "sha384" }
+  },
   logging: {
     browserToTerminal: process.env.NEXT_E2E === "1" ? false : "warn"
   },

@@ -221,7 +221,10 @@ export default function ChatBot({ initialOpen = false }: { initialOpen?: boolean
     setInput('');
     setLoading(true);
     try {
-      const history = next.slice(0, -1).map((m) => ({ role: m.role, text: m.text }));
+      const history = next
+        .slice(0, -1)
+        .filter((message) => message.role === 'user')
+        .map((message) => ({ role: 'user' as const, text: message.text }));
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
