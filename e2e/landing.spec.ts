@@ -119,6 +119,13 @@ test("rutas cerca de mí localiza y abre las rutas próximas", async ({ page, co
   await routeSheet.getByRole("button", { name: "Cerrar panel" }).click();
   await expect(page.getByRole("button", { name: /rutas cerca de ti, ver rutas disponibles/ }))
     .toContainText("Cerca de ti");
+
+  const dismissNearbyNotice = page.getByRole("button", { name: "Cerrar aviso" });
+  const nearbyNotice = dismissNearbyNotice.locator("xpath=..");
+  await expect(dismissNearbyNotice).toBeVisible();
+  await expect(nearbyNotice).toHaveClass(/ov-panel/);
+  await dismissNearbyNotice.click();
+  await expect(page.getByText("No hay rutas cercanas a tu ubicación", { exact: true })).toHaveCount(0);
 });
 
 test("recupera el modo cercano si la navegación pierde el parámetro", async ({ page, context }) => {
