@@ -2386,7 +2386,7 @@ function MapComponent({
         {/* Accuracy chip — shown after a fix is received */}
         {!tripModeActive && userLocationAccuracyM !== null && (
           <div
-            className="ov-panel ov-border ov-text-muted inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-[11px] font-semibold shadow-soft backdrop-blur-xl"
+            className="ov-panel ov-border ov-text-muted hidden items-center gap-1.5 rounded-md border px-2.5 py-1 text-[11px] font-semibold shadow-soft backdrop-blur-xl md:inline-flex"
           >
             <span className="h-2 w-2 shrink-0 rounded-full bg-lima" aria-hidden="true" />
             GPS ±{Math.round(userLocationAccuracyM)} m

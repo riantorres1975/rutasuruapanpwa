@@ -50,7 +50,8 @@ test("ir a mi ubicación actualiza el origen y las rutas cercanas", async ({ pag
   await page.getByRole("button", { name: "Ir a mi ubicación" }).click();
 
   await expect(page.getByText(/ruta[s]? cercana[s]? a ti/i).first()).toBeVisible();
-  await expect(page.getByText(/GPS ±\d+ m/).first()).toBeVisible();
+  const gpsAccuracy = page.getByText(/GPS ±\d+ m/).first();
+  await expect(gpsAccuracy).toBeHidden();
   await page.getByRole("button", { name: /^Rutas \d+, ver rutas disponibles$/ }).click();
   await expect(page.getByRole("dialog", { name: "Selecciona una ruta" })
     .getByText("Cercanas a ti", { exact: true })).toBeVisible();
