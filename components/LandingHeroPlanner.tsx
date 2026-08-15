@@ -14,6 +14,7 @@ import {
   Play,
 } from "lucide-react";
 import LandingSearch from "@/components/LandingSearch";
+import { rememberNearbyRoutesRequest } from "@/lib/nearby-request";
 
 type TripStepKind = "start" | "walk" | "bus" | "transfer" | "cable" | "finish";
 
@@ -162,6 +163,7 @@ export default function LandingHeroPlanner() {
       <div className="mt-7 flex flex-wrap items-center gap-3 lg:justify-center">
         <Link
           href="/mapa?cerca=1"
+          onClick={rememberNearbyRoutesRequest}
           className="inline-flex min-h-12 items-center gap-2 rounded-md px-6 text-sm font-semibold text-ink-900 transition-all hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(106,171,72,0.28)]"
           style={{ background: "var(--verde)" }}
         >

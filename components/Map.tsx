@@ -13,7 +13,8 @@ import {
   URUAPAN_CENTER
 } from "@/lib/map";
 import type { Coordinates, RouteData } from "@/lib/types";
-import { haversineMeters, isWithinUruapanServiceArea } from "@/lib/geo";
+import { haversineMeters } from "@/lib/geo";
+import { findNearbyRouteIds, type NearbyRoutePath } from "@/lib/nearby-routes";
 import type { TripJourney, TripProgress } from "@/lib/trip-mode";
 import {
   getTripMarkerAnimationDuration,
@@ -181,6 +182,10 @@ function setUserLocationLayerVisibility(map: mapboxgl.Map, visible: boolean) {
 
 type MapProps = {
   routes: RouteData[];
+  nearbyRoutePaths: NearbyRoutePath[];
+  nearbyFocusPoint?: Coordinates | null;
+  userLocationPoint?: Coordinates | null;
+  userLocationAccuracyM?: number | null;
   selectedRouteId: number | null;
   suggestedRouteIds: number[];
   allRoutesMode: RoutesMapMode;
@@ -202,7 +207,7 @@ type MapProps = {
   onMapPick: (point: [number, number]) => void;
   onSelectRoute: (routeId: number) => void;
   onNearbyRoutesFound: (routeIds: number[]) => void;
-  onLocationOutsideServiceArea: () => void;
+  onRequestLocation: () => Promise<{ location: Coordinates; accuracyM: number } | null>;
 };
 
 function telefericoRouteExpression() {
@@ -770,6 +775,21 @@ function renderUserLocation(
   }
 }
 
+function renderUserLocationWhenReady(
+  map: mapboxgl.Map,
+  location: Coordinates,
+  accuracyM: number,
+) {
+  if (map.isStyleLoaded()) {
+    renderUserLocation(map, location, accuracyM);
+    return;
+  }
+
+  map.once("style.load", () => {
+    renderUserLocation(map, location, accuracyM);
+  });
+}
+
 function clearTransferLayers(map: mapboxgl.Map) {
   for (const layer of [TRANSFER_SEG_A_LAYER, TRANSFER_SEG_B_LAYER, TRANSFER_WALK_LAYER, TRANSFER_PIN_LAYER]) {
     if (map.getLayer(layer)) map.removeLayer(layer);
@@ -1089,6 +1109,10 @@ function clearAllDebugLayers(map: mapboxgl.Map) {
 
 function MapComponent({
   routes,
+  nearbyRoutePaths,
+  nearbyFocusPoint = null,
+  userLocationPoint = null,
+  userLocationAccuracyM = null,
   selectedRouteId,
   suggestedRouteIds,
   allRoutesMode = "all-visible",
@@ -1109,11 +1133,12 @@ function MapComponent({
   onMapPick,
   onSelectRoute,
   onNearbyRoutesFound,
-  onLocationOutsideServiceArea
+  onRequestLocation,
 }: MapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const routesRef = useRef(routes);
+  const nearbyRoutePathsRef = useRef(nearbyRoutePaths);
   const selectedRouteIdRef = useRef(selectedRouteId);
   const suggestedRouteIdsRef = useRef(suggestedRouteIds);
   const bestSuggestedRouteIdRef = useRef(bestSuggestedRouteId);
@@ -1144,6 +1169,7 @@ function MapComponent({
   const tripSessionKeyRef = useRef(tripSessionKey);
   const tripFollowingRef = useRef(false);
   const userLocationRef = useRef<{ location: Coordinates; accuracyM: number } | null>(null);
+  const lastNearbyFocusRef = useRef<string | null>(null);
   const lastFittedTransferKeyRef = useRef<string | null>(null);
   const lastFittedRouteKeyRef = useRef<string | null>(null);
   const transferRouteIdsRef = useRef<number[]>(
@@ -1159,7 +1185,6 @@ function MapComponent({
 
   const [isLoading, setIsLoading] = useState(true);
   const [locationLoading, setLocationLoading] = useState(false);
-  const [locationAccuracy, setLocationAccuracy] = useState<number | null>(null);
   const [releasedTripKey, setReleasedTripKey] = useState<string | null>(null);
   const isTripFollowing = Boolean(
     tripModeActive && tripSessionKey && releasedTripKey !== tripSessionKey,
@@ -1229,6 +1254,10 @@ function MapComponent({
   useEffect(() => {
     routesRef.current = routes;
   }, [routes]);
+
+  useEffect(() => {
+    nearbyRoutePathsRef.current = nearbyRoutePaths;
+  }, [nearbyRoutePaths]);
 
   useEffect(() => {
     selectedRouteIdRef.current = selectedRouteId;
@@ -1994,6 +2023,36 @@ function MapComponent({
 
   useEffect(() => {
     const map = mapRef.current;
+    if (!map || !isMapReadyRef.current || !nearbyFocusPoint || tripModeActive) return;
+
+    const focusKey = `${nearbyFocusPoint[0].toFixed(6)},${nearbyFocusPoint[1].toFixed(6)}`;
+    if (lastNearbyFocusRef.current === focusKey) return;
+    lastNearbyFocusRef.current = focusKey;
+    map.flyTo({
+      center: nearbyFocusPoint,
+      zoom: 15.5,
+      duration: 900,
+      essential: true,
+      padding: { top: 130, right: 24, bottom: 150, left: 24 },
+    });
+  }, [isLoading, nearbyFocusPoint, tripModeActive]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (
+      !map
+      || !isMapReadyRef.current
+      || !userLocationPoint
+      || userLocationAccuracyM === null
+      || tripModeActive
+    ) return;
+
+    userLocationRef.current = { location: userLocationPoint, accuracyM: userLocationAccuracyM };
+    renderUserLocationWhenReady(map, userLocationPoint, userLocationAccuracyM);
+  }, [isLoading, tripModeActive, userLocationAccuracyM, userLocationPoint]);
+
+  useEffect(() => {
+    const map = mapRef.current;
     if (!map || !isMapReadyRef.current) {
       return;
     }
@@ -2203,83 +2262,31 @@ function MapComponent({
     renderDebugPointLayer(map, debugCoordsRef.current, debugStep);
   }, [debugActive, debugDir, debugStep, isLoading, routes, selectedRouteId]);
 
-  const handleLocateMe = () => {
+  const handleLocateMe = useCallback(async () => {
     const map = mapRef.current;
-    if (!map || !navigator.geolocation) {
-      return;
-    }
+    if (!map) return;
 
     setLocationLoading(true);
-    navigator.geolocation.getCurrentPosition(
-      ({ coords }) => {
-        const userLng = coords.longitude;
-        const userLat = coords.latitude;
-        const accuracyM = coords.accuracy; // metres
+    let fix: { location: Coordinates; accuracyM: number } | null = null;
+    try {
+      fix = await onRequestLocation();
+    } catch {
+      return;
+    } finally {
+      setLocationLoading(false);
+    }
+    if (!fix) return;
 
-        if (!isWithinUruapanServiceArea([userLng, userLat])) {
-          setLocationAccuracy(null);
-          setLocationLoading(false);
-          onLocationOutsideServiceArea();
-          return;
-        }
-
-        setLocationAccuracy(accuracyM);
-
-        // ── Fly to user position ──────────────────────────────────────────
-        map.flyTo({
-          center: [userLng, userLat],
-          zoom: 15.5,
-          duration: 1200,
-          essential: true
-        });
-
-        // ── Draw blue dot + accuracy circle as GeoJSON layers ────────────
-        userLocationRef.current = { location: [userLng, userLat], accuracyM };
-        renderUserLocation(map, [userLng, userLat], accuracyM);
-
-        // ── Haversine proximity search (400 m threshold) ──────────────────
-        const NEARBY_METERS = 400;
-        const toRad = (v: number) => (v * Math.PI) / 180;
-
-        const haversine = (lng1: number, lat1: number, lng2: number, lat2: number) => {
-          const dLat = toRad(lat2 - lat1);
-          const dLng = toRad(lng2 - lng1);
-          const a =
-            Math.sin(dLat / 2) ** 2 +
-            Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
-          return 6_371_000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        };
-
-        const nearbyRoutes: { id: number; minDist: number }[] = [];
-
-        for (const route of routesRef.current) {
-          let minDist = Infinity;
-          for (const [lng, lat] of route.coordenadas) {
-            const d = haversine(userLng, userLat, lng, lat);
-            if (d < minDist) minDist = d;
-            if (minDist === 0) break;
-          }
-          if (minDist <= NEARBY_METERS) {
-            nearbyRoutes.push({ id: route.id, minDist });
-          }
-        }
-
-        nearbyRoutes.sort((a, b) => a.minDist - b.minDist);
-        const nearbyIds = nearbyRoutes.map((r) => r.id);
-
-        onNearbyRoutesFoundRef.current(nearbyIds);
-        setLocationLoading(false);
-      },
-      () => {
-        setLocationLoading(false);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 9000,
-        maximumAge: 0
-      }
-    );
-  };
+    onNearbyRoutesFoundRef.current(findNearbyRouteIds(nearbyRoutePathsRef.current, fix.location));
+    map.flyTo({
+      center: fix.location,
+      zoom: 15.5,
+      duration: 1200,
+      essential: true,
+    });
+    userLocationRef.current = fix;
+    renderUserLocationWhenReady(map, fix.location, fix.accuracyM);
+  }, [onRequestLocation]);
 
   const handleResumeTripFollow = () => {
     const map = mapRef.current;
@@ -2377,26 +2384,12 @@ function MapComponent({
         ) : null}
 
         {/* Accuracy chip — shown after a fix is received */}
-        {!tripModeActive && locationAccuracy !== null && (
+        {!tripModeActive && userLocationAccuracyM !== null && (
           <div
-            className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold shadow-soft backdrop-blur-xl transition-all duration-300 ${
-              locationAccuracy > 1200
-                ? "border-amber-400/50 bg-amber-900/70 text-amber-200"
-                : "border-emerald-400/40 bg-emerald-900/70 text-emerald-200"
-            }`}
+            className="ov-panel ov-border ov-text-muted inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-[11px] font-semibold shadow-soft backdrop-blur-xl"
           >
-            {locationAccuracy > 1200 ? (
-              <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3 shrink-0" aria-hidden="true">
-                <path d="M12 8v4m0 4h.01M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0Z"
-                  stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              </svg>
-            ) : (
-              <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-400" aria-hidden="true" />
-            )}
-            {locationAccuracy > 1200
-              ? `GPS impreciso ±${Math.round(locationAccuracy / 1000 * 10) / 10} km`
-              : `±${Math.round(locationAccuracy)} m`
-            }
+            <span className="h-2 w-2 shrink-0 rounded-full bg-lima" aria-hidden="true" />
+            GPS ±{Math.round(userLocationAccuracyM)} m
           </div>
         )}
       </div>

@@ -8,12 +8,17 @@ import {
 import type { Coordinates } from "@/lib/types";
 
 export type GeoStatus = "idle" | "locating" | "ok" | "outside" | "inaccurate" | "error";
+export type UserLocationFix = {
+  location: Coordinates;
+  accuracyM: number;
+};
 
 export function useUruapanGeolocation(disabled = false) {
   const [userLocation, setUserLocation] = useState<Coordinates | null>(null);
   const [liveLocation, setLiveLocation] = useState<Coordinates | null>(null);
   const [status, setStatus] = useState<GeoStatus>(disabled ? "idle" : "locating");
   const [accuracyWarning, setAccuracyWarning] = useState(false);
+  const [locationAccuracyM, setLocationAccuracyM] = useState<number | null>(null);
   const liveLocationRef = useRef<Coordinates | null>(null);
   const liveLocationListenersRef = useRef(new Set<(location: Coordinates) => void>());
 
@@ -36,10 +41,59 @@ export function useUruapanGeolocation(disabled = false) {
     setLiveLocation(null);
     liveLocationRef.current = null;
     setAccuracyWarning(false);
+    setLocationAccuracyM(null);
     setStatus("outside");
   }, []);
 
   const clearAccuracyWarning = useCallback(() => setAccuracyWarning(false), []);
+
+  const applyPosition = useCallback((position: GeolocationPosition, updateOrigin: boolean) => {
+    const coords: Coordinates = [position.coords.longitude, position.coords.latitude];
+    const accuracyM = position.coords.accuracy;
+
+    if (!isAccurateEnoughForAutomaticOrigin(accuracyM)) {
+      setAccuracyWarning(true);
+      setLocationAccuracyM(accuracyM);
+      setStatus("inaccurate");
+      return null;
+    }
+
+    if (!isWithinUruapanServiceArea(coords)) {
+      if (!updateOrigin && liveLocationRef.current) {
+        setAccuracyWarning(false);
+        setStatus("outside");
+        return null;
+      }
+      markOutside();
+      return null;
+    }
+
+    publishLiveLocation(coords);
+    setAccuracyWarning(false);
+    setLocationAccuracyM(accuracyM);
+    setStatus("ok");
+    if (updateOrigin) setUserLocation(coords);
+    return { location: coords, accuracyM } satisfies UserLocationFix;
+  }, [markOutside, publishLiveLocation]);
+
+  const requestLocation = useCallback(() => {
+    if (!navigator.geolocation) {
+      setStatus("error");
+      return Promise.resolve<UserLocationFix | null>(null);
+    }
+
+    setStatus("locating");
+    return new Promise<UserLocationFix | null>((resolve) => {
+      navigator.geolocation.getCurrentPosition(
+        (position) => resolve(applyPosition(position, true)),
+        () => {
+          setStatus("error");
+          resolve(null);
+        },
+        { enableHighAccuracy: true, timeout: 12_000, maximumAge: 15_000 },
+      );
+    });
+  }, [applyPosition]);
 
   useEffect(() => {
     if (disabled) return;
@@ -52,48 +106,25 @@ export function useUruapanGeolocation(disabled = false) {
 
     const watchId = navigator.geolocation.watchPosition(
       (position) => {
-        const coords: Coordinates = [position.coords.longitude, position.coords.latitude];
-
-        if (!isAccurateEnoughForAutomaticOrigin(position.coords.accuracy)) {
-          // Keep the last trusted fix so a brief accuracy drop cannot erase an
-          // active route. No listeners are notified until GPS quality recovers.
-          setAccuracyWarning(true);
-          setStatus("inaccurate");
-          return;
-        }
-
-        if (!isWithinUruapanServiceArea(coords)) {
-          if (liveLocationRef.current) {
-            setAccuracyWarning(false);
-            setStatus("outside");
-          } else {
-            markOutside();
-          }
-          return;
-        }
-
-        publishLiveLocation(coords);
-        setAccuracyWarning(false);
-        setStatus("ok");
-        if (!firstFix) {
-          firstFix = coords;
-          setUserLocation(coords);
-        }
+        const fix = applyPosition(position, firstFix === null);
+        if (fix && !firstFix) firstFix = fix.location;
       },
       () => setStatus("error"),
       { enableHighAccuracy: true, timeout: 10_000, maximumAge: 15_000 }
     );
 
     return () => navigator.geolocation.clearWatch(watchId);
-  }, [disabled, markOutside, publishLiveLocation]);
+  }, [applyPosition, disabled]);
 
   return {
     userLocation,
     liveLocation,
     status,
     accuracyWarning,
+    locationAccuracyM,
     markOutside,
     clearAccuracyWarning,
+    requestLocation,
     subscribeToLiveLocation,
   };
 }

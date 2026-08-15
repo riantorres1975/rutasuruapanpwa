@@ -41,6 +41,21 @@ test("permite reemplazar el GPS por un origen manual visible", async ({ page, co
   await expect(manualOriginButton).toBeHidden();
 });
 
+test("ir a mi ubicación actualiza el origen y las rutas cercanas", async ({ page, context }) => {
+  await context.setGeolocation({ longitude: -102.06303, latitude: 19.42101 });
+  await context.grantPermissions(["geolocation"]);
+  await page.addInitScript(() => localStorage.setItem("rutas-uru-onboarded", "1"));
+  await page.goto("/mapa");
+
+  await page.getByRole("button", { name: "Ir a mi ubicación" }).click();
+
+  await expect(page.getByText(/ruta[s]? cercana[s]? a ti/i).first()).toBeVisible();
+  await expect(page.getByText(/GPS ±\d+ m/).first()).toBeVisible();
+  await page.getByRole("button", { name: /^Rutas \d+, ver rutas disponibles$/ }).click();
+  await expect(page.getByRole("dialog", { name: "Selecciona una ruta" })
+    .getByText("Cercanas a ti", { exact: true })).toBeVisible();
+});
+
 test("monta una sola interfaz del mapa al cambiar de tamaño", async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem("rutas-uru-onboarded", "1"));
   await page.goto("/mapa");

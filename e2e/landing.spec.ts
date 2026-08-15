@@ -102,3 +102,36 @@ test("las tarjetas de transporte usan iconos y caben en mobile", async ({ page }
   }));
   expect(layout.scrollWidth).toBeLessThanOrEqual(layout.viewportWidth);
 });
+
+test("rutas cerca de mí localiza y abre las rutas próximas", async ({ page, context }) => {
+  await context.setGeolocation({ longitude: -102.06303, latitude: 19.42101 });
+  await context.grantPermissions(["geolocation"]);
+  await page.addInitScript(() => localStorage.setItem("rutas-uru-onboarded", "1"));
+  await page.goto("/");
+
+  await page.getByRole("link", { name: "Rutas cerca de mí" }).click();
+
+  await expect(page).toHaveURL(/\/mapa\?cerca=1$/);
+  const routeSheet = page.getByRole("dialog", { name: "Selecciona una ruta" });
+  await expect(routeSheet).toBeVisible();
+  await expect(routeSheet.getByText("Cercanas a ti", { exact: true })).toBeVisible();
+
+  await routeSheet.getByRole("button", { name: "Cerrar panel" }).click();
+  await expect(page.getByRole("button", { name: /rutas cerca de ti, ver rutas disponibles/ }))
+    .toContainText("Cerca de ti");
+});
+
+test("recupera el modo cercano si la navegación pierde el parámetro", async ({ page, context }) => {
+  await context.setGeolocation({ longitude: -102.06303, latitude: 19.42101 });
+  await context.grantPermissions(["geolocation"]);
+  await page.addInitScript(() => {
+    localStorage.setItem("rutas-uru-onboarded", "1");
+    sessionStorage.setItem("urugo-nearby-routes-request", "1");
+  });
+
+  await page.goto("/mapa");
+
+  const routeSheet = page.getByRole("dialog", { name: "Selecciona una ruta" });
+  await expect(routeSheet).toBeVisible();
+  await expect(routeSheet.getByText("Cercanas a ti", { exact: true })).toBeVisible();
+});

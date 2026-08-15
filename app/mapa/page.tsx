@@ -40,6 +40,8 @@ import { findMatchingTransfer } from "@/lib/transfer-selection";
 import { buildSharedRouteSegment } from "@/lib/shared-route";
 import { formatCoordinateParam, getSharedTransferIdentity } from "@/lib/shared-map-state";
 import { haversineMeters } from "@/lib/geo";
+import { findNearbyRouteIds } from "@/lib/nearby-routes";
+import { consumeNearbyRoutesRequest, hasNearbyRoutesRequest } from "@/lib/nearby-request";
 import {
   findNearestLandmark as findNearestRouteLandmark,
   findUpcomingLandmark,
@@ -138,7 +140,14 @@ const subscribeLocationSearch = (callback: () => void) => {
   window.addEventListener("popstate", callback);
   return () => window.removeEventListener("popstate", callback);
 };
-const getLocationSearchSnapshot = () => window.location.search;
+const getLocationSearchSnapshot = () => {
+  const search = window.location.search;
+  if (!hasNearbyRoutesRequest()) return search;
+
+  const params = new URLSearchParams(search);
+  params.set("cerca", "1");
+  return `?${params.toString()}`;
+};
 function getSegmentLengthMeters(segment: Coordinates[]) {
   let total = 0;
   for (let index = 1; index < segment.length; index += 1) {
@@ -261,8 +270,9 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     showHint,
     status: geoStatus,
     accuracyWarning: geoAccuracyWarn,
-    markOutside: markGeolocationOutside,
+    locationAccuracyM,
     clearAccuracyWarning,
+    requestLocation,
     subscribeToLiveLocation,
     userLocation,
   } = useRoutePlanner({ initialUrlState, tripSessionActive: tripSession !== null });
@@ -322,9 +332,20 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
   const [isShortScreen, setIsShortScreen] = useState(false);
   const [abExpanded, setAbExpanded] = useState(false);
   const { favorites: favoriteRouteNames, toggleFavorite } = useFavoriteRoutes();
-  // /mapa?cerca=1: el usuario llegó pidiendo "rutas cerca de mí" — al
-  // detectar rutas cercanas abrimos la lista de inmediato (en móvil).
+  const nearbyRequested = initialUrlState.wantsNearby;
+  // Conservamos la solicitud en una ref para ejecutar la búsqueda una sola vez.
   const wantsNearbyRef = useRef(initialUrlState.wantsNearby);
+
+  useEffect(() => {
+    if (!initialUrlState.wantsNearby) return;
+
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("cerca") !== "1") {
+      url.searchParams.set("cerca", "1");
+      window.history.replaceState(window.history.state, "", url);
+    }
+    consumeNearbyRoutesRequest();
+  }, [initialUrlState.wantsNearby]);
 
   const prepareRouteList = useCallback(() => {
     void preloadRouteList().then((loaded) => {
@@ -439,6 +460,25 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     sharedSegmentColor,
     suggestions,
   });
+  const nearbyRouteNames = useMemo(() => {
+    const canonicalNames = new Map(listRoutes.map((route) => [route.id, route.nombre]));
+    return new Set(nearbyRouteIds.map((id) => canonicalNames.get(id)).filter(Boolean));
+  }, [listRoutes, nearbyRouteIds]);
+  const nearbyMapRouteIds = useMemo(
+    () => polylineRoutes
+      .filter((route) => nearbyRouteNames.has(route.name))
+      .map((route) => route.id),
+    [nearbyRouteNames, polylineRoutes],
+  );
+  const mapSuggestedRouteIds = suggestedRouteIds.length > 0
+    ? suggestedRouteIds
+    : nearbyMapRouteIds;
+  const mapBestSuggestedRouteId = bestSuggestion?.routeId ?? nearbyMapRouteIds[0] ?? null;
+  const isNearbyMode = nearbyRequested;
+  const isNearbySearchPending = nearbyRequested
+    && nearbyRouteIds.length === 0
+    && (geoStatus === "idle" || geoStatus === "locating");
+  const displayedRouteCount = isNearbyMode ? nearbyRouteIds.length : visibleRouteCount;
 
   const handleNearbyRoutesFound = useCallback((routeIds: number[]) => {
     setNearbyRouteIds(routeIds);
@@ -452,13 +492,19 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     }
   }, [openRouteList]);
 
-  const handleLocationOutsideServiceArea = useCallback(() => {
-    markGeolocationOutside();
-    setShowHint(true);
-    if (!originPointRef.current) {
-      setActivePoint("origin");
+  useEffect(() => {
+    if (!wantsNearbyRef.current || !userLocation || polylineRoutes.length === 0) return;
+    handleNearbyRoutesFound(findNearbyRouteIds(polylineRoutes, userLocation));
+  }, [handleNearbyRoutesFound, polylineRoutes, userLocation]);
+
+  const handleRequestMapLocation = useCallback(async () => {
+    const fix = await requestLocation();
+    if (fix) {
+      setManualOrigin(null);
+      setShowHint(true);
     }
-  }, [markGeolocationOutside, originPointRef, setActivePoint, setShowHint]);
+    return fix;
+  }, [requestLocation, setManualOrigin, setShowHint]);
 
   const handleMapPick = useCallback((point: Coordinates) => {
     setShowHint(false);
@@ -1178,7 +1224,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
       {isDesktopLayout && (
       <DesktopMapSidebar
         width={sidebarWidth}
-        routeCount={visibleRouteCount}
+        routeCount={displayedRouteCount}
         flowStep={flowStep}
         routesMapMode={routesMapMode}
         onToggleMode={toggleRoutesMapMode}
@@ -1305,10 +1351,14 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
         ) : (
           <MapView
             routes={mapRoutes}
+            nearbyRoutePaths={polylineRoutes}
+            nearbyFocusPoint={nearbyRequested ? userLocation : null}
+            userLocationPoint={userLocation}
+            userLocationAccuracyM={locationAccuracyM}
             selectedRouteId={selectedRouteId}
-            suggestedRouteIds={suggestedRouteIds}
+            suggestedRouteIds={mapSuggestedRouteIds}
             allRoutesMode={routesMapMode}
-            bestSuggestedRouteId={bestSuggestion?.routeId ?? null}
+            bestSuggestedRouteId={mapBestSuggestedRouteId}
             selectedRouteSegment={selectedMapSegment}
             arrowSegments={arrowSegments}
             originPoint={originPoint}
@@ -1325,7 +1375,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
             onMapPick={handleMapPick}
             onSelectRoute={handleSelectRoute}
             onNearbyRoutesFound={handleNearbyRoutesFound}
-            onLocationOutsideServiceArea={handleLocationOutsideServiceArea}
+            onRequestLocation={handleRequestMapLocation}
           />
         )}
 
@@ -1388,7 +1438,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
         {!isDesktopLayout && (
         <MobileMapControls
           flowStep={flowStep}
-          routeCount={visibleRouteCount}
+          routeCount={displayedRouteCount}
           routesMapMode={routesMapMode}
           onToggleMode={toggleRoutesMapMode}
           nearbyNotice={!isTripActive ? (
@@ -1507,8 +1557,14 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
               type="button"
               onPointerDown={() => { void preloadRouteList(); }}
               onClick={openRouteList}
-              className="ov-panel pointer-events-auto inline-flex h-12 items-center gap-2 rounded-2xl border pl-3.5 pr-4 text-[14px] font-semibold shadow-[0_8px_32px_rgba(0,0,0,0.3)] backdrop-blur-xl transition hover:border-lima/40 hover:shadow-[0_8px_32px_rgba(232,93,47,0.15)] active:scale-[0.97]"
-              aria-label={selectedRoute ? `Ruta activa: ${formatRouteLabel(selectedRoute.name, selectedRoute.name)}` : `Rutas ${visibleRouteCount}, ver rutas disponibles`}
+              className={`ov-panel pointer-events-auto inline-flex h-12 items-center gap-2 rounded-2xl border pl-3.5 pr-4 text-[14px] font-semibold shadow-[0_8px_32px_rgba(0,0,0,0.3)] backdrop-blur-xl transition hover:border-lima/40 hover:shadow-[0_8px_32px_rgba(232,93,47,0.15)] active:scale-[0.97] ${isNearbyMode ? "border-lima/50 bg-lima/10" : ""}`}
+              aria-label={selectedRoute
+                ? `Ruta activa: ${formatRouteLabel(selectedRoute.name, selectedRoute.name)}`
+                  : isNearbySearchPending
+                    ? "Buscando rutas cerca de ti"
+                    : isNearbyMode
+                  ? `${nearbyRouteIds.length} rutas cerca de ti, ver rutas disponibles`
+                  : `Rutas ${visibleRouteCount}, ver rutas disponibles`}
             >
               {selectedRoute ? (
                 <>
@@ -1525,10 +1581,16 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
                   <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 text-lima" aria-hidden="true">
                     <path d="M4 7H20M4 12H20M4 17H14" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
                   </svg>
-                  <span className="ov-text">Rutas</span>
-                  <span className="ml-0.5 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-lima/20 px-1.5 text-[11px] font-bold text-lima">
-                    {visibleRouteCount}
+                  <span className="ov-text">
+                    {isNearbySearchPending ? "Buscando cerca" : isNearbyMode ? "Cerca de ti" : "Rutas"}
                   </span>
+                  {isNearbySearchPending ? (
+                    <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-lima/50 border-t-lima" aria-hidden="true" />
+                  ) : (
+                    <span className="ml-0.5 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-lima/20 px-1.5 text-[11px] font-bold text-lima">
+                      {displayedRouteCount}
+                    </span>
+                  )}
                 </>
               )}
             </button>
