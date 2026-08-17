@@ -22,16 +22,23 @@ export async function generateMetadata({ params }: PlacePageProps): Promise<Meta
   const place = findPlaceSeoItem(slug);
   if (!place) return {};
 
-  const routes = getRoutesNearPlace(place.center);
-  const routeNames = routes.slice(0, 3).map((r) => r.name).join(", ");
+  const isCentro = place.slug === "centro";
+  const title = isCentro
+    ? "Cómo llegar al Centro de Uruapan: rutas y mapa"
+    : `Cómo llegar a ${place.label} en camión — Uruapan`;
+  const description = isCentro
+    ? "Descubre qué rutas de camión pasan cerca del Centro de Uruapan, a cuántos minutos te dejan y cómo llegar desde tu ubicación en el mapa de UruGo."
+    : `Cómo llegar a ${place.label} en Uruapan: rutas de camión cercanas, distancia a pie, tarifa de ${FARES_2026.urbanBus.price} y mapa desde tu ubicación.`;
 
   return {
-    title: `Cómo llegar a ${place.label} en camión — Uruapan`,
-    description: `Rutas de camión que te dejan en ${place.label}, Uruapan${routeNames ? `: ${routeNames}` : ""}. Tarifa ${FARES_2026.urbanBus.price}, distancias a pie y mapa interactivo.`,
+    title,
+    description,
     alternates: { canonical: `${SITE_URL}/como-llegar/${place.slug}` },
     openGraph: {
-      title: `Cómo llegar a ${place.label} en camión`,
-      description: `Qué rutas de transporte público te dejan en ${place.label}, Uruapan, y a cuántos minutos caminando.`,
+      title: isCentro ? "Cómo llegar al Centro de Uruapan" : `Cómo llegar a ${place.label} en camión`,
+      description: isCentro
+        ? "Rutas de camión para llegar al Centro de Uruapan, distancia a pie y mapa desde tu ubicación."
+        : `Qué rutas de transporte público te dejan en ${place.label}, Uruapan, y a cuántos minutos caminando.`,
       url: `${SITE_URL}/como-llegar/${place.slug}`,
       type: "article"
     }
@@ -112,7 +119,7 @@ export default async function ComoLlegarPage({ params }: PlacePageProps) {
             className="mt-2 font-serif text-4xl font-black tracking-tight md:text-5xl"
             style={{ color: "#e8f2d8", letterSpacing: "-0.025em" }}
           >
-            {place.label}
+            {place.slug === "centro" ? "Cómo llegar al Centro de Uruapan" : place.label}
           </h1>
           <p className="mt-4 max-w-2xl text-sm leading-7" style={{ color: "#a8c888" }}>
             {routes.length > 0

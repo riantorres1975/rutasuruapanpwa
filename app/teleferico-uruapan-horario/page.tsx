@@ -10,16 +10,16 @@ import { SITE_URL } from "@/lib/site-url";
 
 export const metadata: Metadata = {
   title: {
-    absolute: "Teleférico Uruapan horario, estaciones y tarifa 2026"
+    absolute: "Teleférico de Uruapan: horario, precio y estaciones"
   },
   description:
-    "Consulta el horario del Teleférico Uruapan, estaciones, tarifa, forma de pago y conexiones con rutas de camiones urbanos.",
+    "Horario 05:00 a 23:00, tarifa de $12 MXN y las 6 estaciones del Teleférico de Uruapan. Consulta cómo pagar y combinarlo con rutas de camión.",
   alternates: {
     canonical: "https://www.urugo.app/teleferico-uruapan-horario"
   },
   openGraph: {
-    title: "Teleférico Uruapan: horario, estaciones y tarifa",
-    description: "Guía rápida del Teleférico de Uruapan con estaciones, costo, pago y mapa de conexión.",
+    title: "Teleférico de Uruapan: horario, precio y estaciones",
+    description: "Consulta el horario, la tarifa de $12 MXN, las 6 estaciones y las conexiones con camiones urbanos.",
     url: "https://www.urugo.app/teleferico-uruapan-horario",
     type: "article"
   }
@@ -51,6 +51,15 @@ const stationDescriptions = [
   "Corazón administrativo de la ciudad. Frente a la Presidencia Municipal de Uruapan.",
   "Acceso al Parque Nacional Eduardo Ruiz y zona comercial del centro. La estación más transitada.",
   "Terminal poniente. Conexión con el mercado y colonias del lado oeste de la ciudad."
+] as const;
+
+const stationPlaceSlugs = [
+  "hospital-regional",
+  "libramiento-aeropuerto",
+  "boulevard-industrial-plaza-agora",
+  "presidencia-municipal",
+  "centro-historico",
+  "mercado-poniente"
 ] as const;
 
 export default function TelefericoHorarioPage() {
@@ -102,13 +111,13 @@ export default function TelefericoHorarioPage() {
       <div className="relative z-10 mx-auto max-w-5xl">
         <PageHeader
           kicker="Único en Michoacán"
-          eyebrow="Teleférico Uruapan · horario 2026"
+          eyebrow="Teleférico de Uruapan · información 2026"
           title={
             <>
-              <span className="italic" style={{ color: "#b8e840" }}>Teleférico</span>: horario, estaciones y tarifa.
+              <span className="italic" style={{ color: "#b8e840" }}>Teleférico de Uruapan</span>: horario, precio y estaciones.
             </>
           }
-          intro="Guía rápida para moverte en el Teleférico de Uruapan y combinarlo con rutas de camión urbano desde el mapa de UruGo."
+          intro={`Opera de ${TELEFERICO_URUAPAN.hours}, cuesta ${TELEFERICO_URUAPAN.fare} y conecta seis estaciones. Revisa cómo pagar y combinar tu trayecto con rutas de camión urbano.`}
         />
 
         <div className="mt-7 flex flex-col gap-3 sm:flex-row">
@@ -189,6 +198,13 @@ export default function TelefericoHorarioPage() {
                   <h3 className="font-serif text-lg font-black leading-tight" style={{ color: "#e8f2d8" }}>{station}</h3>
                 </div>
                 <p className="mt-3 text-xs leading-6" style={{ color: "rgba(232,242,216,0.55)" }}>{stationDescriptions[index]}</p>
+                <Link
+                  href={`/como-llegar/${stationPlaceSlugs[index]}`}
+                  className="mt-4 inline-flex text-xs font-bold transition hover:opacity-80"
+                  style={{ color: "#b8e840" }}
+                >
+                  Cómo llegar a esta estación →
+                </Link>
               </article>
             ))}
           </div>

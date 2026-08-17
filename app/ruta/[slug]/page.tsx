@@ -34,16 +34,18 @@ export async function generateMetadata({ params }: RoutePageProps): Promise<Meta
   const label = route.destination ? `${route.name} a ${route.destination}` : route.name;
   const kmText = route.distanceKm > 0 ? `, recorrido de ${route.distanceKm} km` : "";
   const lmText = route.landmarks.length > 0 ? `, pasa por ${route.landmarks.slice(0, 2).join(" y ")}` : "";
+  const schedule = getSchedule(route.name);
+  const scheduleText = schedule ? `, horario ${schedule.first} a ${schedule.last}` : "";
 
   return {
-    title: `${label} en Uruapan — horario y mapa`,
-    description: `${route.name} de camión urbano en Uruapan${kmText}${lmText}. Tarifa ${FARES_2026.urbanBus.price}. Consulta el mapa interactivo, paradas y transbordos.`,
+    title: `${route.name} Uruapan: recorrido y horario`,
+    description: `Consulta por dónde pasa la ${route.name} en Uruapan${kmText}${scheduleText}. Tarifa ${FARES_2026.urbanBus.price} y mapa con puntos de referencia.`,
     alternates: {
       canonical: `https://www.urugo.app/ruta/${route.slug}`
     },
     openGraph: {
-      title: `${label} en Uruapan`,
-      description: `Información de la ${route.name}${kmText}. Tarifa y mapa de transporte público en Uruapan.`,
+      title: `${label}: recorrido y horario en Uruapan`,
+      description: `Consulta por dónde pasa la ${route.name}${lmText}${kmText}, su tarifa y el recorrido en el mapa.`,
       url: `https://www.urugo.app/ruta/${route.slug}`,
       type: "article"
     }
@@ -79,10 +81,10 @@ export default async function RoutePage({ params }: RoutePageProps) {
       answer: `La tarifa base de la ${route.name} es de ${FARES_2026.urbanBus.price} por viaje, pagadera al abordar.`
     },
     {
-      question: `¿A dónde va la ${route.name}?`,
+      question: `¿Por dónde pasa la ${route.name} en Uruapan?`,
       answer: route.destination
-        ? `La ${route.name} conecta distintos puntos de Uruapan con ${route.destination}${route.landmarks.length > 0 ? `, pasando por ${route.landmarks.slice(0, 3).join(", ")}` : ""}.`
-        : `La ${route.name} recorre colonias y zonas de Uruapan${route.landmarks.length > 0 ? `, pasando por ${route.landmarks.slice(0, 3).join(", ")}` : ""}.`
+        ? `La ${route.name} conecta distintos puntos de Uruapan con ${route.destination}${route.landmarks.length > 0 ? ` y pasa cerca de ${route.landmarks.slice(0, 4).join(", ")}` : ""}. Consulta el mapa para seguir el recorrido exacto.`
+        : `La ${route.name} recorre colonias y zonas de Uruapan${route.landmarks.length > 0 ? ` y pasa cerca de ${route.landmarks.slice(0, 4).join(", ")}` : ""}. Consulta el mapa para seguir el recorrido exacto.`
     },
     {
       question: `¿Cuánto tiempo tarda la ${route.name}?`,
@@ -307,8 +309,14 @@ export default async function RoutePage({ params }: RoutePageProps) {
               {route.landmarks.length > 0 && (
                 <section>
                   <h2 className="mb-4 font-serif text-xl font-black lg:text-2xl" style={{ color: "#e8f2d8" }}>
-                    Puntos de referencia en la ruta
+                    ¿Por dónde pasa la {route.name}?
                   </h2>
+                  <p className="mb-5 text-sm leading-7" style={{ color: "#a8c888" }}>
+                    {route.destination
+                      ? `El recorrido hacia ${route.destination} pasa cerca de estos puntos de referencia en Uruapan.`
+                      : "Estos son algunos puntos de referencia ubicados cerca del recorrido en Uruapan."}
+                    {schedule && ` Su horario aproximado es de ${schedule.first} a ${schedule.last}.`}
+                  </p>
                   <ul className="grid gap-2 sm:grid-cols-2 lg:gap-3">
                     {route.landmarks.map((lm) => (
                       <li

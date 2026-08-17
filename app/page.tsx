@@ -221,7 +221,7 @@ export default function LandingPage() {
               40 <span className="text-sm font-sans font-semibold" style={{ color: "var(--muted)" }}>rutas</span>
             </div>
             <p className="mt-3 text-sm leading-relaxed" style={{ color: "var(--muted)" }}>
-              Cubren toda la ciudad, de las colonias al Centro. La mayoría se pagan en efectivo al subir.
+              Consulta el rutero de Uruapan: recorridos, horarios y puntos de referencia de las 40 rutas. La mayoría se pagan en efectivo al subir.
             </p>
             <span className="mt-auto inline-flex min-h-10 items-center gap-2 pt-4 text-xs font-bold" style={{ color: "var(--lima)" }}>
               Ver las 40 rutas

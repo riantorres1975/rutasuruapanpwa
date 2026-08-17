@@ -2,24 +2,24 @@
 import { BLOG_ARTICLES } from "@/lib/blog-content";
 import { getPlaceSeoItems } from "@/lib/como-llegar";
 import { getRouteSeoItems } from "@/lib/route-seo";
+import { DATA_LAST_UPDATED_ISO, SITE_CONTENT_LAST_UPDATED_ISO } from "@/lib/mobility-config";
 import { SITE_URL } from "@/lib/site-url";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const now = new Date();
-
-  const ROUTES_LAST_MODIFIED = now;
+  const CONTENT_LAST_MODIFIED = new Date(`${SITE_CONTENT_LAST_UPDATED_ISO}T12:00:00-06:00`);
+  const ROUTES_LAST_MODIFIED = new Date(`${DATA_LAST_UPDATED_ISO}T12:00:00-06:00`);
   const STATIC_LAST_MODIFIED = new Date("2026-01-01");
 
   const staticUrls: MetadataRoute.Sitemap = [
     {
       url: SITE_URL,
-      lastModified: now,
+      lastModified: CONTENT_LAST_MODIFIED,
       changeFrequency: "weekly",
       priority: 1
     },
     {
       url: `${SITE_URL}/mapa`,
-      lastModified: now,
+      lastModified: CONTENT_LAST_MODIFIED,
       changeFrequency: "daily",
       priority: 0.9
     },
@@ -31,43 +31,43 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     {
       url: `${SITE_URL}/teleferico-uruapan-horario`,
-      lastModified: now,
+      lastModified: CONTENT_LAST_MODIFIED,
       changeFrequency: "weekly",
       priority: 0.95
     },
     {
       url: `${SITE_URL}/rutas`,
-      lastModified: now,
+      lastModified: ROUTES_LAST_MODIFIED,
       changeFrequency: "monthly",
       priority: 0.85
     },
     {
       url: `${SITE_URL}/horarios`,
-      lastModified: now,
+      lastModified: ROUTES_LAST_MODIFIED,
       changeFrequency: "monthly",
       priority: 0.9
     },
     {
       url: `${SITE_URL}/como-llegar`,
-      lastModified: now,
+      lastModified: ROUTES_LAST_MODIFIED,
       changeFrequency: "monthly",
       priority: 0.85
     },
     {
       url: `${SITE_URL}/guia`,
-      lastModified: now,
+      lastModified: CONTENT_LAST_MODIFIED,
       changeFrequency: "monthly",
       priority: 0.85
     },
     {
       url: `${SITE_URL}/blog`,
-      lastModified: now,
+      lastModified: CONTENT_LAST_MODIFIED,
       changeFrequency: "weekly",
       priority: 0.8
     },
     {
       url: `${SITE_URL}/reportar-error`,
-      lastModified: now,
+      lastModified: CONTENT_LAST_MODIFIED,
       changeFrequency: "monthly",
       priority: 0.5
     }
