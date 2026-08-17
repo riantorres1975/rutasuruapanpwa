@@ -1,4 +1,4 @@
-import type { RouteData } from "@/lib/types";
+import type { Coordinates, RouteData } from "@/lib/types";
 import type * as GeoJSON from "geojson";
 
 export const SOURCE_ID = "routes-source";
@@ -74,4 +74,26 @@ export function getBoundsFromRoutes(routes: RouteData[]) {
     [minLng, minLat],
     [maxLng, maxLat]
   ] as [[number, number], [number, number]];
+}
+
+export function getInitialMapBounds({
+  destination,
+  hasSelectedJourney,
+  origin,
+  routes,
+}: {
+  destination: Coordinates | null;
+  hasSelectedJourney: boolean;
+  origin: Coordinates | null;
+  routes: RouteData[];
+}) {
+  if (!hasSelectedJourney && origin && destination) {
+    return {
+      bounds: getBoundsFromCoordinates([origin, destination]),
+      target: "journey" as const,
+    };
+  }
+
+  const bounds = getBoundsFromRoutes(routes);
+  return bounds ? { bounds, target: "routes" as const } : null;
 }

@@ -7,7 +7,7 @@ import {
   DEFAULT_ZOOM,
   SOURCE_ID,
   getBoundsFromCoordinates,
-  getBoundsFromRoutes,
+  getInitialMapBounds,
   getMapStyle,
   toFeatureCollection,
   URUAPAN_CENTER
@@ -1160,6 +1160,8 @@ function MapComponent({
   const tripMarkerAnimationFrameRef = useRef<number | null>(null);
   const prevOriginRef = useRef<[number, number] | null>(null);
   const prevDestinationRef = useRef<[number, number] | null>(null);
+  const originPointRef = useRef(originPoint);
+  const destinationPointRef = useRef(destinationPoint);
   const onNearbyRoutesFoundRef = useRef(onNearbyRoutesFound);
   const showTelefericoRef = useRef(showTeleferico);
   const telefericoGeoJSONRef = useRef<any>(null);
@@ -1274,6 +1276,14 @@ function MapComponent({
   useEffect(() => {
     selectedRouteSegmentRef.current = selectedRouteSegment;
   }, [selectedRouteSegment]);
+
+  useEffect(() => {
+    originPointRef.current = originPoint;
+  }, [originPoint]);
+
+  useEffect(() => {
+    destinationPointRef.current = destinationPoint;
+  }, [destinationPoint]);
 
   useEffect(() => {
     allRoutesModeRef.current = allRoutesMode;
@@ -1802,16 +1812,27 @@ function MapComponent({
     const onLoad = () => {
       ensureRouteLayers();
 
-      const bounds = getBoundsFromRoutes(routesRef.current);
-      if (bounds) {
-        fitBoundsAnimated(map, bounds, {
-          top: 88,
-          right: 28,
-          bottom: 146,
-          left: 28,
-          duration: CAMERA_DURATION,
-          maxZoom: 14.6
+      const initialCamera = getInitialMapBounds({
+        destination: destinationPointRef.current,
+        hasSelectedJourney:
+          selectedRouteIdRef.current !== null || selectedTransferRef.current !== null,
+        origin: originPointRef.current,
+        routes: routesRef.current,
+      });
+      if (initialCamera) {
+        const fittingJourney = initialCamera.target === "journey";
+        fitBoundsAnimated(map, initialCamera.bounds, {
+          top: fittingJourney ? 220 : 88,
+          right: fittingJourney ? 48 : 28,
+          bottom: fittingJourney ? 200 : 146,
+          left: fittingJourney ? 48 : 28,
+          duration: fittingJourney ? 700 : CAMERA_DURATION,
+          maxZoom: fittingJourney ? 15 : 14.6
         });
+        if (fittingJourney) {
+          prevOriginRef.current = originPointRef.current;
+          prevDestinationRef.current = destinationPointRef.current;
+        }
       }
 
       isMapReadyRef.current = true;
