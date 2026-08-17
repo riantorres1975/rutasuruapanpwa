@@ -6,9 +6,8 @@ import landmarkPlaces from "@/data/landmark-places.json";
 //  1. Índice local con coordenadas REALES (extraídas de los datos de rutas:
 //     landmarks verificados + estaciones del Teleférico). Resuelve al instante,
 //     sin red, y funciona offline en la PWA.
-//  2. Si no hay match local, se consulta la API de geocodificación de Mapbox
-//     acotada al bounding box de Uruapan (coordenadas reales devueltas por
-//     Mapbox; nunca se inventan).
+//  2. Se consulta Mapbox Search Box, que incluye direcciones, comercios y otros
+//     puntos de interés. La consulta se limita al bounding box de Uruapan.
 //
 // IMPORTANTE: las coordenadas del índice local provienen de
 // data/rutas_produccion_final.json y lib/mobility-config.ts. No se inventan.
@@ -29,6 +28,10 @@ export type PlaceResult = {
   label: string;
   /** Origen del resultado */
   source: "local" | "mapbox";
+  /** Tipo de resultado para distinguir negocios, direcciones y zonas. */
+  kind?: "known" | "business" | "address" | "area";
+  /** Dirección o contexto breve mostrado debajo del nombre. */
+  description?: string;
 };
 
 export type KnownPlace = {
@@ -108,7 +111,12 @@ export function searchLocalPlaces(query: string, limit = 6): PlaceResult[] {
 
   return [...exact, ...startsWith, ...includes]
     .slice(0, limit)
-    .map((place) => ({ center: place.center, label: place.label, source: "local" as const }));
+    .map((place) => ({
+      center: place.center,
+      label: place.label,
+      source: "local" as const,
+      kind: "known" as const,
+    }));
 }
 
 function findLocalPlace(query: string): PlaceResult | null {
@@ -121,7 +129,7 @@ function isWithinBbox(center: Coordinates): boolean {
 }
 
 /**
- * Geocodificación forward con Mapbox, acotada al bbox de Uruapan.
+ * Búsqueda de direcciones y POI con Mapbox Search Box, acotada a Uruapan.
  * Devuelve hasta `limit` resultados reales o [] si falla / no hay token.
  */
 export async function geocodeMapbox(
@@ -134,13 +142,15 @@ export async function geocodeMapbox(
 
   const limit = Math.min(Math.max(options.limit ?? 5, 1), 10);
   const params = new URLSearchParams({
-    q,
+    q: q.slice(0, 120),
     access_token: token,
-    country: "mx",
+    country: "MX",
     language: "es",
     limit: String(limit),
     proximity: URUAPAN_CENTER.join(","),
     bbox: URUAPAN_BBOX.join(","),
+    types: "poi,address,street,neighborhood,locality,place",
+    auto_complete: "true",
   });
 
   const controller = new AbortController();
@@ -153,8 +163,9 @@ export async function geocodeMapbox(
   const timeoutId = setTimeout(() => controller.abort(), MAPBOX_REQUEST_TIMEOUT_MS);
 
   try {
-    const res = await fetch(`https://api.mapbox.com/search/geocode/v6/forward?${params.toString()}`, {
+    const res = await fetch(`https://api.mapbox.com/search/searchbox/v1/forward?${params.toString()}`, {
       signal: controller.signal,
+      cache: "no-store",
     });
     if (!res.ok) return [];
     const data = await res.json();
@@ -164,7 +175,13 @@ export async function geocodeMapbox(
     for (const feature of features) {
       const f = feature as {
         geometry?: { coordinates?: [number, number] };
-        properties?: { name?: string; place_formatted?: string; full_address?: string };
+        properties?: {
+          name?: string;
+          name_preferred?: string;
+          place_formatted?: string;
+          full_address?: string;
+          feature_type?: string;
+        };
       };
       const coords = f.geometry?.coordinates;
       if (!coords || coords.length < 2 || !Number.isFinite(coords[0]) || !Number.isFinite(coords[1])) {
@@ -172,8 +189,15 @@ export async function geocodeMapbox(
       }
       const center: Coordinates = [coords[0], coords[1]];
       if (!isWithinBbox(center)) continue;
-      const label = f.properties?.name || f.properties?.place_formatted || f.properties?.full_address || q;
-      results.push({ center, label, source: "mapbox" });
+      const label = f.properties?.name_preferred || f.properties?.name || q;
+      const description = f.properties?.full_address || f.properties?.place_formatted;
+      const featureType = f.properties?.feature_type;
+      const kind = featureType === "poi"
+        ? "business"
+        : featureType === "address" || featureType === "street"
+          ? "address"
+          : "area";
+      results.push({ center, label, source: "mapbox", kind, description });
     }
     return results;
   } catch {

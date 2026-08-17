@@ -20,7 +20,7 @@ function isValidPlace(value: unknown): value is PlaceResult {
     Array.isArray(place.center) &&
     place.center.length === 2 &&
     place.center.every((n) => typeof n === "number" && Number.isFinite(n)) &&
-    (place.source === "local" || place.source === "mapbox")
+    place.source === "local"
   );
 }
 
@@ -44,7 +44,7 @@ export function getSavedPlaces(): SavedPlaces {
 }
 
 export function setSavedPlace(slot: SavedSlot, place: PlaceResult): void {
-  if (typeof window === "undefined") return;
+  if (typeof window === "undefined" || place.source !== "local") return;
   try {
     const next = { ...getSavedPlaces(), [slot]: place };
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));

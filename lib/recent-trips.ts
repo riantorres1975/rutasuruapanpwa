@@ -56,12 +56,15 @@ export function getRecentTrips(): RecentTrip[] {
   }
 }
 
-export function addRecentTrip(trip: Omit<RecentTrip, "savedAt">): void {
-  if (typeof window === "undefined") return;
+export function addRecentTrip(
+  trip: Omit<RecentTrip, "savedAt"> & { temporaryProviderResult?: boolean },
+): void {
+  if (typeof window === "undefined" || trip.temporaryProviderResult) return;
   try {
-    const key = tripKey(trip);
+    const { temporaryProviderResult: _temporaryProviderResult, ...persistentTrip } = trip;
+    const key = tripKey(persistentTrip);
     const rest = getRecentTrips().filter((t) => tripKey(t) !== key);
-    const next: RecentTrip[] = [{ ...trip, savedAt: Date.now() }, ...rest].slice(0, MAX_TRIPS);
+    const next: RecentTrip[] = [{ ...persistentTrip, savedAt: Date.now() }, ...rest].slice(0, MAX_TRIPS);
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
     window.dispatchEvent(new Event(RECENT_TRIPS_EVENT));
   } catch {

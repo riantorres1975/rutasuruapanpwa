@@ -252,15 +252,19 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     activePointRef,
     destinationPoint,
     destinationPointRef,
+    destinationSource,
     flowStep,
     liveLocation,
     manualOrigin,
+    manualOriginSource,
     originPoint,
     originPointRef,
     requestedDestination,
     setActivePoint,
     setDestinationPoint,
+    setDestinationSource,
     setManualOrigin,
+    setManualOriginSource,
     setRequestedDestination,
     setSharedRouteSegment,
     setSharedSegmentColor,
@@ -501,10 +505,11 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     const fix = await requestLocation();
     if (fix) {
       setManualOrigin(null);
+      setManualOriginSource(null);
       setShowHint(true);
     }
     return fix;
-  }, [requestLocation, setManualOrigin, setShowHint]);
+  }, [requestLocation, setManualOrigin, setManualOriginSource, setShowHint]);
 
   const handleMapPick = useCallback((point: Coordinates) => {
     setShowHint(false);
@@ -515,6 +520,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
 
     if (active === "origin") {
       setManualOrigin(point);
+      setManualOriginSource(null);
       // If destination already exists, keep it and show results immediately
       if (destinationPointRef.current) {
         setActivePoint(null);
@@ -526,24 +532,28 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
 
     if (active === "destination") {
       setDestinationPoint(point);
+      setDestinationSource(null);
       setActivePoint(null);
       return;
     }
 
     if (!originPointRef.current) {
       setManualOrigin(point);
+      setManualOriginSource(null);
       setActivePoint("destination");
       return;
     }
 
     if (!destinationPointRef.current) {
       setDestinationPoint(point);
+      setDestinationSource(null);
       setActivePoint(null);
       return;
     }
 
     // Both pins set, no active mode → move destination (most common action)
     setDestinationPoint(point);
+    setDestinationSource(null);
     setActivePoint(null);
   }, [
     activePointRef,
@@ -551,7 +561,9 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     originPointRef,
     setActivePoint,
     setDestinationPoint,
+    setDestinationSource,
     setManualOrigin,
+    setManualOriginSource,
     setSharedRouteSegment,
     setSharedSegmentColor,
     setShowHint,
@@ -567,6 +579,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
 
     if (activePointRef.current === "origin") {
       setManualOrigin(result.center);
+      setManualOriginSource(result.source);
       clearAccuracyWarning();
       setActivePoint(destinationPointRef.current ? null : "destination");
       return;
@@ -574,6 +587,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
 
     setRequestedDestination(result.label);
     setDestinationPoint(result.center);
+    setDestinationSource(result.source);
     // Si aún no hay origen, deja activo el origen para que el usuario lo fije
     // (o lo complete el GPS). Si ya hay origen, calcula la ruta de inmediato.
     setActivePoint(originPointRef.current ? null : "origin");
@@ -584,7 +598,9 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     originPointRef,
     setActivePoint,
     setDestinationPoint,
+    setDestinationSource,
     setManualOrigin,
+    setManualOriginSource,
     setRequestedDestination,
     setSelectedTransfer,
     setSharedRouteSegment,
@@ -822,21 +838,26 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
       destination: destinationPoint,
       destinationLabel: requestedDestination,
       routeName: bestSuggestion.ruta,
+      temporaryProviderResult: manualOriginSource === "mapbox" || destinationSource === "mapbox",
     });
-  }, [originPoint, destinationPoint, bestSuggestion, isCalculatingSuggestions, requestedDestination]);
+  }, [originPoint, destinationPoint, bestSuggestion, isCalculatingSuggestions, requestedDestination, manualOriginSource, destinationSource]);
 
   const repeatTrip = useCallback((trip: RecentTrip) => {
     setShowHint(false);
     setSharedRouteSegment(null);
     setSharedSegmentColor(null);
     setManualOrigin(trip.origin);
+    setManualOriginSource(null);
     setDestinationPoint(trip.destination);
+    setDestinationSource(null);
     setRequestedDestination(trip.destinationLabel);
     setActivePoint(null);
   }, [
     setActivePoint,
     setDestinationPoint,
+    setDestinationSource,
     setManualOrigin,
+    setManualOriginSource,
     setRequestedDestination,
     setSharedRouteSegment,
     setSharedSegmentColor,
@@ -1106,7 +1127,9 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
           onReset={() => {
             setSharedRouteSegment(null);
             setManualOrigin(null);
+            setManualOriginSource(null);
             setDestinationPoint(null);
+            setDestinationSource(null);
             setActivePoint(userLocation ? "destination" : "origin");
             setShowHint(true);
           }}

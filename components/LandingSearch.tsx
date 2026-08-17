@@ -3,15 +3,21 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { track } from "@vercel/analytics";
+import { Building2, MapPin } from "lucide-react";
 import { searchLocalPlaces, searchPlaces, type PlaceResult } from "@/lib/geocode";
 import { addRecentPlace, getRecentPlaces } from "@/lib/recent-places";
 import { getSavedPlaces, setSavedPlace, SAVED_SLOT_LABELS, type SavedSlot } from "@/lib/saved-places";
 
-const DEBOUNCE_MS = 280;
+const DEBOUNCE_MS = 450;
 
 function mapHref(result: PlaceResult): string {
   const [lng, lat] = result.center;
-  return `/mapa?b=${lng.toFixed(6)},${lat.toFixed(6)}&destino=${encodeURIComponent(result.label)}`;
+  const params = new URLSearchParams({
+    b: `${lng.toFixed(6)},${lat.toFixed(6)}`,
+    destino: result.label,
+  });
+  if (result.source === "mapbox") params.set("tmp", "1");
+  return `/mapa?${params.toString()}`;
 }
 
 export default function LandingSearch() {
@@ -168,7 +174,7 @@ export default function LandingSearch() {
                 }
               }}
               onKeyDown={handleKeyDown}
-              placeholder="¿A dónde vas? Ej. Parque Nacional"
+              placeholder="Negocio, hotel, colonia o lugar…"
               aria-label="Buscar destino"
               role="combobox"
               aria-expanded={isOpen}
@@ -301,16 +307,19 @@ export default function LandingSearch() {
                     <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
                     <path d="M12 7v5l3 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                   </svg>
+                ) : result.kind === "business" ? (
+                  <Building2 className="h-4 w-4 shrink-0" style={{ color: "var(--lima)" }} strokeWidth={1.8} aria-hidden="true" />
                 ) : (
-                  <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0" style={{ color: "var(--lima)" }} aria-hidden="true">
-                    <path d="M12 21s6-5.7 6-11a6 6 0 1 0-12 0c0 5.3 6 11 6 11Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                    <circle cx="12" cy="10" r="2" fill="currentColor" />
-                  </svg>
+                  <MapPin className="h-4 w-4 shrink-0" style={{ color: "var(--lima)" }} strokeWidth={1.8} aria-hidden="true" />
                 )}
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[13px] font-semibold" style={{ color: "var(--ink)" }}>{result.label}</span>
-                  <span className="block text-[11px]" style={{ color: "var(--muted)" }}>
-                    {showingRecents ? "Búsqueda reciente" : result.source === "local" ? "Lugar conocido" : "Uruapan, Mich."}
+                  <span className="block truncate text-[11px]" style={{ color: "var(--muted)" }}>
+                    {showingRecents
+                      ? "Búsqueda reciente"
+                      : result.source === "local"
+                        ? "Lugar conocido"
+                        : result.description ?? (result.kind === "business" ? "Comercio o servicio" : "Uruapan, Mich.")}
                   </span>
                 </span>
               </button>

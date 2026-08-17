@@ -48,12 +48,45 @@ describe("geocode", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(geocodeMapbox("Plaza Morelos")).resolves.toEqual([
-      { center: [-102.05, 19.42], label: "Plaza Morelos", source: "mapbox" },
+      {
+        center: [-102.05, 19.42],
+        label: "Plaza Morelos",
+        source: "mapbox",
+        kind: "area",
+        description: undefined,
+      },
     ]);
 
     const requestUrl = new URL(fetchMock.mock.calls[0][0] as string);
     expect(requestUrl.searchParams.get("bbox")).toBe(URUAPAN_BBOX.join(","));
-    expect(requestUrl.searchParams.get("country")).toBe("mx");
+    expect(requestUrl.searchParams.get("country")).toBe("MX");
+    expect(requestUrl.pathname).toContain("/search/searchbox/v1/forward");
+    expect(requestUrl.searchParams.get("types")).toContain("poi");
+  });
+
+  it("clasifica comercios y conserva su dirección", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(
+      mapboxResponse([
+        {
+          geometry: { coordinates: [-102.064247, 19.42164] },
+          properties: {
+            name: "Hotel Plaza Uruapan",
+            feature_type: "poi",
+            full_address: "Ocampo 64, Centro, Uruapan",
+          },
+        },
+      ]),
+    ));
+
+    await expect(geocodeMapbox("hotel")).resolves.toEqual([
+      {
+        center: [-102.064247, 19.42164],
+        label: "Hotel Plaza Uruapan",
+        source: "mapbox",
+        kind: "business",
+        description: "Ocampo 64, Centro, Uruapan",
+      },
+    ]);
   });
 
   it("descarta coordenadas remotas fuera de la ciudad", async () => {

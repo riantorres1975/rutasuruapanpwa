@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { track } from "@vercel/analytics";
+import { Building2, MapPin } from "lucide-react";
 import { searchLocalPlaces, searchPlaces, type PlaceResult } from "@/lib/geocode";
 import { addRecentPlace, getRecentPlaces } from "@/lib/recent-places";
 import { getSavedPlaces, setSavedPlace, SAVED_SLOT_LABELS, type SavedSlot } from "@/lib/saved-places";
@@ -15,7 +16,7 @@ type PlaceSearchProps = {
   initialQuery?: string;
 };
 
-const DEBOUNCE_MS = 280;
+const DEBOUNCE_MS = 450;
 
 export default function PlaceSearch({
   placeholder = "Busca una colonia, hospital, plaza…",
@@ -83,7 +84,7 @@ export default function PlaceSearch({
     return () => window.removeEventListener("pointerdown", onPointerDown);
   }, []);
 
-  // Búsqueda: resultados locales instantáneos + Mapbox con debounce
+  // Búsqueda: resultados locales instantáneos + comercios/direcciones con debounce.
   useEffect(() => {
     const trimmed = query.trim();
     if (trimmed.length < 2) return;
@@ -296,16 +297,19 @@ export default function PlaceSearch({
                     <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
                     <path d="M12 7v5l3 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                   </svg>
+                ) : result.kind === "business" ? (
+                  <Building2 className="h-4 w-4 shrink-0 text-lima" strokeWidth={1.8} aria-hidden="true" />
                 ) : (
-                  <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0 text-lima" aria-hidden="true">
-                    <path d="M12 21s6-5.7 6-11a6 6 0 1 0-12 0c0 5.3 6 11 6 11Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                    <circle cx="12" cy="10" r="2" fill="currentColor" />
-                  </svg>
+                  <MapPin className="h-4 w-4 shrink-0 text-lima" strokeWidth={1.8} aria-hidden="true" />
                 )}
                 <span className="min-w-0 flex-1">
                   <span className="ov-text block truncate text-[13px] font-semibold">{result.label}</span>
-                  <span className="ov-text-muted block text-[11px]">
-                    {showingRecents ? "Búsqueda reciente" : result.source === "local" ? "Lugar conocido" : "Uruapan, Mich."}
+                  <span className="ov-text-muted block truncate text-[11px]">
+                    {showingRecents
+                      ? "Búsqueda reciente"
+                      : result.source === "local"
+                        ? "Lugar conocido"
+                        : result.description ?? (result.kind === "business" ? "Comercio o servicio" : "Uruapan, Mich.")}
                   </span>
                 </span>
               </button>

@@ -46,8 +46,8 @@ export default function RoutePlannerSearch({
       <PlaceSearch
         label={activePoint === "origin" ? "Buscar origen" : "Buscar destino"}
         placeholder={activePoint === "origin"
-          ? "¿Desde dónde sales? Colonia, calle, plaza…"
-          : "¿A dónde vas? Colonia, hospital, plaza…"}
+          ? "¿Desde dónde sales? Negocio, colonia, calle…"
+          : "¿A dónde vas? Negocio, hotel, colonia…"}
         onSelect={onPlaceSelect}
       />
 

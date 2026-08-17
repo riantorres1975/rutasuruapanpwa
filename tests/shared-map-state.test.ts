@@ -17,6 +17,10 @@ describe("shared map state", () => {
     expect(parsed.wantsNearby).toBe(true);
   });
 
+  it("marca como temporal un destino obtenido del proveedor de POI", () => {
+    expect(parseInitialMapUrl("?b=-102.05,19.42&destino=Hotel&tmp=1").temporaryDestination).toBe(true);
+  });
+
   it("reconstruye una ruta directa compartida", () => {
     const url = buildMapShareUrl("https://urugo.app/otra", "vuelta", {
       routeId: 7,

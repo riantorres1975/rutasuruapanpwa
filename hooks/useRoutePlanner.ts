@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { geocodePlace } from "@/lib/geocode";
+import { geocodePlace, type PlaceResult } from "@/lib/geocode";
 import type { InitialMapUrlState } from "@/lib/shared-map-state";
 import type { Coordinates } from "@/lib/types";
 import { useUruapanGeolocation } from "@/hooks/useUruapanGeolocation";
@@ -48,6 +48,10 @@ export function useRoutePlanner({
   const [requestedDestination, setRequestedDestination] = useState<string | null>(
     initialUrlState.destinationParam,
   );
+  const [manualOriginSource, setManualOriginSource] = useState<PlaceResult["source"] | null>(null);
+  const [destinationSource, setDestinationSource] = useState<PlaceResult["source"] | null>(
+    initialUrlState.temporaryDestination ? "mapbox" : null,
+  );
   const geolocation = useUruapanGeolocation(manualOrigin !== null && !tripSessionActive);
   const originPoint = manualOrigin ?? geolocation.userLocation;
   const flowStep = getFlowStep(originPoint, destinationPoint);
@@ -89,6 +93,7 @@ export function useRoutePlanner({
         if (!result) return;
         setDestinationPoint((current) => current ?? result.center);
         setRequestedDestination(result.label);
+        setDestinationSource(result.source);
       })
       .catch(() => {
         // The user can still choose the destination manually.
@@ -102,14 +107,18 @@ export function useRoutePlanner({
     activePointRef,
     destinationPoint,
     destinationPointRef,
+    destinationSource,
     flowStep,
     manualOrigin,
+    manualOriginSource,
     originPoint,
     originPointRef,
     requestedDestination,
     setActivePoint,
     setDestinationPoint,
+    setDestinationSource,
     setManualOrigin,
+    setManualOriginSource,
     setRequestedDestination,
     setSharedRouteSegment,
     setSharedSegmentColor,

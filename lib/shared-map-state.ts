@@ -22,6 +22,7 @@ export type SharedMapState = {
 export type InitialMapUrlState = {
   destinationParam: string | null;
   sharedState: SharedMapState | null;
+  temporaryDestination: boolean;
   wantsNearby: boolean;
 };
 
@@ -100,6 +101,7 @@ export function parseInitialMapUrl(search: string): InitialMapUrlState {
   return {
     destinationParam: destination ? destination.slice(0, 80) : null,
     sharedState: parseSharedMapState(search),
+    temporaryDestination: params.get("tmp") === "1",
     wantsNearby: params.get("cerca") === "1",
   };
 }

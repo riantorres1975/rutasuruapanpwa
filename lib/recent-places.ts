@@ -20,7 +20,7 @@ function isValidPlace(value: unknown): value is PlaceResult {
     Array.isArray(place.center) &&
     place.center.length === 2 &&
     place.center.every((n) => typeof n === "number" && Number.isFinite(n)) &&
-    (place.source === "local" || place.source === "mapbox")
+    place.source === "local"
   );
 }
 
@@ -40,7 +40,7 @@ export function getRecentPlaces(): PlaceResult[] {
 
 /** Guarda un destino al frente de la lista de recientes (dedupe por label). */
 export function addRecentPlace(place: PlaceResult): void {
-  if (typeof window === "undefined") return;
+  if (typeof window === "undefined" || place.source !== "local") return;
   try {
     const normalized = normalizeLabel(place.label);
     const rest = getRecentPlaces().filter((p) => normalizeLabel(p.label) !== normalized);
