@@ -1,13 +1,17 @@
 import { expect, test } from "./fixtures";
 
-const STATIC_CACHE = "rutas-static-__BUILD_ID__";
+const STATIC_CACHE_PREFIX = "rutas-static-";
 const DATA_CACHE = "rutas-data-v1";
 
 async function installServiceWorker(page: import("@playwright/test").Page) {
   await page.evaluate(async () => {
-    // Register the source template so the test always exercises the current
-    // worker even when a local Next dev server predates the latest build.
-    await navigator.serviceWorker.register("/sw.template.js", { scope: "/" });
+    const registration = await navigator.serviceWorker.register("/sw.js", {
+      scope: "/",
+      updateViaCache: "none",
+    });
+    if (registration.waiting) {
+      registration.waiting.postMessage({ type: "SKIP_WAITING" });
+    }
     await navigator.serviceWorker.ready;
 
     if (!navigator.serviceWorker.controller) {
@@ -29,9 +33,16 @@ test("instala la PWA, renueva sus cachés y conserva datos de rutas sin conexió
 
   await installServiceWorker(page);
 
-  await expect.poll(() => page.evaluate(() => caches.keys())).toEqual(
-    expect.arrayContaining([STATIC_CACHE, "cache-de-otra-aplicacion"]),
-  );
+  await expect.poll(() => page.evaluate(async (prefix) => {
+    const keys = await caches.keys();
+    return keys.find((key) => key.startsWith(prefix)) ?? null;
+  }, STATIC_CACHE_PREFIX)).not.toBeNull();
+  const staticCache = await page.evaluate(async (prefix) => {
+    const keys = await caches.keys();
+    return keys.find((key) => key.startsWith(prefix)) ?? null;
+  }, STATIC_CACHE_PREFIX);
+  expect(staticCache).not.toBeNull();
+  expect(await page.evaluate(() => caches.keys())).toContain("cache-de-otra-aplicacion");
   await expect.poll(() => page.evaluate(() => caches.keys())).not.toContain("rutas-static-version-anterior");
 
   const shellIsReady = await page.evaluate(async (cacheName) => {
@@ -39,7 +50,7 @@ test("instala la PWA, renueva sus cachés y conserva datos de rutas sin conexió
     const requiredPages = ["/", "/mapa", "/privacidad", "/offline.html"];
     const matches = await Promise.all(requiredPages.map((url) => cache.match(url)));
     return matches.every(Boolean);
-  }, STATIC_CACHE);
+  }, staticCache!);
   expect(shellIsReady).toBe(true);
 
   await page.goto("/mapa");

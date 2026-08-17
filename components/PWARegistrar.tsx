@@ -1,36 +1,117 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { X } from "lucide-react";
 
 const SERVICE_WORKER_URL = "/sw.js";
+const UPDATE_CHECK_INTERVAL_MS = 30 * 60 * 1000;
+const UPDATE_CHECK_THROTTLE_MS = 60 * 1000;
 
 export default function PWARegistrar() {
   const [pendingWorker, setPendingWorker] = useState<ServiceWorker | null>(null);
+  const pendingWorkerRef = useRef<ServiceWorker | null>(null);
+  const isReloadingRef = useRef(false);
+  const reloadWhenVisibleRef = useRef(false);
+  const reloadAfterControllerChangeRef = useRef(false);
+
+  const activateWorker = useCallback((worker: ServiceWorker) => {
+    pendingWorkerRef.current = null;
+    setPendingWorker(null);
+    reloadAfterControllerChangeRef.current = true;
+    worker.postMessage({ type: "SKIP_WAITING" });
+  }, []);
 
   useEffect(() => {
     if (process.env.NODE_ENV !== "production" || !("serviceWorker" in navigator)) {
       return;
     }
 
+    let registration: ServiceWorkerRegistration | null = null;
+    let lastUpdateCheckAt = 0;
+    let disposed = false;
+
+    const reloadWithNewWorker = () => {
+      if (isReloadingRef.current) return;
+      if (document.visibilityState !== "visible") {
+        reloadWhenVisibleRef.current = true;
+        return;
+      }
+      isReloadingRef.current = true;
+      window.location.reload();
+    };
+
+    const checkForUpdate = async (force = false) => {
+      if (!registration || navigator.onLine === false) return;
+      const now = Date.now();
+      if (!force && now - lastUpdateCheckAt < UPDATE_CHECK_THROTTLE_MS) return;
+      lastUpdateCheckAt = now;
+      await registration.update().catch(() => undefined);
+    };
+
+    const queueUpdate = (worker: ServiceWorker) => {
+      if (
+        worker.state !== "installed" ||
+        !navigator.serviceWorker.controller ||
+        disposed
+      ) {
+        return;
+      }
+
+      pendingWorkerRef.current = worker;
+      if (document.visibilityState === "hidden") {
+        activateWorker(worker);
+      } else {
+        setPendingWorker(worker);
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        if (pendingWorkerRef.current) activateWorker(pendingWorkerRef.current);
+        return;
+      }
+      if (reloadWhenVisibleRef.current) {
+        reloadWhenVisibleRef.current = false;
+        reloadWithNewWorker();
+        return;
+      }
+      void checkForUpdate();
+    };
+
+    const handleFocus = () => void checkForUpdate();
+    const handleOnline = () => void checkForUpdate(true);
+    const handleControllerChange = () => {
+      if (!reloadAfterControllerChangeRef.current) return;
+      reloadAfterControllerChangeRef.current = false;
+      reloadWithNewWorker();
+    };
+
+    navigator.serviceWorker.addEventListener("controllerchange", handleControllerChange);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("focus", handleFocus);
+    window.addEventListener("online", handleOnline);
+
     const registerServiceWorker = async () => {
       try {
-        const registration = await navigator.serviceWorker.register(SERVICE_WORKER_URL, { scope: "/" });
-
-        const notifyUpdate = (worker: ServiceWorker) => {
-          if (worker.state === "installed" && navigator.serviceWorker.controller) {
-            setPendingWorker(worker);
-          }
-        };
+        registration = await navigator.serviceWorker.register(SERVICE_WORKER_URL, {
+          scope: "/",
+          updateViaCache: "none",
+        });
+        if (disposed) return;
 
         if (registration.waiting) {
-          notifyUpdate(registration.waiting);
+          // Es una actualización descargada en una sesión anterior. Activarla
+          // al abrir evita que la PWA siga usando el build antiguo.
+          activateWorker(registration.waiting);
         }
 
         registration.addEventListener("updatefound", () => {
-          const worker = registration.installing;
+          const worker = registration?.installing;
           if (!worker) return;
-          worker.addEventListener("statechange", () => notifyUpdate(worker));
+          worker.addEventListener("statechange", () => queueUpdate(worker));
         });
+
+        await checkForUpdate(true);
       } catch (error) {
         console.error("Service worker registration failed", error);
       }
@@ -40,18 +121,26 @@ export default function PWARegistrar() {
       registerServiceWorker();
     } else {
       window.addEventListener("load", registerServiceWorker);
-      return () => window.removeEventListener("load", registerServiceWorker);
     }
-  }, []);
+
+    const updateTimer = window.setInterval(() => {
+      if (document.visibilityState === "visible") void checkForUpdate();
+    }, UPDATE_CHECK_INTERVAL_MS);
+
+    return () => {
+      disposed = true;
+      window.clearInterval(updateTimer);
+      window.removeEventListener("load", registerServiceWorker);
+      window.removeEventListener("focus", handleFocus);
+      window.removeEventListener("online", handleOnline);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      navigator.serviceWorker.removeEventListener("controllerchange", handleControllerChange);
+    };
+  }, [activateWorker]);
 
   const handleUpdate = () => {
     if (!pendingWorker) return;
-    pendingWorker.postMessage({ type: "SKIP_WAITING" });
-    setPendingWorker(null);
-    // Reload once the new SW takes control
-    navigator.serviceWorker.addEventListener("controllerchange", () => {
-      window.location.reload();
-    }, { once: true });
+    activateWorker(pendingWorker);
   };
 
   if (!pendingWorker) return null;
@@ -75,11 +164,9 @@ export default function PWARegistrar() {
       <button
         onClick={() => setPendingWorker(null)}
         aria-label="Cerrar"
-        className="shrink-0 text-cream-100/35 transition hover:text-cream-100/70"
+        className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-cream-100/35 transition hover:bg-white/5 hover:text-cream-100/70"
       >
-        <svg viewBox="0 0 16 16" fill="none" className="h-4 w-4" aria-hidden="true">
-          <path d="M3 3l10 10M13 3L3 13" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
-        </svg>
+        <X className="h-4 w-4" aria-hidden="true" />
       </button>
     </div>
   );
