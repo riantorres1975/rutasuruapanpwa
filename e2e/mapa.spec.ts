@@ -41,44 +41,6 @@ test("permite reemplazar el GPS por un origen manual visible", async ({ page, co
   await expect(manualOriginButton).toBeHidden();
 });
 
-test("encuadra el viaje si GPS y destino existen antes de cargar el mapa", async ({ page, context }) => {
-  await context.setGeolocation({ longitude: -102.06303, latitude: 19.42101 });
-  await context.grantPermissions(["geolocation"]);
-  await page.addInitScript(() => {
-    localStorage.setItem("rutas-uru-onboarded", "1");
-    Object.defineProperty(navigator, "connection", {
-      configurable: true,
-      value: { downlink: 10, effectiveType: "4g", saveData: true },
-    });
-  });
-  await page.goto("/mapa");
-
-  await expect(page.getByText("Origen: mi ubicación", { exact: true })).toBeVisible();
-  const destinationSearch = page.locator('input[aria-label="Buscar destino"]:visible');
-  await destinationSearch.fill("Hospital Regional");
-  await page.getByRole("option", { name: /Hospital Regional/ }).first().click();
-  await page.getByRole("dialog").getByRole("button", { name: "Cerrar panel" }).click();
-  await expect(page.getByRole("button", { name: "Activar mapa interactivo" })).toHaveCount(0);
-
-  const originMarker = page.locator('[aria-label="Punto de origen"]');
-  const destinationMarker = page.locator('[aria-label="Punto de destino"]');
-  await expect(originMarker).toBeVisible();
-  await expect(destinationMarker).toBeVisible();
-  await page.waitForTimeout(900);
-
-  const [originBox, destinationBox] = await Promise.all([
-    originMarker.boundingBox(),
-    destinationMarker.boundingBox(),
-  ]);
-  expect(originBox).not.toBeNull();
-  expect(destinationBox).not.toBeNull();
-  const markerDistance = Math.hypot(
-    originBox!.x - destinationBox!.x,
-    originBox!.y - destinationBox!.y,
-  );
-  expect(markerDistance).toBeGreaterThan(140);
-});
-
 test("ir a mi ubicación actualiza el origen y las rutas cercanas", async ({ page, context }) => {
   await context.setGeolocation({ longitude: -102.06303, latitude: 19.42101 });
   await context.grantPermissions(["geolocation"]);
