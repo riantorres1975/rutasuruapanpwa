@@ -1,24 +1,36 @@
 import { expect, test } from "./fixtures";
 
-test("el buscador de la portada no cubre los accesos populares", async ({ page }) => {
+test("el buscador de la portada abre sugerencias sin desplazar el contenido", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/");
 
+  const popularLabel = page.getByText("Populares", { exact: true }).first();
+  const popularBefore = await popularLabel.boundingBox();
   await page.getByRole("combobox", { name: "Buscar destino" }).focus();
 
   const suggestions = page.getByRole("listbox");
-  const popularLabel = page.getByText("Populares", { exact: true }).first();
 
   await expect(suggestions).toBeVisible();
   await expect(suggestions).toContainText("Casa");
   await expect(suggestions).toContainText("Trabajo");
+  await expect(suggestions).toHaveCSS("position", "absolute");
 
-  const suggestionsBox = await suggestions.boundingBox();
-  const popularBox = await popularLabel.boundingBox();
+  const popularAfter = await popularLabel.boundingBox();
 
-  expect(suggestionsBox).not.toBeNull();
-  expect(popularBox).not.toBeNull();
-  expect(suggestionsBox!.y + suggestionsBox!.height).toBeLessThanOrEqual(popularBox!.y);
+  expect(popularBefore).not.toBeNull();
+  expect(popularAfter).not.toBeNull();
+  expect(Math.abs(popularAfter!.y - popularBefore!.y)).toBeLessThanOrEqual(1);
+
+  await page.setViewportSize({ width: 360, height: 800 });
+  await page.reload();
+  const mobilePopular = page.getByText("Populares", { exact: true }).first();
+  const mobileBefore = await mobilePopular.boundingBox();
+  await page.getByRole("combobox", { name: "Buscar destino" }).focus();
+  const mobileAfter = await mobilePopular.boundingBox();
+
+  expect(mobileBefore).not.toBeNull();
+  expect(mobileAfter).not.toBeNull();
+  expect(Math.abs(mobileAfter!.y - mobileBefore!.y)).toBeLessThanOrEqual(1);
 });
 
 test("el simulador cambia de destino y abre el recorrido seleccionado", async ({ page }) => {
@@ -56,6 +68,23 @@ test("el simulador animado cabe en una pantalla móvil", async ({ page }) => {
   }));
 
   expect(layout.scrollWidth).toBeLessThanOrEqual(layout.viewportWidth);
+});
+
+test("la vista móvil usa capturas reales del modo viaje", async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  await page.goto("/");
+  await page.getByRole("button", { name: "Mercado Poniente", exact: true }).click();
+
+  const simulator = page.getByTestId("landing-trip-simulator");
+  const journeyImage = simulator.locator(".landing-journey-image");
+  await expect(simulator.locator(".landing-map-stage > svg")).toHaveCount(0);
+  await expect(journeyImage).toHaveAttribute("src", /modo-viaje-caminando/);
+  await expect(simulator).toContainText("Último tramo a pie");
+
+  await page.getByRole("button", { name: "Hospital Regional", exact: true }).click();
+  await expect(journeyImage).toHaveAttribute("src", /modo-viaje-teleferico/);
+  await expect(simulator).toContainText("Teleférico Uruapan");
+  await expect(simulator.locator(".landing-map-pin")).toHaveCount(0);
 });
 
 test("la tarifa usa un signo de pesos legible", async ({ page }) => {

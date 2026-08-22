@@ -3,7 +3,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { track } from "@vercel/analytics";
-import { Building2, MapPin } from "lucide-react";
+import { ArrowRight, Building2, MapPin, Search } from "lucide-react";
 import { searchLocalPlaces, searchPlaces, type PlaceResult } from "@/lib/geocode";
 import { addRecentPlace, getRecentPlaces } from "@/lib/recent-places";
 import { getSavedPlaces, setSavedPlace, SAVED_SLOT_LABELS, type SavedSlot } from "@/lib/saved-places";
@@ -138,28 +138,23 @@ export default function LandingSearch() {
   };
 
   return (
-    <div ref={containerRef} className="relative mt-6 max-w-xl">
+    <div ref={containerRef} className="relative mt-6 w-full">
       {/* action/method reales → la búsqueda funciona incluso sin JavaScript */}
       <form
         action="/mapa"
         method="get"
         onSubmit={handleSubmit}
-        className="rounded-3xl border p-2 shadow-[0_20px_80px_rgba(0,0,0,0.45)] backdrop-blur-xl"
-        style={{ borderColor: "var(--ov-border)", background: "rgba(12,17,10,0.85)" }}
+        className="rounded-lg border p-1.5 shadow-[0_18px_50px_rgba(0,0,0,0.26)]"
+        style={{ borderColor: "rgba(232,242,216,0.18)", background: "#11180e" }}
       >
         <label className="sr-only" htmlFor="destino">¿A dónde vas?</label>
         <div className="flex flex-col gap-2 sm:flex-row">
           <div className="relative flex-1">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2"
-              style={{ color: "var(--muted)" }}
+            <Search
+              className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#6f895a]"
+              strokeWidth={1.8}
               aria-hidden="true"
-            >
-              <path d="M12 21s6-5.7 6-11a6 6 0 1 0-12 0c0 5.3 6 11 6 11Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-              <circle cx="12" cy="10" r="2" fill="currentColor" />
-            </svg>
+            />
             <input
               id="destino"
               name="destino"
@@ -181,10 +176,10 @@ export default function LandingSearch() {
               aria-controls={listboxId}
               aria-autocomplete="list"
               aria-activedescendant={activeIndex >= 0 ? `${listboxId}-opt-${activeIndex}` : undefined}
-              className="h-12 w-full rounded-2xl border pl-12 pr-4 text-sm font-medium outline-none transition"
+              className="h-12 w-full rounded-md border pl-12 pr-4 text-sm font-semibold outline-none transition placeholder:text-[#60794d]"
               style={{
-                background: "rgba(106,171,72,0.06)",
-                borderColor: "rgba(140,200,80,0.15)",
+                background: "#0c110a",
+                borderColor: "rgba(232,242,216,0.1)",
                 color: "var(--ink)",
               }}
             />
@@ -197,11 +192,12 @@ export default function LandingSearch() {
             )}
           </div>
           <button
-            className="cta-shine h-12 rounded-2xl px-6 text-sm font-black text-ink-900 transition hover:opacity-90"
+            className="cta-shine inline-flex h-12 items-center justify-center gap-2 rounded-md px-6 text-sm font-black text-ink-900 transition hover:bg-[#c8f25b]"
             type="submit"
-            style={{ background: "var(--verde)" }}
+            style={{ background: "var(--lima)" }}
           >
             Buscar ruta
+            <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
       </form>
@@ -210,7 +206,7 @@ export default function LandingSearch() {
         <ul
           id={listboxId}
           role="listbox"
-          className="relative z-20 mt-2 max-h-72 w-full overflow-y-auto overscroll-contain rounded-2xl border p-1.5 shadow-[0_20px_60px_rgba(0,0,0,0.5)]"
+          className="absolute left-0 top-full z-50 mt-2 max-h-72 w-full overflow-y-auto overscroll-contain rounded-lg border p-1.5 shadow-[0_20px_60px_rgba(0,0,0,0.5)]"
           style={{ background: "var(--card, #141c10)", borderColor: "var(--ov-border)" }}
         >
           {savingSlot && (

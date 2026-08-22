@@ -12,24 +12,24 @@ const STATS = [
 const CELL_BORDERS = [
   "border-b border-r sm:border-b-0",
   "border-b sm:border-b-0 sm:border-r",
-  "border-r",
+  "border-r sm:border-l-0",
   "",
 ] as const;
 
 export default function StatsAnimados() {
   return (
-    <div className="mx-auto max-w-[1200px] px-5 py-4">
-      <div className="grid grid-cols-2 overflow-hidden rounded-lg border border-[var(--ov-border)] bg-[rgba(20,28,16,0.5)] sm:grid-cols-4">
+    <div className="border-y border-white/10 bg-[#10160d]">
+      <div className="mx-auto grid max-w-[1240px] grid-cols-2 px-5 sm:grid-cols-4 sm:px-8">
         {STATS.map((stat, index) => (
           <div
             key={stat.label}
-            className={`border-[var(--ov-border)] px-6 py-7 lg:px-8 lg:py-9 ${CELL_BORDERS[index]}`}
+            className={`border-white/10 px-4 py-6 sm:px-6 lg:px-8 lg:py-8 ${CELL_BORDERS[index]}`}
           >
-            <div className="font-serif text-4xl font-black leading-none lg:text-5xl" style={{ color: stat.color }}>
+            <div className="font-serif text-3xl font-black leading-none lg:text-4xl" style={{ color: stat.color }}>
               {"prefix" in stat ? <span className="font-sans font-bold">{stat.prefix}</span> : null}
               {stat.value}
             </div>
-            <div className="mt-1.5 text-xs leading-snug text-[var(--muted)]">{stat.label}</div>
+            <div className="mt-2 text-[11px] font-bold uppercase tracking-[0.08em] leading-snug text-[var(--muted)]">{stat.label}</div>
           </div>
         ))}
       </div>
