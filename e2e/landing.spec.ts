@@ -1,8 +1,18 @@
+import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
+
+async function waitForLandingIntro(page: Page) {
+  await page.locator(".animate-fade-up").evaluateAll(async (elements) => {
+    await Promise.all(
+      elements.flatMap((element) => element.getAnimations().map((animation) => animation.finished)),
+    );
+  });
+}
 
 test("el buscador de la portada abre sugerencias sin desplazar el contenido", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/");
+  await waitForLandingIntro(page);
 
   const popularLabel = page.getByText("Populares", { exact: true }).first();
   const popularBefore = await popularLabel.boundingBox();
@@ -23,6 +33,7 @@ test("el buscador de la portada abre sugerencias sin desplazar el contenido", as
 
   await page.setViewportSize({ width: 360, height: 800 });
   await page.reload();
+  await waitForLandingIntro(page);
   const mobilePopular = page.getByText("Populares", { exact: true }).first();
   const mobileBefore = await mobilePopular.boundingBox();
   await page.getByRole("combobox", { name: "Buscar destino" }).focus();
