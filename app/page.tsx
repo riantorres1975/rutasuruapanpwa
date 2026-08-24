@@ -113,23 +113,6 @@ export default function LandingPage() {
     <main
       className="landing-home min-h-dvh overflow-hidden bg-[#0c110a] text-[#e8f2d8]"
       data-theme="dark"
-      style={{
-        "--background": "#0c110a",
-        "--foreground": "#e8f2d8",
-        "--ov-border": "rgba(232,242,216,0.12)",
-        "--ov-bg": "rgba(12,17,10,0.97)",
-        "--ov-text": "#e8f2d8",
-        "--ink": "#e8f2d8",
-        "--ink2": "#a8c888",
-        "--muted": "#729260",
-        "--card": "#12190f",
-        "--verde": "#6aab48",
-        "--verde-l": "rgba(106,171,72,0.12)",
-        "--verde-d": "#3d6828",
-        "--lima": "#b8e840",
-        "--agua": "#48a878",
-        "--agua-l": "rgba(72,168,120,0.12)",
-      } as React.CSSProperties}
     >
       <ForceDark />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />

@@ -54,32 +54,6 @@ export const TELEFERICO_URUAPAN = {
   ]
 } as const;
 
-export const LANDING_SEARCH_SUGGESTIONS = [
-  "Centro Histórico",
-  "Mercado Poniente",
-  "Hospital Regional",
-  "Presidencia",
-  "Parque Nacional",
-  "Plaza Ágora",
-  "IMSS",
-  "Ruta 11 Uruapan"
-] as const;
-
-export const SUBURBAN_CONNECTIONS = [
-  "Nuevo San Juan Parangaricutiro",
-  "Capacuaro",
-  "Paracho",
-  "Angahuan"
-] as const;
-
-export const SEO_KEYWORDS = [
-  "rutas de camiones Uruapan",
-  "Teleférico Uruapan horario",
-  "precio teleférico Uruapan 2026",
-  "cómo llegar al Parque Nacional en camión",
-  "ruta 11 Uruapan"
-] as const;
-
 export const LANDING_FAQS = [
   {
     question: "¿Cuál es el horario del teleférico en Uruapan?",

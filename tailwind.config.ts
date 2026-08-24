@@ -62,8 +62,7 @@ const config: Config = {
         },
       },
       boxShadow: {
-        soft: "0 12px 36px -20px rgba(2, 6, 23, 0.45)",
-        ticket: "0 18px 40px -20px rgba(31, 47, 20, 0.55)"
+        soft: "0 12px 36px -20px rgba(2, 6, 23, 0.45)"
       }
     }
   },
