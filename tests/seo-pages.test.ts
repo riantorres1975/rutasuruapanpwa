@@ -19,7 +19,7 @@ describe("SEO basado en consultas reales", () => {
       params: Promise.resolve({ slug: "ruta-176-quinta-clinica-76" }),
     });
 
-    expect(titleText(metadata.title)).toBe("Ruta 176 Uruapan: recorrido y horario");
+    expect(titleText(metadata.title)).toBe("Ruta 176 Uruapan: por dónde pasa y horario");
     expect(metadata.description).toContain("Consulta por dónde pasa la Ruta 176");
     expect(metadata.description).toContain("horario 05:30 a 23:30");
     expect(String(metadata.description).length).toBeLessThanOrEqual(160);

@@ -126,13 +126,13 @@ export default async function ComoLlegarPage({ params }: PlacePageProps) {
               ? `${routes.length} ruta${routes.length === 1 ? "" : "s"} de camión te ${routes.length === 1 ? "deja" : "dejan"} cerca de ${place.label}. Tarifa ${FARES_2026.urbanBus.price} en efectivo.`
               : `Ninguna ruta pasa directamente por ${place.label}; usa el mapa para planear un viaje con transbordo.`}
           </p>
-          <p className="mt-3 inline-flex items-center gap-1.5 text-[11px] font-semibold" style={{ color: "#a8c888" }}>
+          <Link href="/acerca-de" className="mt-3 inline-flex items-center gap-1.5 text-[11px] font-semibold transition hover:text-[#e8f2d8]" style={{ color: "#a8c888" }}>
             <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 shrink-0" style={{ color: "#b8e840" }} aria-hidden="true">
               <path d="M9 12l2 2 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
             </svg>
             Recorridos verificados en campo · actualizado {DATA_LAST_UPDATED}
-          </p>
+          </Link>
 
           {/* Rutas cercanas */}
           {routes.length > 0 && (

@@ -9,6 +9,14 @@ import ReportBugForm from "@/components/ReportBugForm";
 export const metadata: Metadata = {
   title: "Reportar un error",
   description: "Reporta errores de rutas, mapa, ubicación o funcionamiento de UruGo.",
+  robots: {
+    index: false,
+    follow: true,
+    googleBot: {
+      index: false,
+      follow: true,
+    },
+  },
   alternates: {
     canonical: "https://www.urugo.app/reportar-error"
   },

@@ -66,10 +66,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.8
     },
     {
-      url: `${SITE_URL}/reportar-error`,
+      url: `${SITE_URL}/acerca-de`,
       lastModified: CONTENT_LAST_MODIFIED,
       changeFrequency: "monthly",
-      priority: 0.5
+      priority: 0.7
     }
   ];
 

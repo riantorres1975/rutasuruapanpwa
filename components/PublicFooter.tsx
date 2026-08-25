@@ -5,13 +5,7 @@ import {
   Heart,
 } from "lucide-react";
 import Logo from "@/components/Logo";
-
-const AUTHOR_NAME = "Antonio Rivera";
-const GITHUB_URL = "https://github.com/riantorres1975";
-const X_URL = "https://x.com/WH01S_R00T";
-const LINKEDIN_URL = "https://www.linkedin.com/in/josé-antonio-rivera-torres-b44559244";
-const REPO_URL = "https://github.com/riantorres1975/rutasuruapanpwa";
-const DONATION_URL = "https://www.paypal.com/paypalme/wh0code";
+import { PROJECT } from "@/lib/project";
 
 function GithubIcon({ className }: { className?: string }) {
   return (
@@ -44,12 +38,13 @@ const exploreLinks = [
   { label: "Teleférico", href: "/teleferico-uruapan-horario" },
   { label: "Guía de uso", href: "/guia" },
   { label: "Guías locales", href: "/blog" },
+  { label: "Cómo se hace UruGo", href: "/acerca-de" },
 ] as const;
 
 const socialLinks = [
-  { label: "GitHub de Antonio", shortLabel: "GitHub", href: GITHUB_URL, icon: GithubIcon },
-  { label: "X de Antonio", shortLabel: null, href: X_URL, icon: XIcon },
-  { label: "LinkedIn de Antonio", shortLabel: "LinkedIn", href: LINKEDIN_URL, icon: LinkedinIcon },
+  { label: "GitHub de Antonio", shortLabel: "GitHub", href: PROJECT.githubUrl, icon: GithubIcon },
+  { label: "X de Antonio", shortLabel: null, href: PROJECT.xUrl, icon: XIcon },
+  { label: "LinkedIn de Antonio", shortLabel: "LinkedIn", href: PROJECT.linkedinUrl, icon: LinkedinIcon },
 ] as const;
 
 export default function PublicFooter() {
@@ -65,7 +60,7 @@ export default function PublicFooter() {
 
             <div className="mt-6 flex flex-wrap gap-3">
               <Link
-                href={DONATION_URL}
+                href={PROJECT.donationUrl}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex h-11 items-center gap-2 rounded-full bg-[#6aab48] px-5 text-sm font-bold text-[#0c110a] transition hover:bg-[#7cbd59] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#b8e840]"
@@ -74,7 +69,7 @@ export default function PublicFooter() {
                 Apoyar UruGo
               </Link>
               <Link
-                href={REPO_URL}
+                href={PROJECT.repositoryUrl}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex h-11 items-center gap-2 rounded-full border border-white/15 px-5 text-sm font-bold text-[#dceaca] transition hover:border-[#6aab48]/60 hover:bg-[#6aab48]/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#b8e840]"
@@ -100,7 +95,7 @@ export default function PublicFooter() {
           <div>
             <p className="text-xs font-bold uppercase text-[#b8e840]">Proyecto independiente</p>
             <p className="mt-4 max-w-sm text-sm leading-6 text-[#88a66e]">
-              Hecho en Uruapan por <span className="font-semibold text-[#dceaca]">{AUTHOR_NAME}</span>. Tu apoyo ayuda a mantener el mapa, el dominio y las mejoras futuras.
+              Hecho en Uruapan por <span className="font-semibold text-[#dceaca]">{PROJECT.author}</span>. Tu apoyo ayuda a mantener el mapa, el dominio y las mejoras futuras.
             </p>
 
             <div className="mt-5 flex flex-wrap gap-2" aria-label="Redes sociales del creador">
@@ -130,6 +125,7 @@ export default function PublicFooter() {
         <div className="flex flex-col gap-4 border-t border-white/[0.08] py-6 text-xs text-[#6f895a] sm:flex-row sm:items-center sm:justify-between">
           <p>UruGo no está afiliado al gobierno ni a las empresas de transporte.</p>
           <nav aria-label="Información legal" className="flex flex-wrap gap-x-5 gap-y-2 font-semibold">
+            <Link href="/acerca-de" className="transition hover:text-[#dceaca]">Metodología y autor</Link>
             <Link href="/reportar-error" className="transition hover:text-[#dceaca]">Reportar un error</Link>
             <Link href="/privacidad" className="transition hover:text-[#dceaca]">Privacidad</Link>
           </nav>

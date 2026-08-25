@@ -9,6 +9,7 @@ const links = [
   { href: "/como-llegar", label: "Cómo llegar" },
   { href: "/guia", label: "Guía" },
   { href: "/blog", label: "Guías locales" },
+  { href: "/acerca-de", label: "Acerca de UruGo" },
 ] as const;
 
 export default function PublicMobileMenu() {

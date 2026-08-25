@@ -7,7 +7,7 @@ export const APP_BRAND = {
 /** Fecha de la última verificación manual de los datos de rutas (visible al usuario). */
 export const DATA_LAST_UPDATED = "junio 2026";
 export const DATA_LAST_UPDATED_ISO = "2026-06-30";
-export const SITE_CONTENT_LAST_UPDATED_ISO = "2026-08-15";
+export const SITE_CONTENT_LAST_UPDATED_ISO = "2026-08-25";
 
 export const FARES_2026 = {
   urbanBus: {

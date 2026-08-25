@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import {
   ArrowRight,
+  BadgeCheck,
   BusFront,
   CableCar,
   Crosshair,
@@ -23,6 +24,8 @@ import {
   TELEFERICO_URUAPAN,
 } from "@/lib/mobility-config";
 import { getPlaceSeoItems, getRoutesNearPlace, walkMinutesFor } from "@/lib/como-llegar";
+import { PROJECT, PROJECT_SOCIAL_PROFILES } from "@/lib/project";
+import { getRouteSeoItems } from "@/lib/route-seo";
 import { SITE_URL } from "@/lib/site-url";
 
 const HOW_IT_WORKS_STEPS = [
@@ -61,10 +64,15 @@ const featuredPlaces = FEATURED_PLACE_LABELS.map((label) => {
   };
 }).filter((place): place is NonNullable<typeof place> => place !== null);
 
+const FEATURED_ROUTE_NAMES = ["Ruta 176", "Ruta 17", "Ruta 45", "Ruta 10"] as const;
+const allSeoRoutes = getRouteSeoItems();
+const featuredRoutes = FEATURED_ROUTE_NAMES.map((name) => allSeoRoutes.find((route) => route.name === name))
+  .filter((route): route is NonNullable<typeof route> => route !== undefined);
+
 export const metadata: Metadata = {
-  title: { absolute: "Rutas de camiones en Uruapan: mapa y horarios | UruGo" },
+  title: { absolute: "UruGo | Rutas de camiones en Uruapan: mapa y horarios" },
   description:
-    "Encuentra qué camión tomar en Uruapan en segundos. Las 40 rutas y el Teleférico en un mapa interactivo, con horarios y tarifas 2026. Gratis, sin registro.",
+    "UruGo te ayuda a encontrar qué camión tomar en Uruapan. Consulta 40 rutas y el Teleférico en un mapa con horarios y tarifas 2026.",
   alternates: { canonical: SITE_URL },
   openGraph: {
     title: "UruGo | Encuentra tu ruta en Uruapan",
@@ -97,15 +105,36 @@ const webAppJsonLd = {
   description: APP_BRAND.description,
   offers: { "@type": "Offer", price: "0", priceCurrency: "MXN" },
   areaServed: { "@type": "City", name: "Uruapan, Michoacán" },
+  provider: { "@id": `${SITE_URL}/#organization` },
+};
+
+const websiteJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "@id": `${SITE_URL}/#website`,
+  name: APP_BRAND.name,
+  alternateName: ["UruGo App", "urugo.app"],
+  url: SITE_URL,
+  inLanguage: "es-MX",
+  publisher: { "@id": `${SITE_URL}/#organization` },
 };
 
 const organizationJsonLd = {
   "@context": "https://schema.org",
   "@type": "Organization",
+  "@id": `${SITE_URL}/#organization`,
   name: APP_BRAND.name,
+  alternateName: "UruGo App",
   url: SITE_URL,
   logo: `${SITE_URL}/icons/icon-512.png`,
   areaServed: { "@type": "City", name: "Uruapan, Michoacán" },
+  founder: {
+    "@type": "Person",
+    name: PROJECT.author,
+    sameAs: [...PROJECT_SOCIAL_PROFILES],
+  },
+  sameAs: [...PROJECT_SOCIAL_PROFILES, PROJECT.repositoryUrl],
+  publishingPrinciples: `${SITE_URL}/acerca-de`,
 };
 
 export default function LandingPage() {
@@ -116,6 +145,7 @@ export default function LandingPage() {
     >
       <ForceDark />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(webAppJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }} />
 
@@ -165,6 +195,52 @@ export default function LandingPage() {
       </section>
 
       <StatsAnimados />
+
+      <section className={`border-y border-white/10 bg-[#10160d] ${DEFERRED_SECTION}`}>
+        <div className="mx-auto grid max-w-[1240px] gap-10 px-5 py-14 sm:px-8 lg:grid-cols-[minmax(0,1fr)_520px] lg:items-center lg:py-20">
+          <div>
+            <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.18em] text-[#b8e840]">
+              <BadgeCheck className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+              Datos hechos en Uruapan
+            </div>
+            <h2 className="mt-4 max-w-xl font-serif text-4xl font-black leading-tight sm:text-5xl">
+              Rutas verificadas localmente, con referencias que sí reconoces.
+            </h2>
+            <p className="mt-5 max-w-xl text-sm leading-7 text-[#8eaa76]">
+              Los recorridos se documentan como trazos GPS y se revisan con observación de campo. Los puntos de referencia ayudan a buscar por hospitales, escuelas, mercados y lugares cotidianos.
+            </p>
+            <Link href="/acerca-de" className="mt-6 inline-flex items-center gap-2 text-sm font-black text-[#b8e840]">
+              Conoce cómo se construye UruGo <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </Link>
+          </div>
+
+          <div>
+            <p className="border-b border-white/10 pb-4 text-[11px] font-black uppercase tracking-[0.18em] text-[#6f895a]">
+              Rutas más consultadas
+            </p>
+            <div className="divide-y divide-white/10">
+              {featuredRoutes.map((route) => (
+                <Link
+                  key={route.slug}
+                  href={`/ruta/${route.slug}`}
+                  className="group grid min-h-20 grid-cols-[1fr_auto] items-center gap-4 py-4 transition hover:bg-white/[0.025] sm:px-3"
+                >
+                  <span>
+                    <span className="block text-sm font-black text-[#e8f2d8]">{route.name} en Uruapan</span>
+                    <span className="mt-1 block text-xs text-[#6f895a]">
+                      {route.destination ?? "Recorrido local"} · horario, mapa y por dónde pasa
+                    </span>
+                  </span>
+                  <ArrowRight className="h-4 w-4 text-[#6f895a] transition group-hover:translate-x-1 group-hover:text-[#b8e840]" aria-hidden="true" />
+                </Link>
+              ))}
+            </div>
+            <Link href="/rutas" className="mt-4 inline-flex min-h-11 items-center gap-2 text-sm font-black text-[#dceaca]">
+              Ver las 40 rutas <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </Link>
+          </div>
+        </div>
+      </section>
 
       <section id="transporte" className={`mx-auto max-w-[1240px] px-5 py-16 sm:px-8 lg:py-24 ${DEFERRED_SECTION}`}>
         <div className="mb-8 grid gap-3 border-b border-white/10 pb-5 md:grid-cols-[1fr_auto] md:items-end">

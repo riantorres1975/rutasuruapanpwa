@@ -4,9 +4,10 @@ import { notFound } from "next/navigation";
 import PublicFooter from "@/components/PublicFooter";
 import PublicHeader from "@/components/PublicHeader";
 import RoutePreviewFromData from "@/components/RoutePreviewFromData";
-import { APP_BRAND, DATA_LAST_UPDATED, FARES_2026 } from "@/lib/mobility-config";
+import { FARES_2026, SITE_CONTENT_LAST_UPDATED_ISO } from "@/lib/mobility-config";
 import { findRouteSeoItem, getRouteSeoItems } from "@/lib/route-seo";
 import { getSchedule } from "@/lib/schedules";
+import { SITE_URL } from "@/lib/site-url";
 import { buildRouteStaticMapUrl } from "@/lib/static-map";
 
 type RoutePageProps = {
@@ -38,15 +39,15 @@ export async function generateMetadata({ params }: RoutePageProps): Promise<Meta
   const scheduleText = schedule ? `, horario ${schedule.first} a ${schedule.last}` : "";
 
   return {
-    title: `${route.name} Uruapan: recorrido y horario`,
+    title: `${route.name} Uruapan: por dónde pasa y horario`,
     description: `Consulta por dónde pasa la ${route.name} en Uruapan${kmText}${scheduleText}. Tarifa ${FARES_2026.urbanBus.price} y mapa con puntos de referencia.`,
     alternates: {
-      canonical: `https://www.urugo.app/ruta/${route.slug}`
+      canonical: `${SITE_URL}/ruta/${route.slug}`
     },
     openGraph: {
       title: `${label}: recorrido y horario en Uruapan`,
       description: `Consulta por dónde pasa la ${route.name}${lmText}${kmText}, su tarifa y el recorrido en el mapa.`,
-      url: `https://www.urugo.app/ruta/${route.slug}`,
+      url: `${SITE_URL}/ruta/${route.slug}`,
       type: "article"
     }
   };
@@ -118,19 +119,27 @@ export default async function RoutePage({ params }: RoutePageProps) {
       {
         "@type": "BreadcrumbList",
         itemListElement: [
-          { "@type": "ListItem", position: 1, name: "Inicio", item: "https://www.urugo.app/" },
-          { "@type": "ListItem", position: 2, name: "Rutas", item: "https://www.urugo.app/rutas" },
-          { "@type": "ListItem", position: 3, name: route.name, item: `https://www.urugo.app/ruta/${route.slug}` }
+          { "@type": "ListItem", position: 1, name: "Inicio", item: SITE_URL },
+          { "@type": "ListItem", position: 2, name: "Rutas", item: `${SITE_URL}/rutas` },
+          { "@type": "ListItem", position: 3, name: route.name, item: `${SITE_URL}/ruta/${route.slug}` }
         ]
       },
       {
+        "@type": "WebPage",
+        "@id": `${SITE_URL}/ruta/${route.slug}#page`,
+        name: `${route.name} Uruapan: por dónde pasa y horario`,
+        url: `${SITE_URL}/ruta/${route.slug}`,
+        inLanguage: "es-MX",
+        dateModified: SITE_CONTENT_LAST_UPDATED_ISO,
+        isPartOf: { "@id": `${SITE_URL}/#website` },
+        publisher: { "@id": `${SITE_URL}/#organization` },
+        about: { "@id": `${SITE_URL}/ruta/${route.slug}#trip` }
+      },
+      {
         "@type": "BusTrip",
+        "@id": `${SITE_URL}/ruta/${route.slug}#trip`,
         name: `${route.name} Uruapan`,
         description: `Ruta de camión urbano en Uruapan${route.destination ? ` hacia ${route.destination}` : ""}${route.distanceKm > 0 ? `. Recorrido de ${route.distanceKm} km` : ""}.`,
-        provider: {
-          "@type": "Organization",
-          name: APP_BRAND.name
-        },
         offers: {
           "@type": "Offer",
           price: FARES_2026.urbanBus.price.replace(/[^0-9.]/g, ""),
@@ -354,13 +363,13 @@ export default async function RoutePage({ params }: RoutePageProps) {
                   Abre el mapa de UruGo y marca tu punto de origen y tu destino. El sistema calcula si la {route.name} cubre tu trayecto, qué tan lejos están las paradas y si necesitas caminar o hacer transbordo con otra ruta o el Teleférico de Uruapan.
                   {estimatedMinutes && ` El recorrido completo toma aproximadamente ${estimatedMinutes} minutos.`}
                 </p>
-                <p className="mt-3 inline-flex items-center gap-1.5 text-[11px] font-semibold" style={{ color: "#a8c888" }}>
+                <Link href="/acerca-de" className="mt-3 inline-flex items-center gap-1.5 text-[11px] font-semibold transition hover:text-[#e8f2d8]" style={{ color: "#a8c888" }}>
                   <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 shrink-0" style={{ color: "#b8e840" }} aria-hidden="true">
                     <path d="M9 12l2 2 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
                   </svg>
-                  Recorrido verificado en campo · actualizado {DATA_LAST_UPDATED}
-                </p>
+                  Recorrido verificado en campo · conoce la metodología
+                </Link>
               </section>
               </div>
 

@@ -6,6 +6,7 @@ const pages = [
   { name: "mapa", path: "/mapa" },
   { name: "horarios", path: "/horarios" },
   { name: "guía de uso", path: "/guia" },
+  { name: "metodología", path: "/acerca-de" },
   { name: "reporte de errores", path: "/reportar-error" },
   { name: "artículo del blog", path: "/blog/como-usar-el-teleferico-uruapan" },
 ] as const;
