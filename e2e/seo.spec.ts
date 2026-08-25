@@ -36,5 +36,7 @@ test("la metodología y la autoría del proyecto son públicas", async ({ page }
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://www.urugo.app/acerca-de");
   await expect(page.getByRole("heading", { level: 1 })).toContainText("recorriendo Uruapan");
   await expect(page.getByRole("heading", { name: "Hecho en Uruapan por Antonio Rivera." })).toBeVisible();
+  await expect(page.getByRole("link", { name: "TikTok de Antonio" })).toHaveAttribute("href", "https://www.tiktok.com/@wh01s_r00t");
+  await expect(page.getByRole("link", { name: "Instagram de Antonio" })).toHaveAttribute("href", "https://www.instagram.com/wh01s_r00t");
   await expect(page.getByRole("link", { name: "Reportar una corrección" })).toHaveAttribute("href", "/reportar-error");
 });

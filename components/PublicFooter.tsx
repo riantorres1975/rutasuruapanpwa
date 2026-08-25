@@ -31,6 +31,24 @@ function XIcon({ className }: { className?: string }) {
   );
 }
 
+function TikTokIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
+      <path d="M12.53.02c1.3-.02 2.6-.01 3.9-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03a12.2 12.2 0 0 1-4.2-.97c-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75a7.22 7.22 0 0 1-1.35 3.94A7.36 7.36 0 0 1 9.32 24a7.08 7.08 0 0 1-4.08-1.03 7.4 7.4 0 0 1-3.65-5.72c-.02-.5-.03-1-.01-1.48a7.32 7.32 0 0 1 2.58-4.96 7.18 7.18 0 0 1 6.15-1.72c.02 1.48-.04 2.96-.04 4.44a3.25 3.25 0 0 0-3.02.37 3.05 3.05 0 0 0-1.36 1.75c-.21.51-.15 1.08-.14 1.62.24 1.64 1.82 3.02 3.5 2.87a3.2 3.2 0 0 0 2.77-1.61c.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.03-12.09Z" />
+    </svg>
+  );
+}
+
+function InstagramIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <rect x="2.5" y="2.5" width="19" height="19" rx="5" stroke="currentColor" strokeWidth="2" />
+      <circle cx="12" cy="12" r="4.25" stroke="currentColor" strokeWidth="2" />
+      <circle cx="17.5" cy="6.7" r="1.15" fill="currentColor" />
+    </svg>
+  );
+}
+
 const exploreLinks = [
   { label: "Rutas", href: "/rutas" },
   { label: "Horarios", href: "/horarios" },
@@ -44,6 +62,8 @@ const exploreLinks = [
 const socialLinks = [
   { label: "GitHub de Antonio", shortLabel: "GitHub", href: PROJECT.githubUrl, icon: GithubIcon },
   { label: "X de Antonio", shortLabel: null, href: PROJECT.xUrl, icon: XIcon },
+  { label: "TikTok de Antonio", shortLabel: "TikTok", href: PROJECT.tiktokUrl, icon: TikTokIcon },
+  { label: "Instagram de Antonio", shortLabel: "Instagram", href: PROJECT.instagramUrl, icon: InstagramIcon },
   { label: "LinkedIn de Antonio", shortLabel: "LinkedIn", href: PROJECT.linkedinUrl, icon: LinkedinIcon },
 ] as const;
 
@@ -106,7 +126,7 @@ export default function PublicFooter() {
                     key={link.href}
                     href={link.href}
                     target="_blank"
-                    rel="noreferrer"
+                    rel="me noreferrer"
                     aria-label={link.label}
                     title={link.label}
                     className="inline-flex h-10 min-w-10 items-center justify-center gap-2 rounded-full border border-white/10 px-3 text-xs font-bold text-[#9bb77f] transition hover:border-[#6aab48]/50 hover:bg-[#6aab48]/10 hover:text-[#e8f2d8] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#b8e840]"
