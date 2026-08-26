@@ -4,6 +4,7 @@ import ForceDark from "@/components/ForceDark";
 import PublicFooter from "@/components/PublicFooter";
 import PublicHeader from "@/components/PublicHeader";
 import ScheduleDirectory, { type ScheduleService } from "@/components/ScheduleDirectory";
+import SchoolDepartures from "@/components/SchoolDepartures";
 import { DATA_LAST_UPDATED, FARES_2026 } from "@/lib/mobility-config";
 import { getRouteSeoItems } from "@/lib/route-seo";
 import { getSchedule } from "@/lib/schedules";
@@ -12,7 +13,7 @@ import { SITE_URL } from "@/lib/site-url";
 export const metadata: Metadata = {
   title: "Horarios de camiones en Uruapan 2026 — Todas las rutas",
   description:
-    "Horarios y frecuencia de las 40 rutas de camión urbano en Uruapan, Michoacán. Primer y último camión, cada cuántos minutos pasa y horario del Teleférico.",
+    "Horarios de rutas urbanas, Teleférico y salidas escolares reportadas hacia el CETIS 27, Tec Uruapan y Universidad Politécnica.",
   alternates: { canonical: `${SITE_URL}/horarios` },
   openGraph: {
     title: "Horarios de camiones en Uruapan — Todas las rutas",
@@ -42,6 +43,11 @@ const faqs = [
     question: "¿Los horarios son exactos?",
     answer:
       `Los camiones urbanos en Uruapan no operan con horario fijo por parada: los rangos son aproximados y pueden variar por tráfico y día de la semana. Los datos se verificaron en campo y se actualizaron en ${DATA_LAST_UPDATED}.`,
+  },
+  {
+    question: "¿Hay salidas especiales hacia el CETIS 27, Tec o Politécnico?",
+    answer:
+      "Existen referencias comunitarias de corridas que extienden rutas normales para llevar estudiantes de ida. Confirma el horario, punto de abordaje y destino con el plantel o transportista antes de salir.",
   },
 ] as const;
 
@@ -118,12 +124,19 @@ export default function HorariosPage() {
             </svg>
             Datos verificados en campo · actualizado {DATA_LAST_UPDATED}
           </p>
+          <a href="#salidas-escolares" className="mt-4 inline-flex items-center gap-2 text-xs font-black text-[#f1bf62] transition hover:text-white">
+            Consultar salidas escolares de solo ida ↓
+          </a>
 
           <ScheduleDirectory services={services} />
 
           <p className="mt-3 text-[11px] text-[#78965f]">
             Tarifa base: {FARES_2026.urbanBus.price} por abordaje. “En servicio” indica que la hora actual está dentro del rango general de operación; no representa seguimiento en tiempo real de las unidades.
           </p>
+
+          <div className="mt-14">
+            <SchoolDepartures />
+          </div>
 
           <section className="mt-12">
             <h2 className="font-serif text-2xl font-black">Preguntas frecuentes</h2>
