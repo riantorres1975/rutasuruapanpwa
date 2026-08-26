@@ -8,9 +8,11 @@ import {
 const departures = SCHOOL_DEPARTURE_GROUPS.flatMap((group) => group.departures);
 
 describe("salidas escolares comunitarias", () => {
-  it("publica las referencias de la tabla y la extensión histórica de Ruta 26", () => {
-    expect(SCHOOL_DEPARTURE_COUNT).toBe(13);
-    expect(departures.some((departure) => departure.regularRoute?.name === "Ruta 26")).toBe(true);
+  it("unifica Río Volga y Ruta 26 en una sola salida escolar", () => {
+    expect(SCHOOL_DEPARTURE_COUNT).toBe(12);
+    const route26 = departures.filter((departure) => departure.regularRoute?.name === "Ruta 26");
+    expect(route26).toHaveLength(1);
+    expect(route26[0]?.origin).toContain("Río Volga");
   });
 
   it("mantiene todas las salidas como solo ida y sin certificación oficial", () => {

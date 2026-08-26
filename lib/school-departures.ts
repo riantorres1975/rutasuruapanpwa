@@ -55,12 +55,17 @@ const CETIS_TEC_DEPARTURES: readonly SchoolDeparture[] = [
     status: "community-report",
   },
   {
-    id: "rio-volga-cetis",
-    origin: "Río Volga",
-    destination: "CETIS 27",
+    id: "ruta-26-rio-volga-cetis-tec",
+    origin: "Ruta 26 · Río Volga",
+    destination: "CETIS 27 · Tec Uruapan",
     departures: ["06:00"],
     direction: "outbound-only",
     status: "community-report",
+    note: "La salida escolar extiende el recorrido habitual de la Ruta 26.",
+    regularRoute: {
+      name: "Ruta 26",
+      slug: "ruta-26-constituyentes-unidad",
+    },
   },
   {
     id: "taximacuaro-cetis-politecnico",
@@ -94,19 +99,6 @@ const CETIS_TEC_DEPARTURES: readonly SchoolDeparture[] = [
     departures: ["06:00"],
     direction: "outbound-only",
     status: "community-report",
-  },
-  {
-    id: "ruta-26-cetis-tec",
-    origin: "Recorrido habitual de Ruta 26",
-    destination: "CETIS 27 · Tec Uruapan",
-    departures: ["06:00"],
-    direction: "outbound-only",
-    status: "community-report",
-    note: "Referencia histórica compartida por un usuario; confirma si la extensión sigue vigente.",
-    regularRoute: {
-      name: "Ruta 26",
-      slug: "ruta-26-constituyentes-unidad",
-    },
   },
 ];
 
