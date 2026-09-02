@@ -87,6 +87,7 @@ El cálculo se realiza en el cliente con los datos del proyecto. Mapbox se utili
 | Vitest | Pruebas de geometría, horarios, búsqueda y almacenamiento |
 | Service Worker | Instalación y caché de la PWA |
 | Vercel Analytics | Métricas de uso y rendimiento |
+| Supabase | Reportes comunitarios, autenticación administrativa e historial de rutas |
 
 ## Puesta en marcha
 
@@ -135,6 +136,12 @@ La aplicación estará disponible en [http://localhost:3000](http://localhost:30
 | `ERROR_ALERT_WEBHOOK_TOKEN` | No | Token Bearer opcional para autenticar el webhook |
 | `DEBUG_ROUTE_SAVE_ENABLED` | No | Activa el guardado del editor de recorridos en desarrollo |
 | `DEBUG_ROUTE_SAVE_TOKEN` | No | Protege el endpoint del editor cuando está habilitado |
+| `NEXT_PUBLIC_SUPABASE_URL` | No | URL del proyecto que habilita reportes y administración |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | No | Clave pública usada para iniciar la sesión administrativa |
+| `SUPABASE_SECRET_KEY` | No | Clave privada de servidor para persistencia y moderación |
+| `ADMIN_EMAILS` | No | Correos autorizados para entrar al panel, separados por comas |
+| `REPORTER_HASH_SECRET` | No | Secreto para anonimizar la IP de quien contribuye |
+| `ROUTE_DATA_SOURCE` | No | `static` por defecto; usa `supabase` después de importar y verificar las rutas |
 
 El token público de Mapbox debe restringirse por dominio desde el panel de Mapbox. Las claves privadas no deben usar el prefijo `NEXT_PUBLIC_` ni incluirse en el repositorio.
 
@@ -149,6 +156,7 @@ pnpm start             # inicia la compilación de producción
 pnpm lint              # revisión estática con ESLint
 pnpm test              # ejecuta la suite de Vitest
 pnpm guide:screenshots # actualiza las capturas de la aplicación
+pnpm db:seed-routes     # importa el JSON actual en Supabase
 ```
 
 ## Estructura del proyecto
@@ -161,6 +169,7 @@ hooks/                 favoritos y enlaces compartidos
 lib/                   geometría, horarios, búsqueda y motor de rutas
 public/                manifest, Service Worker, iconos y recursos públicos
 tests/                 pruebas automatizadas
+supabase/              migraciones reproducibles de la base de datos
 ```
 
 Los módulos principales son:
@@ -176,7 +185,7 @@ Los módulos principales son:
 
 La fuente principal de recorridos es `data/rutas_produccion_final.json`. El proyecto incluye un editor visual para corregir segmentos durante el desarrollo. Su endpoint de guardado está deshabilitado por defecto y no debe exponerse públicamente sin autenticación.
 
-Los reportes sobre rutas, horarios o puntos incorrectos pueden enviarse desde la página [`/reportar-error`](https://www.urugo.app/reportar-error).
+Los reportes sobre rutas, horarios o puntos incorrectos pueden enviarse desde la página [`/reportar-error`](https://www.urugo.app/reportar-error). Cuando Supabase está configurado quedan pendientes en el panel privado; ningún reporte modifica directamente el mapa. La guía de configuración está en [`docs/community-data.md`](./docs/community-data.md).
 
 ### Generar puntos de referencia
 

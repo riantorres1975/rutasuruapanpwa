@@ -31,6 +31,10 @@ const SECTIONS = [
     body: "La app puede guardar archivos, datos de rutas, favoritos y viajes recientes en el navegador para mejorar la velocidad y permitir uso parcial sin conexión. Puedes borrar estos datos desde la configuración de tu navegador."
   },
   {
+    title: "Reportes comunitarios",
+    body: "Si envías una corrección, UruGo guarda el tipo de reporte, la ruta o lugar indicado, tu descripción y el contacto que decidas proporcionar. La dirección IP no se conserva: se transforma en una huella no reversible para limitar abuso. Las confirmaciones de rutas y los reportes permanecen privados mientras se revisan y nunca modifican el mapa automáticamente."
+  },
+  {
     title: "Servicios de terceros",
     body: "Mapbox muestra el mapa y resuelve búsquedas de lugares. Vercel Analytics y Speed Insights recopilan métricas técnicas agregadas. Las mediciones de rendimiento del cálculo solo incluyen rangos de tiempo, motor y tipo de resultado; no contienen coordenadas, nombres de lugares ni el recorrido elegido. UruGo también elimina de la URL los parámetros sensibles. DeepSeek procesa los mensajes que envías voluntariamente al asistente junto con contexto de rutas cercanas. Los errores inesperados generan una huella técnica anónima para detectar fallos repetidos; no se envían el mensaje del error, la traza, las búsquedas ni la ubicación."
   },

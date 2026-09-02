@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import PublicFooter from "@/components/PublicFooter";
 import PublicHeader from "@/components/PublicHeader";
 import RoutePreviewFromData from "@/components/RoutePreviewFromData";
+import RouteVerification from "@/components/RouteVerification";
 import { FARES_2026, SITE_CONTENT_LAST_UPDATED_ISO } from "@/lib/mobility-config";
 import { findRouteSeoItem, getRouteSeoItems } from "@/lib/route-seo";
 import { getSchedule } from "@/lib/schedules";
@@ -372,6 +373,8 @@ export default async function RoutePage({ params }: RoutePageProps) {
                 </Link>
               </section>
               </div>
+
+              <RouteVerification routeKey={route.slug} routeName={route.name} />
 
               <section className="mt-10 border-t pt-9" style={{ borderColor: "rgba(140,200,80,0.10)" }}>
                 <h2 className="mb-5 font-serif text-xl font-black lg:text-2xl" style={{ color: "#e8f2d8" }}>

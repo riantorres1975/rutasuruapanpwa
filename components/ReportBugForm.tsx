@@ -1,6 +1,8 @@
 "use client";
 
+import { CheckCircle2, LoaderCircle, Mail, Send } from "lucide-react";
 import { useMemo, useState, useSyncExternalStore } from "react";
+import type { CommunityReportType } from "@/lib/community-report";
 
 const ISSUE_URL = "https://github.com/riantorres1975/rutasuruapanpwa/issues/new";
 const REPORT_EMAIL = "contacto@urugo.app";
@@ -14,45 +16,57 @@ function getSourceUrl() {
   return from ? `${window.location.origin}${from}` : window.location.href;
 }
 
-const REPORT_TYPES = [
-  "Ruta incorrecta",
-  "Ruta faltante",
-  "Error en el mapa",
-  "Problema de ubicación",
-  "Error visual o de uso",
-  "Otro"
-] as const;
+const REPORT_TYPES: ReadonlyArray<{ value: CommunityReportType; label: string }> = [
+  { value: "route_incorrect", label: "Ruta incorrecta" },
+  { value: "route_missing", label: "Ruta faltante" },
+  { value: "route_inactive", label: "La ruta ya no circula" },
+  { value: "route_changed", label: "Cambió el recorrido" },
+  { value: "schedule_changed", label: "Cambió el horario" },
+  { value: "landmark_changed", label: "Referencia incorrecta" },
+  { value: "map_error", label: "Error en el mapa" },
+  { value: "location_problem", label: "Problema de ubicación" },
+  { value: "usability_problem", label: "Error visual o de uso" },
+  { value: "other", label: "Otro" },
+];
 
 type ReportBugFormProps = {
   initialRoute?: string;
   initialLandmark?: string;
 };
 
+type SubmitState = "idle" | "submitting" | "success" | "error";
+
+function GithubIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
+      <path d="M12 .5A11.5 11.5 0 0 0 8.36 22.9c.58.1.79-.25.79-.56v-2.02c-3.22.7-3.9-1.38-3.9-1.38-.53-1.34-1.3-1.7-1.3-1.7-1.06-.72.08-.7.08-.7 1.17.08 1.79 1.2 1.79 1.2 1.04 1.78 2.73 1.27 3.4.97.1-.75.4-1.27.74-1.56-2.57-.29-5.28-1.29-5.28-5.73 0-1.27.45-2.3 1.2-3.12-.12-.29-.52-1.47.11-3.07 0 0 .98-.31 3.2 1.2a11.1 11.1 0 0 1 5.82 0c2.22-1.51 3.2-1.2 3.2-1.2.63 1.6.23 2.78.11 3.07.75.82 1.2 1.85 1.2 3.12 0 4.46-2.72 5.43-5.3 5.72.42.36.8 1.08.8 2.18v3.23c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z" />
+    </svg>
+  );
+}
+
 export default function ReportBugForm({ initialRoute = "", initialLandmark = "" }: ReportBugFormProps) {
-  const [reportType, setReportType] = useState<(typeof REPORT_TYPES)[number]>("Ruta incorrecta");
+  const [reportType, setReportType] = useState<CommunityReportType>("route_incorrect");
   const [routeName, setRouteName] = useState(initialRoute);
   const [place, setPlace] = useState(initialLandmark ? `Cerca de ${initialLandmark}` : "");
   const [description, setDescription] = useState("");
   const [expected, setExpected] = useState("");
   const [contact, setContact] = useState("");
+  const [website, setWebsite] = useState("");
+  const [submitState, setSubmitState] = useState<SubmitState>("idle");
+  const [submitError, setSubmitError] = useState("");
   const sourceUrl = useSyncExternalStore(subscribeBrowserContext, getSourceUrl, () => "");
-  const userAgent = useSyncExternalStore(subscribeBrowserContext, () => window.navigator.userAgent, () => "");
 
+  const reportLabel = REPORT_TYPES.find((item) => item.value === reportType)?.label ?? "Reporte";
   const reportSubject = useMemo(() => {
     const reportTarget = routeName.trim() || place.trim();
-    return reportTarget ? `Reporte ${reportType}: ${reportTarget}` : `Reporte ${reportType}`;
-  }, [place, reportType, routeName]);
+    return reportTarget ? `Reporte ${reportLabel}: ${reportTarget}` : `Reporte ${reportLabel}`;
+  }, [place, reportLabel, routeName]);
 
   const reportBody = useMemo(() => {
     return [
-      "Tipo de problema:",
-      reportType,
-      "",
-      "Ruta, colonia o lugar relacionado:",
-      routeName || "No especificado",
-      "",
-      "Ubicación aproximada:",
-      place || "No especificada",
+      `Tipo de problema: ${reportLabel}`,
+      `Ruta o lugar: ${routeName || "No especificado"}`,
+      `Ubicación aproximada: ${place || "No especificada"}`,
       "",
       "Qué pasó:",
       description || "No especificado",
@@ -60,163 +74,133 @@ export default function ReportBugForm({ initialRoute = "", initialLandmark = "" 
       "Qué debería pasar:",
       expected || "No especificado",
       "",
-      "Contacto opcional:",
-      contact || "No proporcionado",
-      "",
-      "Contexto técnico:",
+      `Contacto opcional: ${contact || "No proporcionado"}`,
       `Página: ${sourceUrl || "No disponible"}`,
-      `Navegador: ${userAgent || "No disponible"}`
     ].join("\n");
-  }, [contact, description, expected, place, reportType, routeName, sourceUrl, userAgent]);
+  }, [contact, description, expected, place, reportLabel, routeName, sourceUrl]);
 
-  const emailHref = useMemo(() => {
-    return `mailto:${REPORT_EMAIL}?subject=${encodeURIComponent(reportSubject)}&body=${encodeURIComponent(reportBody)}`;
-  }, [reportBody, reportSubject]);
+  const emailHref = `mailto:${REPORT_EMAIL}?subject=${encodeURIComponent(reportSubject)}&body=${encodeURIComponent(reportBody)}`;
+  const issueHref = `${ISSUE_URL}?${new URLSearchParams({
+    title: `[Reporte] ${routeName || place || reportLabel}`,
+    body: reportBody,
+    labels: "bug",
+  }).toString()}`;
+  const canSubmit = description.trim().length >= 10 && submitState !== "submitting";
 
-  const issueHref = useMemo(() => {
-    const title = `[Reporte] ${routeName || place || reportType}`;
-    const body = [
-      "## Tipo de problema",
-      reportType,
-      "",
-      "## Ruta, colonia o lugar relacionado",
-      routeName || "No especificado",
-      "",
-      "## Ubicación aproximada",
-      place || "No especificada",
-      "",
-      "## Qué pasó",
-      description || "No especificado",
-      "",
-      "## Qué debería pasar",
-      expected || "No especificado",
-      "",
-      "## Contacto opcional",
-      contact || "No proporcionado",
-      "",
-      "## Contexto técnico",
-      `Página: ${sourceUrl || "No disponible"}`,
-      `Navegador: ${userAgent || "No disponible"}`
-    ].join("\n");
+  async function submitReport(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!canSubmit) return;
+    setSubmitState("submitting");
+    setSubmitError("");
 
-    const params = new URLSearchParams({
-      title,
-      body,
-      labels: "bug"
-    });
+    try {
+      const response = await fetch("/api/community/reports", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          reportType,
+          routeName,
+          place,
+          description,
+          expectedResult: expected,
+          contact,
+          sourcePath: sourceUrl ? new URL(sourceUrl).pathname : window.location.pathname,
+          website,
+        }),
+      });
+      const result = (await response.json().catch(() => null)) as { error?: string } | null;
+      if (!response.ok) throw new Error(result?.error || "No pudimos enviar el reporte.");
+      setSubmitState("success");
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : "No pudimos enviar el reporte.");
+      setSubmitState("error");
+    }
+  }
 
-    return `${ISSUE_URL}?${params.toString()}`;
-  }, [contact, description, expected, place, reportType, routeName, sourceUrl, userAgent]);
+  if (submitState === "success") {
+    return (
+      <section className="border border-[#6aab48]/30 bg-[#111a0d] p-7 shadow-[0_24px_80px_rgba(0,0,0,0.28)] md:p-10" aria-live="polite">
+        <CheckCircle2 className="h-9 w-9 text-[#b8e840]" aria-hidden="true" />
+        <p className="mt-6 text-xs font-black uppercase text-[#89aa70]">Reporte recibido</p>
+        <h2 className="mt-2 font-serif text-3xl font-black text-[#e8f2d8]">Gracias por ayudar a mejorar la ruta.</h2>
+        <p className="mt-4 max-w-lg text-sm leading-7 text-[#a8c888]">
+          Quedó pendiente de revisión. Ningún dato cambia en el mapa hasta que un administrador compruebe la información.
+        </p>
+        <button
+          type="button"
+          onClick={() => {
+            setDescription("");
+            setExpected("");
+            setSubmitState("idle");
+          }}
+          className="mt-7 inline-flex h-11 items-center justify-center bg-[#6aab48] px-5 text-sm font-black text-[#0c110a] transition hover:bg-[#79bd55]"
+        >
+          Enviar otro reporte
+        </button>
+      </section>
+    );
+  }
 
-  const canSubmit = description.trim().length >= 10;
+  const fieldClass = "mt-2 w-full border border-[#6aab48]/20 bg-[#0c110a] px-4 text-sm text-[#e8f2d8] outline-none placeholder:text-white/30 focus:border-[#b8e840]/60 focus:ring-2 focus:ring-[#b8e840]/10";
 
   return (
-    <form
-      className="rounded-[2rem] border p-5 shadow-[0_24px_80px_rgba(0,0,0,0.28)] backdrop-blur-xl md:p-7"
-      style={{ borderColor: "rgba(140,200,80,0.14)", background: "rgba(20,28,16,0.72)" }}
-      onSubmit={(event) => {
-        event.preventDefault();
-        if (canSubmit) {
-          window.location.href = emailHref;
-        }
-      }}
-    >
-      <div className="grid gap-4 md:grid-cols-2">
+    <form className="border border-[#6aab48]/20 bg-[#111a0d]/95 p-5 shadow-[0_24px_80px_rgba(0,0,0,0.28)] md:p-7" onSubmit={submitReport}>
+      <div className="grid gap-5 md:grid-cols-2">
         <label className="block">
-          <span className="text-xs font-bold uppercase tracking-[0.18em]" style={{ color: "#b8e840" }}>Tipo</span>
-          <select
-            value={reportType}
-            onChange={(event) => setReportType(event.target.value as (typeof REPORT_TYPES)[number])}
-            className="mt-2 h-12 w-full rounded-2xl border px-4 text-sm outline-none"
-            style={{ borderColor: "rgba(140,200,80,0.18)", background: "rgba(12,17,10,0.9)", color: "#e8f2d8" }}
-          >
-            {REPORT_TYPES.map((type) => (
-              <option key={type} value={type}>{type}</option>
-            ))}
+          <span className="text-xs font-bold uppercase text-[#b8e840]">Tipo de reporte</span>
+          <select value={reportType} onChange={(event) => setReportType(event.target.value as CommunityReportType)} className={`${fieldClass} h-12`}>
+            {REPORT_TYPES.map((type) => <option key={type.value} value={type.value}>{type.label}</option>)}
           </select>
         </label>
 
         <label className="block">
-          <span className="text-xs font-bold uppercase tracking-[0.18em]" style={{ color: "#b8e840" }}>Ruta o lugar</span>
-          <input
-            value={routeName}
-            onChange={(event) => setRouteName(event.target.value)}
-            placeholder="Ej. Ruta 11, Jucutacato, Centro"
-            className="mt-2 h-12 w-full rounded-2xl border px-4 text-sm outline-none placeholder:text-white/30 focus:ring-2 focus:ring-lima/30"
-            style={{ borderColor: "rgba(140,200,80,0.18)", background: "rgba(12,17,10,0.9)", color: "#e8f2d8" }}
-          />
+          <span className="text-xs font-bold uppercase text-[#b8e840]">Ruta o lugar</span>
+          <input value={routeName} onChange={(event) => setRouteName(event.target.value)} maxLength={120} placeholder="Ej. Ruta 11, Jucutacato, Centro" className={`${fieldClass} h-12`} />
         </label>
 
-        <label className="mt-4 block">
-          <span className="text-xs font-bold uppercase tracking-[0.18em]" style={{ color: "#b8e840" }}>Ubicación aproximada</span>
-          <input
-            value={place}
-            onChange={(event) => setPlace(event.target.value)}
-            placeholder="Ej. cerca del Mercado, Hospital Regional, colonia..."
-            className="mt-2 h-12 w-full rounded-2xl border px-4 text-sm outline-none placeholder:text-white/30 focus:ring-2 focus:ring-lima/30"
-            style={{ borderColor: "rgba(140,200,80,0.18)", background: "rgba(12,17,10,0.9)", color: "#e8f2d8" }}
-          />
+        <label className="block">
+          <span className="text-xs font-bold uppercase text-[#b8e840]">Ubicación aproximada</span>
+          <input value={place} onChange={(event) => setPlace(event.target.value)} maxLength={180} placeholder="Mercado, calle, colonia o referencia" className={`${fieldClass} h-12`} />
         </label>
 
-        <label className="mt-4 block">
-          <span className="text-xs font-bold uppercase tracking-[0.18em]" style={{ color: "#b8e840" }}>Qué pasó</span>
-          <textarea
-            value={description}
-            onChange={(event) => setDescription(event.target.value)}
-            required
-            minLength={10}
-            rows={5}
-            placeholder="Describe el error con el mayor detalle posible."
-            className="mt-2 w-full rounded-2xl border px-4 py-3 text-sm leading-6 outline-none placeholder:text-white/30 focus:ring-2 focus:ring-lima/30"
-            style={{ borderColor: "rgba(140,200,80,0.18)", background: "rgba(12,17,10,0.9)", color: "#e8f2d8" }}
-          />
+        <label className="block md:row-span-2">
+          <span className="text-xs font-bold uppercase text-[#b8e840]">Qué pasó</span>
+          <textarea value={description} onChange={(event) => setDescription(event.target.value)} required minLength={10} maxLength={2000} rows={6} placeholder="Describe lo que viste y, si puedes, cuándo ocurrió." className={`${fieldClass} py-3 leading-6`} />
         </label>
 
-        <label className="mt-4 block">
-          <span className="text-xs font-bold uppercase tracking-[0.18em]" style={{ color: "#b8e840" }}>Qué debería pasar</span>
-          <textarea
-            value={expected}
-            onChange={(event) => setExpected(event.target.value)}
-            rows={3}
-            placeholder="Ej. la ruta debería pasar por tal calle, el botón debería abrir..."
-            className="mt-2 w-full rounded-2xl border px-4 py-3 text-sm leading-6 outline-none placeholder:text-white/30 focus:ring-2 focus:ring-lima/30"
-            style={{ borderColor: "rgba(140,200,80,0.18)", background: "rgba(12,17,10,0.9)", color: "#e8f2d8" }}
-          />
+        <label className="block">
+          <span className="text-xs font-bold uppercase text-[#b8e840]">Qué debería mostrar</span>
+          <textarea value={expected} onChange={(event) => setExpected(event.target.value)} maxLength={1500} rows={3} placeholder="Ej. ahora gira en otra calle o ya no circula." className={`${fieldClass} py-3 leading-6`} />
         </label>
 
-        <label className="mt-4 block">
-          <span className="text-xs font-bold uppercase tracking-[0.18em]" style={{ color: "#b8e840" }}>Contacto opcional</span>
-          <input
-            value={contact}
-            onChange={(event) => setContact(event.target.value)}
-            placeholder="Email, X, GitHub o teléfono si quieres seguimiento"
-            className="mt-2 h-12 w-full rounded-2xl border px-4 text-sm outline-none placeholder:text-white/30 focus:ring-2 focus:ring-lima/30"
-            style={{ borderColor: "rgba(140,200,80,0.18)", background: "rgba(12,17,10,0.9)", color: "#e8f2d8" }}
-          />
+        <label className="block">
+          <span className="text-xs font-bold uppercase text-[#b8e840]">Contacto opcional</span>
+          <input value={contact} onChange={(event) => setContact(event.target.value)} maxLength={180} placeholder="Email o red social para dar seguimiento" className={`${fieldClass} h-12`} />
         </label>
       </div>
 
-      <div className="mt-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <p className="text-xs leading-5" style={{ color: "rgba(232,242,216,0.52)" }}>
-          Se abrirá tu app de correo con destino a {REPORT_EMAIL}, asunto y mensaje prellenados.
+      <label className="absolute -left-[10000px] top-auto h-px w-px overflow-hidden" aria-hidden="true">
+        Sitio web
+        <input name="website" value={website} onChange={(event) => setWebsite(event.target.value)} tabIndex={-1} autoComplete="off" />
+      </label>
+
+      {submitState === "error" && (
+        <div className="mt-5 border-l-2 border-[#f4c84a] bg-[#f4c84a]/[0.07] px-4 py-3" role="alert">
+          <p className="text-sm font-bold text-[#f4df98]">{submitError}</p>
+          <p className="mt-1 text-xs leading-5 text-[#a8c888]">Puedes enviarlo por correo o GitHub mientras tanto.</p>
+        </div>
+      )}
+
+      <div className="mt-6 flex flex-col gap-4 border-t border-white/[0.08] pt-5 lg:flex-row lg:items-center lg:justify-between">
+        <p className="max-w-lg text-xs leading-5 text-[#78965f]">
+          El reporte queda privado hasta ser revisado. No publicamos tu contacto ni modificamos una ruta automáticamente.
         </p>
-        <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center lg:w-auto lg:shrink-0">
-          <a
-            href={issueHref}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex h-12 w-full min-w-[136px] items-center justify-center rounded-full border px-5 text-sm font-bold transition hover:border-lima/50 sm:w-auto whitespace-nowrap"
-            style={{ borderColor: "rgba(140,200,80,0.18)", color: "rgba(232,242,216,0.72)" }}
-          >
-            Usar GitHub
-          </a>
-          <button
-            type="submit"
-            disabled={!canSubmit}
-            className="cta-shine inline-flex h-12 w-full min-w-[168px] items-center justify-center rounded-full px-6 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-45 sm:w-auto whitespace-nowrap"
-            style={{ background: "#6aab48", color: "#0c110a" }}
-          >
-            Enviar por correo
+        <div className="flex flex-wrap items-center gap-2">
+          <a href={emailHref} aria-label="Enviar reporte por correo" title="Enviar por correo" className="grid h-11 w-11 place-items-center border border-white/15 text-[#a8c888] transition hover:border-[#6aab48]/60 hover:text-[#e8f2d8]"><Mail className="h-4 w-4" /></a>
+          <a href={issueHref} target="_blank" rel="noreferrer" aria-label="Crear reporte en GitHub" title="Usar GitHub" className="grid h-11 w-11 place-items-center border border-white/15 text-[#a8c888] transition hover:border-[#6aab48]/60 hover:text-[#e8f2d8]"><GithubIcon className="h-4 w-4" /></a>
+          <button type="submit" disabled={!canSubmit} className="inline-flex h-11 min-w-44 items-center justify-center gap-2 bg-[#b8e840] px-5 text-sm font-black text-[#0c110a] transition hover:bg-[#c7f35c] disabled:cursor-not-allowed disabled:opacity-45">
+            {submitState === "submitting" ? <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Send className="h-4 w-4" aria-hidden="true" />}
+            {submitState === "submitting" ? "Enviando" : "Enviar a revisión"}
           </button>
         </div>
       </div>

@@ -18,6 +18,7 @@
     "landmarks:review": "node scripts/generate-landmarks.mjs",
     "landmarks:apply": "node scripts/generate-landmarks.mjs --apply && node scripts/generate-landmark-index.mjs",
     "landmarks:index": "node scripts/generate-landmark-index.mjs",
+    "db:seed-routes": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/sync-routes-to-supabase.mjs",
     "guide:screenshots": "node scripts/capture-guide-screenshots.mjs",
     "video:record": "node scripts/record-demo-video.mjs",
     "video:studio": "remotion studio video/index.ts",
@@ -28,6 +29,8 @@
     "check": "pnpm typecheck && pnpm lint && pnpm test && pnpm build && pnpm bundle:check"
   },
   "dependencies": {
+    "@supabase/ssr": "0.12.5",
+    "@supabase/supabase-js": "2.112.4",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
     "fuse.js": "^7.5.0",

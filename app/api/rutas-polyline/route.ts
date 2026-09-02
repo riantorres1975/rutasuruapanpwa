@@ -1,19 +1,10 @@
-import { readFileSync } from "fs";
-import { join } from "path";
-import type { ProductionRoute } from "@/lib/types";
+import { getPublishedRouteData } from "@/lib/route-repository";
 
 export const revalidate = 3600;
 
 export async function GET() {
-  let routes: ProductionRoute[];
-  try {
-    routes = JSON.parse(readFileSync(join(process.cwd(), "data/rutas_produccion_final.json"), "utf8"));
-  } catch {
-    return new Response(JSON.stringify({ error: "Route data unavailable" }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
+  const bundle = await getPublishedRouteData();
+  const routes = bundle.routes;
 
   if (!Array.isArray(routes) || routes.length === 0) {
     console.error("[GET /api/rutas-polyline] rutas_produccion_final.json is empty or invalid");
@@ -30,6 +21,8 @@ export async function GET() {
     headers: {
       "Content-Type": "application/json",
       "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
+      "X-UruGo-Data-Source": bundle.source,
+      "X-UruGo-Data-Version": bundle.version,
     },
   });
 }
