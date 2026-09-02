@@ -39,6 +39,19 @@ En **Authentication > URL Configuration** agrega:
 - Redirect URL: `https://www.urugo.app/auth/callback`
 - Desarrollo: `http://localhost:3000/auth/callback`
 
+En **Authentication > Email Templates**, actualiza el enlace de las plantillas
+**Confirm signup** y **Magic link** para que la sesión pueda validarse en el
+servidor:
+
+```html
+<a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=email">
+  Entrar al panel de UruGo
+</a>
+```
+
+El callback acepta este flujo con `token_hash` y conserva compatibilidad con
+enlaces PKCE que entreguen un parámetro `code`.
+
 Los correos incluidos en `ADMIN_EMAILS` pueden entrar directamente. Para autorizar a otra persona sin cambiar variables, registra su correo en minúsculas:
 
 ```sql

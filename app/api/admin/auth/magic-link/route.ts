@@ -53,7 +53,6 @@ export async function POST(request: NextRequest) {
   }
 
   const callback = new URL("/auth/callback", request.url);
-  callback.searchParams.set("next", "/admin");
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: { emailRedirectTo: callback.toString(), shouldCreateUser: true },
