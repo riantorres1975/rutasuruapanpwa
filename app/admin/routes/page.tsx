@@ -20,7 +20,11 @@ type RouteRow = {
   last_verified_at: string | null;
 };
 
-type ConfirmationRow = { route_name: string; confirmation_type: "seen_today" | "not_running" | "changed" };
+type ConfirmationRow = {
+  route_name: string;
+  confirmation_type: "seen_today" | "not_running" | "changed";
+  status: "pending" | "accepted" | "dismissed";
+};
 
 const statusLabels = {
   active: "Activa",
@@ -38,7 +42,7 @@ export default async function AdminRoutesPage({ searchParams }: Props) {
 
   const [routeResult, confirmationResult] = await Promise.all([
     supabase.from("routes").select("id,name,original_name,color,verified,operational_status,data_version,last_verified_at").order("name").order("id"),
-    supabase.from("route_confirmations").select("route_name,confirmation_type").order("observed_at", { ascending: false }).limit(5000),
+    supabase.from("route_confirmations").select("route_name,confirmation_type,status").order("observed_at", { ascending: false }).limit(5000),
   ]);
 
   const routes = (routeResult.data ?? []) as RouteRow[];
@@ -48,11 +52,11 @@ export default async function AdminRoutesPage({ searchParams }: Props) {
     ? routes.filter((route) => `${route.name} ${route.original_name} ${route.id}`.toLocaleLowerCase("es-MX").includes(query))
     : routes;
 
-  const signals = new Map<string, { seen: number; warnings: number }>();
+  const signals = new Map<string, { acceptedSeen: number; pending: number }>();
   for (const confirmation of confirmations) {
-    const current = signals.get(confirmation.route_name) ?? { seen: 0, warnings: 0 };
-    if (confirmation.confirmation_type === "seen_today") current.seen += 1;
-    else current.warnings += 1;
+    const current = signals.get(confirmation.route_name) ?? { acceptedSeen: 0, pending: 0 };
+    if (confirmation.status === "pending") current.pending += 1;
+    if (confirmation.status === "accepted" && confirmation.confirmation_type === "seen_today") current.acceptedSeen += 1;
     signals.set(confirmation.route_name, current);
   }
 
@@ -81,7 +85,7 @@ export default async function AdminRoutesPage({ searchParams }: Props) {
             <div className="mb-4 flex items-center justify-between text-xs text-[#60784f]"><span>{visibleRoutes.length} recorridos</span><span>Señales comunitarias recientes</span></div>
             <div className="divide-y divide-white/[0.08] border-y border-white/[0.08]">
               {visibleRoutes.map((route) => {
-                const routeSignals = signals.get(route.name) ?? { seen: 0, warnings: 0 };
+                const routeSignals = signals.get(route.name) ?? { acceptedSeen: 0, pending: 0 };
                 const href = `/admin/routes/${route.id}${params.reporte ? `?reporte=${encodeURIComponent(params.reporte)}` : ""}`;
                 return (
                   <Link key={route.id} href={href} className="grid gap-4 px-2 py-5 transition hover:bg-white/[0.025] sm:grid-cols-[minmax(0,1fr)_130px_180px_36px] sm:items-center sm:px-4">
@@ -92,7 +96,7 @@ export default async function AdminRoutesPage({ searchParams }: Props) {
                     <div className="text-xs"><span className="text-[#78965f]">Versión </span><strong className="text-[#c9dbb9]">{route.data_version}</strong></div>
                     <div className="flex flex-wrap gap-2 text-[11px] font-bold">
                       <span className={`px-2 py-1 ${route.operational_status === "active" ? "bg-[#6aab48]/10 text-[#a8c888]" : "bg-[#f4c84a]/10 text-[#f4df98]"}`}>{statusLabels[route.operational_status]}</span>
-                      <span className="inline-flex items-center gap-1 px-2 py-1 text-[#78965f]"><Activity className="h-3 w-3" /> {routeSignals.seen} vistas · {routeSignals.warnings} alertas</span>
+                      <span className="inline-flex items-center gap-1 px-2 py-1 text-[#78965f]"><Activity className="h-3 w-3" /> {routeSignals.acceptedSeen} vistas aceptadas · {routeSignals.pending} por revisar</span>
                     </div>
                     <ArrowRight className="hidden h-4 w-4 text-[#60784f] sm:block" aria-hidden="true" />
                   </Link>

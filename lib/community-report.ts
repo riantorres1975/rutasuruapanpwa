@@ -95,3 +95,7 @@ export function parseRouteConfirmation(value: unknown): RouteConfirmationInput |
     website: typeof value.website === "string" ? value.website.trim().slice(0, 200) : "",
   };
 }
+
+export function isDuplicateRouteConfirmationError(value: unknown): boolean {
+  return isRecord(value) && value.code === "23505";
+}

@@ -88,6 +88,7 @@ Si Supabase no responde, el servidor vuelve automáticamente al JSON incluido en
 | `GET /api/v1/routes` | Público, cacheado | Entrega recorridos aprobados y versión |
 | `/admin` | Administradores | Revisa y clasifica reportes |
 | `/admin/routes` | Administradores | Consulta señales y prepara revisiones |
+| `/admin/signals` | Administradores | Acepta o descarta confirmaciones rápidas |
 | `/admin/routes/[id]` | Administradores | Publica y restaura versiones de una ruta |
 
 ## Publicar una corrección
@@ -104,5 +105,7 @@ La publicación se ejecuta en una transacción: bloquea la versión actual, crea
 - Todas las tablas tienen RLS y los roles `anon` y `authenticated` carecen de acceso directo.
 - Las escrituras públicas pasan por Route Handlers con validación, límite de tamaño, mismo origen y rate limiting.
 - La IP no se guarda; se transforma mediante HMAC para reconocer abuso sin conservar la dirección original.
+- Una misma instalación sólo aporta una señal por ruta y día; los reintentos se aceptan sin duplicar el conteo.
+- Aceptar o descartar una señal queda registrado en una bitácora privada y no modifica el mapa.
 - El contacto opcional y la bitácora de moderación son privados.
 - Aprobar un reporte no publica una geometría. La publicación versionada se implementa como una acción separada para permitir revisión y rollback.

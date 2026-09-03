@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { parseCommunityReport, parseRouteConfirmation } from "@/lib/community-report";
+import {
+  isDuplicateRouteConfirmationError,
+  parseCommunityReport,
+  parseRouteConfirmation,
+} from "@/lib/community-report";
 
 describe("community report validation", () => {
   it("normaliza un reporte válido y limita la fuente a una ruta interna", () => {
@@ -43,5 +47,11 @@ describe("community report validation", () => {
       routeName: "Ruta 14",
       confirmationType: "seen_today",
     })).toBeNull();
+  });
+
+  it("reconoce únicamente conflictos de unicidad como confirmaciones repetidas", () => {
+    expect(isDuplicateRouteConfirmationError({ code: "23505", message: "duplicate key" })).toBe(true);
+    expect(isDuplicateRouteConfirmationError({ code: "42501" })).toBe(false);
+    expect(isDuplicateRouteConfirmationError(null)).toBe(false);
   });
 });

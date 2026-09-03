@@ -10,6 +10,7 @@ import {
 import { createSupabaseAdminClient, createSupabaseSessionClient } from "@/lib/supabase/server";
 
 const REVIEW_STATUSES = new Set(["reviewing", "approved", "rejected"]);
+const CONFIRMATION_STATUSES = new Set(["pending", "accepted", "dismissed"]);
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function refreshRouteViews(routeId: number) {
@@ -46,6 +47,36 @@ export async function reviewCommunityReport(formData: FormData) {
 
   if (error) throw new Error(`No se pudo actualizar el reporte: ${error.message}`);
   revalidatePath("/admin");
+}
+
+export async function reviewRouteConfirmation(formData: FormData) {
+  const access = await getAdminAccess();
+  if (access.status !== "admin") throw new Error("No tienes permiso para moderar señales.");
+
+  const confirmationId = String(formData.get("confirmationId") ?? "").trim();
+  const status = String(formData.get("status") ?? "").trim();
+  const note = String(formData.get("note") ?? "").trim().slice(0, 1_000);
+  if (!UUID_PATTERN.test(confirmationId) || !CONFIRMATION_STATUSES.has(status)) {
+    throw new Error("La acción de moderación no es válida.");
+  }
+
+  const supabase = createSupabaseAdminClient();
+  if (!supabase) throw new Error("Supabase no está configurado.");
+
+  const pending = status === "pending";
+  const { error } = await supabase
+    .from("route_confirmations")
+    .update({
+      status,
+      moderator_note: note || null,
+      reviewed_by: pending ? null : access.userId,
+      reviewed_at: pending ? null : new Date().toISOString(),
+    })
+    .eq("id", confirmationId);
+
+  if (error) throw new Error(`No se pudo actualizar la señal: ${error.message}`);
+  revalidatePath("/admin/signals");
+  revalidatePath("/admin/routes");
 }
 
 export async function signOutAdmin() {

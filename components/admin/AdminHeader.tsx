@@ -1,11 +1,11 @@
-import { ClipboardList, LogOut, Route } from "lucide-react";
+import { ClipboardList, LogOut, RadioTower, Route } from "lucide-react";
 import Link from "next/link";
 import { signOutAdmin } from "@/app/admin/actions";
 import Logo from "@/components/Logo";
 
 type Props = {
   email: string;
-  active: "reports" | "routes";
+  active: "reports" | "routes" | "signals";
 };
 
 export default function AdminHeader({ email, active }: Props) {
@@ -29,6 +29,9 @@ export default function AdminHeader({ email, active }: Props) {
           </Link>
           <Link href="/admin/routes" className={linkClass(active === "routes")} aria-current={active === "routes" ? "page" : undefined}>
             <Route className="h-4 w-4" aria-hidden="true" /> Rutas
+          </Link>
+          <Link href="/admin/signals" className={linkClass(active === "signals")} aria-current={active === "signals" ? "page" : undefined}>
+            <RadioTower className="h-4 w-4" aria-hidden="true" /> Señales
           </Link>
         </nav>
 

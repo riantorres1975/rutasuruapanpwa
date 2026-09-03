@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { parseRouteConfirmation } from "@/lib/community-report";
+import { isDuplicateRouteConfirmationError, parseRouteConfirmation } from "@/lib/community-report";
 import { getSafeSourcePath, hashSubmitter } from "@/lib/community-submission";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
 import {
@@ -52,6 +52,9 @@ export async function POST(request: NextRequest) {
   });
 
   if (error) {
+    if (isDuplicateRouteConfirmationError(error)) {
+      return Response.json({ ok: true, duplicate: true }, { status: 200 });
+    }
     console.error("[route-confirmation] No se pudo guardar:", error.message);
     return Response.json({ error: "No pudimos guardar la confirmación." }, { status: 502 });
   }
