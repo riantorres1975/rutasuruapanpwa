@@ -102,10 +102,12 @@ Si Supabase no responde, el servidor vuelve automáticamente al JSON incluido en
 | `/admin/routes` | Administradores | Consulta señales y prepara revisiones |
 | `/admin/signals` | Administradores | Acepta o descarta confirmaciones rápidas |
 | `/admin/routes/[id]` | Administradores | Publica y restaura versiones de una ruta |
+| `GET /api/admin/routes/export` | Administradores | Descarga rutas y revisiones en JSON, sin datos comunitarios |
 
 La navegación administrativa muestra contadores de reportes y señales pendientes para que la bandeja de revisión sea visible desde cualquier sección del panel.
 Cada aporte también muestra al administrador un historial agregado de aceptados, descartados y pendientes de la misma instalación anónima. El hash técnico nunca se presenta en pantalla ni se expone en endpoints públicos.
 El inventario prioriza rutas con estado operativo especial, alertas aceptadas posteriores a la última verificación, aportes pendientes o verificaciones de más de seis meses. Las confirmaciones aceptadas se deduplican por instalación antes de contar evidencia.
+El botón **Respaldo** del inventario descarga únicamente rutas y revisiones. Los reportes, contactos, agentes de usuario y hashes anónimos quedan fuera del archivo.
 
 ## Publicar una corrección
 

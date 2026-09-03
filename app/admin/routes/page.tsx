@@ -1,4 +1,4 @@
-import { Activity, AlertTriangle, ArrowRight, CheckCircle2, Search } from "lucide-react";
+import { Activity, AlertTriangle, ArrowRight, CheckCircle2, Download, Search } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import AdminHeader from "@/components/admin/AdminHeader";
@@ -93,13 +93,18 @@ export default async function AdminRoutesPage({ searchParams }: Props) {
             <h1 className="mt-2 font-serif text-4xl font-black sm:text-5xl">Rutas con memoria.</h1>
             <p className="mt-3 max-w-2xl text-sm leading-7 text-[#89a873]">Cada publicación crea una versión restaurable. Las señales comunitarias ayudan a priorizar qué recorrido revisar.</p>
           </div>
-          <form className="relative">
-            {params.reporte && <input type="hidden" name="reporte" value={params.reporte} />}
-            <input type="hidden" name="vista" value={attentionOnly ? "prioridad" : "todas"} />
-            <label htmlFor="route-search" className="sr-only">Buscar ruta</label>
-            <Search className="pointer-events-none absolute left-4 top-3.5 h-4 w-4 text-[#60784f]" />
-            <input id="route-search" name="buscar" defaultValue={params.buscar ?? ""} placeholder="Nombre, dirección o número..." className="h-11 w-full border border-white/10 bg-[#090d08] pl-11 pr-4 text-sm text-[#dceaca] outline-none placeholder:text-white/25 focus:border-[#6aab48]/70" />
-          </form>
+          <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+            <form className="relative">
+              {params.reporte && <input type="hidden" name="reporte" value={params.reporte} />}
+              <input type="hidden" name="vista" value={attentionOnly ? "prioridad" : "todas"} />
+              <label htmlFor="route-search" className="sr-only">Buscar ruta</label>
+              <Search className="pointer-events-none absolute left-4 top-3.5 h-4 w-4 text-[#60784f]" />
+              <input id="route-search" name="buscar" defaultValue={params.buscar ?? ""} placeholder="Nombre, dirección o número..." className="h-11 w-full border border-white/10 bg-[#090d08] pl-11 pr-4 text-sm text-[#dceaca] outline-none placeholder:text-white/25 focus:border-[#6aab48]/70" />
+            </form>
+            <a href="/api/admin/routes/export" download className="inline-flex h-11 items-center justify-center gap-2 border border-white/15 px-4 text-xs font-black text-[#a8c888] transition hover:border-[#6aab48]/60 hover:text-[#e8f2d8]" title="Descargar rutas e historial en JSON">
+              <Download className="h-4 w-4" aria-hidden="true" /> Respaldo
+            </a>
+          </div>
         </div>
 
         {routeResult.error ? (
