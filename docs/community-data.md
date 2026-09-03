@@ -116,6 +116,7 @@ La publicación se ejecuta en una transacción: bloquea la versión actual, crea
 
 - Todas las tablas tienen RLS y los roles `anon` y `authenticated` carecen de acceso directo.
 - Las escrituras públicas pasan por Route Handlers con validación, límite de tamaño, mismo origen y rate limiting.
+- El rate limiting usa contadores atómicos de Supabase entre instancias y guarda sólo claves HMAC; si Supabase no responde, conserva el límite local en memoria.
 - La IP no se guarda; se transforma mediante HMAC para reconocer abuso sin conservar la dirección original.
 - Una misma instalación sólo aporta una señal por ruta y día; los reintentos se aceptan sin duplicar el conteo.
 - El estado público exige dos colaboradores independientes con señales aceptadas; una sola se muestra como verificación en curso.

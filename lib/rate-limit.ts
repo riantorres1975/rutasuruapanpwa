@@ -1,20 +1,31 @@
+import { createHash, createHmac } from "node:crypto";
 import type { NextRequest } from "next/server";
+import { getAdminSupabaseConfig } from "@/lib/supabase/config";
+import { createSupabaseAdminClient } from "@/lib/supabase/server";
 
 /**
  * Rate limiting compartido.
  *
- * En producción, si están configuradas las variables de Upstash Redis
- * (UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN), el contador es
- * **durable y global** entre todas las instancias serverless.
+ * En producción usa Upstash cuando está configurado y, en caso contrario,
+ * Supabase. Ambos comparten el contador entre instancias serverless.
  *
  * Si no hay Upstash configurado (p. ej. en local), cae a un contador
  * en memoria por proceso — el mismo comportamiento que antes.
  *
- * No requiere dependencias npm: usa el REST API de Upstash vía fetch.
+ * Las claves persistentes son HMAC; nunca se envía ni almacena la IP en claro.
  */
 
 const memory = new Map<string, { count: number; resetAt: number }>();
 const MAX_MEMORY_ENTRIES = 5_000;
+
+function hashRateLimitKey(key: string): string {
+  const secret = process.env.RATE_LIMIT_HASH_SECRET?.trim()
+    || process.env.REPORTER_HASH_SECRET?.trim()
+    || getAdminSupabaseConfig()?.secretKey;
+  return secret
+    ? createHmac("sha256", secret).update(key).digest("hex")
+    : createHash("sha256").update(key).digest("hex");
+}
 
 function makeRoomInMemory(now: number): void {
   for (const [key, value] of memory.entries()) {
@@ -74,24 +85,52 @@ async function upstashLimit(
   return count <= limit;
 }
 
+async function supabaseLimit(
+  keyHash: string,
+  limit: number,
+  windowMs: number,
+): Promise<boolean | null> {
+  const supabase = createSupabaseAdminClient();
+  if (!supabase) return null;
+
+  const { data, error } = await supabase.rpc("consume_rate_limit_bucket", {
+    p_key_hash: keyHash,
+    p_limit: limit,
+    p_window_ms: windowMs,
+  });
+  if (error) throw new Error(error.message);
+  if (typeof data !== "boolean") throw new Error("Supabase: respuesta inesperada");
+  return data;
+}
+
 /**
  * Devuelve `true` si la petición está permitida, `false` si excede el límite.
  * Ante cualquier fallo de la red/Upstash, cae al limitador en memoria
  * (fail-open hacia el comportamiento local, no hacia "permitir todo").
  */
 export async function rateLimit(key: string, limit: number, windowMs: number): Promise<boolean> {
+  const keyHash = hashRateLimitKey(key);
   const url = process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
 
   if (url && token) {
     try {
-      return await upstashLimit(url, token, key, limit, windowMs);
+      return await upstashLimit(url, token, `rate-limit:${keyHash}`, limit, windowMs);
     } catch (err) {
-      console.error("[rate-limit] Upstash falló, usando memoria:", err);
+      console.error("[rate-limit] Upstash falló, probando Supabase:", err);
     }
   }
 
-  return memoryLimit(key, limit, windowMs);
+  if (process.env.NODE_ENV !== "test") {
+    try {
+      const allowed = await supabaseLimit(keyHash, limit, windowMs);
+      if (allowed !== null) return allowed;
+    } catch (err) {
+      console.error("[rate-limit] Supabase falló, usando memoria:", err);
+    }
+  }
+
+  return memoryLimit(keyHash, limit, windowMs);
 }
 
 export function resetMemoryRateLimitsForTests(): void {

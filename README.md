@@ -130,8 +130,9 @@ La aplicación estará disponible en [http://localhost:3000](http://localhost:30
 | `NEXT_PUBLIC_MAPBOX_TOKEN` | Sí | Token público para el mapa y la búsqueda de lugares |
 | `NEXT_PUBLIC_SITE_URL` | No | URL base usada en metadatos y enlaces compartidos |
 | `DEEPSEEK_API_KEY` | No | Habilita el asistente de transporte |
-| `UPSTASH_REDIS_REST_URL` | No | Almacenamiento compartido para el límite de solicitudes |
-| `UPSTASH_REDIS_REST_TOKEN` | No | Token de acceso a Upstash Redis |
+| `UPSTASH_REDIS_REST_URL` | No | Backend Redis opcional, con prioridad sobre Supabase para el límite de solicitudes |
+| `UPSTASH_REDIS_REST_TOKEN` | No | Token del backend Redis opcional |
+| `RATE_LIMIT_HASH_SECRET` | No | Secreto HMAC dedicado para anonimizar las claves del rate limit; usa `REPORTER_HASH_SECRET` como respaldo |
 | `ERROR_ALERT_WEBHOOK_URL` | No | Webhook HTTPS para alertas de errores críticos del cliente |
 | `ERROR_ALERT_WEBHOOK_TOKEN` | No | Token Bearer opcional para autenticar el webhook |
 | `DEBUG_ROUTE_SAVE_ENABLED` | No | Activa el guardado del editor de recorridos en desarrollo |
