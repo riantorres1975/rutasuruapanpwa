@@ -141,10 +141,16 @@ La aplicación estará disponible en [http://localhost:3000](http://localhost:30
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | No | Clave pública usada para iniciar la sesión administrativa |
 | `SUPABASE_SECRET_KEY` | No | Clave privada de servidor para persistencia y moderación |
 | `ADMIN_EMAILS` | No | Correos autorizados para entrar al panel, separados por comas |
+| `CRON_SECRET` | No | Secreto que protege las tareas programadas de Vercel |
+| `RESEND_API_KEY` | No | Clave privada de Resend para enviar el resumen administrativo diario |
+| `ADMIN_NOTIFICATION_FROM` | No | Remitente verificado en Resend, por ejemplo `UruGo <avisos@auth.urugo.app>` |
+| `ADMIN_NOTIFICATION_EMAILS` | No | Destinatarios del resumen, separados por comas; si se omite usa `ADMIN_EMAILS` |
 | `REPORTER_HASH_SECRET` | No | Secreto para anonimizar la IP de quien contribuye |
 | `ROUTE_DATA_SOURCE` | No | `static` por defecto; usa `supabase` después de importar y verificar las rutas |
 
 El token público de Mapbox debe restringirse por dominio desde el panel de Mapbox. Las claves privadas no deben usar el prefijo `NEXT_PUBLIC_` ni incluirse en el repositorio.
+
+El resumen administrativo se programa una vez al día y sólo se envía cuando existen reportes o señales por revisar. Requiere `CRON_SECRET`, `RESEND_API_KEY` y un remitente de un dominio verificado en Resend.
 
 En producción conviene configurar Upstash para que los límites de solicitudes se compartan entre todas las instancias. El webhook operativo es opcional: recibe únicamente errores críticos de React, deduplicados por huella durante 15 minutos, sin mensajes, trazas ni ubicación del usuario.
 

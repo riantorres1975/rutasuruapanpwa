@@ -109,6 +109,19 @@ Cada aporte también muestra al administrador un historial agregado de aceptados
 El inventario prioriza rutas con estado operativo especial, alertas aceptadas posteriores a la última verificación, aportes pendientes o verificaciones de más de seis meses. Las confirmaciones aceptadas se deduplican por instalación antes de contar evidencia.
 El botón **Respaldo** del inventario descarga únicamente rutas y revisiones. Los reportes, contactos, agentes de usuario y hashes anónimos quedan fuera del archivo.
 
+## Resumen diario por correo
+
+Vercel ejecuta `GET /api/cron/admin-digest` diariamente a las `14:00 UTC`, aproximadamente a las `08:00` en Uruapan. La hora exacta puede variar en el plan gratuito. Configura estas variables en producción:
+
+```bash
+CRON_SECRET=un-secreto-aleatorio-de-al-menos-16-caracteres
+RESEND_API_KEY=re_...
+ADMIN_NOTIFICATION_FROM="UruGo <avisos@auth.urugo.app>"
+ADMIN_NOTIFICATION_EMAILS=destino@ejemplo.com
+```
+
+`ADMIN_NOTIFICATION_EMAILS` es opcional y, si se omite, se reutilizan los correos de `ADMIN_EMAILS`. El remitente debe pertenecer a un dominio verificado en Resend. La tarea no envía correo cuando no hay pendientes y usa una clave de idempotencia por fecha para evitar duplicados durante reintentos del mismo día.
+
 ## Publicar una corrección
 
 1. Comprueba el reporte y márcalo como aprobado.
