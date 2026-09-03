@@ -57,6 +57,7 @@ const exploreLinks = [
   { label: "Guía de uso", href: "/guia" },
   { label: "Guías locales", href: "/blog" },
   { label: "Cómo se hace UruGo", href: "/acerca-de" },
+  { label: "Datos y API", href: "/datos-api" },
 ] as const;
 
 const socialLinks = [
@@ -146,6 +147,7 @@ export default function PublicFooter() {
           <p>UruGo no está afiliado al gobierno ni a las empresas de transporte.</p>
           <nav aria-label="Información legal" className="flex flex-wrap gap-x-5 gap-y-2 font-semibold">
             <Link href="/acerca-de" className="transition hover:text-[#dceaca]">Metodología y autor</Link>
+            <Link href="/datos-api" className="transition hover:text-[#dceaca]">Datos y API</Link>
             <Link href="/reportar-error" className="transition hover:text-[#dceaca]">Reportar un error</Link>
             <Link href="/privacidad" className="transition hover:text-[#dceaca]">Privacidad</Link>
           </nav>

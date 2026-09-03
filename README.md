@@ -188,6 +188,8 @@ La fuente principal de recorridos es `data/rutas_produccion_final.json`. El proy
 
 Los reportes sobre rutas, horarios o puntos incorrectos pueden enviarse desde la página [`/reportar-error`](https://www.urugo.app/reportar-error). Cuando Supabase está configurado quedan pendientes en el panel privado; ningún reporte modifica directamente el mapa. La guía de configuración está en [`docs/community-data.md`](./docs/community-data.md).
 
+La consulta pública versionada está documentada en [`/datos-api`](https://www.urugo.app/datos-api). `GET /api/v1/routes` admite CORS, caché y validación condicional mediante `ETag`; las escrituras permanecen limitadas al formulario de UruGo y siempre requieren moderación.
+
 ### Generar puntos de referencia
 
 Los puntos de referencia de las rutas pueden regenerarse desde OpenStreetMap sin sobrescribir los que ya fueron verificados manualmente:
