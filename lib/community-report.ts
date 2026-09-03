@@ -18,6 +18,7 @@ export type RouteConfirmationType = (typeof ROUTE_CONFIRMATION_TYPES)[number];
 
 export type CommunityReportInput = {
   reportType: CommunityReportType;
+  routeKey: string | null;
   routeName: string | null;
   place: string | null;
   description: string;
@@ -70,6 +71,7 @@ export function parseCommunityReport(value: unknown): CommunityReportInput | nul
   const website = typeof value.website === "string" ? value.website.trim().slice(0, 200) : "";
   return {
     reportType: value.reportType,
+    routeKey: optionalText(value.routeKey, 140)?.match(/^[a-z0-9-]+$/)?.[0] ?? null,
     routeName: optionalText(value.routeName, 120),
     place: optionalText(value.place, 180),
     description,

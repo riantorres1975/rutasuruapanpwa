@@ -31,6 +31,7 @@ const REPORT_TYPES: ReadonlyArray<{ value: CommunityReportType; label: string }>
 
 type ReportBugFormProps = {
   initialRoute?: string;
+  initialRouteKey?: string;
   initialLandmark?: string;
 };
 
@@ -44,7 +45,7 @@ function GithubIcon({ className }: { className?: string }) {
   );
 }
 
-export default function ReportBugForm({ initialRoute = "", initialLandmark = "" }: ReportBugFormProps) {
+export default function ReportBugForm({ initialRoute = "", initialRouteKey, initialLandmark = "" }: ReportBugFormProps) {
   const [reportType, setReportType] = useState<CommunityReportType>("route_incorrect");
   const [routeName, setRouteName] = useState(initialRoute);
   const [place, setPlace] = useState(initialLandmark ? `Cerca de ${initialLandmark}` : "");
@@ -99,6 +100,7 @@ export default function ReportBugForm({ initialRoute = "", initialLandmark = "" 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           reportType,
+          routeKey: initialRouteKey && routeName.trim() === initialRoute.trim() ? initialRouteKey : null,
           routeName,
           place,
           description,

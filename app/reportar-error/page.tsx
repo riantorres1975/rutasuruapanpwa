@@ -5,6 +5,7 @@ import PageHeader from "@/components/PageHeader";
 import PublicFooter from "@/components/PublicFooter";
 import PublicHeader from "@/components/PublicHeader";
 import ReportBugForm from "@/components/ReportBugForm";
+import { findRouteSeoItem } from "@/lib/route-seo";
 
 export const metadata: Metadata = {
   title: "Reportar un error",
@@ -36,12 +37,13 @@ const REPORT_TIPS = [
 ] as const;
 
 type ReportErrorPageProps = {
-  searchParams: Promise<{ ruta?: string; referencia?: string }>;
+  searchParams: Promise<{ ruta?: string; referencia?: string; clave?: string }>;
 };
 
 export default async function ReportErrorPage({ searchParams }: ReportErrorPageProps) {
   const params = await searchParams;
-  const initialRoute = params.ruta?.trim().slice(0, 100) ?? "";
+  const linkedRoute = params.clave ? findRouteSeoItem(params.clave.trim().slice(0, 140)) : null;
+  const initialRoute = linkedRoute?.name ?? params.ruta?.trim().slice(0, 100) ?? "";
   const initialLandmark = params.referencia?.trim().slice(0, 120) ?? "";
   return (
     <main style={{ background: "#0c110a", color: "#e8f2d8", minHeight: "100dvh" }}>
@@ -83,7 +85,7 @@ export default async function ReportErrorPage({ searchParams }: ReportErrorPageP
               </div>
             </aside>
 
-            <ReportBugForm initialRoute={initialRoute} initialLandmark={initialLandmark} />
+            <ReportBugForm initialRoute={initialRoute} initialRouteKey={linkedRoute?.slug} initialLandmark={initialLandmark} />
           </div>
         </div>
       </div>

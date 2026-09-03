@@ -1,12 +1,16 @@
 import { expect, test } from "./fixtures";
 
 test("el reporte comunitario confirma que queda pendiente de revisión", async ({ page }) => {
-  await page.route("**/api/community/reports", (route) => route.fulfill({
-    status: 201,
-    contentType: "application/json",
-    body: JSON.stringify({ ok: true }),
-  }));
-  await page.goto("/reportar-error?ruta=Ruta%2014");
+  let submittedRouteKey: string | null = null;
+  await page.route("**/api/community/reports", (route) => {
+    submittedRouteKey = (route.request().postDataJSON() as { routeKey?: string }).routeKey ?? null;
+    return route.fulfill({
+      status: 201,
+      contentType: "application/json",
+      body: JSON.stringify({ ok: true }),
+    });
+  });
+  await page.goto("/reportar-error?ruta=Ruta%2014&clave=ruta-14-llanitos");
 
   await page.getByLabel("Tipo de reporte").selectOption("route_inactive");
   await page.getByLabel("Qué pasó").fill("Varias personas indican que esta ruta ya no circula.");
@@ -14,6 +18,7 @@ test("el reporte comunitario confirma que queda pendiente de revisión", async (
 
   await expect(page.getByRole("heading", { name: "Gracias por ayudar a mejorar la ruta." })).toBeVisible();
   await expect(page.getByText(/Ningún dato cambia en el mapa/)).toBeVisible();
+  expect(submittedRouteKey).toBe("ruta-14-llanitos");
 });
 
 test("la página de una ruta permite enviar una confirmación rápida", async ({ page }) => {

@@ -13,6 +13,7 @@ type ReportStatus = "pending" | "reviewing" | "approved" | "rejected";
 type CommunityReportRow = {
   id: string;
   route_id: number | null;
+  route_key: string | null;
   report_type: string;
   route_name: string | null;
   place: string | null;
@@ -82,7 +83,7 @@ export default async function AdminPage({ searchParams }: Props) {
     Promise.all(countRequests),
     supabase
       .from("community_reports")
-      .select("id,route_id,report_type,route_name,place,description,expected_result,contact,source_path,status,moderator_note,created_at")
+      .select("id,route_id,route_key,report_type,route_name,place,description,expected_result,contact,source_path,status,moderator_note,created_at")
       .eq("status", status)
       .order("created_at", { ascending: false })
       .limit(50),
@@ -135,6 +136,7 @@ export default async function AdminPage({ searchParams }: Props) {
                     {report.expected_result && <div className="mt-4 border-l-2 border-[#6aab48] pl-4"><p className="text-[10px] font-black uppercase text-[#78965f]">Debería mostrar</p><p className="mt-1 text-sm leading-6 text-[#a8c888]">{report.expected_result}</p></div>}
                     <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs text-[#60784f]">
                       {report.source_path && <Link href={report.source_path} target="_blank" className="hover:text-[#b8e840]">Abrir página relacionada</Link>}
+                      {report.route_key && <Link href={`/ruta/${report.route_key}`} target="_blank" className="hover:text-[#b8e840]">Ver ficha de la ruta</Link>}
                       {report.contact && <span>Contacto: <span className="text-[#a8c888]">{report.contact}</span></span>}
                       {report.status === "approved" && (
                         <Link href={report.route_id ? `/admin/routes/${report.route_id}?reporte=${report.id}` : `/admin/routes?buscar=${encodeURIComponent(report.route_name ?? "")}&reporte=${report.id}`} className="font-bold text-[#b8e840] hover:underline">

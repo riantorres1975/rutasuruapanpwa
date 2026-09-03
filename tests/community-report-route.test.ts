@@ -5,6 +5,7 @@ import { resetMemoryRateLimitsForTests } from "@/lib/rate-limit";
 
 const validPayload = {
   reportType: "route_changed",
+  routeKey: "ruta-26-rio-volga",
   routeName: "Ruta 26",
   place: "Río Volga",
   description: "La ruta ahora gira antes de llegar a la avenida.",

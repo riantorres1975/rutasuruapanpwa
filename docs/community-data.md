@@ -108,5 +108,6 @@ La publicación se ejecuta en una transacción: bloquea la versión actual, crea
 - La IP no se guarda; se transforma mediante HMAC para reconocer abuso sin conservar la dirección original.
 - Una misma instalación sólo aporta una señal por ruta y día; los reintentos se aceptan sin duplicar el conteo.
 - Aceptar o descartar una señal queda registrado en una bitácora privada y no modifica el mapa.
+- Los reportes abiertos desde una ficha guardan su `route_key`; el administrador decide después qué dirección (`route_id`) corregir.
 - El contacto opcional y la bitácora de moderación son privados.
 - Aprobar un reporte no publica una geometría. La publicación versionada se implementa como una acción separada para permitir revisión y rollback.

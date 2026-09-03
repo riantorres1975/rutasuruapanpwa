@@ -118,7 +118,7 @@ export default function RouteVerification({ routeKey, routeName }: Props) {
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-l-2 border-[#b8e840] bg-[#b8e840]/[0.06] px-4 py-3" role="status">
           <p className={`text-sm font-semibold ${state === "error" ? "text-[#f4df98]" : "text-[#c9dbb9]"}`}>{message}</p>
           {state === "success" && selected !== "seen_today" && (
-            <Link href={`/reportar-error?ruta=${encodeURIComponent(routeName)}&from=ruta/${routeKey}`} className="text-xs font-black text-[#b8e840] underline underline-offset-4">
+            <Link href={`/reportar-error?ruta=${encodeURIComponent(routeName)}&clave=${encodeURIComponent(routeKey)}&from=ruta/${routeKey}`} className="text-xs font-black text-[#b8e840] underline underline-offset-4">
               Agregar detalles
             </Link>
           )}

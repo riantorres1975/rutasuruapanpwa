@@ -9,6 +9,7 @@ describe("community report validation", () => {
   it("normaliza un reporte válido y limita la fuente a una ruta interna", () => {
     expect(parseCommunityReport({
       reportType: "route_inactive",
+      routeKey: "ruta-14-llanitos",
       routeName: "  Ruta 14   Llanitos ",
       place: "Centro",
       description: "  Ya no la hemos visto circular desde hace meses. ",
@@ -18,6 +19,7 @@ describe("community report validation", () => {
       website: "",
     })).toEqual({
       reportType: "route_inactive",
+      routeKey: "ruta-14-llanitos",
       routeName: "Ruta 14 Llanitos",
       place: "Centro",
       description: "Ya no la hemos visto circular desde hace meses.",
@@ -47,6 +49,14 @@ describe("community report validation", () => {
       routeName: "Ruta 14",
       confirmationType: "seen_today",
     })).toBeNull();
+  });
+
+  it("descarta una clave de ruta alterada sin rechazar el reporte", () => {
+    expect(parseCommunityReport({
+      reportType: "route_changed",
+      routeKey: "../admin",
+      description: "El recorrido cambió desde la semana pasada.",
+    })?.routeKey).toBeNull();
   });
 
   it("reconoce únicamente conflictos de unicidad como confirmaciones repetidas", () => {

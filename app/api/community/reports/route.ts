@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { parseCommunityReport } from "@/lib/community-report";
 import { getSafeSourcePath, hashSubmitter } from "@/lib/community-submission";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
+import { findRouteSeoItem } from "@/lib/route-seo";
 import {
   hasJsonContentType,
   isSameOriginRequest,
@@ -47,9 +48,12 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const linkedRoute = report.routeKey ? findRouteSeoItem(report.routeKey) : null;
+
   const { error } = await supabase.from("community_reports").insert({
     report_type: report.reportType,
-    route_name: report.routeName,
+    route_key: linkedRoute?.slug ?? null,
+    route_name: linkedRoute?.name ?? report.routeName,
     place: report.place,
     description: report.description,
     expected_result: report.expectedResult,
