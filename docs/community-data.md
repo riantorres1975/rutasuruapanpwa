@@ -37,7 +37,17 @@ En **Authentication > URL Configuration** agrega:
 
 - URL del sitio: `https://www.urugo.app`
 - Redirect URL: `https://www.urugo.app/auth/callback`
-- Desarrollo: `http://localhost:3000/auth/callback`
+- Desarrollo opcional: `http://localhost:3000/auth/callback`
+
+Configura también el destino usado por el servidor:
+
+```bash
+ADMIN_AUTH_REDIRECT_URL=https://www.urugo.app/auth/callback
+```
+
+Supabase ignora `emailRedirectTo` cuando no coincide con una URL permitida y
+en ese caso usa la URL del sitio. Por eso la URL de producción debe aparecer
+exactamente en ambos lugares y la URL del sitio no debe quedar en localhost.
 
 En **Authentication > Email Templates**, actualiza el enlace de las plantillas
 **Confirm signup** y **Magic link** para que la sesión pueda validarse en el

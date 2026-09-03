@@ -8,6 +8,7 @@ import {
 } from "@/lib/request-security";
 import { createSupabaseAdminClient, createSupabasePublicServerClient } from "@/lib/supabase/server";
 import { getConfiguredAdminEmails } from "@/lib/supabase/config";
+import { getAdminAuthCallbackUrl } from "@/lib/admin-auth-redirect";
 
 const MAX_BODY_BYTES = 1_000;
 
@@ -52,10 +53,9 @@ export async function POST(request: NextRequest) {
     return Response.json({ ok: true });
   }
 
-  const callback = new URL("/auth/callback", request.url);
   const { error } = await supabase.auth.signInWithOtp({
     email,
-    options: { emailRedirectTo: callback.toString(), shouldCreateUser: true },
+    options: { emailRedirectTo: getAdminAuthCallbackUrl(), shouldCreateUser: true },
   });
 
   if (error) {
