@@ -105,6 +105,7 @@ Si Supabase no responde, el servidor vuelve automáticamente al JSON incluido en
 
 La navegación administrativa muestra contadores de reportes y señales pendientes para que la bandeja de revisión sea visible desde cualquier sección del panel.
 Cada aporte también muestra al administrador un historial agregado de aceptados, descartados y pendientes de la misma instalación anónima. El hash técnico nunca se presenta en pantalla ni se expone en endpoints públicos.
+El inventario prioriza rutas con estado operativo especial, alertas aceptadas posteriores a la última verificación, aportes pendientes o verificaciones de más de seis meses. Las confirmaciones aceptadas se deduplican por instalación antes de contar evidencia.
 
 ## Publicar una corrección
 

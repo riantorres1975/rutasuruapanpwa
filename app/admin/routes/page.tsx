@@ -1,13 +1,14 @@
-import { Activity, ArrowRight, Search } from "lucide-react";
+import { Activity, AlertTriangle, ArrowRight, CheckCircle2, Search } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import AdminHeader from "@/components/admin/AdminHeader";
 import { getAdminAccess } from "@/lib/admin-auth";
+import { summarizeAdminRouteReview, type AdminRouteSignal } from "@/lib/admin-route-review";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
-type Props = { searchParams: Promise<{ buscar?: string; reporte?: string }> };
+type Props = { searchParams: Promise<{ buscar?: string; reporte?: string; vista?: string }> };
 
 type RouteRow = {
   id: number;
@@ -20,10 +21,8 @@ type RouteRow = {
   last_verified_at: string | null;
 };
 
-type ConfirmationRow = {
+type ConfirmationRow = AdminRouteSignal & {
   route_name: string;
-  confirmation_type: "seen_today" | "not_running" | "changed";
-  status: "pending" | "accepted" | "dismissed";
 };
 
 const statusLabels = {
@@ -32,6 +31,14 @@ const statusLabels = {
   inactive: "Inactiva",
   historical: "Histórica",
 };
+
+function formatVerifiedDate(value: string | null): string {
+  if (!value) return "Sin fecha de verificación";
+  return `Verificada ${new Intl.DateTimeFormat("es-MX", {
+    dateStyle: "medium",
+    timeZone: "America/Mexico_City",
+  }).format(new Date(value))}`;
+}
 
 export default async function AdminRoutesPage({ searchParams }: Props) {
   const [access, params] = await Promise.all([getAdminAccess(), searchParams]);
@@ -42,23 +49,39 @@ export default async function AdminRoutesPage({ searchParams }: Props) {
 
   const [routeResult, confirmationResult] = await Promise.all([
     supabase.from("routes").select("id,name,original_name,color,verified,operational_status,data_version,last_verified_at").order("name").order("id"),
-    supabase.from("route_confirmations").select("route_name,confirmation_type,status").order("observed_at", { ascending: false }).limit(5000),
+    supabase.from("route_confirmations").select("route_name,confirmation_type,status,observed_at,submitted_by_hash").order("observed_at", { ascending: false }).limit(5000),
   ]);
 
   const routes = (routeResult.data ?? []) as RouteRow[];
   const confirmations = (confirmationResult.data ?? []) as ConfirmationRow[];
   const query = params.buscar?.trim().toLocaleLowerCase("es-MX") ?? "";
-  const visibleRoutes = query
-    ? routes.filter((route) => `${route.name} ${route.original_name} ${route.id}`.toLocaleLowerCase("es-MX").includes(query))
-    : routes;
+  const attentionOnly = params.vista !== "todas";
 
-  const signals = new Map<string, { acceptedSeen: number; pending: number }>();
+  const signals = new Map<string, ConfirmationRow[]>();
   for (const confirmation of confirmations) {
-    const current = signals.get(confirmation.route_name) ?? { acceptedSeen: 0, pending: 0 };
-    if (confirmation.status === "pending") current.pending += 1;
-    if (confirmation.status === "accepted" && confirmation.confirmation_type === "seen_today") current.acceptedSeen += 1;
+    const current = signals.get(confirmation.route_name) ?? [];
+    current.push(confirmation);
     signals.set(confirmation.route_name, current);
   }
+
+  const routeRows = routes.map((route) => ({
+    route,
+    review: summarizeAdminRouteReview(route, signals.get(route.name) ?? []),
+  }));
+  const attentionCount = routeRows.filter(({ review }) => review.needsAttention).length;
+  const visibleRoutes = routeRows
+    .filter(({ route, review }) => (!attentionOnly || review.needsAttention)
+      && (!query || `${route.name} ${route.original_name} ${route.id}`.toLocaleLowerCase("es-MX").includes(query)))
+    .sort((left, right) => right.review.priority - left.review.priority
+      || left.route.name.localeCompare(right.route.name, "es-MX")
+      || left.route.id - right.route.id);
+
+  const listHref = (view: "prioridad" | "todas") => {
+    const search = new URLSearchParams({ vista: view });
+    if (query) search.set("buscar", params.buscar?.trim() ?? "");
+    if (params.reporte) search.set("reporte", params.reporte);
+    return `/admin/routes?${search}`;
+  };
 
   return (
     <main className="min-h-dvh bg-[#0c110a] text-[#e8f2d8]">
@@ -72,6 +95,7 @@ export default async function AdminRoutesPage({ searchParams }: Props) {
           </div>
           <form className="relative">
             {params.reporte && <input type="hidden" name="reporte" value={params.reporte} />}
+            <input type="hidden" name="vista" value={attentionOnly ? "prioridad" : "todas"} />
             <label htmlFor="route-search" className="sr-only">Buscar ruta</label>
             <Search className="pointer-events-none absolute left-4 top-3.5 h-4 w-4 text-[#60784f]" />
             <input id="route-search" name="buscar" defaultValue={params.buscar ?? ""} placeholder="Nombre, dirección o número..." className="h-11 w-full border border-white/10 bg-[#090d08] pl-11 pr-4 text-sm text-[#dceaca] outline-none placeholder:text-white/25 focus:border-[#6aab48]/70" />
@@ -82,28 +106,37 @@ export default async function AdminRoutesPage({ searchParams }: Props) {
           <p className="mt-8 border-l-2 border-[#f4c84a] px-4 py-3 text-sm text-[#f4df98]">No se pudo cargar el inventario: {routeResult.error.message}</p>
         ) : (
           <section className="mt-6" aria-label="Rutas administrables">
-            <div className="mb-4 flex items-center justify-between text-xs text-[#60784f]"><span>{visibleRoutes.length} recorridos</span><span>Señales comunitarias recientes</span></div>
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-4 border-b border-white/[0.08] pb-4">
+              <nav className="flex gap-1" aria-label="Filtrar inventario">
+                <Link href={listHref("prioridad")} aria-current={attentionOnly ? "page" : undefined} className={`px-4 py-2 text-xs font-black transition ${attentionOnly ? "bg-[#b8e840] text-[#0c110a]" : "text-[#78965f] hover:bg-white/[0.04] hover:text-[#e8f2d8]"}`}>Por revisar <span className="ml-1 tabular-nums">{attentionCount}</span></Link>
+                <Link href={listHref("todas")} aria-current={!attentionOnly ? "page" : undefined} className={`px-4 py-2 text-xs font-black transition ${!attentionOnly ? "bg-[#b8e840] text-[#0c110a]" : "text-[#78965f] hover:bg-white/[0.04] hover:text-[#e8f2d8]"}`}>Todas <span className="ml-1 tabular-nums">{routes.length}</span></Link>
+              </nav>
+              <span className="text-xs text-[#60784f]">Alertas posteriores a la última verificación</span>
+            </div>
             <div className="divide-y divide-white/[0.08] border-y border-white/[0.08]">
-              {visibleRoutes.map((route) => {
-                const routeSignals = signals.get(route.name) ?? { acceptedSeen: 0, pending: 0 };
+              {visibleRoutes.map(({ route, review }) => {
                 const href = `/admin/routes/${route.id}${params.reporte ? `?reporte=${encodeURIComponent(params.reporte)}` : ""}`;
                 return (
                   <Link key={route.id} href={href} className="grid gap-4 px-2 py-5 transition hover:bg-white/[0.025] sm:grid-cols-[minmax(0,1fr)_130px_180px_36px] sm:items-center sm:px-4">
                     <div className="flex min-w-0 items-center gap-4">
                       <span className="h-9 w-2 shrink-0" style={{ backgroundColor: route.color }} aria-hidden="true" />
-                      <div className="min-w-0"><strong className="block truncate text-sm text-[#e8f2d8]">{route.name}</strong><span className="mt-1 block truncate text-xs text-[#78965f]">#{route.id} · {route.original_name}</span></div>
+                      <div className="min-w-0"><strong className="block truncate text-sm text-[#e8f2d8]">{route.name}</strong><span className="mt-1 block truncate text-xs text-[#78965f]">#{route.id} · {route.original_name}</span><span className="mt-1 block text-[11px] text-[#60784f]">{formatVerifiedDate(route.last_verified_at)}</span></div>
                     </div>
                     <div className="text-xs"><span className="text-[#78965f]">Versión </span><strong className="text-[#c9dbb9]">{route.data_version}</strong></div>
                     <div className="flex flex-wrap gap-2 text-[11px] font-bold">
                       <span className={`px-2 py-1 ${route.operational_status === "active" ? "bg-[#6aab48]/10 text-[#a8c888]" : "bg-[#f4c84a]/10 text-[#f4df98]"}`}>{statusLabels[route.operational_status]}</span>
-                      <span className="inline-flex items-center gap-1 px-2 py-1 text-[#78965f]"><Activity className="h-3 w-3" /> {routeSignals.acceptedSeen} vistas aceptadas · {routeSignals.pending} por revisar</span>
+                      {review.acceptedConcern > 0 && <span className="inline-flex items-center gap-1 bg-[#dd6b5f]/10 px-2 py-1 text-[#e98b80]"><AlertTriangle className="h-3 w-3" /> {review.acceptedConcern} {review.acceptedConcern === 1 ? "alerta aceptada" : "alertas aceptadas"}</span>}
+                      {review.pending > 0 && <span className="inline-flex items-center gap-1 bg-[#f4c84a]/10 px-2 py-1 text-[#f4df98]"><Activity className="h-3 w-3" /> {review.pending} por revisar</span>}
+                      {review.staleVerification && <span className="inline-flex items-center gap-1 bg-[#f4c84a]/10 px-2 py-1 text-[#f4df98]"><Activity className="h-3 w-3" /> Verificación antigua</span>}
+                      {review.acceptedSeen > 0 && <span className="inline-flex items-center gap-1 px-2 py-1 text-[#78965f]"><CheckCircle2 className="h-3 w-3" /> {review.acceptedSeen} {review.acceptedSeen === 1 ? "vista reciente" : "vistas recientes"}</span>}
+                      {!review.needsAttention && review.acceptedSeen === 0 && <span className="inline-flex items-center gap-1 px-2 py-1 text-[#60784f]"><CheckCircle2 className="h-3 w-3" /> Sin alertas</span>}
                     </div>
                     <ArrowRight className="hidden h-4 w-4 text-[#60784f] sm:block" aria-hidden="true" />
                   </Link>
                 );
               })}
             </div>
-            {visibleRoutes.length === 0 && <p className="py-16 text-center text-sm text-[#78965f]">No encontramos una ruta con ese nombre.</p>}
+            {visibleRoutes.length === 0 && <p className="py-16 text-center text-sm text-[#78965f]">{query ? "No encontramos una ruta con ese nombre." : "No hay rutas que requieran revisión."}</p>}
           </section>
         )}
       </div>
