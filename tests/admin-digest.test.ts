@@ -80,4 +80,3 @@ describe("resumen administrativo", () => {
       .rejects.toThrow("Resend rechazo el resumen administrativo (422)");
   });
 });
-

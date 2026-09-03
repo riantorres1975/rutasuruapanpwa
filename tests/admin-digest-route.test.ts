@@ -77,4 +77,3 @@ describe("cron del resumen administrativo", () => {
     expect(mocks.sendAdminDigest).not.toHaveBeenCalled();
   });
 });
-

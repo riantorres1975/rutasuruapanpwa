@@ -61,4 +61,3 @@ export async function GET(request: Request) {
     return Response.json({ error: "No se pudo generar el resumen" }, { status: 502 });
   }
 }
-
