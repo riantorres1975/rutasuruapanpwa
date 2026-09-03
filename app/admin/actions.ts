@@ -64,7 +64,7 @@ export async function reviewRouteConfirmation(formData: FormData) {
   if (!supabase) throw new Error("Supabase no está configurado.");
 
   const pending = status === "pending";
-  const { error } = await supabase
+  const { data: updatedConfirmation, error } = await supabase
     .from("route_confirmations")
     .update({
       status,
@@ -72,11 +72,15 @@ export async function reviewRouteConfirmation(formData: FormData) {
       reviewed_by: pending ? null : access.userId,
       reviewed_at: pending ? null : new Date().toISOString(),
     })
-    .eq("id", confirmationId);
+    .eq("id", confirmationId)
+    .select("route_key")
+    .maybeSingle();
 
   if (error) throw new Error(`No se pudo actualizar la señal: ${error.message}`);
+  if (!updatedConfirmation) throw new Error("No se encontró la señal que intentas moderar.");
   revalidatePath("/admin/signals");
   revalidatePath("/admin/routes");
+  revalidatePath(`/api/v1/routes/${updatedConfirmation.route_key}/community-status`);
 }
 
 export async function signOutAdmin() {

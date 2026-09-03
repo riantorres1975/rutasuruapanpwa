@@ -86,6 +86,7 @@ Si Supabase no responde, el servidor vuelve automáticamente al JSON incluido en
 | `POST /api/community/reports` | Público, limitado | Crea un reporte pendiente |
 | `POST /api/community/confirmations` | Público, limitado | Registra una observación de una ruta |
 | `GET /api/v1/routes` | Público, cacheado | Entrega recorridos aprobados y versión |
+| `GET /api/v1/routes/[key]/community-status` | Público, cacheado | Resume sólo señales aceptadas, sin datos del dispositivo |
 | `/admin` | Administradores | Revisa y clasifica reportes |
 | `/admin/routes` | Administradores | Consulta señales y prepara revisiones |
 | `/admin/signals` | Administradores | Acepta o descarta confirmaciones rápidas |

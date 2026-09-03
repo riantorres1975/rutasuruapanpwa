@@ -17,6 +17,11 @@ test("el reporte comunitario confirma que queda pendiente de revisión", async (
 });
 
 test("la página de una ruta permite enviar una confirmación rápida", async ({ page }) => {
+  await page.route("**/api/v1/routes/*/community-status", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({ state: "recently_seen", observedAt: "2026-09-02T12:00:00.000Z" }),
+  }));
   await page.route("**/api/community/confirmations", (route) => route.fulfill({
     status: 201,
     contentType: "application/json",
@@ -25,6 +30,7 @@ test("la página de una ruta permite enviar una confirmación rápida", async ({
   await page.goto("/ruta/ruta-17-purhepechas");
 
   await expect(page.getByRole("heading", { name: "¿Has visto esta ruta recientemente?" })).toBeVisible();
+  await expect(page.getByText("Actividad confirmada", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "La vi circular" }).click();
   await expect(page.getByText("Gracias. Tu confirmación quedó registrada.")).toBeVisible();
 });

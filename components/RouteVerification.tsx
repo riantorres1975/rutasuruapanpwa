@@ -1,9 +1,10 @@
 "use client";
 
-import { AlertTriangle, BusFront, Check, LoaderCircle, Route } from "lucide-react";
+import { AlertTriangle, BusFront, Check, CheckCircle2, LoaderCircle, Route } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { RouteConfirmationType } from "@/lib/community-report";
+import type { PublicRouteSignalStatus } from "@/lib/community-route-status";
 
 type Props = {
   routeKey: string;
@@ -26,6 +27,20 @@ export default function RouteVerification({ routeKey, routeName }: Props) {
   const [state, setState] = useState<State>("idle");
   const [selected, setSelected] = useState<RouteConfirmationType | null>(null);
   const [message, setMessage] = useState("");
+  const [publicStatus, setPublicStatus] = useState<PublicRouteSignalStatus | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    fetch(`/api/v1/routes/${encodeURIComponent(routeKey)}/community-status`)
+      .then(async (response) => response.ok ? response.json() as Promise<PublicRouteSignalStatus> : null)
+      .then((result) => {
+        if (active && result && ["recently_seen", "review_suggested", "no_recent_data"].includes(result.state)) {
+          setPublicStatus(result);
+        }
+      })
+      .catch(() => undefined);
+    return () => { active = false; };
+  }, [routeKey]);
 
   async function confirm(type: RouteConfirmationType) {
     if (state === "submitting" || state === "success") return;
@@ -57,6 +72,18 @@ export default function RouteVerification({ routeKey, routeName }: Props) {
 
   return (
     <section className="mt-10 border-y border-[#6aab48]/15 bg-[#0c110a] py-6" aria-labelledby="route-verification-title">
+      {publicStatus && publicStatus.state !== "no_recent_data" && (
+        <div className={`mb-6 flex gap-3 border-l-2 px-4 py-3 ${publicStatus.state === "recently_seen" ? "border-[#b8e840] bg-[#b8e840]/[0.06]" : "border-[#f4c84a] bg-[#f4c84a]/[0.06]"}`} role="status">
+          {publicStatus.state === "recently_seen" ? <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#b8e840]" aria-hidden="true" /> : <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[#f4c84a]" aria-hidden="true" />}
+          <div>
+            <p className={`text-xs font-black uppercase ${publicStatus.state === "recently_seen" ? "text-[#b8e840]" : "text-[#f4df98]"}`}>{publicStatus.state === "recently_seen" ? "Actividad confirmada" : "Información en revisión"}</p>
+            <p className="mt-1 text-sm leading-6 text-[#a8c888]">
+              {publicStatus.state === "recently_seen" ? "Una señal revisada confirma que esta ruta circuló recientemente." : "Una señal reciente indica cambios o posible suspensión. Confirma antes de viajar."}
+              {publicStatus.observedAt && <span className="ml-1 text-[#78965f]">Actualizado {new Intl.DateTimeFormat("es-MX", { dateStyle: "medium", timeZone: "America/Mexico_City" }).format(new Date(publicStatus.observedAt))}.</span>}
+            </p>
+          </div>
+        </div>
+      )}
       <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
         <div className="flex max-w-xl gap-4">
           <span className="grid h-10 w-10 shrink-0 place-items-center bg-[#b8e840] text-[#0c110a]">
