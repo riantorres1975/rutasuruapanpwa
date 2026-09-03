@@ -1,7 +1,7 @@
-import { AlertCircle, CheckCircle2, Clock3, ExternalLink, LogOut, Search, ShieldCheck, XCircle } from "lucide-react";
+import { AlertCircle, CheckCircle2, Clock3, ExternalLink, Search, ShieldCheck, XCircle } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import Logo from "@/components/Logo";
+import AdminHeader from "@/components/admin/AdminHeader";
 import { getAdminAccess } from "@/lib/admin-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import { reviewCommunityReport, signOutAdmin } from "@/app/admin/actions";
@@ -12,6 +12,7 @@ type ReportStatus = "pending" | "reviewing" | "approved" | "rejected";
 
 type CommunityReportRow = {
   id: string;
+  route_id: number | null;
   report_type: string;
   route_name: string | null;
   place: string | null;
@@ -81,7 +82,7 @@ export default async function AdminPage({ searchParams }: Props) {
     Promise.all(countRequests),
     supabase
       .from("community_reports")
-      .select("id,report_type,route_name,place,description,expected_result,contact,source_path,status,moderator_note,created_at")
+      .select("id,route_id,report_type,route_name,place,description,expected_result,contact,source_path,status,moderator_note,created_at")
       .eq("status", status)
       .order("created_at", { ascending: false })
       .limit(50),
@@ -90,12 +91,7 @@ export default async function AdminPage({ searchParams }: Props) {
 
   return (
     <main className="min-h-dvh bg-[#0c110a] text-[#e8f2d8]">
-      <header className="border-b border-white/[0.08] bg-[#090d08] px-5 sm:px-8">
-        <div className="mx-auto flex h-16 max-w-[1500px] items-center justify-between gap-4">
-          <div className="flex items-center gap-5"><Logo size={26} showName /><span className="hidden border-l border-white/10 pl-5 text-xs font-black uppercase text-[#78965f] sm:block">Control de datos</span></div>
-          <div className="flex items-center gap-3 text-xs text-[#78965f]"><span className="hidden sm:inline">{access.email}</span><form action={signOutAdmin}><button aria-label="Cerrar sesión" title="Cerrar sesión" className="grid h-9 w-9 place-items-center border border-white/10 transition hover:border-[#6aab48]/60 hover:text-[#e8f2d8]"><LogOut className="h-4 w-4" /></button></form></div>
-        </div>
-      </header>
+      <AdminHeader email={access.email} active="reports" />
 
       <div className="mx-auto max-w-[1500px] px-5 py-8 sm:px-8 lg:py-10">
         <div className="flex flex-col gap-5 border-b border-white/[0.08] pb-8 md:flex-row md:items-end md:justify-between">
@@ -140,6 +136,11 @@ export default async function AdminPage({ searchParams }: Props) {
                     <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs text-[#60784f]">
                       {report.source_path && <Link href={report.source_path} target="_blank" className="hover:text-[#b8e840]">Abrir página relacionada</Link>}
                       {report.contact && <span>Contacto: <span className="text-[#a8c888]">{report.contact}</span></span>}
+                      {report.status === "approved" && (
+                        <Link href={report.route_id ? `/admin/routes/${report.route_id}?reporte=${report.id}` : `/admin/routes?buscar=${encodeURIComponent(report.route_name ?? "")}&reporte=${report.id}`} className="font-bold text-[#b8e840] hover:underline">
+                          Preparar cambio de ruta
+                        </Link>
+                      )}
                     </div>
                   </div>
 

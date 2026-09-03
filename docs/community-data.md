@@ -87,6 +87,17 @@ Si Supabase no responde, el servidor vuelve automáticamente al JSON incluido en
 | `POST /api/community/confirmations` | Público, limitado | Registra una observación de una ruta |
 | `GET /api/v1/routes` | Público, cacheado | Entrega recorridos aprobados y versión |
 | `/admin` | Administradores | Revisa y clasifica reportes |
+| `/admin/routes` | Administradores | Consulta señales y prepara revisiones |
+| `/admin/routes/[id]` | Administradores | Publica y restaura versiones de una ruta |
+
+## Publicar una corrección
+
+1. Comprueba el reporte y márcalo como aprobado.
+2. Abre **Preparar cambio de ruta** desde el reporte o entra al inventario de rutas.
+3. Ajusta los metadatos o pega el recorrido como matriz de coordenadas, `LineString` o `Feature` GeoJSON.
+4. Describe qué cambió y cómo se verificó antes de publicar.
+
+La publicación se ejecuta en una transacción: bloquea la versión actual, crea una revisión inmutable y actualiza la ruta pública. Si otro administrador publicó mientras la pantalla estaba abierta, el cambio se rechaza hasta volver a cargar. Restaurar una revisión antigua nunca borra historia; crea una versión nueva con los datos anteriores.
 
 ## Seguridad operativa
 

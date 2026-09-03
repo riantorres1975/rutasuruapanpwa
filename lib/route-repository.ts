@@ -69,7 +69,7 @@ export async function getPublishedRouteData(): Promise<RouteDataBundle> {
 
   const { data, error } = await supabase
     .from("routes")
-    .select("id,name,original_name,color,corridor_width_m,verified,path,landmarks,data_version")
+    .select("id,name,original_name,color,corridor_width_m,verified,path,landmarks,data_version,updated_at")
     .eq("publication_status", "published")
     .eq("operational_status", "active")
     .order("id", { ascending: true });
@@ -85,6 +85,9 @@ export async function getPublishedRouteData(): Promise<RouteDataBundle> {
     return staticBundle("static-fallback");
   }
 
-  const maxVersion = data.reduce((max, row) => Math.max(max, Number(row.data_version) || 1), 1);
-  return { routes, source: "supabase", version: `supabase-${maxVersion}` };
+  const latestUpdate = data.reduce((latest, row) => {
+    const timestamp = Date.parse(String(row.updated_at));
+    return Number.isFinite(timestamp) ? Math.max(latest, timestamp) : latest;
+  }, 0);
+  return { routes, source: "supabase", version: `supabase-${latestUpdate}-${routes.length}` };
 }

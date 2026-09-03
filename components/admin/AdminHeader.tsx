@@ -1,0 +1,47 @@
+import { ClipboardList, LogOut, Route } from "lucide-react";
+import Link from "next/link";
+import { signOutAdmin } from "@/app/admin/actions";
+import Logo from "@/components/Logo";
+
+type Props = {
+  email: string;
+  active: "reports" | "routes";
+};
+
+export default function AdminHeader({ email, active }: Props) {
+  const linkClass = (selected: boolean) => `inline-flex h-9 items-center gap-2 border px-3 text-xs font-bold transition ${
+    selected
+      ? "border-[#6aab48]/50 bg-[#6aab48]/10 text-[#dceaca]"
+      : "border-transparent text-[#78965f] hover:border-white/10 hover:text-[#dceaca]"
+  }`;
+
+  return (
+    <header className="border-b border-white/[0.08] bg-[#090d08] px-5 sm:px-8">
+      <div className="mx-auto flex min-h-16 max-w-[1500px] flex-wrap items-center justify-between gap-3 py-3">
+        <div className="flex items-center gap-4">
+          <Logo size={26} showName />
+          <span className="hidden border-l border-white/10 pl-4 text-xs font-black uppercase text-[#78965f] sm:block">Control de datos</span>
+        </div>
+
+        <nav className="order-3 flex w-full gap-1 border-t border-white/[0.06] pt-3 sm:order-none sm:w-auto sm:border-0 sm:pt-0" aria-label="Administración">
+          <Link href="/admin" className={linkClass(active === "reports")} aria-current={active === "reports" ? "page" : undefined}>
+            <ClipboardList className="h-4 w-4" aria-hidden="true" /> Reportes
+          </Link>
+          <Link href="/admin/routes" className={linkClass(active === "routes")} aria-current={active === "routes" ? "page" : undefined}>
+            <Route className="h-4 w-4" aria-hidden="true" /> Rutas
+          </Link>
+        </nav>
+
+        <div className="flex items-center gap-3 text-xs text-[#78965f]">
+          <span className="hidden max-w-52 truncate lg:inline">{email}</span>
+          <form action={signOutAdmin}>
+            <button aria-label="Cerrar sesión" title="Cerrar sesión" className="grid h-9 w-9 place-items-center border border-white/10 transition hover:border-[#6aab48]/60 hover:text-[#e8f2d8]">
+              <LogOut className="h-4 w-4" />
+            </button>
+          </form>
+        </div>
+      </div>
+    </header>
+  );
+}
+
