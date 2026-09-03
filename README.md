@@ -88,6 +88,7 @@ El cálculo se realiza en el cliente con los datos del proyecto. Mapbox se utili
 | Service Worker | Instalación y caché de la PWA |
 | Vercel Analytics | Métricas de uso y rendimiento |
 | Supabase | Reportes comunitarios, autenticación administrativa e historial de rutas |
+| Resend y Vercel Cron | Resumen diario de elementos pendientes para administración |
 
 ## Puesta en marcha
 
@@ -190,11 +191,33 @@ Los módulos principales son:
 
 ## Datos y correcciones
 
-La fuente principal de recorridos es `data/rutas_produccion_final.json`. El proyecto incluye un editor visual para corregir segmentos durante el desarrollo. Su endpoint de guardado está deshabilitado por defecto y no debe exponerse públicamente sin autenticación.
+`data/rutas_produccion_final.json` se conserva como respaldo incluido en la aplicación. En producción, Supabase puede entregar las versiones publicadas y el servidor vuelve automáticamente al JSON si la fuente remota no está disponible. El proyecto también incluye un editor visual local cuyo endpoint de guardado permanece deshabilitado por defecto.
 
 Los reportes sobre rutas, horarios o puntos incorrectos pueden enviarse desde la página [`/reportar-error`](https://www.urugo.app/reportar-error). Cuando Supabase está configurado quedan pendientes en el panel privado; ningún reporte modifica directamente el mapa. La guía de configuración está en [`docs/community-data.md`](./docs/community-data.md).
 
 La consulta pública versionada está documentada en [`/datos-api`](https://www.urugo.app/datos-api). `GET /api/v1/routes` admite CORS, caché y validación condicional mediante `ETag`; las escrituras permanecen limitadas al formulario de UruGo y siempre requieren moderación.
+
+### Estado del sistema comunitario
+
+Actualmente están operativos:
+
+- Formularios públicos para reportar errores, rutas faltantes y cambios de servicio.
+- Confirmaciones rápidas desde las fichas de ruta, con deduplicación y revisión administrativa.
+- Acceso privado por enlace de correo, bandejas de moderación y bitácora de decisiones.
+- Historial agregado por colaborador anónimo, sin mostrar IP ni identificadores técnicos.
+- Inventario priorizado por antigüedad, estado operativo y evidencia comunitaria aceptada.
+- Publicación versionada de recorridos, restauración de versiones anteriores y respaldo administrativo en JSON.
+- API pública de sólo lectura con los recorridos aprobados.
+- Resumen diario protegido mediante Vercel Cron y Resend; no envía correo cuando no hay pendientes.
+
+Trabajo pendiente:
+
+- Verificar en campo las rutas antiguas o dudosas y registrar una fecha de revisión por recorrido.
+- Procesar los reportes reales de la comunidad y convertir únicamente los comprobados en nuevas versiones públicas.
+- Añadir limpieza programada de contadores técnicos vencidos y una política documentada de retención de datos privados.
+- Incorporar pruebas integrales del panel administrativo contra un proyecto Supabase aislado de producción.
+- Evaluar una API de aportes para aplicaciones externas con autenticación, cuotas y moderación; la API actual seguirá siendo de sólo lectura.
+- Mantener aplazado el seguimiento GPS colaborativo de camiones hasta definir consentimiento, consumo de batería, privacidad y controles contra ubicaciones falsas.
 
 ### Generar puntos de referencia
 
