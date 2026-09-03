@@ -2,7 +2,9 @@ import { AlertCircle, CheckCircle2, Clock3, ExternalLink, Search, ShieldCheck, X
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import AdminHeader from "@/components/admin/AdminHeader";
+import ContributorHistory from "@/components/admin/ContributorHistory";
 import { getAdminAccess } from "@/lib/admin-auth";
+import { getContributorReputations } from "@/lib/community-reputation";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import { reviewCommunityReport, signOutAdmin } from "@/app/admin/actions";
 
@@ -23,6 +25,7 @@ type CommunityReportRow = {
   evidence_url: string | null;
   proposed_path: unknown;
   source_path: string | null;
+  submitted_by_hash: string | null;
   status: ReportStatus;
   moderator_note: string | null;
   created_at: string;
@@ -85,12 +88,13 @@ export default async function AdminPage({ searchParams }: Props) {
     Promise.all(countRequests),
     supabase
       .from("community_reports")
-      .select("id,route_id,route_key,report_type,route_name,place,description,expected_result,contact,evidence_url,proposed_path,source_path,status,moderator_note,created_at")
+      .select("id,route_id,route_key,report_type,route_name,place,description,expected_result,contact,evidence_url,proposed_path,source_path,submitted_by_hash,status,moderator_note,created_at")
       .eq("status", status)
       .order("created_at", { ascending: false })
       .limit(50),
   ]);
   const reports = (reportResult.data ?? []) as CommunityReportRow[];
+  const contributorHistory = await getContributorReputations(reports.map((report) => report.submitted_by_hash));
 
   return (
     <main className="min-h-dvh bg-[#0c110a] text-[#e8f2d8]">
@@ -148,6 +152,7 @@ export default async function AdminPage({ searchParams }: Props) {
                         </Link>
                       )}
                     </div>
+                    <ContributorHistory reputation={report.submitted_by_hash ? contributorHistory.get(report.submitted_by_hash) ?? null : null} />
                   </div>
 
                   <form action={reviewCommunityReport} className="border-l border-white/[0.08] pl-5">

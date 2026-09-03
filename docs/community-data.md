@@ -103,6 +103,9 @@ Si Supabase no responde, el servidor vuelve automáticamente al JSON incluido en
 | `/admin/signals` | Administradores | Acepta o descarta confirmaciones rápidas |
 | `/admin/routes/[id]` | Administradores | Publica y restaura versiones de una ruta |
 
+La navegación administrativa muestra contadores de reportes y señales pendientes para que la bandeja de revisión sea visible desde cualquier sección del panel.
+Cada aporte también muestra al administrador un historial agregado de aceptados, descartados y pendientes de la misma instalación anónima. El hash técnico nunca se presenta en pantalla ni se expone en endpoints públicos.
+
 ## Publicar una corrección
 
 1. Comprueba el reporte y márcalo como aprobado.

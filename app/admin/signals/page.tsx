@@ -11,7 +11,9 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { reviewRouteConfirmation } from "@/app/admin/actions";
 import AdminHeader from "@/components/admin/AdminHeader";
+import ContributorHistory from "@/components/admin/ContributorHistory";
 import { getAdminAccess } from "@/lib/admin-auth";
+import { getContributorReputations } from "@/lib/community-reputation";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -26,6 +28,7 @@ type ConfirmationRow = {
   confirmation_type: ConfirmationType;
   note: string | null;
   source_path: string | null;
+  submitted_by_hash: string | null;
   status: ConfirmationStatus;
   moderator_note: string | null;
   observed_at: string;
@@ -73,7 +76,7 @@ export default async function AdminSignalsPage({ searchParams }: Props) {
 
   let confirmationQuery = supabase
     .from("route_confirmations")
-    .select("id,route_key,route_name,confirmation_type,note,source_path,status,moderator_note,observed_at")
+    .select("id,route_key,route_name,confirmation_type,note,source_path,submitted_by_hash,status,moderator_note,observed_at")
     .eq("status", status)
     .order("observed_at", { ascending: false })
     .limit(100);
@@ -84,6 +87,7 @@ export default async function AdminSignalsPage({ searchParams }: Props) {
     confirmationQuery,
   ]);
   const confirmations = (confirmationResult.data ?? []) as ConfirmationRow[];
+  const contributorHistory = await getContributorReputations(confirmations.map((confirmation) => confirmation.submitted_by_hash));
 
   const filterHref = (nextStatus: ConfirmationStatus) => {
     const query = new URLSearchParams({ estado: nextStatus });
@@ -153,6 +157,7 @@ export default async function AdminSignalsPage({ searchParams }: Props) {
                         <Link href={`/admin/routes?buscar=${encodeURIComponent(confirmation.route_name)}`} className="font-bold text-[#b8e840] hover:underline">Buscar en inventario</Link>
                         {confirmation.source_path && <Link href={confirmation.source_path} target="_blank" className="inline-flex items-center gap-1 text-[#78965f] hover:text-[#b8e840]">Abrir página <ExternalLink className="h-3 w-3" /></Link>}
                       </div>
+                      <ContributorHistory reputation={confirmation.submitted_by_hash ? contributorHistory.get(confirmation.submitted_by_hash) ?? null : null} />
                     </div>
 
                     <form action={reviewRouteConfirmation} className="border-l border-white/[0.08] pl-5">
