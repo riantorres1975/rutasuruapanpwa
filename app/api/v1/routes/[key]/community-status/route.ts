@@ -22,7 +22,7 @@ export async function GET(_request: Request, { params }: Context) {
   const cutoff = new Date(Date.now() - 90 * 24 * 60 * 60 * 1_000).toISOString();
   const { data, error } = await supabase
     .from("route_confirmations")
-    .select("confirmation_type,observed_at")
+    .select("confirmation_type,observed_at,submitted_by_hash")
     .eq("route_key", key)
     .eq("status", "accepted")
     .gte("observed_at", cutoff)

@@ -23,7 +23,7 @@ type RouteSnapshot = {
 
 type Props = {
   route: RouteSnapshot;
-  linkedReport?: { id: string; label: string } | null;
+  linkedReport?: { id: string; label: string; proposedPath: unknown } | null;
 };
 
 const fieldClass = "mt-2 h-11 w-full border border-white/10 bg-[#090d08] px-3 text-sm text-[#dceaca] outline-none transition focus:border-[#6aab48]/70";
@@ -57,6 +57,9 @@ export default function RoutePathEditor({ route, linkedReport }: Props) {
   const [path, setPath] = useState(() => JSON.stringify(route.path));
   const [color, setColor] = useState(route.color);
   const preview = useMemo(() => previewPath(path), [path]);
+  const proposedPath = Array.isArray(linkedReport?.proposedPath)
+    ? parseRoutePath(JSON.stringify(linkedReport.proposedPath))
+    : null;
 
   return (
     <form action={action} className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_420px]">
@@ -67,7 +70,16 @@ export default function RoutePathEditor({ route, linkedReport }: Props) {
       <div className="space-y-7">
         {linkedReport && (
           <div className="border-l-2 border-[#b8e840] bg-[#b8e840]/[0.06] px-4 py-3 text-sm text-[#c9dbb9]">
-            Esta revisión quedará vinculada al reporte aprobado: <strong className="text-[#e8f2d8]">{linkedReport.label}</strong>
+            <p>Esta revisión quedará vinculada al reporte aprobado: <strong className="text-[#e8f2d8]">{linkedReport.label}</strong></p>
+            {proposedPath && (
+              <button
+                type="button"
+                onClick={() => setPath(JSON.stringify(proposedPath))}
+                className="mt-3 inline-flex h-9 items-center border border-[#b8e840]/30 px-3 text-xs font-black text-[#b8e840] transition hover:bg-[#b8e840]/10"
+              >
+                Cargar propuesta como borrador
+              </button>
+            )}
           </div>
         )}
 

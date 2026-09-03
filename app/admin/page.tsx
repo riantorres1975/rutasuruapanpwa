@@ -20,6 +20,8 @@ type CommunityReportRow = {
   description: string;
   expected_result: string | null;
   contact: string | null;
+  evidence_url: string | null;
+  proposed_path: unknown;
   source_path: string | null;
   status: ReportStatus;
   moderator_note: string | null;
@@ -83,7 +85,7 @@ export default async function AdminPage({ searchParams }: Props) {
     Promise.all(countRequests),
     supabase
       .from("community_reports")
-      .select("id,route_id,route_key,report_type,route_name,place,description,expected_result,contact,source_path,status,moderator_note,created_at")
+      .select("id,route_id,route_key,report_type,route_name,place,description,expected_result,contact,evidence_url,proposed_path,source_path,status,moderator_note,created_at")
       .eq("status", status)
       .order("created_at", { ascending: false })
       .limit(50),
@@ -137,6 +139,8 @@ export default async function AdminPage({ searchParams }: Props) {
                     <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs text-[#60784f]">
                       {report.source_path && <Link href={report.source_path} target="_blank" className="hover:text-[#b8e840]">Abrir página relacionada</Link>}
                       {report.route_key && <Link href={`/ruta/${report.route_key}`} target="_blank" className="hover:text-[#b8e840]">Ver ficha de la ruta</Link>}
+                      {report.evidence_url?.startsWith("https://") && <a href={report.evidence_url} target="_blank" rel="noreferrer" className="font-bold text-[#f4c84a] hover:underline">Abrir evidencia</a>}
+                      {Array.isArray(report.proposed_path) && <span className="font-bold text-[#48cce0]">Propuesta: {report.proposed_path.length} puntos</span>}
                       {report.contact && <span>Contacto: <span className="text-[#a8c888]">{report.contact}</span></span>}
                       {report.status === "approved" && (
                         <Link href={report.route_id ? `/admin/routes/${report.route_id}?reporte=${report.id}` : `/admin/routes?buscar=${encodeURIComponent(report.route_name ?? "")}&reporte=${report.id}`} className="font-bold text-[#b8e840] hover:underline">

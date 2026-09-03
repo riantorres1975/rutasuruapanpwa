@@ -33,7 +33,8 @@ const REPORT_TIPS = [
   "Nombre o número de la ruta afectada.",
   "Colonia, calle o punto de referencia donde ocurre el problema.",
   "Qué viste en la app y qué debería mostrarse.",
-  "Captura de pantalla si tu app de correo te permite adjuntarla."
+  "Enlace a una publicación, foto o aviso que ayude a comprobarlo.",
+  "Si llegaste desde una ficha de ruta, puedes marcar el recorrido aproximado."
 ] as const;
 
 type ReportErrorPageProps = {

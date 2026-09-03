@@ -96,6 +96,7 @@ Si Supabase no responde, el servidor vuelve automáticamente al JSON incluido en
 | `POST /api/community/reports` | Público, limitado | Crea un reporte pendiente |
 | `POST /api/community/confirmations` | Público, limitado | Registra una observación de una ruta |
 | `GET /api/v1/routes` | Público, cacheado | Entrega recorridos aprobados y versión |
+| `GET /api/v1/routes/[key]/geometry` | Público, cacheado | Entrega la geometría publicada de una ruta para el editor de propuestas |
 | `GET /api/v1/routes/[key]/community-status` | Público, cacheado | Resume sólo señales aceptadas, sin datos del dispositivo |
 | `/admin` | Administradores | Revisa y clasifica reportes |
 | `/admin/routes` | Administradores | Consulta señales y prepara revisiones |
@@ -117,7 +118,9 @@ La publicación se ejecuta en una transacción: bloquea la versión actual, crea
 - Las escrituras públicas pasan por Route Handlers con validación, límite de tamaño, mismo origen y rate limiting.
 - La IP no se guarda; se transforma mediante HMAC para reconocer abuso sin conservar la dirección original.
 - Una misma instalación sólo aporta una señal por ruta y día; los reintentos se aceptan sin duplicar el conteo.
+- El estado público exige dos colaboradores independientes con señales aceptadas; una sola se muestra como verificación en curso.
 - Aceptar o descartar una señal queda registrado en una bitácora privada y no modifica el mapa.
 - Los reportes abiertos desde una ficha guardan su `route_key`; el administrador decide después qué dirección (`route_id`) corregir.
+- Las fuentes HTTPS y los recorridos aproximados enviados por la comunidad son privados. El editor sólo los carga como borrador y exige una publicación administrativa versionada.
 - El contacto opcional y la bitácora de moderación son privados.
 - Aprobar un reporte no publica una geometría. La publicación versionada se implementa como una acción separada para permitir revisión y rollback.

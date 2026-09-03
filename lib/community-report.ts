@@ -12,6 +12,7 @@ export const COMMUNITY_REPORT_TYPES = [
 ] as const;
 
 export const ROUTE_CONFIRMATION_TYPES = ["seen_today", "not_running", "changed"] as const;
+const ROUTE_PROPOSAL_REPORT_TYPES: ReadonlyArray<CommunityReportType> = ["route_incorrect", "route_changed"];
 
 export type CommunityReportType = (typeof COMMUNITY_REPORT_TYPES)[number];
 export type RouteConfirmationType = (typeof ROUTE_CONFIRMATION_TYPES)[number];
@@ -24,6 +25,8 @@ export type CommunityReportInput = {
   description: string;
   expectedResult: string | null;
   contact: string | null;
+  evidenceUrl: string | null;
+  proposedPath: [number, number][] | null;
   sourcePath: string | null;
   website: string;
 };
@@ -59,6 +62,42 @@ function sourcePath(value: unknown): string | null {
   return normalized;
 }
 
+function httpsUrl(value: unknown): string | null {
+  const normalized = optionalText(value, 500);
+  if (!normalized) return null;
+
+  try {
+    const url = new URL(normalized);
+    if (url.protocol !== "https:" || url.username || url.password) return null;
+    url.hash = "";
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
+function proposedPath(value: unknown): [number, number][] | null {
+  if (value === undefined || value === null || (Array.isArray(value) && value.length === 0)) return null;
+  if (!Array.isArray(value) || value.length < 2 || value.length > 120) return null;
+
+  const points: [number, number][] = [];
+  for (const point of value) {
+    if (!Array.isArray(point) || point.length !== 2) return null;
+    const longitude = Number(point[0]);
+    const latitude = Number(point[1]);
+    if (
+      !Number.isFinite(longitude)
+      || !Number.isFinite(latitude)
+      || longitude < -103
+      || longitude > -101
+      || latitude < 18.5
+      || latitude > 20.5
+    ) return null;
+    points.push([Number(longitude.toFixed(6)), Number(latitude.toFixed(6))]);
+  }
+  return points;
+}
+
 function includesValue<const T extends readonly string[]>(values: T, value: unknown): value is T[number] {
   return typeof value === "string" && values.includes(value);
 }
@@ -68,15 +107,28 @@ export function parseCommunityReport(value: unknown): CommunityReportInput | nul
   const description = text(value.description, 2_000);
   if (!description || description.length < 10) return null;
 
+  const routeKey = optionalText(value.routeKey, 140)?.match(/^[a-z0-9-]+$/)?.[0] ?? null;
+  const evidenceUrl = httpsUrl(value.evidenceUrl);
+  if (value.evidenceUrl && !evidenceUrl) return null;
+  const path = proposedPath(value.proposedPath);
+  const hasProposedPath = value.proposedPath !== undefined
+    && value.proposedPath !== null
+    && !(Array.isArray(value.proposedPath) && value.proposedPath.length === 0);
+  if (hasProposedPath && !path) return null;
+  if (path && !routeKey) return null;
+  if (path && !ROUTE_PROPOSAL_REPORT_TYPES.includes(value.reportType)) return null;
+
   const website = typeof value.website === "string" ? value.website.trim().slice(0, 200) : "";
   return {
     reportType: value.reportType,
-    routeKey: optionalText(value.routeKey, 140)?.match(/^[a-z0-9-]+$/)?.[0] ?? null,
+    routeKey,
     routeName: optionalText(value.routeName, 120),
     place: optionalText(value.place, 180),
     description,
     expectedResult: optionalText(value.expectedResult, 1_500),
     contact: optionalText(value.contact, 180),
+    evidenceUrl,
+    proposedPath: path,
     sourcePath: sourcePath(value.sourcePath),
     website,
   };

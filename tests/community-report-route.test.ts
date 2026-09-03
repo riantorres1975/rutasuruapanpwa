@@ -11,6 +11,8 @@ const validPayload = {
   description: "La ruta ahora gira antes de llegar a la avenida.",
   expectedResult: "Revisar el recorrido",
   contact: "",
+  evidenceUrl: "https://example.com/foto-ruta-26",
+  proposedPath: [[-102.08, 19.41], [-102.06, 19.42]],
   sourcePath: "/ruta/ruta-26",
   website: "",
 };

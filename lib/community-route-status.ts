@@ -3,25 +3,75 @@ import type { RouteConfirmationType } from "@/lib/community-report";
 export type AcceptedRouteSignal = {
   confirmation_type: RouteConfirmationType;
   observed_at: string;
+  submitted_by_hash: string | null;
 };
 
 export type PublicRouteSignalStatus = {
-  state: "recently_seen" | "review_suggested" | "no_recent_data";
+  state: "recently_seen" | "review_suggested" | "collecting_evidence" | "no_recent_data";
   observedAt: string | null;
+  supportCount: number;
+  requiredCount: number;
+  evidenceType: "circulating" | "concern" | null;
 };
 
 const RECENT_SEEN_MS = 45 * 24 * 60 * 60 * 1_000;
 const RECENT_CONCERN_MS = 90 * 24 * 60 * 60 * 1_000;
+export const PUBLIC_SIGNAL_CONSENSUS = 2;
 
-function latestTimestamp(signals: AcceptedRouteSignal[], types: RouteConfirmationType[]): number | null {
-  let latest: number | null = null;
+type NormalizedSignal = {
+  evidenceType: Exclude<PublicRouteSignalStatus["evidenceType"], null>;
+  observedAt: number;
+};
+
+function latestSignalsByContributor(
+  signals: AcceptedRouteSignal[],
+  nowTimestamp: number,
+): NormalizedSignal[] {
+  const contributors = new Map<string, NormalizedSignal>();
+
   for (const signal of signals) {
-    if (!types.includes(signal.confirmation_type)) continue;
     const timestamp = Date.parse(signal.observed_at);
     if (!Number.isFinite(timestamp)) continue;
-    if (latest === null || timestamp > latest) latest = timestamp;
+    const evidenceType = signal.confirmation_type === "seen_today" ? "circulating" : "concern";
+    const maxAge = evidenceType === "circulating" ? RECENT_SEEN_MS : RECENT_CONCERN_MS;
+    if (Math.max(0, nowTimestamp - timestamp) > maxAge) continue;
+
+    // Sin una huella no podemos demostrar independencia, así que esas señales
+    // cuentan juntas como un solo colaborador conservador.
+    const contributor = signal.submitted_by_hash || "unidentified";
+    const previous = contributors.get(contributor);
+    if (!previous || timestamp > previous.observedAt) {
+      contributors.set(contributor, { evidenceType, observedAt: timestamp });
+    }
   }
-  return latest;
+
+  return [...contributors.values()];
+}
+
+function summarizeEvidence(signals: NormalizedSignal[], evidenceType: NormalizedSignal["evidenceType"]) {
+  const matching = signals.filter((signal) => signal.evidenceType === evidenceType);
+  return {
+    count: matching.length,
+    latest: matching.reduce<number | null>(
+      (latest, signal) => latest === null || signal.observedAt > latest ? signal.observedAt : latest,
+      null,
+    ),
+  };
+}
+
+function response(
+  state: PublicRouteSignalStatus["state"],
+  observedAt: number | null,
+  supportCount: number,
+  evidenceType: PublicRouteSignalStatus["evidenceType"],
+): PublicRouteSignalStatus {
+  return {
+    state,
+    observedAt: observedAt === null ? null : new Date(observedAt).toISOString(),
+    supportCount,
+    requiredCount: PUBLIC_SIGNAL_CONSENSUS,
+    evidenceType,
+  };
 }
 
 export function getPublicRouteSignalStatus(
@@ -29,16 +79,24 @@ export function getPublicRouteSignalStatus(
   now = new Date(),
 ): PublicRouteSignalStatus {
   const nowTimestamp = now.getTime();
-  const latestSeen = latestTimestamp(signals, ["seen_today"]);
-  const latestConcern = latestTimestamp(signals, ["changed", "not_running"]);
-  const concernAge = latestConcern === null ? Number.POSITIVE_INFINITY : Math.max(0, nowTimestamp - latestConcern);
-  const seenAge = latestSeen === null ? Number.POSITIVE_INFINITY : Math.max(0, nowTimestamp - latestSeen);
+  const recentSignals = latestSignalsByContributor(signals, nowTimestamp);
+  const seen = summarizeEvidence(recentSignals, "circulating");
+  const concern = summarizeEvidence(recentSignals, "concern");
+  const seenHasConsensus = seen.count >= PUBLIC_SIGNAL_CONSENSUS;
+  const concernHasConsensus = concern.count >= PUBLIC_SIGNAL_CONSENSUS;
 
-  if (latestConcern !== null && concernAge <= RECENT_CONCERN_MS && (latestSeen === null || latestConcern > latestSeen)) {
-    return { state: "review_suggested", observedAt: new Date(latestConcern).toISOString() };
+  if (concernHasConsensus && (!seenHasConsensus || (concern.latest ?? 0) > (seen.latest ?? 0))) {
+    return response("review_suggested", concern.latest, concern.count, "concern");
   }
-  if (latestSeen !== null && seenAge <= RECENT_SEEN_MS) {
-    return { state: "recently_seen", observedAt: new Date(latestSeen).toISOString() };
+  if (seenHasConsensus) {
+    return response("recently_seen", seen.latest, seen.count, "circulating");
   }
-  return { state: "no_recent_data", observedAt: null };
+
+  const latestType = (concern.latest ?? 0) > (seen.latest ?? 0) ? "concern" : "circulating";
+  const latestEvidence = latestType === "concern" ? concern : seen;
+  if (latestEvidence.latest !== null) {
+    return response("collecting_evidence", latestEvidence.latest, latestEvidence.count, latestType);
+  }
+
+  return response("no_recent_data", null, 0, null);
 }

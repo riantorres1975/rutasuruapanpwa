@@ -2,7 +2,9 @@
 
 import { CheckCircle2, LoaderCircle, Mail, Send } from "lucide-react";
 import { useMemo, useState, useSyncExternalStore } from "react";
+import RouteProposalMap from "@/components/RouteProposalMap";
 import type { CommunityReportType } from "@/lib/community-report";
+import type { Coordinates } from "@/lib/types";
 
 const ISSUE_URL = "https://github.com/riantorres1975/rutasuruapanpwa/issues/new";
 const REPORT_EMAIL = "contacto@urugo.app";
@@ -52,12 +54,15 @@ export default function ReportBugForm({ initialRoute = "", initialRouteKey, init
   const [description, setDescription] = useState("");
   const [expected, setExpected] = useState("");
   const [contact, setContact] = useState("");
+  const [evidenceUrl, setEvidenceUrl] = useState("");
+  const [proposedPath, setProposedPath] = useState<Coordinates[]>([]);
   const [website, setWebsite] = useState("");
   const [submitState, setSubmitState] = useState<SubmitState>("idle");
   const [submitError, setSubmitError] = useState("");
   const sourceUrl = useSyncExternalStore(subscribeBrowserContext, getSourceUrl, () => "");
 
   const reportLabel = REPORT_TYPES.find((item) => item.value === reportType)?.label ?? "Reporte";
+  const canProposePath = Boolean(initialRouteKey) && (reportType === "route_incorrect" || reportType === "route_changed");
   const reportSubject = useMemo(() => {
     const reportTarget = routeName.trim() || place.trim();
     return reportTarget ? `Reporte ${reportLabel}: ${reportTarget}` : `Reporte ${reportLabel}`;
@@ -76,9 +81,11 @@ export default function ReportBugForm({ initialRoute = "", initialRouteKey, init
       expected || "No especificado",
       "",
       `Contacto opcional: ${contact || "No proporcionado"}`,
+      `Evidencia: ${evidenceUrl || "No proporcionada"}`,
+      `Recorrido propuesto: ${proposedPath.length >= 2 ? `${proposedPath.length} puntos` : "No proporcionado"}`,
       `Página: ${sourceUrl || "No disponible"}`,
     ].join("\n");
-  }, [contact, description, expected, place, reportLabel, routeName, sourceUrl]);
+  }, [contact, description, evidenceUrl, expected, place, proposedPath.length, reportLabel, routeName, sourceUrl]);
 
   const emailHref = `mailto:${REPORT_EMAIL}?subject=${encodeURIComponent(reportSubject)}&body=${encodeURIComponent(reportBody)}`;
   const issueHref = `${ISSUE_URL}?${new URLSearchParams({
@@ -86,7 +93,7 @@ export default function ReportBugForm({ initialRoute = "", initialRouteKey, init
     body: reportBody,
     labels: "bug",
   }).toString()}`;
-  const canSubmit = description.trim().length >= 10 && submitState !== "submitting";
+  const canSubmit = description.trim().length >= 10 && proposedPath.length !== 1 && submitState !== "submitting";
 
   async function submitReport(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -106,6 +113,8 @@ export default function ReportBugForm({ initialRoute = "", initialRouteKey, init
           description,
           expectedResult: expected,
           contact,
+          evidenceUrl,
+          proposedPath: canProposePath && proposedPath.length >= 2 ? proposedPath : null,
           sourcePath: sourceUrl ? new URL(sourceUrl).pathname : window.location.pathname,
           website,
         }),
@@ -133,6 +142,8 @@ export default function ReportBugForm({ initialRoute = "", initialRouteKey, init
           onClick={() => {
             setDescription("");
             setExpected("");
+            setEvidenceUrl("");
+            setProposedPath([]);
             setSubmitState("idle");
           }}
           className="mt-7 inline-flex h-11 items-center justify-center bg-[#6aab48] px-5 text-sm font-black text-[#0c110a] transition hover:bg-[#79bd55]"
@@ -179,7 +190,20 @@ export default function ReportBugForm({ initialRoute = "", initialRouteKey, init
           <span className="text-xs font-bold uppercase text-[#b8e840]">Contacto opcional</span>
           <input value={contact} onChange={(event) => setContact(event.target.value)} maxLength={180} placeholder="Email o red social para dar seguimiento" className={`${fieldClass} h-12`} />
         </label>
+
+        <label className="block">
+          <span className="text-xs font-bold uppercase text-[#b8e840]">Fuente o evidencia opcional</span>
+          <input type="url" inputMode="url" value={evidenceUrl} onChange={(event) => setEvidenceUrl(event.target.value)} maxLength={500} pattern="https://.*" placeholder="https://publicación, foto o aviso" className={`${fieldClass} h-12`} />
+          <span className="mt-2 block text-[11px] leading-5 text-[#60784f]">Sólo enlaces HTTPS. Se mantiene privado para revisión.</span>
+        </label>
       </div>
+
+      {canProposePath && initialRouteKey && (
+        <div className="mt-6">
+          <RouteProposalMap routeKey={initialRouteKey} points={proposedPath} onChange={setProposedPath} />
+          {proposedPath.length === 1 && <p className="mt-2 text-xs text-[#f4df98]">Marca al menos un segundo punto o borra la propuesta.</p>}
+        </div>
+      )}
 
       <label className="absolute -left-[10000px] top-auto h-px w-px overflow-hidden" aria-hidden="true">
         Sitio web

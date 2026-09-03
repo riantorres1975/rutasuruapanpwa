@@ -11,7 +11,7 @@ import {
 } from "@/lib/request-security";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 
-const MAX_BODY_BYTES = 12_000;
+const MAX_BODY_BYTES = 24_000;
 
 export async function POST(request: NextRequest) {
   if (!isSameOriginRequest(request)) return new Response(null, { status: 403 });
@@ -58,6 +58,8 @@ export async function POST(request: NextRequest) {
     description: report.description,
     expected_result: report.expectedResult,
     contact: report.contact,
+    evidence_url: report.evidenceUrl,
+    proposed_path: report.proposedPath,
     source_path: getSafeSourcePath(request, report.sourcePath),
     user_agent: request.headers.get("user-agent")?.slice(0, 400) ?? null,
     submitted_by_hash: hashSubmitter(ip),

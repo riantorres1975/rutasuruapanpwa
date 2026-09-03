@@ -36,7 +36,7 @@ type RevisionRow = {
   published_at: string | null;
 };
 
-type ApprovedReport = { id: string; report_type: string; description: string; route_name: string | null };
+type ApprovedReport = { id: string; report_type: string; description: string; route_name: string | null; proposed_path: unknown };
 
 function formatDate(value: string | null) {
   if (!value) return "Sin fecha";
@@ -56,7 +56,7 @@ export default async function AdminRoutePage({ params, searchParams }: Props) {
     supabase.from("routes").select("id,name,original_name,color,corridor_width_m,verified,path,operational_status,data_version").eq("id", routeId).maybeSingle(),
     supabase.from("route_revisions").select("id,version,change_summary,source,created_at,published_at").eq("route_id", routeId).order("version", { ascending: false }).limit(25),
     query.reporte
-      ? supabase.from("community_reports").select("id,report_type,description,route_name").eq("id", query.reporte).eq("status", "approved").maybeSingle()
+      ? supabase.from("community_reports").select("id,report_type,description,route_name,proposed_path").eq("id", query.reporte).eq("status", "approved").maybeSingle()
       : Promise.resolve({ data: null, error: null }),
   ]);
 
@@ -100,7 +100,7 @@ export default async function AdminRoutePage({ params, searchParams }: Props) {
               dataVersion: route.data_version,
               path: route.path,
             }}
-            linkedReport={linkedReport ? { id: linkedReport.id, label: linkedReport.route_name || linkedReport.description.slice(0, 90) } : null}
+            linkedReport={linkedReport ? { id: linkedReport.id, label: linkedReport.route_name || linkedReport.description.slice(0, 90), proposedPath: linkedReport.proposed_path } : null}
           />
         </section>
 
