@@ -122,7 +122,18 @@ ADMIN_NOTIFICATION_EMAILS=destino@ejemplo.com
 
 `ADMIN_NOTIFICATION_EMAILS` es opcional y, si se omite, se reutilizan los correos de `ADMIN_EMAILS`. El remitente debe pertenecer a un dominio verificado en Resend. La tarea no envía correo cuando no hay pendientes y usa una clave de idempotencia por fecha para evitar duplicados durante reintentos del mismo día.
 
-La misma ejecución también limpia los contadores técnicos vencidos de `rate_limit_buckets`. Esa limpieza no toca reportes, señales, historial ni datos privados de moderación; si falla, el resumen diario sigue enviándose y el mantenimiento se reintenta en la próxima corrida.
+La misma ejecución también aplica el mantenimiento de privacidad. Cada tarea está aislada: si una falla, el resumen diario sigue enviándose y el mantenimiento se reintenta en la próxima corrida.
+
+## Retención de datos privados
+
+- Los contadores técnicos de `rate_limit_buckets` se eliminan después de vencer.
+- Los reportes aprobados o rechazados y las señales aceptadas o descartadas se eliminan 180 días después de su revisión.
+- Los reportes y señales que permanezcan abiertos se eliminan después de 365 días.
+- Las bitácoras privadas de moderación se eliminan después de 365 días.
+- Las rutas publicadas y sus revisiones no forman parte de esta limpieza: se conservan como historial público versionado.
+- Los miembros administrativos se conservan mientras estén autorizados y deben desactivarse o eliminarse manualmente cuando pierdan acceso.
+
+Al eliminar un aporte también desaparecen su contacto opcional, agente de usuario, evidencia, texto libre y hash anónimo. Las referencias desde revisiones o bitácoras usan `ON DELETE SET NULL`, por lo que la ruta publicada no se pierde.
 
 ## Publicar una corrección
 

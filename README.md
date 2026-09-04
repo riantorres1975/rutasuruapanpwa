@@ -210,12 +210,12 @@ Actualmente están operativos:
 - API pública de sólo lectura con los recorridos aprobados.
 - Resumen diario protegido mediante Vercel Cron y Resend; no envía correo cuando no hay pendientes.
 - Limpieza diaria de contadores técnicos vencidos para mantener el rate limit sano entre instancias.
+- Retención automática de reportes, señales y bitácoras privadas con plazos publicados en el aviso de privacidad.
 
 Trabajo pendiente:
 
 - Verificar en campo las rutas antiguas o dudosas y registrar una fecha de revisión por recorrido.
 - Procesar los reportes reales de la comunidad y convertir únicamente los comprobados en nuevas versiones públicas.
-- Definir y documentar la política de retención de datos privados que acompaña a la moderación.
 - Incorporar pruebas integrales del panel administrativo contra un proyecto Supabase aislado de producción.
 - Evaluar una API de aportes para aplicaciones externas con autenticación, cuotas y moderación; la API actual seguirá siendo de sólo lectura.
 - Mantener aplazado el seguimiento GPS colaborativo de camiones hasta definir consentimiento, consumo de batería, privacidad y controles contra ubicaciones falsas.

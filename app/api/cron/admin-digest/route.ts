@@ -1,5 +1,9 @@
 import { sendAdminDigest, type AdminDigestCounts } from "@/lib/admin-digest";
-import { cleanupExpiredRateLimitBuckets } from "@/lib/admin-maintenance";
+import {
+  cleanupExpiredRateLimitBuckets,
+  cleanupPrivateModerationData,
+  EMPTY_PRIVATE_MODERATION_CLEANUP,
+} from "@/lib/admin-maintenance";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -70,11 +74,22 @@ export async function GET(request: Request) {
       );
     }
 
+    let privateModeration = EMPTY_PRIVATE_MODERATION_CLEANUP;
+    try {
+      privateModeration = await cleanupPrivateModerationData(supabase);
+    } catch (maintenanceError) {
+      console.warn(
+        "[admin-digest] limpieza de datos privados falló:",
+        maintenanceError instanceof Error ? maintenanceError.message : "Error desconocido",
+      );
+    }
+
     return Response.json(
       {
         counts,
         maintenance: {
           expiredRateLimitBucketsDeleted,
+          privateModeration,
         },
         ok: true,
         status,
