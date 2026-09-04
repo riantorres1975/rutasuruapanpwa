@@ -222,7 +222,7 @@ Trabajo pendiente:
 - Verificar en campo las rutas antiguas o dudosas y registrar una fecha de revisión por recorrido.
 - Procesar los reportes reales de la comunidad y convertir únicamente los comprobados en nuevas versiones públicas.
 - Configurar el proyecto Supabase de pruebas en CI para ejecutar automáticamente la prueba administrativa aislada.
-- Aplicar la migración de integraciones en producción y emitir la primera credencial desde el panel administrativo.
+- Emitir la primera credencial cuando exista una integración externa lista para usarla; no conservar claves sin dueño.
 - Mantener aplazado el seguimiento GPS colaborativo de camiones hasta definir consentimiento, consumo de batería, privacidad y controles contra ubicaciones falsas.
 
 ### Generar puntos de referencia
