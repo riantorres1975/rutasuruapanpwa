@@ -154,6 +154,8 @@ TEST_SUPABASE_SECRET_KEY=sb_secret_...
 
 El ejecutor rechaza el identificador conocido de producción y también rechaza una URL que no coincida exactamente con `TEST_SUPABASE_PROJECT_REF`. No reutilices las variables ni las claves de producción. La prueba queda fuera del comando E2E normal hasta que sus secretos se configuren en GitHub Actions.
 
+El workflow usa un entorno de GitHub llamado `integration-test`. Agrega allí los cuatro secretos `TEST_SUPABASE_*`; si alguno falta, el trabajo termina correctamente sin ejecutar escrituras. Conviene proteger ese entorno y no habilitar sus secretos para pull requests de forks.
+
 ## Publicar una corrección
 
 1. Comprueba el reporte y márcalo como aprobado.

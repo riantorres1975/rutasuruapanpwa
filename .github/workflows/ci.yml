@@ -53,3 +53,54 @@ jobs:
 
       - name: Pruebas móviles
         run: pnpm test:e2e
+
+  admin-integration:
+    name: Moderación con Supabase aislado
+    needs: verify
+    runs-on: ubuntu-latest
+    environment: integration-test
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Comprobar configuración aislada
+        id: supabase-test
+        shell: bash
+        env:
+          PROJECT_REF: ${{ secrets.TEST_SUPABASE_PROJECT_REF }}
+          PROJECT_URL: ${{ secrets.TEST_SUPABASE_URL }}
+          PUBLISHABLE_KEY: ${{ secrets.TEST_SUPABASE_PUBLISHABLE_KEY }}
+          SECRET_KEY: ${{ secrets.TEST_SUPABASE_SECRET_KEY }}
+        run: |
+          if [[ -n "$PROJECT_REF" && -n "$PROJECT_URL" && -n "$PUBLISHABLE_KEY" && -n "$SECRET_KEY" ]]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+            echo "Proyecto Supabase de pruebas configurado."
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "Prueba administrativa omitida: faltan secretos del entorno integration-test."
+          fi
+
+      - name: Instalar pnpm y Node.js
+        if: steps.supabase-test.outputs.ready == 'true'
+        uses: pnpm/setup@c9883cc79df532ad1a7b81bf9ab944ceb090d65c # v2.0.0
+        with:
+          runtime: node@22
+          cache: true
+          install: false
+
+      - name: Instalar dependencias
+        if: steps.supabase-test.outputs.ready == 'true'
+        run: pnpm install --frozen-lockfile
+
+      - name: Instalar Chromium
+        if: steps.supabase-test.outputs.ready == 'true'
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Probar moderación y auditoría
+        if: steps.supabase-test.outputs.ready == 'true'
+        run: pnpm test:admin-integration
+        env:
+          ALLOW_TEST_SUPABASE_WRITES: "1"
+          TEST_SUPABASE_PROJECT_REF: ${{ secrets.TEST_SUPABASE_PROJECT_REF }}
+          TEST_SUPABASE_URL: ${{ secrets.TEST_SUPABASE_URL }}
+          TEST_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.TEST_SUPABASE_PUBLISHABLE_KEY }}
+          TEST_SUPABASE_SECRET_KEY: ${{ secrets.TEST_SUPABASE_SECRET_KEY }}
