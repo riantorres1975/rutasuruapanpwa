@@ -12,9 +12,17 @@ import { GET } from "@/app/api/cron/admin-digest/route";
 
 const originalSecret = process.env.CRON_SECRET;
 
-function countClient() {
+function countClient(): any {
   return {
     from: vi.fn((table: string) => ({
+      delete: vi.fn(() => ({
+        lt: vi.fn((_column: string, _value: string) => ({
+          select: vi.fn(async () => ({
+            data: table === "rate_limit_buckets" ? [{ key_hash: "a" }, { key_hash: "b" }] : null,
+            error: null,
+          })),
+        })),
+      })),
       select: vi.fn(() => ({
         eq: vi.fn((_column: string, status: string) => Promise.resolve({
           count: table === "route_confirmations" ? 4 : status === "pending" ? 2 : 1,
@@ -57,6 +65,7 @@ describe("cron del resumen administrativo", () => {
     expect(response.headers.get("cache-control")).toBe("no-store");
     expect(body).toEqual({
       counts: { pendingReports: 2, pendingSignals: 4, reviewingReports: 1 },
+      maintenance: { expiredRateLimitBucketsDeleted: 2 },
       ok: true,
       status: "sent",
     });
@@ -75,5 +84,42 @@ describe("cron del resumen administrativo", () => {
 
     expect(response.status).toBe(503);
     expect(mocks.sendAdminDigest).not.toHaveBeenCalled();
+  });
+
+  it("no rompe el resumen si falla la limpieza técnica", async () => {
+    const client: any = countClient();
+    client.from.mockImplementation((table: string) => ({
+      delete: vi.fn(() => ({
+        lt: vi.fn((_column: string, _value: string) => ({
+          select: vi.fn(async () => ({
+            data: null,
+            error: table === "rate_limit_buckets" ? new Error("cleanup failed") : null,
+          })),
+        })),
+      })),
+      select: vi.fn(() => ({
+        eq: vi.fn((_column: string, status: string) => Promise.resolve({
+          count: table === "route_confirmations" ? 4 : status === "pending" ? 2 : 1,
+          error: null,
+        })),
+      })),
+    }));
+    mocks.createSupabaseAdminClient.mockReturnValue(client);
+    mocks.sendAdminDigest.mockResolvedValue("sent");
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+
+    const response = await GET(new Request("https://www.urugo.app/api/cron/admin-digest", {
+      headers: { authorization: "Bearer cron-test-secret" },
+    }));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.maintenance).toEqual({ expiredRateLimitBucketsDeleted: 0 });
+    expect(mocks.sendAdminDigest).toHaveBeenCalled();
+    expect(warn).toHaveBeenCalledWith(
+      "[admin-digest] limpieza de rate_limit_buckets falló:",
+      "cleanup failed",
+    );
+    warn.mockRestore();
   });
 });

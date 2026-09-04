@@ -122,6 +122,8 @@ ADMIN_NOTIFICATION_EMAILS=destino@ejemplo.com
 
 `ADMIN_NOTIFICATION_EMAILS` es opcional y, si se omite, se reutilizan los correos de `ADMIN_EMAILS`. El remitente debe pertenecer a un dominio verificado en Resend. La tarea no envía correo cuando no hay pendientes y usa una clave de idempotencia por fecha para evitar duplicados durante reintentos del mismo día.
 
+La misma ejecución también limpia los contadores técnicos vencidos de `rate_limit_buckets`. Esa limpieza no toca reportes, señales, historial ni datos privados de moderación; si falla, el resumen diario sigue enviándose y el mantenimiento se reintenta en la próxima corrida.
+
 ## Publicar una corrección
 
 1. Comprueba el reporte y márcalo como aprobado.

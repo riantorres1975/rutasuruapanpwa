@@ -1,4 +1,5 @@
 import { sendAdminDigest, type AdminDigestCounts } from "@/lib/admin-digest";
+import { cleanupExpiredRateLimitBuckets } from "@/lib/admin-maintenance";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -28,6 +29,22 @@ async function countRows(
   return count ?? 0;
 }
 
+async function countDigestData(
+  supabase: NonNullable<ReturnType<typeof createSupabaseAdminClient>>,
+): Promise<AdminDigestCounts> {
+  const [pendingReports, reviewingReports, pendingSignals] = await Promise.all([
+    countRows(supabase, "community_reports", "pending"),
+    countRows(supabase, "community_reports", "reviewing"),
+    countRows(supabase, "route_confirmations", "pending"),
+  ]);
+
+  return {
+    pendingReports,
+    pendingSignals,
+    reviewingReports,
+  };
+}
+
 export async function GET(request: Request) {
   const secret = process.env.CRON_SECRET?.trim();
   if (!secret || request.headers.get("authorization") !== `Bearer ${secret}`) {
@@ -40,20 +57,28 @@ export async function GET(request: Request) {
   }
 
   try {
-    const [pendingReports, reviewingReports, pendingSignals] = await Promise.all([
-      countRows(supabase, "community_reports", "pending"),
-      countRows(supabase, "community_reports", "reviewing"),
-      countRows(supabase, "route_confirmations", "pending"),
-    ]);
-    const counts: AdminDigestCounts = {
-      pendingReports,
-      pendingSignals,
-      reviewingReports,
-    };
+    const counts = await countDigestData(supabase);
     const status = await sendAdminDigest(counts, mexicoCityDateKey());
 
+    let expiredRateLimitBucketsDeleted = 0;
+    try {
+      expiredRateLimitBucketsDeleted = await cleanupExpiredRateLimitBuckets(supabase);
+    } catch (maintenanceError) {
+      console.warn(
+        "[admin-digest] limpieza de rate_limit_buckets falló:",
+        maintenanceError instanceof Error ? maintenanceError.message : "Error desconocido",
+      );
+    }
+
     return Response.json(
-      { counts, ok: true, status },
+      {
+        counts,
+        maintenance: {
+          expiredRateLimitBucketsDeleted,
+        },
+        ok: true,
+        status,
+      },
       { headers: { "cache-control": "no-store" } },
     );
   } catch (error) {
