@@ -7,6 +7,10 @@ import {
   type RouteActionState,
   parseRoutePublicationForm,
 } from "@/lib/admin-route";
+import {
+  parseRouteVerificationForm,
+  type RouteVerificationActionState,
+} from "@/lib/admin-route-verification";
 import { generateCommunityApiKey, hashCommunityApiKey } from "@/lib/community-api-auth";
 import { createSupabaseAdminClient, createSupabaseSessionClient } from "@/lib/supabase/server";
 
@@ -276,4 +280,42 @@ export async function restoreRouteRevision(formData: FormData) {
   }
   refreshRouteViews(routeId);
   redirect(`/admin/routes/${routeId}?publicada=${Number(nextVersion)}&restaurada=${revision.version}`);
+}
+
+export async function recordRouteFieldVerification(
+  _previousState: RouteVerificationActionState,
+  formData: FormData,
+): Promise<RouteVerificationActionState> {
+  const access = await getAdminAccess();
+  if (access.status !== "admin") {
+    return { status: "error", message: "Tu sesión no permite verificar rutas." };
+  }
+
+  const input = parseRouteVerificationForm(formData);
+  if (!input) {
+    return { status: "error", message: "Describe qué comprobaste con al menos 10 caracteres." };
+  }
+
+  const supabase = createSupabaseAdminClient();
+  if (!supabase) return { status: "error", message: "Supabase no está configurado." };
+
+  const { error } = await supabase.rpc("record_route_field_verification", {
+    p_route_id: input.routeId,
+    p_expected_version: input.expectedVersion,
+    p_note: input.note,
+    p_actor_id: access.userId,
+  });
+
+  if (error) {
+    console.error("[admin-routes] No se pudo registrar la verificación:", error.code, error.message);
+    return {
+      status: "error",
+      message: error.code === "40001"
+        ? "La ruta cambió mientras la comprobabas. Recarga la página antes de registrarla."
+        : "No se pudo registrar la verificación. Comprueba que la migración esté aplicada.",
+    };
+  }
+
+  refreshRouteViews(input.routeId);
+  redirect(`/admin/routes/${input.routeId}?verificada=1`);
 }

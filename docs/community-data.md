@@ -108,6 +108,7 @@ Si Supabase no responde, el servidor vuelve automáticamente al JSON incluido en
 | `GET /api/admin/routes/export` | Administradores | Descarga rutas y revisiones en JSON, sin datos comunitarios |
 
 La navegación administrativa muestra contadores de reportes y señales pendientes para que la bandeja de revisión sea visible desde cualquier sección del panel.
+Cada ficha de ruta permite registrar una verificación de campo con fecha, administrador y nota. El registro es inmutable y no crea una versión de geometría; editar otros datos de una ruta no renueva esa fecha.
 Cada aporte también muestra al administrador un historial agregado de aceptados, descartados y pendientes de la misma instalación anónima. El hash técnico nunca se presenta en pantalla ni se expone en endpoints públicos.
 Los reportes externos muestran en la bandeja el nombre de la integración que los envió. La clave completa nunca se almacena ni aparece en el panel.
 El inventario prioriza rutas con estado operativo especial, alertas aceptadas posteriores a la última verificación, aportes pendientes o verificaciones de más de seis meses. Las confirmaciones aceptadas se deduplican por instalación antes de contar evidencia.

@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { restoreRouteRevision } from "@/app/admin/actions";
 import AdminHeader from "@/components/admin/AdminHeader";
 import RoutePathEditor from "@/components/admin/RoutePathEditor";
+import RouteVerificationForm from "@/components/admin/RouteVerificationForm";
 import { getAdminAccess } from "@/lib/admin-auth";
 import type { RouteOperationalStatus } from "@/lib/admin-route";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
@@ -12,7 +13,7 @@ export const dynamic = "force-dynamic";
 
 type Props = {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ reporte?: string; publicada?: string; restaurada?: string }>;
+  searchParams: Promise<{ reporte?: string; publicada?: string; restaurada?: string; verificada?: string }>;
 };
 
 type RouteRow = {
@@ -25,6 +26,7 @@ type RouteRow = {
   path: unknown;
   operational_status: RouteOperationalStatus;
   data_version: number;
+  last_verified_at: string | null;
 };
 
 type RevisionRow = {
@@ -34,6 +36,12 @@ type RevisionRow = {
   source: string;
   created_at: string;
   published_at: string | null;
+};
+
+type FieldVerificationRow = {
+  id: string;
+  note: string;
+  verified_at: string;
 };
 
 type ApprovedReport = { id: string; report_type: string; description: string; route_name: string | null; proposed_path: unknown };
@@ -52,17 +60,19 @@ export default async function AdminRoutePage({ params, searchParams }: Props) {
   const supabase = createSupabaseAdminClient();
   if (!supabase) redirect("/admin/login");
 
-  const [routeResult, revisionsResult, reportsByIdResult] = await Promise.all([
-    supabase.from("routes").select("id,name,original_name,color,corridor_width_m,verified,path,operational_status,data_version").eq("id", routeId).maybeSingle(),
+  const [routeResult, revisionsResult, reportsByIdResult, verificationHistoryResult] = await Promise.all([
+    supabase.from("routes").select("id,name,original_name,color,corridor_width_m,verified,path,operational_status,data_version,last_verified_at").eq("id", routeId).maybeSingle(),
     supabase.from("route_revisions").select("id,version,change_summary,source,created_at,published_at").eq("route_id", routeId).order("version", { ascending: false }).limit(25),
     query.reporte
       ? supabase.from("community_reports").select("id,report_type,description,route_name,proposed_path").eq("id", query.reporte).eq("status", "approved").maybeSingle()
       : Promise.resolve({ data: null, error: null }),
+    supabase.from("route_field_verifications").select("id,note,verified_at").eq("route_id", routeId).order("verified_at", { ascending: false }).limit(10),
   ]);
 
   if (routeResult.error || !routeResult.data) notFound();
   const route = routeResult.data as RouteRow;
   const revisions = (revisionsResult.data ?? []) as RevisionRow[];
+  const fieldVerifications = (verificationHistoryResult.data ?? []) as FieldVerificationRow[];
   const linkedReport = reportsByIdResult.data as ApprovedReport | null;
 
   return (
@@ -85,6 +95,36 @@ export default async function AdminRoutePage({ params, searchParams }: Props) {
             <CheckCircle2 className="h-4 w-4 text-[#b8e840]" /> Versión {query.publicada} publicada{query.restaurada ? ` desde la versión ${query.restaurada}` : ""}.
           </div>
         )}
+
+        {query.verificada && (
+          <div className="mt-6 flex items-center gap-3 border-l-2 border-[#57d6e8] bg-[#57d6e8]/[0.06] px-4 py-3 text-sm text-[#c9eef3]" role="status">
+            <CheckCircle2 className="h-4 w-4 text-[#57d6e8]" /> Verificación de campo registrada sin modificar el recorrido.
+          </div>
+        )}
+
+        <div className="pt-8">
+          <RouteVerificationForm
+            routeId={route.id}
+            dataVersion={route.data_version}
+            lastVerifiedAt={route.last_verified_at}
+          />
+        </div>
+
+        {verificationHistoryResult.error ? (
+          <p className="border-b border-white/[0.08] py-4 text-xs text-[#f4df98]">El historial estará disponible después de aplicar la migración de verificaciones.</p>
+        ) : fieldVerifications.length > 0 ? (
+          <section className="border-b border-white/[0.08] py-6" aria-labelledby="verification-history-heading">
+            <h2 id="verification-history-heading" className="text-xs font-black uppercase text-[#78965f]">Comprobaciones recientes</h2>
+            <ol className="mt-4 divide-y divide-white/[0.06]">
+              {fieldVerifications.map((verification) => (
+                <li key={verification.id} className="grid gap-2 py-3 text-sm sm:grid-cols-[170px_minmax(0,1fr)]">
+                  <time dateTime={verification.verified_at} className="text-xs text-[#57d6e8]">{formatDate(verification.verified_at)}</time>
+                  <p className="leading-6 text-[#a8c888]">{verification.note}</p>
+                </li>
+              ))}
+            </ol>
+          </section>
+        ) : null}
 
         <section className="py-8" aria-labelledby="editor-heading">
           <h2 id="editor-heading" className="mb-6 text-sm font-black uppercase text-[#a8c888]">Preparar nueva versión</h2>

@@ -217,10 +217,11 @@ Actualmente están operativos:
 - API autenticada para que integraciones autorizadas envíen propuestas con cuota propia y moderación obligatoria.
 - Panel para crear, limitar y revocar credenciales externas sin consultar ni almacenar la clave completa.
 - Contrato OpenAPI 3.1 descargable para integrar lecturas y aportes sin depender de documentación manual.
+- Registro administrativo e inmutable de verificaciones de campo, separado de la publicación de geometrías.
 
 Trabajo pendiente:
 
-- Verificar en campo las rutas antiguas o dudosas y registrar una fecha de revisión por recorrido.
+- Verificar en campo las rutas antiguas o dudosas desde el panel y adjuntar una nota de comprobación.
 - Procesar los reportes reales de la comunidad y convertir únicamente los comprobados en nuevas versiones públicas.
 - Crear el proyecto Supabase aislado, aplicarle las migraciones y guardar sus cuatro secretos en el entorno `integration-test` de GitHub.
 - Emitir la primera credencial cuando exista una integración externa lista para usarla; no conservar claves sin dueño.

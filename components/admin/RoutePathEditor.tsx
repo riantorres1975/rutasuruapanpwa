@@ -85,6 +85,7 @@ export default function RoutePathEditor({ route, linkedReport }: Props) {
 
         <fieldset className="grid gap-5 sm:grid-cols-2">
           <legend className="mb-4 text-xs font-black uppercase text-[#b8e840]">Identidad de la ruta</legend>
+          <input type="hidden" name="verified" value={route.verified ? "on" : "off"} />
           <label className="block text-xs font-bold text-[#89a873]">
             Nombre público
             <input name="name" defaultValue={route.name} required maxLength={120} className={fieldClass} />
@@ -113,10 +114,10 @@ export default function RoutePathEditor({ route, linkedReport }: Props) {
               <span className="font-mono text-sm uppercase text-[#dceaca]">{color}</span>
             </span>
           </label>
-          <label className="flex items-center gap-3 self-end border border-white/10 bg-[#090d08] px-4 py-3 text-sm font-bold text-[#c9dbb9]">
-            <input name="verified" type="checkbox" defaultChecked={route.verified} className="h-4 w-4 accent-[#b8e840]" />
-            Recorrido comprobado
-          </label>
+          <div className="flex items-center gap-3 self-end border border-white/10 bg-[#090d08] px-4 py-3 text-sm font-bold text-[#c9dbb9]">
+            <CheckCircle2 className={`h-4 w-4 ${route.verified ? "text-[#b8e840]" : "text-[#60784f]"}`} aria-hidden="true" />
+            {route.verified ? "Recorrido comprobado" : "Pendiente de comprobación"}
+          </div>
         </fieldset>
 
         <label className="block text-xs font-bold text-[#89a873]">
