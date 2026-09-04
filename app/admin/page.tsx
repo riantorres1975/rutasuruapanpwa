@@ -14,6 +14,7 @@ type ReportStatus = "pending" | "reviewing" | "approved" | "rejected";
 
 type CommunityReportRow = {
   id: string;
+  api_client_id: string | null;
   route_id: number | null;
   route_key: string | null;
   report_type: string;
@@ -25,6 +26,7 @@ type CommunityReportRow = {
   evidence_url: string | null;
   proposed_path: unknown;
   source_path: string | null;
+  submission_source: "web" | "external_api";
   submitted_by_hash: string | null;
   status: ReportStatus;
   moderator_note: string | null;
@@ -59,6 +61,15 @@ function formatDate(value: string): string {
   return new Intl.DateTimeFormat("es-MX", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Mexico_City" }).format(new Date(value));
 }
 
+function isMissingCommunityApiSchema(error: { code?: string; message?: string } | null): boolean {
+  if (!error) return false;
+  return error.code === "42703"
+    || error.code === "PGRST204"
+    || error.message?.includes("community_api_clients") === true
+    || error.message?.includes("api_client_id") === true
+    || error.message?.includes("submission_source") === true;
+}
+
 type Props = { searchParams: Promise<{ estado?: string }> };
 
 export default async function AdminPage({ searchParams }: Props) {
@@ -84,17 +95,42 @@ export default async function AdminPage({ searchParams }: Props) {
   if (!supabase) redirect("/admin/login");
 
   const countRequests = filters.map((filter) => supabase.from("community_reports").select("id", { count: "exact", head: true }).eq("status", filter.value));
-  const [counts, reportResult] = await Promise.all([
+  const [counts, initialReportResult] = await Promise.all([
     Promise.all(countRequests),
     supabase
       .from("community_reports")
-      .select("id,route_id,route_key,report_type,route_name,place,description,expected_result,contact,evidence_url,proposed_path,source_path,submitted_by_hash,status,moderator_note,created_at")
+      .select("id,api_client_id,route_id,route_key,report_type,route_name,place,description,expected_result,contact,evidence_url,proposed_path,source_path,submission_source,submitted_by_hash,status,moderator_note,created_at")
       .eq("status", status)
       .order("created_at", { ascending: false })
       .limit(50),
   ]);
-  const reports = (reportResult.data ?? []) as CommunityReportRow[];
-  const contributorHistory = await getContributorReputations(reports.map((report) => report.submitted_by_hash));
+  let reportError = initialReportResult.error;
+  let reports = (initialReportResult.data ?? []) as CommunityReportRow[];
+
+  // Keep moderation available while the API migration is being rolled out.
+  if (isMissingCommunityApiSchema(initialReportResult.error)) {
+    const legacyResult = await supabase
+      .from("community_reports")
+      .select("id,route_id,route_key,report_type,route_name,place,description,expected_result,contact,evidence_url,proposed_path,source_path,submitted_by_hash,status,moderator_note,created_at")
+      .eq("status", status)
+      .order("created_at", { ascending: false })
+      .limit(50);
+
+    reportError = legacyResult.error;
+    reports = (legacyResult.data ?? []).map((report) => ({
+      ...report,
+      api_client_id: null,
+      submission_source: "web" as const,
+    })) as CommunityReportRow[];
+  }
+  const apiClientIds = [...new Set(reports.map((report) => report.api_client_id).filter((id): id is string => Boolean(id)))];
+  const [contributorHistory, apiClientResult] = await Promise.all([
+    getContributorReputations(reports.map((report) => report.submitted_by_hash)),
+    apiClientIds.length > 0
+      ? supabase.from("community_api_clients").select("id,name").in("id", apiClientIds)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+  const apiClientNames = new Map((apiClientResult.data ?? []).map((client) => [client.id, client.name]));
 
   return (
     <main className="min-h-dvh bg-[#0c110a] text-[#e8f2d8]">
@@ -122,8 +158,8 @@ export default async function AdminPage({ searchParams }: Props) {
         <section className="py-6" aria-labelledby="reports-title">
           <div className="mb-5 flex items-center justify-between"><h2 id="reports-title" className="text-sm font-black uppercase text-[#a8c888]">{filters.find((filter) => filter.value === status)?.label}</h2><span className="text-xs text-[#60784f]">Máximo 50 por vista</span></div>
 
-          {reportResult.error ? (
-            <p className="border-l-2 border-[#f4c84a] px-4 py-3 text-sm text-[#f4df98]">No se pudo cargar la bandeja: {reportResult.error.message}</p>
+          {reportError ? (
+            <p className="border-l-2 border-[#f4c84a] px-4 py-3 text-sm text-[#f4df98]">No se pudo cargar la bandeja: {reportError.message}</p>
           ) : reports.length === 0 ? (
             <div className="grid min-h-56 place-items-center border border-dashed border-white/10 text-center"><div><Search className="mx-auto h-7 w-7 text-[#60784f]" /><p className="mt-4 font-serif text-2xl font-black">Nada por aquí.</p><p className="mt-2 text-sm text-[#78965f]">No hay reportes en este estado.</p></div></div>
           ) : (
@@ -141,6 +177,11 @@ export default async function AdminPage({ searchParams }: Props) {
                     <p className="text-sm leading-7 text-[#c9dbb9]">{report.description}</p>
                     {report.expected_result && <div className="mt-4 border-l-2 border-[#6aab48] pl-4"><p className="text-[10px] font-black uppercase text-[#78965f]">Debería mostrar</p><p className="mt-1 text-sm leading-6 text-[#a8c888]">{report.expected_result}</p></div>}
                     <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs text-[#60784f]">
+                      {report.submission_source === "external_api" && (
+                        <span className="font-bold text-[#57d6e8]">
+                          API: {report.api_client_id ? apiClientNames.get(report.api_client_id) ?? "integración revocada" : "integración eliminada"}
+                        </span>
+                      )}
                       {report.source_path && <Link href={report.source_path} target="_blank" className="hover:text-[#b8e840]">Abrir página relacionada</Link>}
                       {report.route_key && <Link href={`/ruta/${report.route_key}`} target="_blank" className="hover:text-[#b8e840]">Ver ficha de la ruta</Link>}
                       {report.evidence_url?.startsWith("https://") && <a href={report.evidence_url} target="_blank" rel="noreferrer" className="font-bold text-[#f4c84a] hover:underline">Abrir evidencia</a>}

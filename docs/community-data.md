@@ -98,6 +98,7 @@ Si Supabase no responde, el servidor vuelve automáticamente al JSON incluido en
 | `GET /api/v1/routes` | Público, cacheado | Entrega recorridos aprobados y versión |
 | `GET /api/v1/routes/[key]/geometry` | Público, cacheado | Entrega la geometría publicada de una ruta para el editor de propuestas |
 | `GET /api/v1/routes/[key]/community-status` | Público, cacheado | Resume sólo señales aceptadas, sin datos del dispositivo |
+| `POST /api/v1/community/reports` | Clave Bearer, limitado | Recibe propuestas externas siempre pendientes de moderación |
 | `/admin` | Administradores | Revisa y clasifica reportes |
 | `/admin/routes` | Administradores | Consulta señales y prepara revisiones |
 | `/admin/signals` | Administradores | Acepta o descarta confirmaciones rápidas |
@@ -106,6 +107,7 @@ Si Supabase no responde, el servidor vuelve automáticamente al JSON incluido en
 
 La navegación administrativa muestra contadores de reportes y señales pendientes para que la bandeja de revisión sea visible desde cualquier sección del panel.
 Cada aporte también muestra al administrador un historial agregado de aceptados, descartados y pendientes de la misma instalación anónima. El hash técnico nunca se presenta en pantalla ni se expone en endpoints públicos.
+Los reportes externos muestran en la bandeja el nombre de la integración que los envió. La clave completa nunca se almacena ni aparece en el panel.
 El inventario prioriza rutas con estado operativo especial, alertas aceptadas posteriores a la última verificación, aportes pendientes o verificaciones de más de seis meses. Las confirmaciones aceptadas se deduplican por instalación antes de contar evidencia.
 El botón **Respaldo** del inventario descarga únicamente rutas y revisiones. Los reportes, contactos, agentes de usuario y hashes anónimos quedan fuera del archivo.
 
@@ -173,3 +175,25 @@ La publicación se ejecuta en una transacción: bloquea la versión actual, crea
 - Las fuentes HTTPS y los recorridos aproximados enviados por la comunidad son privados. El editor sólo los carga como borrador y exige una publicación administrativa versionada.
 - El contacto opcional y la bitácora de moderación son privados.
 - Aprobar un reporte no publica una geometría. La publicación versionada se implementa como una acción separada para permitir revisión y rollback.
+
+## Integraciones para aportes externos
+
+Después de aplicar la migración `community_api_clients`, crea una credencial desde un entorno seguro:
+
+```bash
+pnpm api-key:create -- "Nombre de la integración"
+```
+
+La terminal muestra la clave una sola vez. Compártela mediante un canal privado; Supabase conserva únicamente su hash SHA-256 y un prefijo reconocible. La cuota inicial es de 30 reportes por hora.
+
+Una integración envía propuestas mediante `POST /api/v1/community/reports` con `Authorization: Bearer urugo_sk_...`. El endpoint está pensado para llamadas servidor a servidor, limita intentos de autenticación, valida el tamaño y contenido del JSON y devuelve `202` cuando el reporte queda pendiente.
+
+Para revocar una clave sin borrarla de la auditoría operativa:
+
+```sql
+update public.community_api_clients
+set active = false, revoked_at = now()
+where id = 'UUID_DE_LA_INTEGRACION';
+```
+
+Para cambiar su cuota, actualiza `hourly_limit` con un valor entre 1 y 1000. Una integración no tiene permisos de lectura directa sobre Supabase ni puede aprobar reportes o publicar recorridos.

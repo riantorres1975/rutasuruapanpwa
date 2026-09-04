@@ -6,6 +6,7 @@ import {
   Database,
   ExternalLink,
   GitPullRequest,
+  KeyRound,
   Route,
   ShieldCheck,
   TimerReset,
@@ -31,6 +32,7 @@ export const metadata: Metadata = {
 };
 
 const endpoint = `${SITE_URL}/api/v1/routes`;
+const submissionEndpoint = `${SITE_URL}/api/v1/community/reports`;
 
 const jsonLd = {
   "@context": "https://schema.org",
@@ -60,6 +62,18 @@ const responseExample = `{
     }
   ]
 }`;
+
+const submissionExample = `curl -X POST ${submissionEndpoint} \\
+  -H "Authorization: Bearer urugo_sk_TU_CLAVE" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "reportType": "route_inactive",
+    "routeKey": "ruta-14-llanitos",
+    "routeName": "Ruta 14",
+    "place": "Llanitos",
+    "description": "Vecinos indican que esta ruta ya no circula.",
+    "evidenceUrl": "https://ejemplo.com/evidencia"
+  }'`;
 
 export default function DataApiPage() {
   return (
@@ -114,7 +128,37 @@ export default function DataApiPage() {
           </div>
         </section>
 
-        <section className="border-y border-white/10 bg-[#10160d] px-5 py-16 sm:px-8 lg:py-24" aria-labelledby="contract-title">
+        <section className="border-y border-white/10 bg-[#10160d] px-5 py-16 sm:px-8 lg:py-24" aria-labelledby="write-api-title">
+          <div className="mx-auto max-w-[1240px]">
+            <div className="grid gap-12 lg:grid-cols-[300px_minmax(0,1fr)]">
+              <div>
+                <KeyRound className="h-8 w-8 text-[#f4c84a]" strokeWidth={1.6} aria-hidden="true" />
+                <p className="mt-6 text-[11px] font-black uppercase tracking-[0.18em] text-[#f4c84a]">Acceso por invitación</p>
+                <h2 id="write-api-title" className="mt-3 font-serif text-4xl font-black">Aportes desde otros proyectos.</h2>
+                <p className="mt-4 text-sm leading-7 text-[#8eaa76]">
+                  Organizaciones y herramientas locales pueden solicitar una clave para enviar correcciones. Cada clave tiene cuota propia, puede revocarse y nunca permite editar una ruta publicada.
+                </p>
+              </div>
+
+              <div className="min-w-0">
+                <div className="flex flex-col gap-3 border-y border-white/10 py-5 sm:flex-row sm:items-center">
+                  <span className="w-fit bg-[#f4c84a] px-2 py-1 text-[11px] font-black text-[#0c110a]">POST</span>
+                  <code className="min-w-0 break-all text-sm text-[#dceaca]">{submissionEndpoint}</code>
+                  <span className="text-xs font-bold text-[#78965f] sm:ml-auto">Servidor a servidor</span>
+                </div>
+                <pre className="max-h-[440px] overflow-auto border-b border-white/10 py-6 text-[11px] leading-6 text-[#9fc083]"><code>{submissionExample}</code></pre>
+
+                <ol className="grid border-b border-white/10 sm:grid-cols-3">
+                  <li className="py-5 sm:border-r sm:border-white/10 sm:pr-5"><span className="font-serif text-2xl font-black text-[#b8e840]">01</span><p className="mt-2 text-sm font-black">Recibir</p><p className="mt-2 text-xs leading-5 text-[#78965f]">La propuesta entra como pendiente.</p></li>
+                  <li className="border-t border-white/10 py-5 sm:border-r sm:border-t-0 sm:border-white/10 sm:px-5"><span className="font-serif text-2xl font-black text-[#b8e840]">02</span><p className="mt-2 text-sm font-black">Comprobar</p><p className="mt-2 text-xs leading-5 text-[#78965f]">El equipo revisa fuente y recorrido.</p></li>
+                  <li className="border-t border-white/10 py-5 sm:border-t-0 sm:pl-5"><span className="font-serif text-2xl font-black text-[#b8e840]">03</span><p className="mt-2 text-sm font-black">Publicar</p><p className="mt-2 text-xs leading-5 text-[#78965f]">Una acción separada crea la versión.</p></li>
+                </ol>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="px-5 py-16 sm:px-8 lg:py-24" aria-labelledby="contract-title">
           <div className="mx-auto grid max-w-[1240px] gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(360px,0.8fr)]">
             <div>
               <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#6f895a]">Contrato de respuesta</p>
@@ -133,13 +177,13 @@ export default function DataApiPage() {
           </div>
         </section>
 
-        <section className="px-5 py-16 sm:px-8 lg:py-24" aria-labelledby="rules-title">
+        <section className="border-y border-white/10 bg-[#10160d] px-5 py-16 sm:px-8 lg:py-24" aria-labelledby="rules-title">
           <div className="mx-auto max-w-[1240px]">
             <h2 id="rules-title" className="max-w-3xl font-serif text-4xl font-black sm:text-5xl">Reglas pequeñas, datos más confiables.</h2>
             <div className="mt-10 grid border-y border-white/10 md:grid-cols-3">
               <div className="border-b border-white/10 py-7 md:border-b-0 md:border-r md:pr-8"><TimerReset className="h-6 w-6 text-[#b8e840]" /><h3 className="mt-6 font-serif text-2xl font-black">Caché consciente</h3><p className="mt-3 text-sm leading-7 text-[#8eaa76]">La respuesta puede almacenarse una hora y publica <code>ETag</code> para evitar descargas repetidas.</p></div>
               <div className="border-b border-white/10 py-7 md:border-b-0 md:border-r md:px-8"><Route className="h-6 w-6 text-[#57d6e8]" /><h3 className="mt-6 font-serif text-2xl font-black">Lectura desde otras apps</h3><p className="mt-3 text-sm leading-7 text-[#8eaa76]">El endpoint admite CORS para solicitudes <code>GET</code>. No expone contactos, reportes ni identificadores comunitarios.</p></div>
-              <div className="py-7 md:pl-8"><ShieldCheck className="h-6 w-6 text-[#f4c84a]" /><h3 className="mt-6 font-serif text-2xl font-black">Sin escritura directa</h3><p className="mt-3 text-sm leading-7 text-[#8eaa76]">Ninguna aplicación externa puede editar rutas mediante esta API. Cada corrección se modera y publica como una versión nueva.</p></div>
+              <div className="py-7 md:pl-8"><ShieldCheck className="h-6 w-6 text-[#f4c84a]" /><h3 className="mt-6 font-serif text-2xl font-black">Escritura controlada</h3><p className="mt-3 text-sm leading-7 text-[#8eaa76]">Las integraciones autorizadas sólo crean propuestas pendientes. Cada corrección se modera y publica como una versión nueva.</p></div>
             </div>
           </div>
         </section>

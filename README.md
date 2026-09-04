@@ -164,6 +164,7 @@ pnpm start             # inicia la compilación de producción
 pnpm lint              # revisión estática con ESLint
 pnpm test              # ejecuta la suite de Vitest
 pnpm test:admin-integration # modera un reporte contra un Supabase exclusivo de pruebas
+pnpm api-key:create -- "Nombre" # emite una clave para aportes externos moderados
 pnpm guide:screenshots # actualiza las capturas de la aplicación
 pnpm db:seed-routes     # importa el JSON actual en Supabase
 ```
@@ -213,13 +214,14 @@ Actualmente están operativos:
 - Limpieza diaria de contadores técnicos vencidos para mantener el rate limit sano entre instancias.
 - Retención automática de reportes, señales y bitácoras privadas con plazos publicados en el aviso de privacidad.
 - Prueba E2E administrativa opt-in contra un proyecto Supabase aislado, con creación y limpieza de datos temporales.
+- API autenticada para que integraciones autorizadas envíen propuestas con cuota propia y moderación obligatoria.
 
 Trabajo pendiente:
 
 - Verificar en campo las rutas antiguas o dudosas y registrar una fecha de revisión por recorrido.
 - Procesar los reportes reales de la comunidad y convertir únicamente los comprobados en nuevas versiones públicas.
 - Configurar el proyecto Supabase de pruebas en CI para ejecutar automáticamente la prueba administrativa aislada.
-- Evaluar una API de aportes para aplicaciones externas con autenticación, cuotas y moderación; la API actual seguirá siendo de sólo lectura.
+- Añadir al panel la creación, revocación y ajuste de cuotas de integraciones API; por ahora se administran por script y SQL.
 - Mantener aplazado el seguimiento GPS colaborativo de camiones hasta definir consentimiento, consumo de batería, privacidad y controles contra ubicaciones falsas.
 
 ### Generar puntos de referencia
