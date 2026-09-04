@@ -1,4 +1,4 @@
-import { ClipboardList, LogOut, RadioTower, Route } from "lucide-react";
+import { ClipboardList, KeyRound, LogOut, RadioTower, Route } from "lucide-react";
 import Link from "next/link";
 import { signOutAdmin } from "@/app/admin/actions";
 import Logo from "@/components/Logo";
@@ -6,7 +6,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/server";
 
 type Props = {
   email: string;
-  active: "reports" | "routes" | "signals";
+  active: "integrations" | "reports" | "routes" | "signals";
 };
 
 function PendingCount({ count }: { count: number }) {
@@ -43,7 +43,7 @@ export default async function AdminHeader({ email, active }: Props) {
           <span className="hidden border-l border-white/10 pl-4 text-xs font-black uppercase text-[#78965f] sm:block">Control de datos</span>
         </div>
 
-        <nav className="order-3 flex w-full gap-1 border-t border-white/[0.06] pt-3 sm:order-none sm:w-auto sm:border-0 sm:pt-0" aria-label="Administración">
+        <nav className="order-3 flex w-full gap-1 overflow-x-auto border-t border-white/[0.06] pt-3 sm:order-none sm:w-auto sm:border-0 sm:pt-0" aria-label="Administración">
           <Link href="/admin" className={linkClass(active === "reports")} aria-current={active === "reports" ? "page" : undefined}>
             <ClipboardList className="h-4 w-4" aria-hidden="true" /> Reportes <PendingCount count={pendingReports} />
           </Link>
@@ -52,6 +52,9 @@ export default async function AdminHeader({ email, active }: Props) {
           </Link>
           <Link href="/admin/signals" className={linkClass(active === "signals")} aria-current={active === "signals" ? "page" : undefined}>
             <RadioTower className="h-4 w-4" aria-hidden="true" /> Señales <PendingCount count={pendingSignals} />
+          </Link>
+          <Link href="/admin/integrations" className={linkClass(active === "integrations")} aria-current={active === "integrations" ? "page" : undefined}>
+            <KeyRound className="h-4 w-4" aria-hidden="true" /> Integraciones
           </Link>
         </nav>
 

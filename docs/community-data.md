@@ -102,6 +102,7 @@ Si Supabase no responde, el servidor vuelve automáticamente al JSON incluido en
 | `/admin` | Administradores | Revisa y clasifica reportes |
 | `/admin/routes` | Administradores | Consulta señales y prepara revisiones |
 | `/admin/signals` | Administradores | Acepta o descarta confirmaciones rápidas |
+| `/admin/integrations` | Administradores | Crea, limita y revoca claves para aportes externos |
 | `/admin/routes/[id]` | Administradores | Publica y restaura versiones de una ruta |
 | `GET /api/admin/routes/export` | Administradores | Descarga rutas y revisiones en JSON, sin datos comunitarios |
 
@@ -178,7 +179,9 @@ La publicación se ejecuta en una transacción: bloquea la versión actual, crea
 
 ## Integraciones para aportes externos
 
-Después de aplicar la migración `community_api_clients`, crea una credencial desde un entorno seguro:
+Después de aplicar la migración `community_api_clients`, crea una credencial en `/admin/integrations`. El panel muestra la clave completa una sola vez y después conserva únicamente su prefijo.
+
+El script queda disponible como alternativa operativa desde un entorno seguro:
 
 ```bash
 pnpm api-key:create -- "Nombre de la integración"

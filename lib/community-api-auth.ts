@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 
@@ -17,6 +17,10 @@ export type CommunityApiAuthResult =
 
 export function hashCommunityApiKey(apiKey: string): string {
   return createHash("sha256").update(apiKey).digest("hex");
+}
+
+export function generateCommunityApiKey(): string {
+  return `urugo_sk_${randomBytes(32).toString("base64url")}`;
 }
 
 function bearerToken(request: Request): string | null {

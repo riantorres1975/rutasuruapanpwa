@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { describe, expect, it, vi } from "vitest";
 import {
   authenticateCommunityApiRequest,
+  generateCommunityApiKey,
   hashCommunityApiKey,
 } from "@/lib/community-api-auth";
 
@@ -28,6 +29,15 @@ function authClient(result: { data: unknown; error: { message: string } | null }
 }
 
 describe("autenticación de integraciones comunitarias", () => {
+  it("genera claves aleatorias con el formato público esperado", () => {
+    const first = generateCommunityApiKey();
+    const second = generateCommunityApiKey();
+
+    expect(first).toMatch(/^urugo_sk_[A-Za-z0-9_-]{43}$/);
+    expect(second).not.toBe(first);
+    expect(hashCommunityApiKey(first)).toMatch(/^[0-9a-f]{64}$/);
+  });
+
   it("rechaza credenciales ausentes o con formato incorrecto sin consultar la base", async () => {
     const { client, from } = authClient({ data: null, error: null });
 

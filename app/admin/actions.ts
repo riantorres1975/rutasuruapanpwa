@@ -7,11 +7,18 @@ import {
   type RouteActionState,
   parseRoutePublicationForm,
 } from "@/lib/admin-route";
+import { generateCommunityApiKey, hashCommunityApiKey } from "@/lib/community-api-auth";
 import { createSupabaseAdminClient, createSupabaseSessionClient } from "@/lib/supabase/server";
 
 const REVIEW_STATUSES = new Set(["reviewing", "approved", "rejected"]);
 const CONFIRMATION_STATUSES = new Set(["pending", "accepted", "dismissed"]);
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+export type ApiClientActionState = {
+  apiKey?: string;
+  message: string;
+  status: "idle" | "success" | "error";
+};
 
 function refreshRouteViews(routeId: number) {
   revalidatePath("/admin");
@@ -87,6 +94,85 @@ export async function signOutAdmin() {
   const supabase = await createSupabaseSessionClient();
   if (supabase) await supabase.auth.signOut();
   redirect("/admin/login");
+}
+
+export async function createCommunityApiClient(
+  _previousState: ApiClientActionState,
+  formData: FormData,
+): Promise<ApiClientActionState> {
+  const access = await getAdminAccess();
+  if (access.status !== "admin") return { status: "error", message: "Tu sesión no permite crear integraciones." };
+
+  const name = String(formData.get("name") ?? "").trim();
+  const hourlyLimit = Number(formData.get("hourlyLimit"));
+  if (name.length < 2 || name.length > 120) {
+    return { status: "error", message: "El nombre debe tener entre 2 y 120 caracteres." };
+  }
+  if (!Number.isSafeInteger(hourlyLimit) || hourlyLimit < 1 || hourlyLimit > 1000) {
+    return { status: "error", message: "La cuota debe estar entre 1 y 1000 reportes por hora." };
+  }
+
+  const supabase = createSupabaseAdminClient();
+  if (!supabase) return { status: "error", message: "Supabase no está configurado." };
+
+  const apiKey = generateCommunityApiKey();
+  const { error } = await supabase.from("community_api_clients").insert({
+    created_by: access.userId,
+    hourly_limit: hourlyLimit,
+    key_hash: hashCommunityApiKey(apiKey),
+    key_prefix: apiKey.slice(0, 20),
+    name,
+  });
+  if (error) {
+    console.error("[admin-integrations] No se pudo crear la integración:", error.code, error.message);
+    return { status: "error", message: "No se pudo crear la integración. Comprueba que la migración esté aplicada." };
+  }
+
+  revalidatePath("/admin/integrations");
+  return {
+    apiKey,
+    message: "Guarda esta clave ahora. No volverá a mostrarse.",
+    status: "success",
+  };
+}
+
+export async function updateCommunityApiClient(formData: FormData) {
+  const access = await getAdminAccess();
+  if (access.status !== "admin") throw new Error("No tienes permiso para modificar integraciones.");
+
+  const clientId = String(formData.get("clientId") ?? "").trim();
+  const hourlyLimit = Number(formData.get("hourlyLimit"));
+  if (!UUID_PATTERN.test(clientId) || !Number.isSafeInteger(hourlyLimit) || hourlyLimit < 1 || hourlyLimit > 1000) {
+    throw new Error("La integración o su cuota no son válidas.");
+  }
+
+  const supabase = createSupabaseAdminClient();
+  if (!supabase) throw new Error("Supabase no está configurado.");
+  const { error } = await supabase
+    .from("community_api_clients")
+    .update({ hourly_limit: hourlyLimit })
+    .eq("id", clientId)
+    .eq("active", true);
+  if (error) throw new Error("No se pudo actualizar la cuota de la integración.");
+  revalidatePath("/admin/integrations");
+}
+
+export async function revokeCommunityApiClient(formData: FormData) {
+  const access = await getAdminAccess();
+  if (access.status !== "admin") throw new Error("No tienes permiso para revocar integraciones.");
+
+  const clientId = String(formData.get("clientId") ?? "").trim();
+  if (!UUID_PATTERN.test(clientId)) throw new Error("La integración no es válida.");
+
+  const supabase = createSupabaseAdminClient();
+  if (!supabase) throw new Error("Supabase no está configurado.");
+  const { error } = await supabase
+    .from("community_api_clients")
+    .update({ active: false, revoked_at: new Date().toISOString() })
+    .eq("id", clientId)
+    .eq("active", true);
+  if (error) throw new Error("No se pudo revocar la integración.");
+  revalidatePath("/admin/integrations");
 }
 
 export async function publishRouteRevision(
