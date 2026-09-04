@@ -197,7 +197,7 @@ Los módulos principales son:
 
 Los reportes sobre rutas, horarios o puntos incorrectos pueden enviarse desde la página [`/reportar-error`](https://www.urugo.app/reportar-error). Cuando Supabase está configurado quedan pendientes en el panel privado; ningún reporte modifica directamente el mapa. La guía de configuración está en [`docs/community-data.md`](./docs/community-data.md).
 
-La consulta pública versionada está documentada en [`/datos-api`](https://www.urugo.app/datos-api). `GET /api/v1/routes` admite CORS, caché y validación condicional mediante `ETag`; las escrituras permanecen limitadas al formulario de UruGo y siempre requieren moderación.
+La consulta pública versionada está documentada en [`/datos-api`](https://www.urugo.app/datos-api). `GET /api/v1/routes` admite CORS, caché y validación condicional mediante `ETag`. Las integraciones autorizadas pueden enviar propuestas mediante `POST /api/v1/community/reports`; siempre requieren una clave, respetan una cuota propia y pasan por moderación. El contrato completo se publica en [`GET /api/v1/openapi`](https://www.urugo.app/api/v1/openapi) como OpenAPI 3.1.
 
 ### Estado del sistema comunitario
 
@@ -216,6 +216,7 @@ Actualmente están operativos:
 - Prueba E2E administrativa opt-in contra un proyecto Supabase aislado, con creación y limpieza de datos temporales.
 - API autenticada para que integraciones autorizadas envíen propuestas con cuota propia y moderación obligatoria.
 - Panel para crear, limitar y revocar credenciales externas sin consultar ni almacenar la clave completa.
+- Contrato OpenAPI 3.1 descargable para integrar lecturas y aportes sin depender de documentación manual.
 
 Trabajo pendiente:
 

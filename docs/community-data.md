@@ -99,6 +99,7 @@ Si Supabase no responde, el servidor vuelve automáticamente al JSON incluido en
 | `GET /api/v1/routes/[key]/geometry` | Público, cacheado | Entrega la geometría publicada de una ruta para el editor de propuestas |
 | `GET /api/v1/routes/[key]/community-status` | Público, cacheado | Resume sólo señales aceptadas, sin datos del dispositivo |
 | `POST /api/v1/community/reports` | Clave Bearer, limitado | Recibe propuestas externas siempre pendientes de moderación |
+| `GET /api/v1/openapi` | Público, cacheado | Publica el contrato OpenAPI 3.1 de lectura y aportes externos |
 | `/admin` | Administradores | Revisa y clasifica reportes |
 | `/admin/routes` | Administradores | Consulta señales y prepara revisiones |
 | `/admin/signals` | Administradores | Acepta o descarta confirmaciones rápidas |
@@ -192,6 +193,8 @@ pnpm api-key:create -- "Nombre de la integración"
 La terminal muestra la clave una sola vez. Compártela mediante un canal privado; Supabase conserva únicamente su hash SHA-256 y un prefijo reconocible. La cuota inicial es de 30 reportes por hora.
 
 Una integración envía propuestas mediante `POST /api/v1/community/reports` con `Authorization: Bearer urugo_sk_...`. El endpoint está pensado para llamadas servidor a servidor, limita intentos de autenticación, valida el tamaño y contenido del JSON y devuelve `202` cuando el reporte queda pendiente.
+
+El contrato legible por máquinas está disponible en `GET /api/v1/openapi`. Puede importarse en Postman, Insomnia o un generador compatible con OpenAPI 3.1, y también se descarga desde `/datos-api`.
 
 Para revocar una clave sin borrarla de la auditoría operativa:
 

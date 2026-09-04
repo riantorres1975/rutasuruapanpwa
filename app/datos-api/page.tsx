@@ -5,6 +5,7 @@ import {
   Braces,
   Database,
   ExternalLink,
+  FileJson2,
   GitPullRequest,
   KeyRound,
   Route,
@@ -94,6 +95,14 @@ export default function DataApiPage() {
                 <p className="mt-6 max-w-2xl text-base leading-7 text-[#a8c888] sm:text-lg">
                   Los recorridos que alimentan el mapa se pueden consultar en JSON. Las propuestas de cambio pasan por revisión humana antes de llegar a esta respuesta.
                 </p>
+                <a
+                  href="/api/v1/openapi"
+                  download="urugo-openapi.json"
+                  className="mt-7 inline-flex min-h-11 items-center gap-2 border border-[#57d6e8]/40 px-4 text-sm font-black text-[#dceaca] transition hover:border-[#57d6e8] hover:text-white"
+                >
+                  <FileJson2 className="h-4 w-4 text-[#57d6e8]" aria-hidden="true" />
+                  Descargar OpenAPI
+                </a>
               </div>
 
               <dl className="grid grid-cols-3 border-y border-white/10 py-5 lg:grid-cols-1 lg:gap-4 lg:border-y-0 lg:border-l lg:py-0 lg:pl-8">
