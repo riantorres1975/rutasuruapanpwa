@@ -5,8 +5,10 @@ const BASE_URL = "http://localhost:3200";
 const runId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 const adminEmail = `admin-e2e-${runId}@example.com`;
 const reportDescription = `Reporte aislado E2E ${runId}`;
+const integrationName = `Integración E2E ${runId}`;
 
 let adminClient: SupabaseClient;
+let apiClientId: string | null = null;
 let adminUserId: string | null = null;
 let reportId: string | null = null;
 let tokenHash: string | null = null;
@@ -24,6 +26,7 @@ async function cleanupFixture() {
     await adminClient.from("moderation_audit").delete().eq("report_id", reportId);
     await adminClient.from("community_reports").delete().eq("id", reportId);
   }
+  if (apiClientId) await adminClient.from("community_api_clients").delete().eq("id", apiClientId);
   await adminClient.from("admin_members").delete().eq("email", adminEmail);
   if (adminUserId) await adminClient.auth.admin.deleteUser(adminUserId);
 }
@@ -79,7 +82,7 @@ test.describe("moderación con Supabase aislado", () => {
 
   test.afterAll(cleanupFixture);
 
-  test("inicia sesión, revisa un reporte y registra la auditoría", async ({ page }) => {
+  test("modera un reporte y administra una credencial externa", async ({ page }) => {
     if (!tokenHash || !reportId || !adminUserId) throw new Error("El fixture E2E no está completo.");
 
     await page.goto(`/auth/callback?token_hash=${encodeURIComponent(tokenHash)}&type=email`);
@@ -117,5 +120,46 @@ test.describe("moderación con Supabase aislado", () => {
       previous_status: "pending",
       report_id: reportId,
     });
+
+    await page.goto("/admin/integrations");
+    await expect(page.getByRole("heading", { name: "Llaves con dueño y límite." })).toBeVisible();
+    await page.getByLabel("Nombre").fill(integrationName);
+    await page.getByLabel("Cuota por hora").fill("7");
+    await page.getByRole("button", { name: "Crear clave" }).click();
+    await expect(page.getByText("Guarda esta clave ahora. No volverá a mostrarse.")).toBeVisible();
+    await expect(page.getByText(/^urugo_sk_[A-Za-z0-9_-]{43}$/)).toBeVisible();
+
+    const { data: apiClient, error: apiClientError } = await adminClient
+      .from("community_api_clients")
+      .select("id,active,hourly_limit,key_hash,key_prefix")
+      .eq("name", integrationName)
+      .single();
+    if (apiClientError || !apiClient) throw apiClientError ?? new Error("No se creó la integración E2E.");
+    apiClientId = apiClient.id;
+    expect(apiClient).toMatchObject({ active: true, hourly_limit: 7 });
+    expect(apiClient.key_hash).toMatch(/^[0-9a-f]{64}$/);
+    expect(apiClient.key_prefix).toMatch(/^urugo_sk_[A-Za-z0-9_-]{11}$/);
+
+    const integration = page.locator("article").filter({ hasText: integrationName });
+    await integration.getByLabel(`Cuota por hora de ${integrationName}`).fill("12");
+    await integration.getByRole("button", { name: "Guardar" }).click();
+    await expect.poll(async () => {
+      const { data } = await adminClient
+        .from("community_api_clients")
+        .select("hourly_limit")
+        .eq("id", apiClientId)
+        .single();
+      return data?.hourly_limit;
+    }).toBe(12);
+
+    await integration.getByRole("button", { name: `Revocar ${integrationName}` }).click();
+    await expect.poll(async () => {
+      const { data } = await adminClient
+        .from("community_api_clients")
+        .select("active,revoked_at")
+        .eq("id", apiClientId)
+        .single();
+      return { active: data?.active, revoked: Boolean(data?.revoked_at) };
+    }).toEqual({ active: false, revoked: true });
   });
 });
