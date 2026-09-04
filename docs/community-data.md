@@ -135,6 +135,22 @@ La misma ejecución también aplica el mantenimiento de privacidad. Cada tarea e
 
 Al eliminar un aporte también desaparecen su contacto opcional, agente de usuario, evidencia, texto libre y hash anónimo. Las referencias desde revisiones o bitácoras usan `ON DELETE SET NULL`, por lo que la ruta publicada no se pierde.
 
+## Prueba administrativa aislada
+
+`pnpm test:admin-integration` comprueba el flujo real de acceso, bandeja, moderación y auditoría. La prueba crea un administrador y un reporte temporales y los elimina al terminar. Debe ejecutarse únicamente contra un segundo proyecto Supabase dedicado a pruebas, con todas las migraciones aplicadas.
+
+Configura estas variables sólo en tu terminal o en un entorno de CI protegido:
+
+```bash
+ALLOW_TEST_SUPABASE_WRITES=1
+TEST_SUPABASE_PROJECT_REF=referencia-del-proyecto-de-pruebas
+TEST_SUPABASE_URL=https://referencia-del-proyecto-de-pruebas.supabase.co
+TEST_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
+TEST_SUPABASE_SECRET_KEY=sb_secret_...
+```
+
+El ejecutor rechaza el identificador conocido de producción y también rechaza una URL que no coincida exactamente con `TEST_SUPABASE_PROJECT_REF`. No reutilices las variables ni las claves de producción. La prueba queda fuera del comando E2E normal hasta que sus secretos se configuren en GitHub Actions.
+
 ## Publicar una corrección
 
 1. Comprueba el reporte y márcalo como aprobado.

@@ -15,6 +15,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:e2e": "playwright test",
+    "test:admin-integration": "playwright test --config=playwright.admin.config.ts",
     "landmarks:review": "node scripts/generate-landmarks.mjs",
     "landmarks:apply": "node scripts/generate-landmarks.mjs --apply && node scripts/generate-landmark-index.mjs",
     "landmarks:index": "node scripts/generate-landmark-index.mjs",
